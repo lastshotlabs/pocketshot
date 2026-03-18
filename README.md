@@ -1,62 +1,218 @@
-# pocketshot
+# @lastshotlabs/pocketshot
 
-Expo / React Native starter for [bunshot](https://github.com/Last-Shot-Labs/bunshot) APIs.
+Expo / React Native framework library for bunshot backends — scaffold a new app with `pocketshot init` or drop the runtime into an existing project.
 
-## What's included (Phase 2)
-
-- Auth screens: Login, Register, MFA Verify
-- Token storage via `expo-secure-store`
-- Auth service (`lib/auth.ts`) — register, login, MFA verify, OAuth exchange, logout
-- API client (`lib/api.ts`) — `x-user-token` header auth, automatic token refresh interceptor
-- WebSocket client (`lib/ws.ts`) — `?token=` query param auth, AppState reconnect, room re-subscription
-- OpenAPI codegen (`bun run sync`) — fetches spec and generates typed client
-
-## Setup
+## Install
 
 ```bash
-bun install
-cp .env.example .env.local   # set EXPO_PUBLIC_API_URL
-bun start
+npm install @lastshotlabs/pocketshot
+# peer dependencies
+npm install expo-router expo-secure-store @tanstack/react-query jotai react react-native
 ```
 
-## Environment
+## Quick start
 
-| Variable | Default | Description |
+Call `createPocketshot()` once in your app and destructure everything from it. The canonical pattern (from `lib/pocketshot.ts` in a scaffolded app):
+
+```ts
+import { createPocketshot } from '@lastshotlabs/pocketshot'
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
+const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_URL ?? 'ws://localhost:3000'
+
+export const pocketshot = createPocketshot({ apiUrl: API_BASE_URL, wsUrl: WS_BASE_URL })
+
+export const {
+  useUser, useLogin, useRegister, useLogout,
+  useVerifyMfa, useExchangeOAuthCode,
+  useForgotPassword, useResetPassword, useVerifyEmail, useResendVerification,
+  useSetPassword, useSessions, useRevokeSession, useDeleteAccount, useCancelDeletion,
+  useMfaSetup, useMfaVerifySetup, useMfaDisable, useMfaMethods, useMfaResend,
+  useEmailOtpEnable, useEmailOtpVerifySetup,
+  useRoom, useRoomEvent,
+  Providers, api, queryClient, tokenStorage,
+} = pocketshot
+```
+
+Wrap your root layout with `Providers`:
+
+```tsx
+import { Providers } from '@/lib/pocketshot'
+
+export default function RootLayout() {
+  return <Providers><Stack /></Providers>
+}
+```
+
+## `pocketshot init`
+
+```bash
+npx pocketshot init
+# or with flags
+npx pocketshot init --yes          # skip prompts, use defaults
+npx pocketshot init --dir ./myapp  # output to a specific directory
+```
+
+The interactive wizard asks 9 questions:
+
+1. **Project name** — display name (e.g. `My App`)
+2. **Package name** — slugified (e.g. `my-app`)
+3. **App ID** — bundle identifier (e.g. `com.example.myapp`)
+4. **Deep link scheme** — alphanumeric only (e.g. `myapp`)
+5. **Auth screens** — forgot password, reset password, verify email, settings pages
+6. **MFA screens** — TOTP setup + email OTP (only shown if auth screens selected)
+7. **OAuth callback screen** — handles deep link after OAuth redirect
+8. **WebSocket support** — WS client + `useRoom`/`useRoomEvent` hooks
+9. **Git init** — initialise a git repo in the output directory
+
+After scaffolding, run `expo start` then `npx pocketshot sync` to generate typed API hooks.
+
+## `pocketshot sync`
+
+Generates `lib/api/` and `lib/hooks/` from your bunshot OpenAPI spec.
+
+```bash
+npx pocketshot sync --file openapi.json       # from a local spec file
+npx pocketshot sync --api http://localhost:3000/openapi.json
+npx pocketshot sync --watch                   # re-generate on spec changes
+```
+
+Additional flags:
+
+| Flag | Default | Description |
 |---|---|---|
-| `EXPO_PUBLIC_API_URL` | `http://localhost:3000` | Your bunshot API base URL |
-| `EXPO_PUBLIC_WS_URL` | `ws://localhost:3000` | WebSocket base URL |
+| `--api-dir <dir>` | `lib/api` | Output directory for generated API functions |
+| `--hooks-dir <dir>` | `lib/hooks` | Output directory for generated React Query hooks |
+| `--types-path <path>` | `lib/types/api.ts` | Path for generated TypeScript types |
+| `--pocketshot-import <path>` | `@/lib/pocketshot` | Import path used in generated hooks |
+| `--zod` | off | Also generate Zod schemas |
+
+Project-level defaults live in `pocketshot.config.json` at your project root.
+
+## Runtime API
+
+### `createPocketshot(config)`
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `apiUrl` | `string` | required | bunshot backend base URL |
+| `wsUrl` | `string` | — | WebSocket URL (omit to disable WS) |
+| `tokenKey` | `string` | `"pocketshot_token"` | Key name in `expo-secure-store` |
+| `loginPath` | `string` | `"/(auth)/login"` | Route to redirect to on logout / unauthenticated |
+| `homePath` | `string` | `"/(app)/"` | Route to redirect to after login |
+| `mfaPath` | `string` | `"/(auth)/mfa"` | Route to redirect to when MFA is required |
+| `staleTime` | `number` | `300000` | React Query stale time in ms |
+
+### Hooks
+
+**Auth**
+
+| Hook | Description |
+|---|---|
+| `useUser()` | Current user (`GET /auth/me`), returns `{ user, isLoading, isError }` |
+| `useLogin()` | Login mutation — handles MFA redirect automatically |
+| `useRegister()` | Register mutation — stores token and redirects to home |
+| `useLogout()` | Logout mutation — clears tokens and redirects to login |
+
+**Account management**
+
+| Hook | Description |
+|---|---|
+| `useForgotPassword()` | `POST /auth/forgot-password` |
+| `useResetPassword()` | `POST /auth/reset-password` |
+| `useVerifyEmail()` | `POST /auth/verify-email` |
+| `useResendVerification()` | `POST /auth/resend-verification` |
+| `useSetPassword()` | `POST /auth/set-password` (change password) |
+| `useSessions()` | `GET /auth/sessions` — list active sessions |
+| `useRevokeSession()` | `DELETE /auth/sessions` — revoke a session by ID |
+| `useDeleteAccount()` | `DELETE /auth/me` — delete account, clears tokens |
+| `useCancelDeletion()` | `POST /auth/cancel-deletion` |
+
+**MFA**
+
+| Hook | Description |
+|---|---|
+| `useVerifyMfa()` | `POST /auth/mfa/verify` — complete MFA login challenge |
+| `useMfaSetup()` | `POST /auth/mfa/setup` — initiate TOTP setup |
+| `useMfaVerifySetup()` | `POST /auth/mfa/verify-setup` — confirm TOTP setup |
+| `useMfaDisable()` | `DELETE /auth/mfa` — disable TOTP |
+| `useMfaMethods()` | `GET /auth/mfa/methods` — list enabled MFA methods |
+| `useMfaResend()` | `POST /auth/mfa/resend` — resend email OTP |
+| `useEmailOtpEnable()` | `POST /auth/mfa/email-otp/enable` |
+| `useEmailOtpVerifySetup()` | `POST /auth/mfa/email-otp/verify-setup` |
+
+**OAuth**
+
+| Hook / function | Description |
+|---|---|
+| `useExchangeOAuthCode()` | `POST /auth/oauth/exchange` — exchange one-time code for session |
+| `getOAuthUrl(provider, redirectUri)` | Build the OAuth initiation URL |
+
+**WebSocket** (only available when `wsUrl` is configured)
+
+| Hook | Description |
+|---|---|
+| `useRoom(room)` | Subscribe to a room, returns latest message |
+| `useRoomEvent(room, event, handler)` | Subscribe to a specific event type in a room |
+
+**Provider**
+
+| Export | Description |
+|---|---|
+| `Providers` | Wraps `QueryClientProvider` + Jotai `Provider` — use at the root layout |
+
+### Instance properties
+
+| Property | Description |
+|---|---|
+| `api` | `ApiClient` instance — call `api.get()`, `api.post()`, etc. directly |
+| `queryClient` | `QueryClient` instance — for manual cache invalidation |
+| `tokenStorage` | `TokenStorage` instance — `getToken`, `setToken`, `clearToken`, `getRefreshToken`, `setRefreshToken`, `clearRefreshToken` |
 
 ## Auth flow
 
-Mobile auth uses JSON tokens, not cookies:
+| | |
+|---|---|
+| Token storage | `expo-secure-store` |
+| Request header | `x-user-token: <jwt>` |
+| Refresh | `POST /auth/refresh` with `{ refreshToken }` in body; on success, retries original request once; on second 401, clears tokens |
+| OAuth | `expo-web-browser` opens `GET /auth/:provider`, deep link returns `scheme://auth/callback?code=xxx`, exchanged via `POST /auth/oauth/exchange` |
+| WebSocket | `wss://host/ws?token=<jwt>` (bunshot accepts `?token=` for React Native clients) |
 
-- **Register / Login** — response body `{ token, refreshToken }` stored in `expo-secure-store`
-- **Requests** — `x-user-token: <jwt>` header
-- **Refresh** — `POST /auth/refresh` with `{ refreshToken }` in body; on success, retries the original request once; on second 401, clears tokens and caller redirects to login
-- **OAuth** — `expo-web-browser` opens `GET /auth/:provider`, deep link returns `pocketshot://auth/callback?code=xxx`, exchanged via `POST /auth/oauth/exchange`
-- **WebSocket** — `wss://host/ws?token=<jwt>` (bunshot accepts `?token=` for React Native clients)
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `EXPO_PUBLIC_API_URL` | `http://localhost:3000` | bunshot backend base URL |
+| `EXPO_PUBLIC_WS_URL` | `ws://localhost:3000` | WebSocket URL (optional) |
 
 ## File structure
 
 ```
-app/
-  _layout.tsx              # Root layout (SafeAreaProvider)
-  (auth)/
-    _layout.tsx            # Auth stack
-    login.tsx
-    register.tsx
-    mfa.tsx                # TOTP / email OTP verify
-    oauth-callback.tsx     # Deep link handler: pocketshot://auth/callback
-  (app)/
-    _layout.tsx            # Auth gate — redirects to login if no token
-    index.tsx              # Home screen (placeholder)
-lib/
-  config.ts                # API_BASE_URL, WS_BASE_URL
-  tokenStorage.ts          # expo-secure-store get/set/clear
-  api.ts                   # apiFetch / apiGet / apiPost + refresh interceptor
-  auth.ts                  # register, login, verifyMfa, logout, exchangeOAuthCode
-  ws.ts                    # PocketshotWS class + singleton export
-  generated/               # Output of `bun run sync` (gitignored)
-scripts/
-  sync.ts                  # OpenAPI codegen script
+src/
+  create-pocketshot.tsx   # createPocketshot() factory
+  auth/
+    hooks.ts              # createAuthHooks() — 22 hooks + getOAuthUrl
+    storage.ts            # TokenStorage interface + createSecureStoreStorage()
+  api/
+    client.ts             # ApiClient + ApiError
+  ws/
+    index.ts              # PocketshotWS + createWsHooks()
+  index.ts                # package barrel
+  cli/
+    index.ts              # CLI entry point (init + sync subcommands)
+    prompts.ts            # 9 interactive prompts via @clack/prompts
+    scaffold.ts           # pocketshot init file writer
+    sync.ts               # OpenAPI → TypeScript codegen
+    types.ts              # PocketshotScaffoldConfig interface
+    templates/            # ~21 scaffold template generators
+      app/                # screen templates (login, register, mfa, oauth-callback, settings, …)
+      lib/                # lib/ template (pocketshot.ts, config.ts)
+      app-json.ts         # app.json template
+      env.ts              # .env template
+      package-json.ts     # package.json template
+      pocketshot-config.ts # pocketshot.config.json template
+      tsconfig.ts         # tsconfig.json template
+app/                      # reference implementation (Expo app using the package)
+tests/                    # vitest test suite
 ```
