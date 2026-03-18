@@ -1,31 +1,34 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
-import { router } from 'expo-router'
-import { login } from '@/lib/auth'
+import { router, useRouter } from 'expo-router'
+import { useLogin } from '@/lib/pocketshot'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+  const routerHook = useRouter()
+  const { mutate: login, isPending } = useLogin()
 
-  async function handleLogin() {
+  function handleLogin() {
     if (!email || !password) return
-    setLoading(true)
-    try {
-      const result = await login(email, password)
-      if ('mfaRequired' in result) {
-        router.replace({
-          pathname: '/(auth)/mfa',
-          params: { mfaToken: result.mfaToken, methods: result.mfaMethods.join(',') },
-        })
-      } else {
-        router.replace('/(app)/')
+    login(
+      { email, password },
+      {
+        onSuccess: (result) => {
+          if ('mfaRequired' in result && result.mfaRequired) {
+            router.replace({
+              pathname: '/(auth)/mfa',
+              params: { mfaToken: result.mfaToken, methods: result.mfaMethods.join(',') },
+            })
+          } else {
+            router.replace('/(app)/')
+          }
+        },
+        onError: (err: any) => {
+          Alert.alert('Login failed', err.data?.error ?? err.message)
+        },
       }
-    } catch (err: any) {
-      Alert.alert('Login failed', err.data?.error ?? err.message)
-    } finally {
-      setLoading(false)
-    }
+    )
   }
 
   return (
@@ -48,11 +51,14 @@ export default function LoginScreen() {
         secureTextEntry
         autoComplete="password"
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Signing in\u2026' : 'Sign In'}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isPending}>
+        <Text style={styles.buttonText}>{isPending ? 'Signing in\u2026' : 'Sign In'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
         <Text style={styles.link}>Don't have an account? Create one</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => routerHook.push('/(auth)/forgot-password')}>
+        <Text style={styles.link}>Forgot password?</Text>
       </TouchableOpacity>
     </View>
   )

@@ -1,17 +1,25 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
-import { logout } from '@/lib/auth'
+import { useLogout } from '@/lib/pocketshot'
 
 export default function HomeScreen() {
+  const { mutate: logout } = useLogout()
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>pocketshot</Text>
       <Text style={styles.subtitle}>You're signed in.</Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => logout().then(() => router.replace('/(auth)/login'))}
+        onPress={() => logout(undefined, { onSuccess: () => router.replace('/(auth)/login') })}
       >
         <Text style={styles.buttonText}>Sign Out</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={() => router.push('/(app)/settings/')}
+      >
+        <Text style={styles.settingsText}>Settings</Text>
       </TouchableOpacity>
     </View>
   )
@@ -23,4 +31,6 @@ const styles = StyleSheet.create({
   subtitle: { color: '#666' },
   button: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, paddingHorizontal: 24 },
   buttonText: { fontSize: 16 },
+  settingsButton: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, paddingHorizontal: 24 },
+  settingsText: { fontSize: 16, color: '#007AFF' },
 })

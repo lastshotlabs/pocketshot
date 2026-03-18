@@ -1,10 +1,13 @@
 import { Stack } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { Providers } from '@/lib/pocketshot'
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Providers>
+        <Stack screenOptions={{ headerShown: false }} />
+      </Providers>
     </SafeAreaProvider>
   )
 }

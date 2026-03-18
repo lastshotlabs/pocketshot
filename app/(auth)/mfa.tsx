@@ -1,25 +1,25 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { verifyMfa } from '@/lib/auth'
+import { useVerifyMfa } from '@/lib/pocketshot'
 
 export default function MfaScreen() {
   const { mfaToken, methods } = useLocalSearchParams<{ mfaToken: string; methods: string }>()
   const [code, setCode] = useState('')
-  const [loading, setLoading] = useState(false)
   const method = methods?.split(',')[0] ?? 'totp'
+  const { mutate: verifyMfa, isPending } = useVerifyMfa()
 
-  async function handleVerify() {
+  function handleVerify() {
     if (!code || !mfaToken) return
-    setLoading(true)
-    try {
-      await verifyMfa(mfaToken, code, method)
-      router.replace('/(app)/')
-    } catch (err: any) {
-      Alert.alert('Verification failed', err.data?.error ?? err.message)
-    } finally {
-      setLoading(false)
-    }
+    verifyMfa(
+      { mfaToken, code, method },
+      {
+        onSuccess: () => router.replace('/(app)/'),
+        onError: (err: any) => {
+          Alert.alert('Verification failed', err.data?.error ?? err.message)
+        },
+      }
+    )
   }
 
   return (
@@ -37,8 +37,8 @@ export default function MfaScreen() {
         maxLength={6}
         autoFocus
       />
-      <TouchableOpacity style={styles.button} onPress={handleVerify} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Verifying\u2026' : 'Verify'}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleVerify} disabled={isPending}>
+        <Text style={styles.buttonText}>{isPending ? 'Verifying\u2026' : 'Verify'}</Text>
       </TouchableOpacity>
     </View>
   )

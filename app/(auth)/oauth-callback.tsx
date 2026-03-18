@@ -5,19 +5,24 @@
 import { useEffect } from 'react'
 import { View, Text, ActivityIndicator } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { exchangeOAuthCode } from '@/lib/auth'
+import { useExchangeOAuthCode } from '@/lib/pocketshot'
 
 export default function OAuthCallbackScreen() {
   const { code } = useLocalSearchParams<{ code: string }>()
+  const { mutate: exchangeCode } = useExchangeOAuthCode()
 
   useEffect(() => {
     if (!code) {
       router.replace('/(auth)/login')
       return
     }
-    exchangeOAuthCode(code)
-      .then(() => router.replace('/(app)/'))
-      .catch(() => router.replace('/(auth)/login'))
+    exchangeCode(
+      { code },
+      {
+        onSuccess: () => router.replace('/(app)/'),
+        onError: () => router.replace('/(auth)/login'),
+      }
+    )
   }, [code])
 
   return (
