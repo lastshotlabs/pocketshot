@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "pocketshot",
+    "slug": "pocketshot",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "pocketshot",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lastshotlabs.pocketshot"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.lastshotlabs.pocketshot",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "pocketshot" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

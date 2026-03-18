@@ -1,0 +1,10 @@
+node_modules/
+.expo/
+dist/
+ios/
+android/
+lib/generated/api.ts
+lib/generated/openapi.json
+*.DS_Store
+.env.local
+.env*.local
