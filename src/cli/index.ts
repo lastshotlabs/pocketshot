@@ -46,9 +46,34 @@ async function main() {
     return
   }
 
+  // Help — must come before init, which catches the no-command case
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(`
+pocketshot — Expo mobile framework for bunshot backends
+
+Commands:
+  init [--yes] [--dir <path>]    Scaffold a new pocketshot app
+  sync [--file <path>] [--api <url>] [--watch]
+                                 Generate API client + hooks from OpenAPI spec
+
+Options:
+  --yes, -y        Skip prompts, use defaults
+  --dir <path>     Output directory for init
+  --file <path>    OpenAPI spec file path
+  --api <url>      OpenAPI spec URL
+  --watch, -w      Watch mode for sync
+  --pocketshot-import <path>  Import path override (default: @/lib/pocketshot)
+  --api-dir <dir>  API output dir (default: lib/api)
+  --hooks-dir <dir> Hooks output dir (default: lib/hooks)
+  --types-path <path> Types file path (default: lib/types/api.ts)
+  --zod            Generate Zod schemas
+`)
+    return
+  }
+
   // Subcommand: pocketshot init
   if (positionals[0] === 'init' || !positionals[0]) {
-    if (positionals[0] && positionals[0] !== 'init' && positionals[0] !== '--help' && positionals[0] !== '-h') {
+    if (positionals[0] && positionals[0] !== 'init') {
       log.error(`Unknown command: ${positionals[0]}`)
       log.info('Usage: pocketshot init [--yes] [--dir <path>]')
       log.info('       pocketshot sync [--api <url>] [--file <path>] [--watch]')
@@ -92,31 +117,6 @@ ${wsLine}
 
   Docs: github.com/lastshotlabs/pocketshot`,
     )
-    return
-  }
-
-  // Help or unknown command
-  if (positionals[0] === '--help' || positionals[0] === '-h' || args.includes('--help') || args.includes('-h')) {
-    console.log(`
-pocketshot — Expo mobile framework for bunshot backends
-
-Commands:
-  init [--yes] [--dir <path>]    Scaffold a new pocketshot app
-  sync [--file <path>] [--api <url>] [--watch]
-                                 Generate API client + hooks from OpenAPI spec
-
-Options:
-  --yes, -y        Skip prompts, use defaults
-  --dir <path>     Output directory for init
-  --file <path>    OpenAPI spec file path
-  --api <url>      OpenAPI spec URL
-  --watch, -w      Watch mode for sync
-  --pocketshot-import <path>  Import path override (default: @/lib/pocketshot)
-  --api-dir <dir>  API output dir (default: src/api)
-  --hooks-dir <dir> Hooks output dir (default: src/hooks/api)
-  --types-path <path> Types file path (default: src/types/api.ts)
-  --zod            Generate Zod schemas
-`)
     return
   }
 
