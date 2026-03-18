@@ -1,27 +1,20 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router } from 'expo-router'
-import { register } from '@/lib/auth'
-import { useAuth } from '@/lib/authContext'
+import { useRegister } from '@/lib/auth'
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
+  const register = useRegister()
 
-  async function handleRegister() {
+  function handleRegister() {
     if (!email || !password) return
-    setLoading(true)
-    try {
-      await register(email, password)
-      signIn()
-      router.replace('/(app)/')
-    } catch (err: any) {
-      Alert.alert('Registration failed', err.data?.error ?? err.message)
-    } finally {
-      setLoading(false)
-    }
+    register.mutate({ email, password }, {
+      onError: (err: any) => {
+        Alert.alert('Registration failed', err.data?.error ?? err.message)
+      },
+    })
   }
 
   return (
@@ -44,8 +37,8 @@ export default function RegisterScreen() {
         secureTextEntry
         autoComplete="new-password"
       />
-      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Creating account\u2026' : 'Create Account'}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={register.isPending}>
+        <Text style={styles.buttonText}>{register.isPending ? 'Creating account\u2026' : 'Create Account'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.link}>Already have an account? Sign in</Text>

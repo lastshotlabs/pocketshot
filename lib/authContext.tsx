@@ -1,38 +1,22 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { getToken } from './tokenStorage'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Provider as JotaiProvider } from 'jotai'
+import type { ReactNode } from 'react'
 
-interface AuthContextValue {
-  isAuthed: boolean
-  isReady: boolean
-  signIn: () => void
-  signOut: () => void
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: false,
+    },
+  },
+})
 
-const AuthContext = createContext<AuthContextValue | null>(null)
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isReady, setIsReady] = useState(false)
-  const [isAuthed, setIsAuthed] = useState(false)
-
-  useEffect(() => {
-    getToken().then(t => {
-      setIsAuthed(!!t)
-      setIsReady(true)
-    })
-  }, [])
-
-  function signIn() { setIsAuthed(true) }
-  function signOut() { setIsAuthed(false) }
-
+export function Providers({ children }: { children: ReactNode }) {
   return (
-    <AuthContext.Provider value={{ isAuthed, isReady, signIn, signOut }}>
-      {children}
-    </AuthContext.Provider>
+    <JotaiProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </JotaiProvider>
   )
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
 }

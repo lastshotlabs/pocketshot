@@ -1,9 +1,9 @@
 import { Redirect, Stack } from 'expo-router'
-import { useAuth } from '@/lib/authContext'
+import { useUser } from '@/lib/auth'
 
 export default function AppLayout() {
-  const { isReady, isAuthed } = useAuth()
-  if (!isReady) return null
-  if (!isAuthed) return <Redirect href="/(auth)/login" />
+  const { user, isLoading } = useUser()
+  if (isLoading) return null
+  if (!user) return <Redirect href="/(auth)/login" />
   return <Stack />
 }

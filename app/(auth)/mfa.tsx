@@ -1,28 +1,23 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
-import { router, useLocalSearchParams } from 'expo-router'
-import { verifyMfa } from '@/lib/auth'
-import { useAuth } from '@/lib/authContext'
+import { useAtomValue } from 'jotai'
+import { useVerifyMfa } from '@/lib/auth'
+import { pendingMfaChallengeAtom } from '@/lib/atoms'
 
 export default function MfaScreen() {
-  const { mfaToken, methods } = useLocalSearchParams<{ mfaToken: string; methods: string }>()
+  const challenge = useAtomValue(pendingMfaChallengeAtom)
   const [code, setCode] = useState('')
-  const [loading, setLoading] = useState(false)
-  const method = methods?.split(',')[0] ?? 'totp'
-  const { signIn } = useAuth()
+  const verifyMfa = useVerifyMfa()
 
-  async function handleVerify() {
-    if (!code || !mfaToken) return
-    setLoading(true)
-    try {
-      await verifyMfa(mfaToken, code, method)
-      signIn()
-      router.replace('/(app)/')
-    } catch (err: any) {
-      Alert.alert('Verification failed', err.data?.error ?? err.message)
-    } finally {
-      setLoading(false)
-    }
+  const method = challenge?.mfaMethods[0] ?? 'totp'
+
+  function handleVerify() {
+    if (!code) return
+    verifyMfa.mutate({ code, method }, {
+      onError: (err: any) => {
+        Alert.alert('Verification failed', err.data?.error ?? err.message)
+      },
+    })
   }
 
   return (
@@ -40,8 +35,8 @@ export default function MfaScreen() {
         maxLength={6}
         autoFocus
       />
-      <TouchableOpacity style={styles.button} onPress={handleVerify} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Verifying\u2026' : 'Verify'}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleVerify} disabled={verifyMfa.isPending}>
+        <Text style={styles.buttonText}>{verifyMfa.isPending ? 'Verifying\u2026' : 'Verify'}</Text>
       </TouchableOpacity>
     </View>
   )

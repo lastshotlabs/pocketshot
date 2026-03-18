@@ -1,34 +1,20 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router } from 'expo-router'
-import { login } from '@/lib/auth'
-import { useAuth } from '@/lib/authContext'
+import { useLogin } from '@/lib/auth'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
+  const login = useLogin()
 
-  async function handleLogin() {
+  function handleLogin() {
     if (!email || !password) return
-    setLoading(true)
-    try {
-      const result = await login(email, password)
-      if ('mfaRequired' in result) {
-        router.replace({
-          pathname: '/(auth)/mfa',
-          params: { mfaToken: result.mfaToken, methods: result.mfaMethods.join(',') },
-        })
-      } else {
-        signIn()
-        router.replace('/(app)/')
-      }
-    } catch (err: any) {
-      Alert.alert('Login failed', err.data?.error ?? err.message)
-    } finally {
-      setLoading(false)
-    }
+    login.mutate({ email, password }, {
+      onError: (err: any) => {
+        Alert.alert('Login failed', err.data?.error ?? err.message)
+      },
+    })
   }
 
   return (
@@ -51,8 +37,8 @@ export default function LoginScreen() {
         secureTextEntry
         autoComplete="password"
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Signing in\u2026' : 'Sign In'}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={login.isPending}>
+        <Text style={styles.buttonText}>{login.isPending ? 'Signing in\u2026' : 'Sign In'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
         <Text style={styles.link}>Don't have an account? Create one</Text>

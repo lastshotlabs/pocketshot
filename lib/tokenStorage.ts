@@ -1,26 +1,24 @@
 import * as SecureStore from 'expo-secure-store'
 
-const TOKEN_KEY = 'pocketshot_token'
-const REFRESH_TOKEN_KEY = 'pocketshot_refresh_token'
-
-export async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(TOKEN_KEY)
+export interface TokenStorage {
+  get: () => Promise<string | null>
+  set: (token: string) => Promise<void>
+  clear: () => Promise<void>
+  getRefreshToken: () => Promise<string | null>
+  setRefreshToken: (token: string) => Promise<void>
+  clearRefreshToken: () => Promise<void>
 }
 
-export async function getRefreshToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(REFRESH_TOKEN_KEY)
-}
-
-export async function setTokens(token: string, refreshToken?: string): Promise<void> {
-  await SecureStore.setItemAsync(TOKEN_KEY, token)
-  if (refreshToken) {
-    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken)
+export function createSecureStoreStorage(key = 'pocketshot_token'): TokenStorage {
+  const refreshKey = `${key}_refresh`
+  return {
+    get: () => SecureStore.getItemAsync(key),
+    set: (token) => SecureStore.setItemAsync(key, token),
+    clear: () => SecureStore.deleteItemAsync(key),
+    getRefreshToken: () => SecureStore.getItemAsync(refreshKey),
+    setRefreshToken: (token) => SecureStore.setItemAsync(refreshKey, token),
+    clearRefreshToken: () => SecureStore.deleteItemAsync(refreshKey),
   }
 }
 
-export async function clearTokens(): Promise<void> {
-  await Promise.all([
-    SecureStore.deleteItemAsync(TOKEN_KEY),
-    SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
-  ])
-}
+export const tokenStorage = createSecureStoreStorage()

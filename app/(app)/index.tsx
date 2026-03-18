@@ -1,20 +1,20 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { router } from 'expo-router'
-import { logout } from '@/lib/auth'
-import { useAuth } from '@/lib/authContext'
+import { useUser, useLogout } from '@/lib/auth'
 
 export default function HomeScreen() {
-  const { signOut } = useAuth()
+  const { user } = useUser()
+  const logout = useLogout()
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>pocketshot</Text>
-      <Text style={styles.subtitle}>You're signed in.</Text>
+      <Text style={styles.subtitle}>You're signed in{user?.email ? ` as ${user.email}` : ''}.</Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => logout().then(() => { signOut(); router.replace('/(auth)/login') })}
+        onPress={() => logout.mutate()}
+        disabled={logout.isPending}
       >
-        <Text style={styles.buttonText}>Sign Out</Text>
+        <Text style={styles.buttonText}>{logout.isPending ? 'Signing out…' : 'Sign Out'}</Text>
       </TouchableOpacity>
     </View>
   )

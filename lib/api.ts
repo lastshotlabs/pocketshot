@@ -1,88 +1,109 @@
 /**
- * Thin API client wrapper with automatic token refresh.
+ * Thin API client with automatic token refresh.
  *
  * Uses x-user-token header for auth (not cookies).
- * On 401: attempts one token refresh, retries, redirects to login on second 401.
+ * On 401: attempts one token refresh, retries, clears tokens on second 401.
  */
 import { API_BASE_URL } from './config'
-import { getToken, getRefreshToken, setTokens, clearTokens } from './tokenStorage'
+import type { TokenStorage } from './tokenStorage'
+import { tokenStorage as defaultStorage } from './tokenStorage'
 
 type RequestOptions = RequestInit & { skipAuth?: boolean }
 
-let isRefreshing = false
-let refreshPromise: Promise<string | null> | null = null
+export class ApiClient {
+  private storage: TokenStorage
+  private isRefreshing = false
+  private refreshPromise: Promise<string | null> | null = null
 
-async function doRefresh(): Promise<string | null> {
-  const refreshToken = await getRefreshToken()
-  if (!refreshToken) return null
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    await setTokens(data.token, data.refreshToken)
-    return data.token
-  } catch {
-    return null
-  }
-}
-
-async function refreshOnce(): Promise<string | null> {
-  // Deduplicate concurrent refresh calls
-  if (isRefreshing && refreshPromise) return refreshPromise
-  isRefreshing = true
-  refreshPromise = doRefresh().finally(() => {
-    isRefreshing = false
-    refreshPromise = null
-  })
-  return refreshPromise
-}
-
-export async function apiFetch(path: string, options: RequestOptions = {}): Promise<Response> {
-  const { skipAuth = false, ...init } = options
-  const headers = new Headers(init.headers)
-  headers.set('Content-Type', 'application/json')
-
-  if (!skipAuth) {
-    const token = await getToken()
-    if (token) headers.set('x-user-token', token)
+  constructor(storage: TokenStorage) {
+    this.storage = storage
   }
 
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+  private async doRefresh(): Promise<string | null> {
+    const refreshToken = await this.storage.getRefreshToken()
+    if (!refreshToken) return null
 
-  // Token refresh interceptor
-  if (res.status === 401 && !skipAuth) {
-    const newToken = await refreshOnce()
-    if (newToken) {
-      headers.set('x-user-token', newToken)
-      return fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      await this.storage.set(data.token)
+      if (data.refreshToken) await this.storage.setRefreshToken(data.refreshToken)
+      return data.token as string
+    } catch {
+      return null
     }
-    // Refresh failed — clear tokens (caller handles redirect to login)
-    await clearTokens()
   }
 
-  return res
+  private refreshOnce(): Promise<string | null> {
+    if (this.isRefreshing && this.refreshPromise) return this.refreshPromise
+    this.isRefreshing = true
+    this.refreshPromise = this.doRefresh().finally(() => {
+      this.isRefreshing = false
+      this.refreshPromise = null
+    })
+    return this.refreshPromise
+  }
+
+  async fetch(path: string, options: RequestOptions = {}): Promise<Response> {
+    const { skipAuth = false, ...init } = options
+    const headers = new Headers(init.headers)
+    headers.set('Content-Type', 'application/json')
+
+    if (!skipAuth) {
+      const token = await this.storage.get()
+      if (token) headers.set('x-user-token', token)
+    }
+
+    const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+
+    if (res.status === 401 && !skipAuth) {
+      const newToken = await this.refreshOnce()
+      if (newToken) {
+        headers.set('x-user-token', newToken)
+        return fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+      }
+      await this.storage.clear()
+      await this.storage.clearRefreshToken()
+    }
+
+    return res
+  }
+
+  async post<T>(path: string, body: unknown, options?: RequestOptions): Promise<T> {
+    const res = await this.fetch(path, { method: 'POST', body: JSON.stringify(body), ...options })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }))
+      throw Object.assign(new Error(err.error ?? 'Request failed'), { status: res.status, data: err })
+    }
+    return res.json() as Promise<T>
+  }
+
+  async get<T>(path: string, options?: RequestOptions): Promise<T> {
+    const res = await this.fetch(path, { method: 'GET', ...options })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }))
+      throw Object.assign(new Error(err.error ?? 'Request failed'), { status: res.status, data: err })
+    }
+    return res.json() as Promise<T>
+  }
 }
 
-// Typed helpers
+export const api = new ApiClient(defaultStorage)
+
+// Legacy named exports kept for any direct callers
+export async function apiFetch(path: string, options: RequestOptions = {}): Promise<Response> {
+  return api.fetch(path, options)
+}
+
 export async function apiPost<T>(path: string, body: unknown, options?: RequestOptions): Promise<T> {
-  const res = await apiFetch(path, { method: 'POST', body: JSON.stringify(body), ...options })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw Object.assign(new Error(err.error ?? 'Request failed'), { status: res.status, data: err })
-  }
-  return res.json()
+  return api.post<T>(path, body, options)
 }
 
 export async function apiGet<T>(path: string, options?: RequestOptions): Promise<T> {
-  const res = await apiFetch(path, { method: 'GET', ...options })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw Object.assign(new Error(err.error ?? 'Request failed'), { status: res.status, data: err })
-  }
-  return res.json()
+  return api.get<T>(path, options)
 }
