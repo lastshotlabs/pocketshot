@@ -1,32 +1,38 @@
 {
-  "name": "pocketshot",
+  "name": "@lastshotlabs/pocketshot",
   "version": "0.1.0",
-  "main": "expo-router/entry",
+  "type": "module",
+  "bin": { "pocketshot": "./dist/cli.js" },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "sync": "bun run scripts/sync.ts",
-    "lint": "eslint ."
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
-  "dependencies": {
-    "expo": "~52.0.0",
-    "expo-router": "~4.0.0",
-    "expo-secure-store": "~14.0.0",
-    "expo-web-browser": "~14.0.0",
-    "expo-linking": "~7.0.0",
-    "expo-status-bar": "~2.0.0",
-    "react": "18.3.1",
-    "react-native": "0.76.5",
-    "@react-navigation/native": "^7.0.0",
-    "@react-navigation/native-stack": "^7.0.0",
-    "react-native-safe-area-context": "4.12.0",
-    "react-native-screens": "~4.4.0",
-    "openapi-typescript-fetch": "^1.1.1"
+  "peerDependencies": {
+    "@tanstack/react-query": ">=5.0.0",
+    "expo-router": ">=4.0.0",
+    "expo-secure-store": ">=14.0.0",
+    "jotai": ">=2.0.0",
+    "react": ">=19.0.0",
+    "react-native": ">=0.76.0"
   },
+  "dependencies": { "@clack/prompts": "^1.1.0" },
   "devDependencies": {
-    "@types/react": "~18.3.0",
+    "tsup": "^8.0.0",
     "typescript": "^5.3.0",
-    "bun-types": "latest"
+    "@types/react": "^19.0.0",
+    "@types/node": "^22.0.0",
+    "vitest": "^3.0.0"
   }
 }
