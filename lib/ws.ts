@@ -5,7 +5,7 @@
  */
 import { AppState, type AppStateStatus } from 'react-native'
 import { WS_BASE_URL } from './config'
-import { getToken } from './tokenStorage'
+import { tokenStorage } from './tokenStorage'
 
 type RoomListener = (payload: unknown) => void
 
@@ -17,7 +17,7 @@ export class PocketshotWS {
   private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null
 
   async connect() {
-    const token = await getToken()
+    const token = await tokenStorage.get()
     const url = token ? `${WS_BASE_URL}/ws?token=${encodeURIComponent(token)}` : `${WS_BASE_URL}/ws`
 
     this.ws = new WebSocket(url)
