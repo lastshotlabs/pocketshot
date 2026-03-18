@@ -1,20 +1,25 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { useUser, useLogout } from '@/lib/auth'
+import { router } from 'expo-router'
+import { useLogout } from '@/lib/pocketshot'
 
 export default function HomeScreen() {
-  const { user } = useUser()
-  const logout = useLogout()
+  const { mutate: logout } = useLogout()
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>pocketshot</Text>
-      <Text style={styles.subtitle}>You're signed in{user?.email ? ` as ${user.email}` : ''}.</Text>
+      <Text style={styles.subtitle}>You're signed in.</Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => logout.mutate()}
-        disabled={logout.isPending}
+        onPress={() => logout(undefined, { onSuccess: () => router.replace('/(auth)/login') })}
       >
-        <Text style={styles.buttonText}>{logout.isPending ? 'Signing out…' : 'Sign Out'}</Text>
+        <Text style={styles.buttonText}>Sign Out</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={() => router.push('/(app)/settings/')}
+      >
+        <Text style={styles.settingsText}>Settings</Text>
       </TouchableOpacity>
     </View>
   )
@@ -26,4 +31,6 @@ const styles = StyleSheet.create({
   subtitle: { color: '#666' },
   button: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, paddingHorizontal: 24 },
   buttonText: { fontSize: 16 },
+  settingsButton: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, paddingHorizontal: 24 },
+  settingsText: { fontSize: 16, color: '#007AFF' },
 })

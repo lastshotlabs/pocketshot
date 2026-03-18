@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { Providers } from '@/lib/authContext'
+import { Providers } from '@/lib/pocketshot'
 
 export default function RootLayout() {
   return (

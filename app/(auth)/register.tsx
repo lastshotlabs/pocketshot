@@ -1,20 +1,24 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router } from 'expo-router'
-import { useRegister } from '@/lib/auth'
+import { useRegister } from '@/lib/pocketshot'
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const register = useRegister()
+  const { mutate: register, isPending } = useRegister()
 
   function handleRegister() {
     if (!email || !password) return
-    register.mutate({ email, password }, {
-      onError: (err: any) => {
-        Alert.alert('Registration failed', err.data?.error ?? err.message)
-      },
-    })
+    register(
+      { email, password },
+      {
+        onSuccess: () => router.replace('/(app)/'),
+        onError: (err: any) => {
+          Alert.alert('Registration failed', err.data?.error ?? err.message)
+        },
+      }
+    )
   }
 
   return (
@@ -37,8 +41,8 @@ export default function RegisterScreen() {
         secureTextEntry
         autoComplete="new-password"
       />
-      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={register.isPending}>
-        <Text style={styles.buttonText}>{register.isPending ? 'Creating account\u2026' : 'Create Account'}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isPending}>
+        <Text style={styles.buttonText}>{isPending ? 'Creating account\u2026' : 'Create Account'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.link}>Already have an account? Sign in</Text>
