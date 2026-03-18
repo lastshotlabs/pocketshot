@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import process from 'node:process'
 import path from 'node:path'
 import { intro, outro, cancel, log } from '@clack/prompts'
