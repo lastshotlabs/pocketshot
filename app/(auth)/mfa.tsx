@@ -2,18 +2,21 @@ import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { verifyMfa } from '@/lib/auth'
+import { useAuth } from '@/lib/authContext'
 
 export default function MfaScreen() {
   const { mfaToken, methods } = useLocalSearchParams<{ mfaToken: string; methods: string }>()
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const method = methods?.split(',')[0] ?? 'totp'
+  const { signIn } = useAuth()
 
   async function handleVerify() {
     if (!code || !mfaToken) return
     setLoading(true)
     try {
       await verifyMfa(mfaToken, code, method)
+      signIn()
       router.replace('/(app)/')
     } catch (err: any) {
       Alert.alert('Verification failed', err.data?.error ?? err.message)

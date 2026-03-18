@@ -2,17 +2,20 @@ import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router } from 'expo-router'
 import { register } from '@/lib/auth'
+import { useAuth } from '@/lib/authContext'
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const { signIn } = useAuth()
 
   async function handleRegister() {
     if (!email || !password) return
     setLoading(true)
     try {
       await register(email, password)
+      signIn()
       router.replace('/(app)/')
     } catch (err: any) {
       Alert.alert('Registration failed', err.data?.error ?? err.message)

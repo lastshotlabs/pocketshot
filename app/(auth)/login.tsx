@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router } from 'expo-router'
 import { login } from '@/lib/auth'
+import { useAuth } from '@/lib/authContext'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const { signIn } = useAuth()
 
   async function handleLogin() {
     if (!email || !password) return
@@ -19,6 +21,7 @@ export default function LoginScreen() {
           params: { mfaToken: result.mfaToken, methods: result.mfaMethods.join(',') },
         })
       } else {
+        signIn()
         router.replace('/(app)/')
       }
     } catch (err: any) {
