@@ -1,30 +1,33 @@
-/**
- * WebSocket client for pocketshot.
- * Authenticates via ?token= query param (bunshot accepts this for mobile clients).
- * Handles reconnect on AppState resume and heartbeat close (1001).
- */
+import { useState, useEffect } from 'react'
 import { AppState, type AppStateStatus } from 'react-native'
-import { WS_BASE_URL } from './config'
-import { getToken } from './tokenStorage'
+import type { TokenStorage } from '../auth/storage'
 
 type RoomListener = (payload: unknown) => void
 
 export class PocketshotWS {
   private ws: WebSocket | null = null
+  private readonly baseUrl: string
+  private readonly storage: TokenStorage
   private subscribedRooms = new Set<string>()
   private listeners = new Map<string, Set<RoomListener>>()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null
 
+  constructor(baseUrl: string, storage: TokenStorage) {
+    this.baseUrl = baseUrl.replace(/\/$/, '')
+    this.storage = storage
+  }
+
   async connect() {
-    const token = await getToken()
-    const url = token ? `${WS_BASE_URL}/ws?token=${encodeURIComponent(token)}` : `${WS_BASE_URL}/ws`
+    const token = await this.storage.getToken()
+    const url = token
+      ? `${this.baseUrl}/ws?token=${encodeURIComponent(token)}`
+      : `${this.baseUrl}/ws`
 
     this.ws = new WebSocket(url)
 
     this.ws.onopen = () => {
       console.log('[ws] connected')
-      // Re-subscribe to all rooms after reconnect
       for (const room of this.subscribedRooms) {
         this.send({ action: 'subscribe', room })
       }
@@ -32,19 +35,20 @@ export class PocketshotWS {
 
     this.ws.onmessage = (e) => {
       try {
-        const msg = JSON.parse(e.data)
+        const msg = JSON.parse(e.data as string) as { room?: string }
         if (msg.room) {
           const roomListeners = this.listeners.get(msg.room)
           if (roomListeners) {
             for (const listener of roomListeners) listener(msg)
           }
         }
-      } catch {}
+      } catch {
+        // ignore malformed messages
+      }
     }
 
     this.ws.onclose = (e) => {
       console.log('[ws] closed', e.code)
-      // 1001 = heartbeat timeout (normal reconnect), 1000 = clean close (don't reconnect)
       if (e.code !== 1000) {
         this.scheduleReconnect()
       }
@@ -54,11 +58,10 @@ export class PocketshotWS {
       this.scheduleReconnect()
     }
 
-    // Reconnect when app returns to foreground
     this.appStateSubscription?.remove()
     this.appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active' && (!this.ws || this.ws.readyState > WebSocket.OPEN)) {
-        this.connect()
+        void this.connect()
       }
     })
   }
@@ -92,7 +95,7 @@ export class PocketshotWS {
     if (this.reconnectTimer) return
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
-      this.connect()
+      void this.connect()
     }, 3000)
   }
 
@@ -104,4 +107,39 @@ export class PocketshotWS {
   }
 }
 
-export const ws = new PocketshotWS()
+// ── Hooks ─────────────────────────────────────────────────────────────────────
+
+export function createWsHooks(ws: PocketshotWS) {
+  function useRoom(room: string): unknown {
+    const [latest, setLatest] = useState<unknown>(null)
+
+    useEffect(() => {
+      const listener: RoomListener = (payload) => setLatest(payload)
+      ws.subscribe(room, listener)
+      return () => ws.unsubscribe(room, listener)
+    }, [room])
+
+    return latest
+  }
+
+  function useRoomEvent<T>(room: string, event: string, handler: (payload: T) => void): void {
+    useEffect(() => {
+      const listener: RoomListener = (payload) => {
+        const msg = payload as { event?: string; payload?: T }
+        if (msg.event === event) {
+          handler(msg.payload as T)
+        }
+      }
+      ws.subscribe(room, listener)
+      return () => ws.unsubscribe(room, listener)
+    }, [room, event, handler])
+  }
+
+  return { useRoom, useRoomEvent }
+}
+
+// ── notConfigured helper ──────────────────────────────────────────────────────
+
+export function notConfigured(): never {
+  throw new Error('WebSocket not configured. Pass wsUrl to createPocketshot().')
+}

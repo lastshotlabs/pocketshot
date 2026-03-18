@@ -1,4 +1,5 @@
-import { useState } from 'react'
+export function authMfaTemplate(): string {
+  return `import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useVerifyMfa } from '@/lib/pocketshot'
@@ -52,3 +53,5 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#000', borderRadius: 8, padding: 16, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 })
+`
+}

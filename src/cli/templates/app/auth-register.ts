@@ -1,31 +1,22 @@
-import { useState } from 'react'
+export function authRegisterTemplate(): string {
+  return `import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
-import { router, useRouter } from 'expo-router'
-import { useLogin } from '@/lib/pocketshot'
+import { router } from 'expo-router'
+import { useRegister } from '@/lib/pocketshot'
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const routerHook = useRouter()
-  const { mutate: login, isPending } = useLogin()
+  const { mutate: register, isPending } = useRegister()
 
-  function handleLogin() {
+  function handleRegister() {
     if (!email || !password) return
-    login(
+    register(
       { email, password },
       {
-        onSuccess: (result) => {
-          if ('mfaRequired' in result && result.mfaRequired) {
-            router.replace({
-              pathname: '/(auth)/mfa',
-              params: { mfaToken: result.mfaToken, methods: result.mfaMethods.join(',') },
-            })
-          } else {
-            router.replace('/(app)/')
-          }
-        },
+        onSuccess: () => router.replace('/(app)/'),
         onError: (err: any) => {
-          Alert.alert('Login failed', err.data?.error ?? err.message)
+          Alert.alert('Registration failed', err.data?.error ?? err.message)
         },
       }
     )
@@ -33,7 +24,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign In</Text>
+      <Text style={styles.title}>Create Account</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -49,16 +40,13 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        autoComplete="password"
+        autoComplete="new-password"
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isPending}>
-        <Text style={styles.buttonText}>{isPending ? 'Signing in\u2026' : 'Sign In'}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isPending}>
+        <Text style={styles.buttonText}>{isPending ? 'Creating account\u2026' : 'Create Account'}</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-        <Text style={styles.link}>Don't have an account? Create one</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => routerHook.push('/(auth)/forgot-password')}>
-        <Text style={styles.link}>Forgot password?</Text>
+      <TouchableOpacity onPress={() => router.back()}>
+        <Text style={styles.link}>Already have an account? Sign in</Text>
       </TouchableOpacity>
     </View>
   )
@@ -72,3 +60,5 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   link: { textAlign: 'center', color: '#666', marginTop: 8 },
 })
+`
+}

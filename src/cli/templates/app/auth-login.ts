@@ -1,4 +1,5 @@
-import { useState } from 'react'
+export function authLoginTemplate(): string {
+  return `import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
 import { router, useRouter } from 'expo-router'
 import { useLogin } from '@/lib/pocketshot'
@@ -72,3 +73,5 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   link: { textAlign: 'center', color: '#666', marginTop: 8 },
 })
+`
+}

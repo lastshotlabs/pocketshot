@@ -1,4 +1,5 @@
-import { Redirect, Stack } from 'expo-router'
+export function appLayoutTemplate(): string {
+  return `import { Redirect, Stack } from 'expo-router'
 import { useUser } from '@/lib/pocketshot'
 
 export default function AppLayout() {
@@ -8,4 +9,6 @@ export default function AppLayout() {
   if (!user) return <Redirect href="/(auth)/login" />
 
   return <Stack />
+}
+`
 }

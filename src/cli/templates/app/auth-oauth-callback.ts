@@ -1,4 +1,5 @@
-/**
+export function authOAuthCallbackTemplate(): string {
+  return `/**
  * Handles the OAuth deep link callback: pocketshot://auth/callback?code=xxx
  * Exchanges the code for tokens and navigates to the app.
  */
@@ -31,4 +32,6 @@ export default function OAuthCallbackScreen() {
       <Text style={{ marginTop: 16, color: '#666' }}>Completing sign in\u2026</Text>
     </View>
   )
+}
+`
 }

@@ -1,4 +1,21 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import type { PocketshotScaffoldConfig } from '../../types'
+
+export function appIndexTemplate(config: PocketshotScaffoldConfig): string {
+  const settingsButton = config.authScreens
+    ? `      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={() => router.push('/(app)/settings/')}
+      >
+        <Text style={styles.settingsText}>Settings</Text>
+      </TouchableOpacity>`
+    : ''
+
+  const settingsStyle = config.authScreens
+    ? `  settingsButton: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, paddingHorizontal: 24 },
+  settingsText: { fontSize: 16, color: '#007AFF' },`
+    : ''
+
+  return `import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { useLogout } from '@/lib/pocketshot'
 
@@ -15,12 +32,7 @@ export default function HomeScreen() {
       >
         <Text style={styles.buttonText}>Sign Out</Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.settingsButton}
-        onPress={() => router.push('/(app)/settings/')}
-      >
-        <Text style={styles.settingsText}>Settings</Text>
-      </TouchableOpacity>
+${settingsButton}
     </View>
   )
 }
@@ -31,6 +43,7 @@ const styles = StyleSheet.create({
   subtitle: { color: '#666' },
   button: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, paddingHorizontal: 24 },
   buttonText: { fontSize: 16 },
-  settingsButton: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, paddingHorizontal: 24 },
-  settingsText: { fontSize: 16, color: '#007AFF' },
+${settingsStyle}
 })
+`
+}
