@@ -8,3 +8,5 @@ lib/generated/openapi.json
 *.DS_Store
 .env.local
 .env*.local
+
+CLAUDE.md
