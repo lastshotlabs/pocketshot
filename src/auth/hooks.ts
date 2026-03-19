@@ -5,6 +5,7 @@ import type { ApiClient } from '../api/client'
 import type { TokenStorage } from './storage'
 import type { QueryClient } from '@tanstack/react-query'
 import type { PocketshotConfig } from '../create-pocketshot'
+import type { PocketshotAuthContract } from './contract'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,8 +60,9 @@ export function createAuthHooks(opts: {
   tokenStorage: TokenStorage
   queryClient: QueryClient
   config: PocketshotConfig
+  contract: PocketshotAuthContract
 }) {
-  const { api, tokenStorage, config } = opts
+  const { api, tokenStorage, config, contract } = opts
 
   // Internal MFA pending state atom — not exported to consumers
   const pendingMfaChallengeAtom = atom<MfaChallenge | null>(null)
@@ -72,7 +74,7 @@ export function createAuthHooks(opts: {
       queryKey: AUTH_QUERY_KEY,
       queryFn: async () => {
         try {
-          return await api.get<AuthUser>('/auth/me')
+          return await api.get<AuthUser>(contract.endpoints.me)
         } catch {
           return null
         }
@@ -92,7 +94,7 @@ export function createAuthHooks(opts: {
 
     return useMutation<AuthUser | MfaChallenge, Error, { email: string; password: string }>({
       mutationFn: async ({ email, password }) => {
-        const res = await api.post<LoginResult>('/auth/login', { email, password }, { skipAuth: true })
+        const res = await api.post<LoginResult>(contract.endpoints.login, { email, password }, { skipAuth: true })
 
         if (res.mfaRequired && res.mfaToken) {
           return { mfaToken: res.mfaToken, mfaMethods: res.mfaMethods ?? [] } as MfaChallenge
@@ -101,7 +103,7 @@ export function createAuthHooks(opts: {
         if (res.token) {
           await tokenStorage.setToken(res.token)
         }
-        return api.get<AuthUser>('/auth/me')
+        return api.get<AuthUser>(contract.endpoints.me)
       },
       onSuccess: (result) => {
         if ('mfaToken' in result) {
@@ -124,7 +126,7 @@ export function createAuthHooks(opts: {
     return useMutation<AuthUser, Error, { email: string; password: string; [key: string]: unknown }>({
       mutationFn: async (body) => {
         const res = await api.post<{ token?: string; refreshToken?: string } & Record<string, unknown>>(
-          '/auth/register',
+          contract.endpoints.register,
           body,
           { skipAuth: true },
         )
@@ -134,7 +136,7 @@ export function createAuthHooks(opts: {
         if (typeof res.refreshToken === 'string') {
           await tokenStorage.setRefreshToken(res.refreshToken)
         }
-        return api.get<AuthUser>('/auth/me')
+        return api.get<AuthUser>(contract.endpoints.me)
       },
       onSuccess: (user) => {
         queryClient.setQueryData(AUTH_QUERY_KEY, user)
@@ -152,7 +154,7 @@ export function createAuthHooks(opts: {
 
     return useMutation<void, Error, void>({
       mutationFn: async () => {
-        await api.post('/auth/logout', {}).catch(() => {})
+        await api.post(contract.endpoints.logout, {}).catch(() => {})
       },
       onSuccess: async () => {
         setMfaChallenge(null)
@@ -174,7 +176,7 @@ export function createAuthHooks(opts: {
     return useMutation<AuthUser, Error, { mfaToken: string; code: string; method: string }>({
       mutationFn: async ({ mfaToken, code, method }) => {
         const res = await api.post<{ token: string; refreshToken?: string }>(
-          '/auth/mfa/verify',
+          contract.endpoints.mfaVerify,
           { mfaToken, code, method },
           { skipAuth: true },
         )
@@ -182,7 +184,7 @@ export function createAuthHooks(opts: {
         if (res.refreshToken) {
           await tokenStorage.setRefreshToken(res.refreshToken)
         }
-        return api.get<AuthUser>('/auth/me')
+        return api.get<AuthUser>(contract.endpoints.me)
       },
       onSuccess: (user) => {
         setMfaChallenge(null)
@@ -201,7 +203,7 @@ export function createAuthHooks(opts: {
     return useMutation<AuthUser, Error, { code: string }>({
       mutationFn: async ({ code }) => {
         const res = await api.post<{ token: string; refreshToken?: string }>(
-          '/auth/oauth/exchange',
+          contract.endpoints.oauthExchange,
           { code },
           { skipAuth: true },
         )
@@ -209,7 +211,7 @@ export function createAuthHooks(opts: {
         if (res.refreshToken) {
           await tokenStorage.setRefreshToken(res.refreshToken)
         }
-        return api.get<AuthUser>('/auth/me')
+        return api.get<AuthUser>(contract.endpoints.me)
       },
       onSuccess: (user) => {
         queryClient.setQueryData(AUTH_QUERY_KEY, user)
@@ -222,45 +224,45 @@ export function createAuthHooks(opts: {
 
   function useForgotPassword() {
     return useMutation<void, Error, { email: string }>({
-      mutationFn: (body) => api.post<void>('/auth/forgot-password', body, { skipAuth: true }),
+      mutationFn: (body) => api.post<void>(contract.endpoints.forgotPassword, body, { skipAuth: true }),
     })
   }
 
   function useResetPassword() {
     return useMutation<void, Error, { token: string; password: string }>({
-      mutationFn: (body) => api.post<void>('/auth/reset-password', body, { skipAuth: true }),
+      mutationFn: (body) => api.post<void>(contract.endpoints.resetPassword, body, { skipAuth: true }),
     })
   }
 
   function useVerifyEmail() {
     return useMutation<void, Error, { token: string }>({
-      mutationFn: (body) => api.post<void>('/auth/verify-email', body),
+      mutationFn: (body) => api.post<void>(contract.endpoints.verifyEmail, body),
     })
   }
 
   function useResendVerification() {
     return useMutation<void, Error, void>({
-      mutationFn: () => api.post<void>('/auth/resend-verification', {}),
+      mutationFn: () => api.post<void>(contract.endpoints.resendVerification, {}),
     })
   }
 
   function useSetPassword() {
     return useMutation<void, Error, { currentPassword: string; newPassword: string }>({
-      mutationFn: (body) => api.post<void>('/auth/set-password', body),
+      mutationFn: (body) => api.post<void>(contract.endpoints.setPassword, body),
     })
   }
 
   function useSessions() {
     return useQuery<SessionInfo[]>({
       queryKey: SESSIONS_QUERY_KEY,
-      queryFn: () => api.get<SessionInfo[]>('/auth/sessions'),
+      queryFn: () => api.get<SessionInfo[]>(contract.endpoints.sessions),
     })
   }
 
   function useRevokeSession() {
     const queryClient = useQueryClient()
-    return useMutation<void, Error, { sessionId: string }>({
-      mutationFn: (body) => api.delete<void>('/auth/sessions', body),
+    return useMutation<void, Error, string>({
+      mutationFn: (sessionId) => api.delete<void>(contract.sessionRevoke(sessionId)),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: SESSIONS_QUERY_KEY })
       },
@@ -270,7 +272,7 @@ export function createAuthHooks(opts: {
   function useDeleteAccount() {
     const queryClient = useQueryClient()
     return useMutation<void, Error, void>({
-      mutationFn: () => api.delete<void>('/auth/me'),
+      mutationFn: () => api.delete<void>(contract.endpoints.deleteAccount),
       onSuccess: async () => {
         await tokenStorage.clearToken()
         await tokenStorage.clearRefreshToken()
@@ -281,7 +283,7 @@ export function createAuthHooks(opts: {
 
   function useCancelDeletion() {
     return useMutation<void, Error, { token: string }>({
-      mutationFn: (body) => api.post<void>('/auth/cancel-deletion', body),
+      mutationFn: (body) => api.post<void>(contract.endpoints.cancelDeletion, body),
     })
   }
 
@@ -289,51 +291,71 @@ export function createAuthHooks(opts: {
 
   function useMfaSetup() {
     return useMutation<MfaSetupResult, Error, void>({
-      mutationFn: () => api.post<MfaSetupResult>('/auth/mfa/setup', {}),
+      mutationFn: () => api.post<MfaSetupResult>(contract.endpoints.mfaSetup, {}),
     })
   }
 
   function useMfaVerifySetup() {
     return useMutation<void, Error, { code: string }>({
-      mutationFn: (body) => api.post<void>('/auth/mfa/verify-setup', body),
+      mutationFn: (body) => api.post<void>(contract.endpoints.mfaVerifySetup, body),
     })
   }
 
   function useMfaDisable() {
     return useMutation<void, Error, { code: string }>({
-      mutationFn: (body) => api.delete<void>('/auth/mfa', body),
+      mutationFn: (body) => api.delete<void>(contract.endpoints.mfaDisable, body),
     })
   }
 
   function useMfaMethods() {
     return useQuery<MfaMethod[]>({
       queryKey: MFA_METHODS_QUERY_KEY,
-      queryFn: () => api.get<MfaMethod[]>('/auth/mfa/methods'),
+      queryFn: () => api.get<MfaMethod[]>(contract.endpoints.mfaMethods),
     })
   }
 
   function useMfaResend() {
     return useMutation<void, Error, void>({
-      mutationFn: () => api.post<void>('/auth/mfa/resend', {}),
+      mutationFn: () => api.post<void>(contract.endpoints.mfaResend, {}),
     })
   }
 
   function useEmailOtpEnable() {
     return useMutation<void, Error, void>({
-      mutationFn: () => api.post<void>('/auth/mfa/email-otp/enable', {}),
+      mutationFn: () => api.post<void>(contract.endpoints.mfaEmailOtpEnable, {}),
     })
   }
 
   function useEmailOtpVerifySetup() {
     return useMutation<void, Error, { code: string }>({
-      mutationFn: (body) => api.post<void>('/auth/mfa/email-otp/verify-setup', body),
+      mutationFn: (body) => api.post<void>(contract.endpoints.mfaEmailOtpVerifySetup, body),
     })
   }
 
-  // ── OAuth helper ───────────────────────────────────────────────────────────
+  function useMfaEmailOtpDisable() {
+    return useMutation<void, Error, void>({
+      mutationFn: () => api.delete<void>(contract.endpoints.mfaEmailOtpDisable),
+    })
+  }
+
+  // ── OAuth helpers ──────────────────────────────────────────────────────────
 
   function getOAuthUrl(provider: string, redirectUri: string): string {
-    return `${config.apiUrl}/auth/${provider}?redirect_uri=${encodeURIComponent(redirectUri)}`
+    return `${contract.oauthUrl(provider)}?redirect_uri=${encodeURIComponent(redirectUri)}`
+  }
+
+  function getLinkUrl(provider: string): string {
+    return contract.oauthLinkUrl(provider)
+  }
+
+  function useOAuthUnlink() {
+    const queryClient = useQueryClient()
+    return useMutation<void, Error, string>({
+      mutationFn: (provider) => api.delete<void>(contract.oauthUnlink(provider)),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
+      },
+    })
   }
 
   // ── Return all hooks ───────────────────────────────────────────────────────
@@ -364,8 +386,11 @@ export function createAuthHooks(opts: {
     useMfaResend,
     useEmailOtpEnable,
     useEmailOtpVerifySetup,
-    // OAuth helper
+    useMfaEmailOtpDisable,
+    // OAuth helpers
     getOAuthUrl,
+    getLinkUrl,
+    useOAuthUnlink,
   }
 }
 

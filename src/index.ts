@@ -13,3 +13,7 @@ export type {
   SessionInfo,
   MfaSetupResult,
 } from './auth/hooks'
+export { mergeContract, defaultContract } from './auth/contract'
+export type { PocketshotAuthContract, PocketshotAuthContractConfig, PocketshotAuthEndpoints } from './auth/contract'
+export { formatAuthError, createAuthErrorFormatter } from './auth/errors'
+export type { AuthErrorConfig, AuthErrorContext } from './auth/errors'

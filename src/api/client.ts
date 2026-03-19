@@ -1,3 +1,4 @@
+import type { PocketshotAuthContract } from '../auth/contract'
 import type { TokenStorage } from '../auth/storage'
 
 export class ApiError extends Error {
@@ -19,12 +20,14 @@ type RequestOptions = RequestInit & { skipAuth?: boolean }
 export class ApiClient {
   private readonly baseUrl: string
   private readonly tokenStorage: TokenStorage
+  private readonly contract: PocketshotAuthContract
   private isRefreshing = false
   private refreshPromise: Promise<string | null> | null = null
 
-  constructor(opts: { baseUrl: string; tokenStorage: TokenStorage }) {
+  constructor(opts: { baseUrl: string; tokenStorage: TokenStorage; contract: PocketshotAuthContract }) {
     this.baseUrl = opts.baseUrl.replace(/\/$/, '')
     this.tokenStorage = opts.tokenStorage
+    this.contract = opts.contract
   }
 
   private async doRefresh(): Promise<string | null> {
@@ -32,7 +35,7 @@ export class ApiClient {
     if (!refreshToken) return null
 
     try {
-      const res = await fetch(`${this.baseUrl}/auth/refresh`, {
+      const res = await fetch(`${this.baseUrl}${this.contract.endpoints.refresh}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -65,7 +68,7 @@ export class ApiClient {
 
     if (!skipAuth) {
       const token = await this.tokenStorage.getToken()
-      if (token) headers.set('x-user-token', token)
+      if (token) headers.set(this.contract.headers.userToken, token)
     }
 
     return headers
@@ -85,7 +88,7 @@ export class ApiClient {
     if (res.status === 401 && !skipAuth) {
       const newToken = await this.refreshOnce()
       if (newToken) {
-        headers.set('x-user-token', newToken)
+        headers.set(this.contract.headers.userToken, newToken)
         return fetch(`${this.baseUrl}${path}`, { ...init, headers })
       }
       await this.tokenStorage.clearToken()

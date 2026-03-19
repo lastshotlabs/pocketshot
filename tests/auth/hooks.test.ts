@@ -27,14 +27,16 @@ vi.mock('react', async () => {
 import { createAuthHooks } from '../../src/auth/hooks'
 import { createSecureStoreStorage } from '../../src/auth/storage'
 import { ApiClient } from '../../src/api/client'
+import { defaultContract } from '../../src/auth/contract'
 import { QueryClient } from '@tanstack/react-query'
 
 describe('createAuthHooks factory shape', () => {
   const tokenStorage = createSecureStoreStorage('test_key')
-  const api = new ApiClient({ baseUrl: 'http://localhost:3000', tokenStorage })
+  const contract = defaultContract('http://localhost:3000')
+  const api = new ApiClient({ baseUrl: 'http://localhost:3000', tokenStorage, contract })
   const queryClient = new QueryClient()
   const config = { apiUrl: 'http://localhost:3000' }
-  const hooks = createAuthHooks({ api, tokenStorage, queryClient, config })
+  const hooks = createAuthHooks({ api, tokenStorage, queryClient, config, contract })
 
   const expectedHooks = [
     'useUser', 'useLogin', 'useRegister', 'useLogout',
@@ -42,7 +44,8 @@ describe('createAuthHooks factory shape', () => {
     'useForgotPassword', 'useResetPassword', 'useVerifyEmail', 'useResendVerification',
     'useSetPassword', 'useSessions', 'useRevokeSession', 'useDeleteAccount', 'useCancelDeletion',
     'useMfaSetup', 'useMfaVerifySetup', 'useMfaDisable', 'useMfaMethods', 'useMfaResend',
-    'useEmailOtpEnable', 'useEmailOtpVerifySetup',
+    'useEmailOtpEnable', 'useEmailOtpVerifySetup', 'useMfaEmailOtpDisable',
+    'useOAuthUnlink',
   ]
 
   for (const hookName of expectedHooks) {
@@ -56,8 +59,17 @@ describe('createAuthHooks factory shape', () => {
     expect(typeof hooks.getOAuthUrl).toBe('function')
   })
 
+  it('returns getLinkUrl function', () => {
+    expect(typeof hooks.getLinkUrl).toBe('function')
+  })
+
   it('getOAuthUrl builds correct URL', () => {
     const url = hooks.getOAuthUrl('google', 'myapp://auth')
     expect(url).toBe('http://localhost:3000/auth/google?redirect_uri=myapp%3A%2F%2Fauth')
+  })
+
+  it('getLinkUrl builds correct URL', () => {
+    const url = hooks.getLinkUrl('google')
+    expect(url).toBe('http://localhost:3000/auth/google/link')
   })
 })
