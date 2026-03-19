@@ -28,7 +28,7 @@ export function libPocketshotTemplate(config: PocketshotScaffoldConfig): string 
     )
   }
   if (config.webSocket) hooks.push('useRoom', 'useRoomEvent')
-  hooks.push('Providers', 'api', 'queryClient', 'tokenStorage')
+  hooks.push('formatAuthError', 'Providers', 'api', 'queryClient', 'tokenStorage')
 
   const destructure = hooks.join(',\n  ')
 
