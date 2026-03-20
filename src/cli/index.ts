@@ -99,7 +99,7 @@ Options:
 
     const relDir = path.relative(process.cwd(), config.dir)
     const wsLine = config.webSocket
-      ? `    EXPO_PUBLIC_WS_URL    — your WebSocket URL\n`
+      ? `    EXPO_PUBLIC_WS_ENDPOINT — your WebSocket endpoint URL\n`
       : ''
 
     outro(

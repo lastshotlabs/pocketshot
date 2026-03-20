@@ -18,9 +18,9 @@ Call `createPocketshot()` once in your app and destructure everything from it. T
 import { createPocketshot } from '@lastshotlabs/pocketshot'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000'
-const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_URL ?? 'ws://localhost:3000'
+const WS_ENDPOINT = process.env.EXPO_PUBLIC_WS_ENDPOINT ?? 'ws://localhost:3000/chat'
 
-export const pocketshot = createPocketshot({ apiUrl: API_BASE_URL, wsUrl: WS_BASE_URL })
+export const pocketshot = createPocketshot({ apiUrl: API_BASE_URL, wsEndpoint: WS_ENDPOINT })
 
 export const {
   useUser, useLogin, useRegister, useLogout,
@@ -96,7 +96,7 @@ Project-level defaults live in `pocketshot.config.json` at your project root.
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `apiUrl` | `string` | required | bunshot backend base URL |
-| `wsUrl` | `string` | — | WebSocket URL (omit to disable WS) |
+| `wsEndpoint` | `string` | — | Full WebSocket endpoint URL including path (e.g. `ws://host/chat`). Optional — omit to disable WebSocket. |
 | `tokenKey` | `string` | `"pocketshot_token"` | Key name in `expo-secure-store` |
 | `loginPath` | `string` | `"/(auth)/login"` | Route to redirect to on logout / unauthenticated |
 | `homePath` | `string` | `"/(app)/"` | Route to redirect to after login |
@@ -148,7 +148,7 @@ Project-level defaults live in `pocketshot.config.json` at your project root.
 | `useExchangeOAuthCode()` | `POST /auth/oauth/exchange` — exchange one-time code for session |
 | `getOAuthUrl(provider, redirectUri)` | Build the OAuth initiation URL |
 
-**WebSocket** (only available when `wsUrl` is configured)
+**WebSocket** (only available when `wsEndpoint` is configured)
 
 | Hook | Description |
 |---|---|
@@ -184,7 +184,7 @@ Project-level defaults live in `pocketshot.config.json` at your project root.
 | Variable | Default | Description |
 |---|---|---|
 | `EXPO_PUBLIC_API_URL` | `http://localhost:3000` | bunshot backend base URL |
-| `EXPO_PUBLIC_WS_URL` | `ws://localhost:3000` | WebSocket URL (optional) |
+| `EXPO_PUBLIC_WS_ENDPOINT` | `ws://localhost:3000/chat` | WebSocket endpoint URL (optional) |
 
 ## File structure
 

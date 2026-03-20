@@ -6,23 +6,23 @@ type RoomListener = (payload: unknown) => void
 
 export class PocketshotWS {
   private ws: WebSocket | null = null
-  private readonly baseUrl: string
+  private readonly endpointUrl: string
   private readonly storage: TokenStorage
   private subscribedRooms = new Set<string>()
   private listeners = new Map<string, Set<RoomListener>>()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null
 
-  constructor(baseUrl: string, storage: TokenStorage) {
-    this.baseUrl = baseUrl.replace(/\/$/, '')
+  constructor(endpointUrl: string, storage: TokenStorage) {
+    this.endpointUrl = endpointUrl.replace(/\/$/, '')
     this.storage = storage
   }
 
   async connect() {
     const token = await this.storage.getToken()
-    const url = token
-      ? `${this.baseUrl}/ws?token=${encodeURIComponent(token)}`
-      : `${this.baseUrl}/ws`
+    const u = new URL(this.endpointUrl)
+    if (token) u.searchParams.set('token', token)
+    const url = u.toString()
 
     this.ws = new WebSocket(url)
 
@@ -141,5 +141,5 @@ export function createWsHooks(ws: PocketshotWS) {
 // ── notConfigured helper ──────────────────────────────────────────────────────
 
 export function notConfigured(): never {
-  throw new Error('WebSocket not configured. Pass wsUrl to createPocketshot().')
+  throw new Error('WebSocket not configured. Pass wsEndpoint to createPocketshot().')
 }
