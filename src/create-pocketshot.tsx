@@ -13,7 +13,7 @@ import { PocketshotWS, createWsHooks, notConfigured } from './ws/index'
 
 export interface PocketshotConfig {
   apiUrl: string
-  wsUrl?: string
+  wsEndpoint?: string
   tokenKey?: string
   loginPath?: string
   homePath?: string
@@ -39,7 +39,7 @@ export function createPocketshot(config: PocketshotConfig) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: config.staleTime ?? 300_000, retry: false } },
   })
-  const wsManager = config.wsUrl ? new PocketshotWS(config.wsUrl, tokenStorage) : null
+  const wsManager = config.wsEndpoint ? new PocketshotWS(config.wsEndpoint, tokenStorage) : null
   const hooks = createAuthHooks({ api, tokenStorage, queryClient, config, contract })
   const wsHooks = wsManager
     ? createWsHooks(wsManager)

@@ -3,11 +3,11 @@ import type { PocketshotScaffoldConfig } from '../../types'
 export function libPocketshotTemplate(config: PocketshotScaffoldConfig): string {
   const imports = [`import { createPocketshot } from '@lastshotlabs/pocketshot'`]
   const configImports: string[] = [`API_BASE_URL`]
-  if (config.webSocket) configImports.push(`WS_BASE_URL`)
+  if (config.webSocket) configImports.push(`WS_ENDPOINT`)
   imports.push(`import { ${configImports.join(', ')} } from './config'`)
 
   const createArgs: Record<string, string> = { apiUrl: 'API_BASE_URL' }
-  if (config.webSocket) createArgs.wsUrl = 'WS_BASE_URL'
+  if (config.webSocket) createArgs.wsEndpoint = 'WS_ENDPOINT'
   const createArgsStr = Object.entries(createArgs).map(([k, v]) => `${k}: ${v}`).join(', ')
 
   // Build destructure list based on config

@@ -75,7 +75,7 @@ describe('scaffold', () => {
 
   it('lib/pocketshot.ts includes WS when webSocket=true', () => {
     const content = readFileSync(join(dir, 'lib/pocketshot.ts'), 'utf8')
-    expect(content).toContain('WS_BASE_URL')
+    expect(content).toContain('WS_ENDPOINT')
     expect(content).toContain('useRoom')
   })
 
@@ -112,9 +112,9 @@ describe('scaffold', () => {
     expect(content).toContain('EXPO_PUBLIC_API_URL')
   })
 
-  it('.env.example has EXPO_PUBLIC_WS_URL when webSocket=true', () => {
+  it('.env.example has EXPO_PUBLIC_WS_ENDPOINT when webSocket=true', () => {
     const content = readFileSync(join(dir, '.env.example'), 'utf8')
-    expect(content).toContain('EXPO_PUBLIC_WS_URL')
+    expect(content).toContain('EXPO_PUBLIC_WS_ENDPOINT')
   })
 
   it('tsconfig.json extends expo/tsconfig.base', () => {
@@ -168,7 +168,7 @@ describe('scaffold without optional features', () => {
 
   it('lib/pocketshot.ts does NOT include WS when webSocket=false', () => {
     const content = readFileSync(join(dir, 'lib/pocketshot.ts'), 'utf8')
-    expect(content).not.toContain('WS_BASE_URL')
+    expect(content).not.toContain('WS_ENDPOINT')
     expect(content).not.toContain('useRoom')
   })
 
@@ -177,8 +177,8 @@ describe('scaffold without optional features', () => {
     expect(pkg.dependencies['react-native-qrcode-svg']).toBeUndefined()
   })
 
-  it('.env.example does NOT have EXPO_PUBLIC_WS_URL when webSocket=false', () => {
+  it('.env.example does NOT have EXPO_PUBLIC_WS_ENDPOINT when webSocket=false', () => {
     const content = readFileSync(join(dir, '.env.example'), 'utf8')
-    expect(content).not.toContain('EXPO_PUBLIC_WS_URL')
+    expect(content).not.toContain('EXPO_PUBLIC_WS_ENDPOINT')
   })
 })
