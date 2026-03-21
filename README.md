@@ -155,6 +155,8 @@ Project-level defaults live in `pocketshot.config.json` at your project root.
 | `useRoom(room)` | Subscribe to a room, returns latest message |
 | `useRoomEvent(room, event, handler)` | Subscribe to a specific event type in a room |
 
+> **SSE (Server-Sent Events):** The Bunshot backend supports server-push streams for browser clients via `/__sse/*` endpoints. Pocketshot uses WebSockets for real-time in v1 — SSE client support for React Native may be added in a future release.
+
 **Provider**
 
 | Export | Description |
