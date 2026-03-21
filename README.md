@@ -157,6 +157,72 @@ Project-level defaults live in `pocketshot.config.json` at your project root.
 
 > **SSE (Server-Sent Events):** The Bunshot backend supports server-push streams for browser clients via `/__sse/*` endpoints. Pocketshot uses WebSockets for real-time in v1 — SSE client support for React Native may be added in a future release.
 
+**Community** (call `createCommunityHooks(api)` to create)
+
+| Hook | Description |
+|---|---|
+| `useListContainers(params?)` | List all containers (paginated) |
+| `useGetContainer(containerId)` | Get a single container |
+| `useCreateContainer()` | Create a container |
+| `useUpdateContainer()` | Update a container |
+| `useDeleteContainer()` | Delete a container |
+| `useListThreads({ containerId, ...params })` | List threads in a container |
+| `useGetThread(threadId)` | Get a single thread |
+| `useCreateThread()` | Create a thread |
+| `useUpdateThread()` | Update a thread |
+| `useDeleteThread()` | Delete a thread |
+| `useListReplies({ threadId, ...params })` | List replies to a thread |
+| `useGetReply(replyId)` | Get a single reply |
+| `useCreateReply()` | Create a reply |
+| `useUpdateReply()` | Update a reply |
+| `useDeleteReply()` | Delete a reply |
+| `useAddThreadReaction()` | Add a reaction to a thread |
+| `useRemoveThreadReaction()` | Remove a reaction from a thread |
+| `useAddReplyReaction()` | Add a reaction to a reply |
+| `useRemoveReplyReaction()` | Remove a reaction from a reply |
+| `useListReports(params?)` | List reports (mod/admin) |
+| `useCreateReport()` | File a report |
+| `useResolveReport()` | Resolve a report |
+| `useListBans(params?)` | List bans (mod/admin) |
+| `useCheckBan(userId, containerId?)` | Check if a user is banned (scoped or site-wide) |
+| `useCreateBan()` | Ban a user |
+| `useDeleteBan()` | Remove a ban |
+| `useListNotifications(params?)` | List notifications for the current user |
+| `useMarkNotificationRead()` | Mark a notification read |
+| `useMarkAllNotificationsRead()` | Mark all notifications read |
+| `useSearch(params)` | Search threads and replies (requires `q` param) |
+
+```ts
+import { createCommunityHooks } from '@lastshotlabs/pocketshot'
+import { api } from '@/lib/pocketshot'
+
+export const community = createCommunityHooks(api)
+export const { useListThreads, useCreateThread, useCheckBan } = community
+```
+
+**Webhooks** (call `createWebhookHooks(api)` to create)
+
+| Hook | Description |
+|---|---|
+| `useListWebhookEndpoints()` | List all registered webhook endpoints |
+| `useGetWebhookEndpoint(endpointId)` | Get a single endpoint |
+| `useCreateWebhookEndpoint()` | Register a new endpoint |
+| `useUpdateWebhookEndpoint()` | Update an endpoint (PATCH) |
+| `useDeleteWebhookEndpoint()` | Soft-delete an endpoint |
+| `useListWebhookDeliveries({ endpointId, ...params })` | List delivery history for an endpoint |
+| `useGetWebhookDelivery(deliveryId)` | Get a single delivery record |
+| `useTestWebhookEndpoint()` | Fire a test delivery; invalidates delivery list on success |
+
+> **No retry hook:** Bunshot manages retries internally via BullMQ. There is no client-triggered retry endpoint.
+
+```ts
+import { createWebhookHooks } from '@lastshotlabs/pocketshot'
+import { api } from '@/lib/pocketshot'
+
+export const webhooks = createWebhookHooks(api)
+export const { useListWebhookEndpoints, useCreateWebhookEndpoint } = webhooks
+```
+
 **Provider**
 
 | Export | Description |
