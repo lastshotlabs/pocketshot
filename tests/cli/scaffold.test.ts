@@ -20,6 +20,7 @@ describe('scaffold', () => {
       mfaScreens: true,
       oauthScreens: true,
       webSocket: true,
+      communityScreens: false,
       gitInit: false,  // skip git for test speed
     }
     await scaffold(config)
@@ -147,6 +148,7 @@ describe('scaffold without optional features', () => {
       mfaScreens: false,
       oauthScreens: false,
       webSocket: false,
+      communityScreens: false,
       gitInit: false,
     }
     await scaffold(config)
