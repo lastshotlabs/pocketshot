@@ -46,12 +46,14 @@ export function libPocketshotTemplate(config: PocketshotScaffoldConfig): string 
       'useListNotifications', 'useMarkNotificationRead', 'useMarkAllNotificationsRead',
       // Search
       'useSearch',
-      // Webhooks
-      'useListWebhookEndpoints', 'useGetWebhookEndpoint', 'useCreateWebhookEndpoint',
-      'useUpdateWebhookEndpoint', 'useDeleteWebhookEndpoint',
-      'useListWebhookDeliveries', 'useGetWebhookDelivery', 'useTestWebhookEndpoint',
     )
   }
+  // Webhook hooks are always available — createPocketshot instantiates them unconditionally
+  hooks.push(
+    'useListWebhookEndpoints', 'useGetWebhookEndpoint', 'useCreateWebhookEndpoint',
+    'useUpdateWebhookEndpoint', 'useDeleteWebhookEndpoint',
+    'useListWebhookDeliveries', 'useGetWebhookDelivery', 'useTestWebhookEndpoint',
+  )
   hooks.push('formatAuthError', 'Providers', 'api', 'queryClient', 'tokenStorage')
 
   const destructure = hooks.join(',\n  ')
