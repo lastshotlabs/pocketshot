@@ -25,14 +25,14 @@ export function createWebhookHooks(api: ApiClient) {
 
   // ── Endpoints ─────────────────────────────────────────────────────────────────
 
-  function useListWebhookEndpoints() {
+  function useWebhookEndpoints() {
     return useQuery<WebhookEndpointResponse[]>({
       queryKey: keys.endpoints(),
       queryFn: () => api.get<WebhookEndpointResponse[]>('/webhooks/endpoints'),
     })
   }
 
-  function useGetWebhookEndpoint(endpointId: string) {
+  function useWebhookEndpoint(endpointId: string) {
     return useQuery<WebhookEndpointResponse>({
       queryKey: keys.endpoint(endpointId),
       queryFn: () => api.get<WebhookEndpointResponse>(`/webhooks/endpoints/${endpointId}`),
@@ -74,7 +74,7 @@ export function createWebhookHooks(api: ApiClient) {
 
   // ── Deliveries ────────────────────────────────────────────────────────────────
 
-  function useListWebhookDeliveries({ endpointId, page, pageSize }: WebhookDeliveryListParams) {
+  function useWebhookDeliveries({ endpointId, page, pageSize }: WebhookDeliveryListParams) {
     const query = `?page=${page ?? 1}&pageSize=${pageSize ?? 20}`
     return useQuery<PaginatedResponse<WebhookDeliveryResponse>>({
       queryKey: keys.deliveries(endpointId),
@@ -86,7 +86,7 @@ export function createWebhookHooks(api: ApiClient) {
     })
   }
 
-  function useGetWebhookDelivery(deliveryId: string) {
+  function useWebhookDelivery(deliveryId: string) {
     return useQuery<WebhookDeliveryResponse>({
       queryKey: keys.deliveryDetail(deliveryId),
       queryFn: () => api.get<WebhookDeliveryResponse>(`/webhooks/deliveries/${deliveryId}`),
@@ -110,13 +110,13 @@ export function createWebhookHooks(api: ApiClient) {
   // ── Return all hooks ──────────────────────────────────────────────────────────
 
   return {
-    useListWebhookEndpoints,
-    useGetWebhookEndpoint,
+    useWebhookEndpoints,
+    useWebhookEndpoint,
     useCreateWebhookEndpoint,
     useUpdateWebhookEndpoint,
     useDeleteWebhookEndpoint,
-    useListWebhookDeliveries,
-    useGetWebhookDelivery,
+    useWebhookDeliveries,
+    useWebhookDelivery,
     useTestWebhookEndpoint,
   }
 }

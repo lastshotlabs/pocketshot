@@ -31,28 +31,35 @@ export function libPocketshotTemplate(config: PocketshotScaffoldConfig): string 
   if (config.communityScreens) {
     hooks.push(
       // Containers
-      'useListContainers', 'useGetContainer', 'useCreateContainer', 'useUpdateContainer', 'useDeleteContainer',
+      'useContainers', 'useContainer', 'useCreateContainer', 'useUpdateContainer', 'useDeleteContainer',
       // Threads
-      'useListThreads', 'useGetThread', 'useCreateThread', 'useUpdateThread', 'useDeleteThread',
+      'useContainerThreads', 'useContainerThread', 'useCreateThread', 'useUpdateThread', 'useDeleteThread',
+      'usePublishThread', 'useLockThread', 'usePinThread', 'useUnpinThread',
       // Replies
-      'useListReplies', 'useGetReply', 'useCreateReply', 'useUpdateReply', 'useDeleteReply',
+      'useThreadReplies', 'useReply', 'useCreateReply', 'useUpdateReply', 'useDeleteReply',
       // Reactions
+      'useThreadReactions', 'useReplyReactions',
       'useAddThreadReaction', 'useRemoveThreadReaction', 'useAddReplyReaction', 'useRemoveReplyReaction',
+      // Members / Roles
+      'useContainerMembers', 'useContainerModerators', 'useContainerOwners',
+      'useAddMember', 'useRemoveMember',
+      'useAssignModerator', 'useRemoveModerator',
+      'useAssignOwner', 'useRemoveOwner',
       // Reports
-      'useListReports', 'useCreateReport', 'useResolveReport',
+      'useReports', 'useReport', 'useCreateReport', 'useResolveReport', 'useDismissReport',
       // Bans
-      'useListBans', 'useCheckBan', 'useCreateBan', 'useDeleteBan',
+      'useBans', 'useCheckBan', 'useCreateBan', 'useRemoveBan',
       // Notifications
-      'useListNotifications', 'useMarkNotificationRead', 'useMarkAllNotificationsRead',
+      'useNotifications', 'useNotificationsUnreadCount', 'useMarkNotificationRead', 'useMarkAllNotificationsRead',
       // Search
-      'useSearch',
+      'useSearchThreads', 'useSearchReplies',
     )
   }
   // Webhook hooks are always available — createPocketshot instantiates them unconditionally
   hooks.push(
-    'useListWebhookEndpoints', 'useGetWebhookEndpoint', 'useCreateWebhookEndpoint',
+    'useWebhookEndpoints', 'useWebhookEndpoint', 'useCreateWebhookEndpoint',
     'useUpdateWebhookEndpoint', 'useDeleteWebhookEndpoint',
-    'useListWebhookDeliveries', 'useGetWebhookDelivery', 'useTestWebhookEndpoint',
+    'useWebhookDeliveries', 'useWebhookDelivery', 'useTestWebhookEndpoint',
   )
   hooks.push('formatAuthError', 'Providers', 'api', 'queryClient', 'tokenStorage')
 
