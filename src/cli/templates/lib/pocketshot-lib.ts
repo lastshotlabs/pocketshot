@@ -28,6 +28,30 @@ export function libPocketshotTemplate(config: PocketshotScaffoldConfig): string 
     )
   }
   if (config.webSocket) hooks.push('useRoom', 'useRoomEvent')
+  if (config.communityScreens) {
+    hooks.push(
+      // Containers
+      'useListContainers', 'useGetContainer', 'useCreateContainer', 'useUpdateContainer', 'useDeleteContainer',
+      // Threads
+      'useListThreads', 'useGetThread', 'useCreateThread', 'useUpdateThread', 'useDeleteThread',
+      // Replies
+      'useListReplies', 'useGetReply', 'useCreateReply', 'useUpdateReply', 'useDeleteReply',
+      // Reactions
+      'useAddThreadReaction', 'useRemoveThreadReaction', 'useAddReplyReaction', 'useRemoveReplyReaction',
+      // Reports
+      'useListReports', 'useCreateReport', 'useResolveReport',
+      // Bans
+      'useListBans', 'useCheckBan', 'useCreateBan', 'useDeleteBan',
+      // Notifications
+      'useListNotifications', 'useMarkNotificationRead', 'useMarkAllNotificationsRead',
+      // Search
+      'useSearch',
+      // Webhooks
+      'useListWebhookEndpoints', 'useGetWebhookEndpoint', 'useCreateWebhookEndpoint',
+      'useUpdateWebhookEndpoint', 'useDeleteWebhookEndpoint',
+      'useListWebhookDeliveries', 'useGetWebhookDelivery', 'useTestWebhookEndpoint',
+    )
+  }
   hooks.push('formatAuthError', 'Providers', 'api', 'queryClient', 'tokenStorage')
 
   const destructure = hooks.join(',\n  ')

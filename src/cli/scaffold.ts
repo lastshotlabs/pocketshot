@@ -27,6 +27,9 @@ import { settingsSessionsTemplate } from './templates/app/settings-sessions'
 import { settingsDeleteAccountTemplate } from './templates/app/settings-delete-account'
 import { settingsEmailOtpTemplate } from './templates/app/settings-email-otp'
 import { appMfaSetupTemplate } from './templates/app/app-mfa-setup'
+import { communityContainersTemplate } from './templates/app/community-containers'
+import { communityThreadListTemplate } from './templates/app/community-thread-list'
+import { communityThreadTemplate } from './templates/app/community-thread'
 
 const GITIGNORE_CONTENT = `node_modules/
 .expo/
@@ -89,6 +92,12 @@ export async function scaffold(config: PocketshotScaffoldConfig): Promise<void> 
   if (config.mfaScreens) {
     await write('app/(app)/settings/email-otp.tsx', settingsEmailOtpTemplate())
     await write('app/(app)/mfa-setup.tsx', appMfaSetupTemplate())
+  }
+
+  if (config.communityScreens) {
+    await write('app/(app)/community/index.tsx', communityContainersTemplate())
+    await write('app/(app)/community/[containerId]/threads.tsx', communityThreadListTemplate())
+    await write('app/(app)/community/threads/[threadId].tsx', communityThreadTemplate())
   }
 
   // Step: install dependencies

@@ -8,5 +8,6 @@ export interface PocketshotScaffoldConfig {
   mfaScreens: boolean     // MFA setup + email-otp (only if authScreens=true)
   oauthScreens: boolean   // oauth-callback screen
   webSocket: boolean      // WS client + useRoom/useRoomEvent
+  communityScreens: boolean  // community containers, thread list, thread detail screens
   gitInit: boolean
 }

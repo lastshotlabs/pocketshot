@@ -8,6 +8,8 @@ import { createAuthErrorFormatter } from './auth/errors'
 import type { AuthErrorConfig } from './auth/errors'
 import { createAuthHooks } from './auth/hooks'
 import { createSecureStoreStorage } from './auth/storage'
+import { createCommunityHooks } from './community/hooks'
+import { createWebhookHooks } from './webhooks/hooks'
 import { warnOnce } from './lib/warnings'
 import { PocketshotWS, createWsHooks, notConfigured } from './ws/index'
 
@@ -44,6 +46,8 @@ export function createPocketshot(config: PocketshotConfig) {
   const wsHooks = wsManager
     ? createWsHooks(wsManager)
     : { useRoom: notConfigured, useRoomEvent: notConfigured }
+  const communityHooks = createCommunityHooks(api)
+  const webhookHooks = createWebhookHooks(api)
 
   function Providers({ children }: { children: ReactNode }) {
     return (
@@ -53,5 +57,5 @@ export function createPocketshot(config: PocketshotConfig) {
     )
   }
 
-  return { ...hooks, ...wsHooks, Providers, api, queryClient, tokenStorage, formatAuthError }
+  return { ...hooks, ...wsHooks, ...communityHooks, ...webhookHooks, Providers, api, queryClient, tokenStorage, formatAuthError }
 }

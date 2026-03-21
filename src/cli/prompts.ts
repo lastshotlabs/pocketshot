@@ -41,6 +41,7 @@ export async function runPrompts(opts: PromptOptions): Promise<PocketshotScaffol
       mfaScreens: false,
       oauthScreens: true,
       webSocket: true,
+      communityScreens: false,
       gitInit: true,
     }
   }
@@ -114,7 +115,15 @@ export async function runPrompts(opts: PromptOptions): Promise<PocketshotScaffol
   if (isCancel(wsVal)) return null
   const webSocket = wsVal as boolean
 
-  // 9. Git init
+  // 9. Community screens
+  const communityVal = await confirm({
+    message: 'Include community screens (containers, thread list, thread detail)?',
+    initialValue: false,
+  })
+  if (isCancel(communityVal)) return null
+  const communityScreens = communityVal as boolean
+
+  // 10. Git init
   const gitVal = await confirm({
     message: 'Git init?',
     initialValue: true,
@@ -132,6 +141,7 @@ export async function runPrompts(opts: PromptOptions): Promise<PocketshotScaffol
     mfaScreens,
     oauthScreens,
     webSocket,
+    communityScreens,
     gitInit,
   }
 }
