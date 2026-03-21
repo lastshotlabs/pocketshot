@@ -41,6 +41,22 @@ export const communityContract = {
     method: 'DELETE' as const,
     path: '/community/threads/:threadId',
   },
+  publishThread: {
+    method: 'POST' as const,
+    path: '/community/threads/:threadId/publish',
+  },
+  lockThread: {
+    method: 'POST' as const,
+    path: '/community/threads/:threadId/lock',
+  },
+  pinThread: {
+    method: 'POST' as const,
+    path: '/community/threads/:threadId/pin',
+  },
+  unpinThread: {
+    method: 'POST' as const,
+    path: '/community/threads/:threadId/unpin',
+  },
   // ── Replies ─────────────────────────────────────────────────────────────────
   listReplies: {
     method: 'GET' as const,
@@ -63,6 +79,10 @@ export const communityContract = {
     path: '/community/replies/:replyId',
   },
   // ── Thread Reactions ────────────────────────────────────────────────────────
+  threadReactions: {
+    method: 'GET' as const,
+    path: '/community/threads/:threadId/reactions',
+  },
   addThreadReaction: {
     method: 'POST' as const,
     path: '/community/threads/:threadId/reactions',
@@ -72,6 +92,10 @@ export const communityContract = {
     path: '/community/threads/:threadId/reactions/:emoji',
   },
   // ── Reply Reactions ─────────────────────────────────────────────────────────
+  replyReactions: {
+    method: 'GET' as const,
+    path: '/community/replies/:replyId/reactions',
+  },
   addReplyReaction: {
     method: 'POST' as const,
     path: '/community/replies/:replyId/reactions',
@@ -85,6 +109,10 @@ export const communityContract = {
     method: 'GET' as const,
     path: '/community/reports',
   },
+  getReport: {
+    method: 'GET' as const,
+    path: '/community/reports/:reportId',
+  },
   createReport: {
     method: 'POST' as const,
     path: '/community/reports',
@@ -92,6 +120,10 @@ export const communityContract = {
   resolveReport: {
     method: 'POST' as const,
     path: '/community/reports/:reportId/resolve',
+  },
+  dismissReport: {
+    method: 'POST' as const,
+    path: '/community/reports/:reportId/dismiss',
   },
   // ── Bans ────────────────────────────────────────────────────────────────────
   listBans: {
@@ -115,6 +147,10 @@ export const communityContract = {
     method: 'GET' as const,
     path: '/community/notifications',
   },
+  notificationsUnreadCount: {
+    method: 'GET' as const,
+    path: '/community/notifications/unread-count',
+  },
   markNotificationRead: {
     method: 'PATCH' as const,
     path: '/community/notifications/:notificationId/read',
@@ -123,9 +159,50 @@ export const communityContract = {
     method: 'POST' as const,
     path: '/community/notifications/read-all',
   },
-  // ── Search ───────────────────────────────────────────────────────────────────
-  search: {
+  // ── Members / Roles ──────────────────────────────────────────────────────────
+  listMembers: {
     method: 'GET' as const,
-    path: '/community/search',
+    path: '/community/containers/:containerId/members',
+  },
+  addMember: {
+    method: 'POST' as const,
+    path: '/community/containers/:containerId/members',
+  },
+  removeMember: {
+    method: 'DELETE' as const,
+    path: '/community/containers/:containerId/members/:userId',
+  },
+  listModerators: {
+    method: 'GET' as const,
+    path: '/community/containers/:containerId/moderators',
+  },
+  assignModerator: {
+    method: 'POST' as const,
+    path: '/community/containers/:containerId/moderators',
+  },
+  removeModerator: {
+    method: 'DELETE' as const,
+    path: '/community/containers/:containerId/moderators/:userId',
+  },
+  listOwners: {
+    method: 'GET' as const,
+    path: '/community/containers/:containerId/owners',
+  },
+  assignOwner: {
+    method: 'POST' as const,
+    path: '/community/containers/:containerId/owners',
+  },
+  removeOwner: {
+    method: 'DELETE' as const,
+    path: '/community/containers/:containerId/owners/:userId',
+  },
+  // ── Search ───────────────────────────────────────────────────────────────────
+  searchThreads: {
+    method: 'GET' as const,
+    path: '/community/search/threads',
+  },
+  searchReplies: {
+    method: 'GET' as const,
+    path: '/community/search/replies',
   },
 } as const

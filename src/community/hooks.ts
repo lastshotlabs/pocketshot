@@ -36,12 +36,17 @@ const keys = {
   replies: (threadId: string) => ['community', 'replies', threadId] as const,
   replyDetail: (replyId: string) => ['community', 'replies', 'detail', replyId] as const,
   reports: () => ['community', 'reports'] as const,
+  report: (reportId: string) => ['community', 'reports', reportId] as const,
   bans: () => ['community', 'bans'] as const,
   banCheck: (userId: string, containerId?: string) =>
     ['community', 'bans', userId, 'check', containerId ?? null] as const,
   banCheckPrefix: (userId: string) => ['community', 'bans', userId, 'check'] as const,
   notifications: () => ['community', 'notifications'] as const,
-  search: () => ['community', 'search'] as const,
+  notificationsUnread: () => ['community', 'notifications', 'unread'] as const,
+  members: (containerId: string) => ['community', 'members', containerId] as const,
+  moderators: (containerId: string) => ['community', 'moderators', containerId] as const,
+  owners: (containerId: string) => ['community', 'owners', containerId] as const,
+  searchThreads: () => ['community', 'search', 'threads'] as const,
   searchReplies: () => ['community', 'search', 'replies'] as const,
 }
 
@@ -51,7 +56,7 @@ export function createCommunityHooks(api: ApiClient) {
 
   // ── Containers ───────────────────────────────────────────────────────────────
 
-  function useListContainers(params?: ListParams) {
+  function useContainers(params?: ListParams) {
     const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
     return useQuery<PaginatedResponse<ContainerResponse>>({
       queryKey: keys.containers(),
@@ -59,7 +64,7 @@ export function createCommunityHooks(api: ApiClient) {
     })
   }
 
-  function useGetContainer(containerId: string) {
+  function useContainer(containerId: string) {
     return useQuery<ContainerResponse>({
       queryKey: keys.container(containerId),
       queryFn: () => api.get<ContainerResponse>(`/community/containers/${containerId}`),
@@ -101,7 +106,7 @@ export function createCommunityHooks(api: ApiClient) {
 
   // ── Threads ───────────────────────────────────────────────────────────────────
 
-  function useListThreads({ containerId, ...params }: ThreadListParams) {
+  function useContainerThreads({ containerId, ...params }: ThreadListParams) {
     const query = `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}`
     return useQuery<PaginatedResponse<ThreadResponse>>({
       queryKey: keys.threads(containerId),
@@ -113,7 +118,7 @@ export function createCommunityHooks(api: ApiClient) {
     })
   }
 
-  function useGetThread(threadId: string) {
+  function useContainerThread(threadId: string) {
     return useQuery<ThreadResponse>({
       queryKey: keys.threadDetail(threadId),
       queryFn: () => api.get<ThreadResponse>(`/community/threads/${threadId}`),
@@ -128,7 +133,7 @@ export function createCommunityHooks(api: ApiClient) {
         api.post<ThreadResponse>(`/community/containers/${containerId}/threads`, body),
       onSuccess: (_data, { containerId }) => {
         queryClient.invalidateQueries({ queryKey: keys.threads(containerId) })
-        queryClient.invalidateQueries({ queryKey: keys.search() })
+        queryClient.invalidateQueries({ queryKey: keys.searchThreads() })
       },
     })
   }
@@ -141,7 +146,7 @@ export function createCommunityHooks(api: ApiClient) {
       onSuccess: (_data, { threadId, containerId }) => {
         queryClient.invalidateQueries({ queryKey: keys.threadDetail(threadId) })
         queryClient.invalidateQueries({ queryKey: keys.threads(containerId) })
-        queryClient.invalidateQueries({ queryKey: keys.search() })
+        queryClient.invalidateQueries({ queryKey: keys.searchThreads() })
       },
     })
   }
@@ -152,14 +157,62 @@ export function createCommunityHooks(api: ApiClient) {
       mutationFn: ({ threadId }) => api.delete<void>(`/community/threads/${threadId}`),
       onSuccess: (_data, { containerId }) => {
         queryClient.invalidateQueries({ queryKey: keys.threads(containerId) })
-        queryClient.invalidateQueries({ queryKey: keys.search() })
+        queryClient.invalidateQueries({ queryKey: keys.searchThreads() })
+      },
+    })
+  }
+
+  function usePublishThread() {
+    const queryClient = useQueryClient()
+    return useMutation<ThreadResponse, Error, { threadId: string; containerId: string }>({
+      mutationFn: ({ threadId }) =>
+        api.post<ThreadResponse>(`/community/threads/${threadId}/publish`, {}),
+      onSuccess: (_data, { threadId, containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.threadDetail(threadId) })
+        queryClient.invalidateQueries({ queryKey: keys.threads(containerId) })
+      },
+    })
+  }
+
+  function useLockThread() {
+    const queryClient = useQueryClient()
+    return useMutation<ThreadResponse, Error, { threadId: string; containerId: string }>({
+      mutationFn: ({ threadId }) =>
+        api.post<ThreadResponse>(`/community/threads/${threadId}/lock`, {}),
+      onSuccess: (_data, { threadId, containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.threadDetail(threadId) })
+        queryClient.invalidateQueries({ queryKey: keys.threads(containerId) })
+      },
+    })
+  }
+
+  function usePinThread() {
+    const queryClient = useQueryClient()
+    return useMutation<ThreadResponse, Error, { threadId: string; containerId: string }>({
+      mutationFn: ({ threadId }) =>
+        api.post<ThreadResponse>(`/community/threads/${threadId}/pin`, {}),
+      onSuccess: (_data, { threadId, containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.threadDetail(threadId) })
+        queryClient.invalidateQueries({ queryKey: keys.threads(containerId) })
+      },
+    })
+  }
+
+  function useUnpinThread() {
+    const queryClient = useQueryClient()
+    return useMutation<ThreadResponse, Error, { threadId: string; containerId: string }>({
+      mutationFn: ({ threadId }) =>
+        api.post<ThreadResponse>(`/community/threads/${threadId}/unpin`, {}),
+      onSuccess: (_data, { threadId, containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.threadDetail(threadId) })
+        queryClient.invalidateQueries({ queryKey: keys.threads(containerId) })
       },
     })
   }
 
   // ── Replies ───────────────────────────────────────────────────────────────────
 
-  function useListReplies({ threadId, ...params }: ReplyListParams) {
+  function useThreadReplies({ threadId, ...params }: ReplyListParams) {
     const query = `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}`
     return useQuery<PaginatedResponse<ReplyResponse>>({
       queryKey: keys.replies(threadId),
@@ -171,7 +224,7 @@ export function createCommunityHooks(api: ApiClient) {
     })
   }
 
-  function useGetReply(replyId: string) {
+  function useReply(replyId: string) {
     return useQuery<ReplyResponse>({
       queryKey: keys.replyDetail(replyId),
       queryFn: () => api.get<ReplyResponse>(`/community/replies/${replyId}`),
@@ -186,7 +239,7 @@ export function createCommunityHooks(api: ApiClient) {
         api.post<ReplyResponse>(`/community/threads/${threadId}/replies`, body),
       onSuccess: (_data, { threadId }) => {
         queryClient.invalidateQueries({ queryKey: keys.replies(threadId) })
-        queryClient.invalidateQueries({ queryKey: keys.search() })
+        queryClient.invalidateQueries({ queryKey: keys.searchReplies() })
       },
     })
   }
@@ -199,7 +252,7 @@ export function createCommunityHooks(api: ApiClient) {
       onSuccess: (_data, { replyId, threadId }) => {
         queryClient.invalidateQueries({ queryKey: keys.replyDetail(replyId) })
         queryClient.invalidateQueries({ queryKey: keys.replies(threadId) })
-        queryClient.invalidateQueries({ queryKey: keys.search() })
+        queryClient.invalidateQueries({ queryKey: keys.searchReplies() })
       },
     })
   }
@@ -210,12 +263,20 @@ export function createCommunityHooks(api: ApiClient) {
       mutationFn: ({ replyId }) => api.delete<void>(`/community/replies/${replyId}`),
       onSuccess: (_data, { threadId }) => {
         queryClient.invalidateQueries({ queryKey: keys.replies(threadId) })
-        queryClient.invalidateQueries({ queryKey: keys.search() })
+        queryClient.invalidateQueries({ queryKey: keys.searchReplies() })
       },
     })
   }
 
   // ── Thread Reactions ──────────────────────────────────────────────────────────
+
+  function useThreadReactions(threadId: string) {
+    return useQuery<ReactionBody[]>({
+      queryKey: ['community', 'thread-reactions', threadId] as const,
+      queryFn: () => api.get<ReactionBody[]>(`/community/threads/${threadId}/reactions`),
+      enabled: !!threadId,
+    })
+  }
 
   function useAddThreadReaction() {
     const queryClient = useQueryClient()
@@ -243,6 +304,14 @@ export function createCommunityHooks(api: ApiClient) {
 
   // ── Reply Reactions ───────────────────────────────────────────────────────────
 
+  function useReplyReactions(replyId: string) {
+    return useQuery<ReactionBody[]>({
+      queryKey: ['community', 'reply-reactions', replyId] as const,
+      queryFn: () => api.get<ReactionBody[]>(`/community/replies/${replyId}/reactions`),
+      enabled: !!replyId,
+    })
+  }
+
   function useAddReplyReaction() {
     const queryClient = useQueryClient()
     return useMutation<void, Error, { replyId: string; threadId: string } & ReactionBody>({
@@ -269,14 +338,126 @@ export function createCommunityHooks(api: ApiClient) {
     })
   }
 
+  // ── Members / Roles ───────────────────────────────────────────────────────────
+
+  function useContainerMembers(containerId: string, params?: ListParams) {
+    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    return useQuery<PaginatedResponse<{ userId: string }>>({
+      queryKey: keys.members(containerId),
+      queryFn: () =>
+        api.get<PaginatedResponse<{ userId: string }>>(
+          `/community/containers/${containerId}/members${query}`,
+        ),
+      enabled: !!containerId,
+    })
+  }
+
+  function useContainerModerators(containerId: string, params?: ListParams) {
+    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    return useQuery<PaginatedResponse<{ userId: string }>>({
+      queryKey: keys.moderators(containerId),
+      queryFn: () =>
+        api.get<PaginatedResponse<{ userId: string }>>(
+          `/community/containers/${containerId}/moderators${query}`,
+        ),
+      enabled: !!containerId,
+    })
+  }
+
+  function useContainerOwners(containerId: string, params?: ListParams) {
+    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    return useQuery<PaginatedResponse<{ userId: string }>>({
+      queryKey: keys.owners(containerId),
+      queryFn: () =>
+        api.get<PaginatedResponse<{ userId: string }>>(
+          `/community/containers/${containerId}/owners${query}`,
+        ),
+      enabled: !!containerId,
+    })
+  }
+
+  function useAddMember() {
+    const queryClient = useQueryClient()
+    return useMutation<void, Error, { containerId: string; userId: string }>({
+      mutationFn: ({ containerId, userId }) =>
+        api.post<void>(`/community/containers/${containerId}/members`, { userId }),
+      onSuccess: (_data, { containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.members(containerId) })
+      },
+    })
+  }
+
+  function useRemoveMember() {
+    const queryClient = useQueryClient()
+    return useMutation<void, Error, { containerId: string; userId: string }>({
+      mutationFn: ({ containerId, userId }) =>
+        api.delete<void>(`/community/containers/${containerId}/members/${userId}`),
+      onSuccess: (_data, { containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.members(containerId) })
+      },
+    })
+  }
+
+  function useAssignModerator() {
+    const queryClient = useQueryClient()
+    return useMutation<void, Error, { containerId: string; userId: string }>({
+      mutationFn: ({ containerId, userId }) =>
+        api.post<void>(`/community/containers/${containerId}/moderators`, { userId }),
+      onSuccess: (_data, { containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.moderators(containerId) })
+      },
+    })
+  }
+
+  function useRemoveModerator() {
+    const queryClient = useQueryClient()
+    return useMutation<void, Error, { containerId: string; userId: string }>({
+      mutationFn: ({ containerId, userId }) =>
+        api.delete<void>(`/community/containers/${containerId}/moderators/${userId}`),
+      onSuccess: (_data, { containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.moderators(containerId) })
+      },
+    })
+  }
+
+  function useAssignOwner() {
+    const queryClient = useQueryClient()
+    return useMutation<void, Error, { containerId: string; userId: string }>({
+      mutationFn: ({ containerId, userId }) =>
+        api.post<void>(`/community/containers/${containerId}/owners`, { userId }),
+      onSuccess: (_data, { containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.owners(containerId) })
+      },
+    })
+  }
+
+  function useRemoveOwner() {
+    const queryClient = useQueryClient()
+    return useMutation<void, Error, { containerId: string; userId: string }>({
+      mutationFn: ({ containerId, userId }) =>
+        api.delete<void>(`/community/containers/${containerId}/owners/${userId}`),
+      onSuccess: (_data, { containerId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.owners(containerId) })
+      },
+    })
+  }
+
   // ── Reports ───────────────────────────────────────────────────────────────────
 
-  function useListReports(params?: ListParams) {
+  function useReports(params?: ListParams) {
     const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
     return useQuery<PaginatedResponse<ReportResponse>>({
       queryKey: keys.reports(),
       queryFn: () =>
         api.get<PaginatedResponse<ReportResponse>>(`/community/reports${query}`),
+    })
+  }
+
+  function useReport(reportId: string) {
+    return useQuery<ReportResponse>({
+      queryKey: keys.report(reportId),
+      queryFn: () => api.get<ReportResponse>(`/community/reports/${reportId}`),
+      enabled: !!reportId,
     })
   }
 
@@ -295,15 +476,28 @@ export function createCommunityHooks(api: ApiClient) {
     return useMutation<ReportResponse, Error, { reportId: string } & ResolveReportBody>({
       mutationFn: ({ reportId, ...body }) =>
         api.post<ReportResponse>(`/community/reports/${reportId}/resolve`, body),
-      onSuccess: () => {
+      onSuccess: (_data, { reportId }) => {
         queryClient.invalidateQueries({ queryKey: keys.reports() })
+        queryClient.invalidateQueries({ queryKey: keys.report(reportId) })
+      },
+    })
+  }
+
+  function useDismissReport() {
+    const queryClient = useQueryClient()
+    return useMutation<ReportResponse, Error, { reportId: string }>({
+      mutationFn: ({ reportId }) =>
+        api.post<ReportResponse>(`/community/reports/${reportId}/dismiss`, {}),
+      onSuccess: (_data, { reportId }) => {
+        queryClient.invalidateQueries({ queryKey: keys.reports() })
+        queryClient.invalidateQueries({ queryKey: keys.report(reportId) })
       },
     })
   }
 
   // ── Bans ──────────────────────────────────────────────────────────────────────
 
-  function useListBans(params?: ListParams) {
+  function useBans(params?: ListParams) {
     const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
     return useQuery<PaginatedResponse<BanResponse>>({
       queryKey: keys.bans(),
@@ -334,7 +528,7 @@ export function createCommunityHooks(api: ApiClient) {
     })
   }
 
-  function useDeleteBan() {
+  function useRemoveBan() {
     const queryClient = useQueryClient()
     return useMutation<void, Error, { banId: string; userId: string }>({
       mutationFn: ({ banId }) => api.delete<void>(`/community/bans/${banId}`),
@@ -347,12 +541,19 @@ export function createCommunityHooks(api: ApiClient) {
 
   // ── Notifications ─────────────────────────────────────────────────────────────
 
-  function useListNotifications(params?: ListParams) {
+  function useNotifications(params?: ListParams) {
     const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
     return useQuery<PaginatedResponse<NotificationResponse>>({
       queryKey: keys.notifications(),
       queryFn: () =>
         api.get<PaginatedResponse<NotificationResponse>>(`/community/notifications${query}`),
+    })
+  }
+
+  function useNotificationsUnreadCount() {
+    return useQuery<{ count: number }>({
+      queryKey: keys.notificationsUnread(),
+      queryFn: () => api.get<{ count: number }>('/community/notifications/unread-count'),
     })
   }
 
@@ -363,6 +564,7 @@ export function createCommunityHooks(api: ApiClient) {
         api.patch<void>(`/community/notifications/${notificationId}/read`, {}),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: keys.notifications() })
+        queryClient.invalidateQueries({ queryKey: keys.notificationsUnread() })
       },
     })
   }
@@ -373,21 +575,35 @@ export function createCommunityHooks(api: ApiClient) {
       mutationFn: () => api.post<void>('/community/notifications/read-all', {}),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: keys.notifications() })
+        queryClient.invalidateQueries({ queryKey: keys.notificationsUnread() })
       },
     })
   }
 
   // ── Search ────────────────────────────────────────────────────────────────────
 
-  function useSearch(params: CommunitySearchParams) {
-    const qs = new URLSearchParams({ q: params.q })
-    if (params.type) qs.set('type', params.type)
+  function useSearchThreads(params: CommunitySearchParams & { q: string }) {
+    const qs = new URLSearchParams()
+    if (params.q) qs.set('q', params.q)
     if (params.containerId) qs.set('containerId', params.containerId)
     if (params.page) qs.set('page', String(params.page))
     if (params.pageSize) qs.set('pageSize', String(params.pageSize))
     return useQuery<SearchResponse>({
-      queryKey: [...keys.search(), params] as const,
-      queryFn: () => api.get<SearchResponse>(`/community/search?${qs.toString()}`),
+      queryKey: [...keys.searchThreads(), params] as const,
+      queryFn: () => api.get<SearchResponse>(`/community/search/threads?${qs.toString()}`),
+      enabled: !!params.q,
+    })
+  }
+
+  function useSearchReplies(params: CommunitySearchParams & { q: string }) {
+    const qs = new URLSearchParams()
+    if (params.q) qs.set('q', params.q)
+    if (params.containerId) qs.set('containerId', params.containerId)
+    if (params.page) qs.set('page', String(params.page))
+    if (params.pageSize) qs.set('pageSize', String(params.pageSize))
+    return useQuery<SearchResponse>({
+      queryKey: [...keys.searchReplies(), params] as const,
+      queryFn: () => api.get<SearchResponse>(`/community/search/replies?${qs.toString()}`),
       enabled: !!params.q,
     })
   }
@@ -396,44 +612,64 @@ export function createCommunityHooks(api: ApiClient) {
 
   return {
     // Containers
-    useListContainers,
-    useGetContainer,
+    useContainers,
+    useContainer,
     useCreateContainer,
     useUpdateContainer,
     useDeleteContainer,
     // Threads
-    useListThreads,
-    useGetThread,
+    useContainerThreads,
+    useContainerThread,
     useCreateThread,
     useUpdateThread,
     useDeleteThread,
+    usePublishThread,
+    useLockThread,
+    usePinThread,
+    useUnpinThread,
     // Replies
-    useListReplies,
-    useGetReply,
+    useThreadReplies,
+    useReply,
     useCreateReply,
     useUpdateReply,
     useDeleteReply,
     // Thread reactions
+    useThreadReactions,
+    useReplyReactions,
     useAddThreadReaction,
     useRemoveThreadReaction,
     // Reply reactions
     useAddReplyReaction,
     useRemoveReplyReaction,
-    // Reports
-    useListReports,
-    useCreateReport,
-    useResolveReport,
-    // Bans
-    useListBans,
-    useCheckBan,
-    useCreateBan,
-    useDeleteBan,
+    // Members / Roles
+    useContainerMembers,
+    useContainerModerators,
+    useContainerOwners,
+    useAddMember,
+    useRemoveMember,
+    useAssignModerator,
+    useRemoveModerator,
+    useAssignOwner,
+    useRemoveOwner,
     // Notifications
-    useListNotifications,
+    useNotifications,
+    useNotificationsUnreadCount,
     useMarkNotificationRead,
     useMarkAllNotificationsRead,
+    // Reports
+    useReports,
+    useReport,
+    useCreateReport,
+    useResolveReport,
+    useDismissReport,
+    // Bans
+    useBans,
+    useCheckBan,
+    useCreateBan,
+    useRemoveBan,
     // Search
-    useSearch,
+    useSearchThreads,
+    useSearchReplies,
   }
 }
 
