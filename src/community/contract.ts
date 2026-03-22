@@ -49,6 +49,10 @@ export const communityContract = {
     method: 'POST' as const,
     path: '/community/threads/:threadId/lock',
   },
+  unlockThread: {
+    method: 'POST' as const,
+    path: '/community/threads/:threadId/unlock',
+  },
   pinThread: {
     method: 'POST' as const,
     path: '/community/threads/:threadId/pin',
