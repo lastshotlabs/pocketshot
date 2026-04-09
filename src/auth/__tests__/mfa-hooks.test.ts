@@ -18,6 +18,14 @@ import type { ApiClient } from '../../api/client'
 
 ;(globalThis as any).__DEV__ = true
 
+// ── Stub native / expo deps ───────────────────────────────────────────────────
+
+vi.mock('expo-router', () => ({ useRouter: vi.fn(() => ({ replace: vi.fn() })) }))
+vi.mock('jotai', () => ({
+  atom: vi.fn(() => ({})),
+  useAtom: vi.fn(() => [null, vi.fn()]),
+}))
+
 // ── Stub useMutation / useQuery so the factories can be called outside React ──
 
 vi.mock('@tanstack/react-query', async (importOriginal) => {
