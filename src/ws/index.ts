@@ -12,6 +12,7 @@ export class PocketshotWS {
   private listeners = new Map<string, Set<RoomListener>>()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private unsubscribeForeground: (() => void) | null = null
+  private connecting = false
 
   /**
    * @param endpointUrl     - Full WebSocket URL, e.g. wss://api.example.com/ws
@@ -30,6 +31,7 @@ export class PocketshotWS {
   }
 
   async connect() {
+    this.connecting = true
     const token = await this.storage.getToken()
     const u = new URL(this.endpointUrl)
     if (token) u.searchParams.set('token', token)
@@ -38,6 +40,7 @@ export class PocketshotWS {
     this.ws = new WebSocket(url)
 
     this.ws.onopen = () => {
+      this.connecting = false
       console.log('[ws] connected')
       for (const room of this.subscribedRooms) {
         this.send({ action: 'subscribe', room })
@@ -59,6 +62,7 @@ export class PocketshotWS {
     }
 
     this.ws.onclose = (e) => {
+      this.connecting = false
       console.log('[ws] closed', e.code)
       if (e.code !== 1000) {
         this.scheduleReconnect()
@@ -66,6 +70,7 @@ export class PocketshotWS {
     }
 
     this.ws.onerror = () => {
+      this.connecting = false
       this.scheduleReconnect()
     }
   }
@@ -74,7 +79,16 @@ export class PocketshotWS {
     this.subscribedRooms.add(room)
     if (!this.listeners.has(room)) this.listeners.set(room, new Set())
     this.listeners.get(room)!.add(listener)
-    this.send({ action: 'subscribe', room })
+
+    if (!this.ws || this.ws.readyState > WebSocket.OPEN) {
+      // No open connection — initiate one. onopen will send subscribe frames
+      // for all rooms in subscribedRooms, so we don't double-send here.
+      if (!this.connecting) {
+        void this.connect()
+      }
+    } else {
+      this.send({ action: 'subscribe', room })
+    }
   }
 
   unsubscribe(room: string, listener?: RoomListener) {

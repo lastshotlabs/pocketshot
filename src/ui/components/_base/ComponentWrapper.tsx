@@ -1,32 +1,57 @@
 import React, { type ReactNode, Component } from 'react'
-import { View } from 'react-native'
+import { View, Text } from 'react-native'
 
 // ── Error Boundary ─────────────────────────────────────────────────────────────
 
-interface ErrorBoundaryState {
-  hasError: boolean
-  error: Error | null
+interface ErrorBoundaryProps {
+  children: ReactNode
+  id?: string
+  testID?: string
 }
 
-class ComponentErrorBoundary extends Component<
-  { children: ReactNode; componentId?: string },
-  ErrorBoundaryState
-> {
-  state: ErrorBoundaryState = { hasError: false, error: null }
+interface ErrorBoundaryState {
+  hasError: boolean
+  error?: Error
+}
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+class ComponentErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: { hasError: boolean; error?: Error } = { hasError: false }
+
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error) {
-    console.error(
-      `[pocketshot] Component error${this.props.componentId ? ` in "${this.props.componentId}"` : ''}:`,
-      error,
-    )
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    this.setState({ error })
+    console.error(`[pocketshot] Component "${this.props.id}" threw:`, error, info)
   }
 
   render() {
-    if (this.state.hasError) return null // Fail silently in production
+    if (this.state.hasError) {
+      return (
+        <View
+          style={{
+            padding: 12,
+            backgroundColor: '#fee2e2',
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: '#fca5a5',
+          }}
+          testID={this.props.testID ? `${this.props.testID}-error` : undefined}
+          accessibilityRole="alert"
+          accessibilityLabel="Component error"
+        >
+          <Text style={{ fontSize: 12, color: '#dc2626', fontWeight: '600' }}>
+            Component failed to render
+          </Text>
+          {__DEV__ && this.state.error ? (
+            <Text style={{ fontSize: 11, color: '#dc2626', marginTop: 4 }} numberOfLines={3}>
+              {this.state.error.message}
+            </Text>
+          ) : null}
+        </View>
+      )
+    }
     return this.props.children
   }
 }
@@ -43,14 +68,14 @@ export interface ComponentWrapperProps {
 
 /**
  * Wraps every config-driven component. Provides:
- * - Error boundary (fails silently in production, logs to console)
+ * - Error boundary (renders visible error fallback in dev, logs to console)
  * - testID for E2E testing
  *
  * Place this as the outermost element of every config-addressable component.
  */
 export function ComponentWrapper({ id, testID, children }: ComponentWrapperProps) {
   return (
-    <ComponentErrorBoundary componentId={id}>
+    <ComponentErrorBoundary id={id} testID={testID ?? id}>
       <View testID={testID ?? id} style={{ flexShrink: 1 }}>
         {children}
       </View>

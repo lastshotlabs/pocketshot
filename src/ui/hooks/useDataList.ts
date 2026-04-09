@@ -40,8 +40,11 @@ export function useDataList<T = unknown>(config: DataListConfig): UseDataListRet
   const handleRefresh = useCallback(async () => {
     if (!config.refreshable) return
     setRefreshing(true)
-    await dispatch({ type: 'refresh' })
-    setRefreshing(false)
+    try {
+      await dispatch({ type: 'refresh' })
+    } finally {
+      setRefreshing(false)
+    }
   }, [config.refreshable, dispatch])
 
   const handleItemPress = useCallback(

@@ -31,13 +31,31 @@ export async function executeAction(action: Action, deps: ActionExecutorDeps): P
       break
 
     case 'api': {
-      let result: unknown
-      if (action.method === 'GET') result = await api.get(action.path)
-      else if (action.method === 'POST') result = await api.post(action.path, action.body ?? {})
-      else if (action.method === 'PUT') result = await api.put(action.path, action.body ?? {})
-      else if (action.method === 'PATCH') result = await api.patch(action.path, action.body ?? {})
-      else if (action.method === 'DELETE') result = await api.delete(action.path, action.body)
-      if (action.resultKey) screenContext.setValue(action.resultKey, result)
+      try {
+        let result: unknown
+        if (action.method === 'GET') result = await api.get(action.path)
+        else if (action.method === 'POST') result = await api.post(action.path, action.body ?? {})
+        else if (action.method === 'PUT') result = await api.put(action.path, action.body ?? {})
+        else if (action.method === 'PATCH') result = await api.patch(action.path, action.body ?? {})
+        else if (action.method === 'DELETE') result = await api.delete(action.path, action.body)
+        if (action.resultKey) screenContext.setValue(action.resultKey, result)
+        if (action.onSuccess) {
+          await executeAction(action.onSuccess, deps)
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unexpected error occurred'
+        if (action.onError) {
+          screenContext.setValue('__apiError', message)
+          await executeAction(action.onError, deps)
+        } else {
+          screenContext.setValue('__toast', {
+            message,
+            variant: 'error',
+            duration: 4000,
+            id: Date.now(),
+          })
+        }
+      }
       break
     }
 

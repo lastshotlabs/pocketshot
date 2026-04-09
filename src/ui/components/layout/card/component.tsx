@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { View, TouchableOpacity, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useTokens } from '../../../context/AppContext'
@@ -9,7 +9,14 @@ import type { CardConfig } from './types'
 export function Card({ config, children }: { config: CardConfig; children?: React.ReactNode }) {
   const tokens = useTokens()
   const { dispatch } = useScreenContext()
-  const styles = makeStyles(tokens, config)
+  const shadow = config.shadow ?? 'md'
+  const padding = config.padding ?? 4
+  const radius = config.radius ?? 'lg'
+  const backgroundColor = config.backgroundColor
+  const styles = useMemo(
+    () => makeStyles(tokens, shadow, padding, radius, backgroundColor),
+    [tokens, shadow, padding, radius, backgroundColor],
+  )
 
   const containerStyle = [styles.card]
 
@@ -18,7 +25,7 @@ export function Card({ config, children }: { config: CardConfig; children?: Reac
       <ComponentWrapper id={config.id} testID={config.testID}>
         <TouchableOpacity
           style={containerStyle}
-          onPress={() => dispatch(config.onPress!)}
+          onPress={() => void dispatch(config.onPress!)}
           accessibilityRole="button"
           accessibilityLabel="Card"
           activeOpacity={0.7}
@@ -36,18 +43,23 @@ export function Card({ config, children }: { config: CardConfig; children?: Reac
   )
 }
 
-function makeStyles(tokens: DesignTokens, config: CardConfig) {
+function makeStyles(
+  tokens: DesignTokens,
+  shadow: NonNullable<CardConfig['shadow']>,
+  padding: number,
+  radius: NonNullable<CardConfig['radius']>,
+  backgroundColor?: string,
+) {
   const spacing = tokens.spacing
-  const shadow = tokens.shadows[config.shadow ?? 'md']
-  const paddingValue =
-    spacing[(config.padding ?? 4) as keyof typeof spacing] ?? (config.padding as number)
+  const shadowVal = tokens.shadows[shadow]
+  const paddingValue = spacing[padding as keyof typeof spacing] ?? padding
 
   return StyleSheet.create({
     card: {
-      backgroundColor: config.backgroundColor ?? tokens.colors.surface,
-      borderRadius: tokens.radius[config.radius ?? 'lg'],
+      backgroundColor: backgroundColor ?? tokens.colors.surface,
+      borderRadius: tokens.radius[radius],
       padding: paddingValue,
-      ...shadow,
+      ...shadowVal,
     },
   })
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, type ReactNode } from 'react'
+import React, { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import {
   Animated,
   Dimensions,
@@ -135,7 +135,7 @@ export function Modal({ config, children }: ModalProps) {
 
   const size = config.size ?? 'md'
   const showCloseButton = config.showCloseButton ?? true
-  const styles = makeStyles(tokens, size)
+  const styles = useMemo(() => makeStyles(tokens, size), [tokens, size])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>

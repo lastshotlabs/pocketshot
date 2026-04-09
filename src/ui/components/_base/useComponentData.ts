@@ -56,7 +56,7 @@ export function useComponentData<T>(spec: DataSpec | undefined): {
     }
   }
 
-  const queryKey = ['componentData', method, path, body]
+  const queryKey = ['componentData', method, path, body !== undefined ? JSON.stringify(body) : null]
 
   const result = useQuery<T | null>({
     queryKey,

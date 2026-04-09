@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   Modal,
@@ -128,14 +128,25 @@ export function ActionSheet({ config: _ }: { config: ActionSheetConfig }) {
   }
 
   function handleOption(action: ActionSheetPayload['options'][number]['action']) {
-    dismiss()
-    // Brief delay so dismiss animation completes before any navigation
-    setTimeout(() => {
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: 300,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setValue('__actionSheet', null)
+      setActiveSheet(null)
       void dispatch(action)
-    }, 260)
+    })
   }
 
-  const styles = makeStyles(tokens)
+  const styles = useMemo(() => makeStyles(tokens), [tokens])
 
   return (
     <Modal
@@ -161,7 +172,7 @@ export function ActionSheet({ config: _ }: { config: ActionSheetConfig }) {
 
               {activeSheet?.options.map((option, index) => (
                 <TouchableOpacity
-                  key={index}
+                  key={option.label}
                   style={styles.option}
                   onPress={() => handleOption(option.action)}
                   accessibilityRole="button"

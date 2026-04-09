@@ -40,6 +40,10 @@ export interface ApiAction {
   body?: Record<string, unknown>
   /** If set, store the response under this key in ScreenContext. */
   resultKey?: string
+  /** Action to dispatch on success. */
+  onSuccess?: Action
+  /** Action to dispatch on error. Error message stored as `__apiError` in ScreenContext. */
+  onError?: Action
 }
 
 export interface OpenBottomSheetAction {

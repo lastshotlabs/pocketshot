@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useScreenContext } from '../context/ScreenContext'
 import { resolveFromRef } from '../components/_base/fromRef'
 import type { AutoFormConfig, AutoFormField } from '../components/forms/auto-form/types'
@@ -45,14 +45,14 @@ export function useAutoForm(config: AutoFormConfig): UseAutoFormReturn {
     return initial
   })
 
-  function updateField(id: string, value: unknown) {
+  const updateField = useCallback((id: string, value: unknown) => {
     setFormState((prev) => ({ ...prev, [id]: value }))
-  }
+  }, [])
 
-  async function handleSubmit() {
+  const handleSubmit = useCallback(async () => {
     setValue(config.onSubmitKey ?? '__formData', formState)
     await dispatch(config.onSubmit)
-  }
+  }, [config.onSubmitKey, config.onSubmit, formState, setValue, dispatch])
 
   return { formState, updateField, handleSubmit, validationErrors }
 }

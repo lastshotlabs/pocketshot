@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   FlatList,
@@ -120,7 +120,7 @@ export function DataList({ config }: { config: DataListConfig }) {
   const tokens = useTokens()
   const { dispatch, setValue } = useScreenContext()
   const { data, isLoading, error } = useComponentData<unknown[]>(config.data)
-  const styles = makeStyles(tokens)
+  const styles = useMemo(() => makeStyles(tokens), [tokens])
   const [refreshing, setRefreshing] = useState(false)
 
   const handleRefresh = useCallback(async () => {

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "pocketshot": "./dist/cli.js"
+    "pocketshot": "./dist/cli.cjs"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -80,6 +80,9 @@
       "optional": true
     },
     "expo-sqlite": {
+      "optional": true
+    },
+    "expo-secure-store": {
       "optional": true
     },
     "react-native-sse": {

@@ -32,13 +32,17 @@ interface GorhomSheetRef {
   close(): void
 }
 
+let _gorhomCache: GorhomModule | null | undefined
+
 function tryGorhom(): GorhomModule | null {
+  if (_gorhomCache !== undefined) return _gorhomCache
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('@gorhom/bottom-sheet') as GorhomModule
+    _gorhomCache = require('@gorhom/bottom-sheet') as GorhomModule
   } catch {
-    return null
+    _gorhomCache = null
   }
+  return _gorhomCache
 }
 
 // ── Custom bottom sheet (Animated + PanResponder fallback) ─────────────────────

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, TextInput as RNTextInput, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useTokens } from '../../../context/AppContext'
@@ -26,21 +26,24 @@ export function TextInput({ config }: { config: TextInputConfig }) {
   }, [resolvedValue])
 
   const hasError = Boolean(resolvedError)
-  const styles = makeStyles(tokens, focused, hasError)
+  const styles = useMemo(() => makeStyles(tokens, focused, hasError), [tokens, focused, hasError])
 
-  function handleChange(text: string) {
-    setLocalValue(text)
-    setValue(config.id, text)
-    if (config.onChangeAction) {
-      void dispatch(config.onChangeAction)
-    }
-  }
+  const handleChange = useCallback(
+    (text: string) => {
+      setLocalValue(text)
+      setValue(config.id, text)
+      if (config.onChangeAction) {
+        void dispatch(config.onChangeAction)
+      }
+    },
+    [config.id, config.onChangeAction, setValue, dispatch],
+  )
 
-  function handleSubmit() {
+  const handleSubmit = useCallback(() => {
     if (config.onSubmitAction) {
       void dispatch(config.onSubmitAction)
     }
-  }
+  }, [config.onSubmitAction, dispatch])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
@@ -67,7 +70,6 @@ export function TextInput({ config }: { config: TextInputConfig }) {
           numberOfLines={config.multiline ? (config.numberOfLines ?? 4) : undefined}
           maxLength={config.maxLength}
           accessibilityLabel={config.label ?? config.placeholder ?? config.id}
-          accessibilityRole="none"
           testID={config.testID ? `${config.testID}-input` : `${config.id}-input`}
         />
         {hasError && resolvedError ? (

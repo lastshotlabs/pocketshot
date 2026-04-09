@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -44,7 +44,7 @@ export function RegisterForm({ config }: { config: RegisterFormConfig }) {
   const [focusedField, setFocusedField] = useState<FieldName | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
-  const styles = makeStyles(tokens)
+  const styles = useMemo(() => makeStyles(tokens), [tokens])
 
   function handleFieldChange(field: FieldName, text: string) {
     setFieldValues((prev) => ({ ...prev, [field]: text }))
@@ -104,7 +104,7 @@ export function RegisterForm({ config }: { config: RegisterFormConfig }) {
                   placeholderTextColor={tokens.colors.inputPlaceholder}
                   secureTextEntry={isSecure}
                   keyboardType={isEmail ? 'email-address' : 'default'}
-                  autoCapitalize={isEmail || isSecure ? 'none' : 'none'}
+                  autoCapitalize={isEmail || isSecure ? 'none' : 'words'}
                   autoComplete={
                     isEmail
                       ? 'email'
@@ -116,7 +116,6 @@ export function RegisterForm({ config }: { config: RegisterFormConfig }) {
                   }
                   returnKeyType="next"
                   accessibilityLabel={FIELD_LABELS[field]}
-                  accessibilityRole="none"
                   testID={config.testID ? `${config.testID}-${field}` : `register-${field}`}
                 />
                 {showError && (

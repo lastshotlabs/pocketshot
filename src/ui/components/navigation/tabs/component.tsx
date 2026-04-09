@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useEffect, useMemo, useState } from 'react'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
@@ -95,49 +95,45 @@ export function Tabs({ config }: { config: TabsConfig }) {
     }
   }
 
-  const styles = makeStyles(tokens, config.variant)
+  const styles = useMemo(() => makeStyles(tokens, config.variant), [tokens, config.variant])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled={false}>
-        <View style={styles.container}>
-          {config.tabs.map((tab) => {
-            const isActive = tab.id === activeTab
-            const activeStyle =
-              config.variant === 'default'
-                ? styles.activeTab_default
-                : config.variant === 'pills'
-                  ? styles.activeTab_pills
-                  : styles.activeTab_underline
+      <View style={styles.container}>
+        {config.tabs.map((tab) => {
+          const isActive = tab.id === activeTab
+          const activeStyle =
+            config.variant === 'default'
+              ? styles.activeTab_default
+              : config.variant === 'pills'
+                ? styles.activeTab_pills
+                : styles.activeTab_underline
 
-            return (
-              <TouchableOpacity
-                key={tab.id}
-                style={[styles.tab, isActive && activeStyle]}
-                onPress={() => handleTabPress(tab.id)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-                accessibilityLabel={tab.label}
-                testID={config.testID ? `${config.testID}-${tab.id}` : `${config.id}-${tab.id}`}
-              >
-                {tab.icon != null && (
-                  <Text
-                    style={[styles.tabIcon, isActive ? styles.activeLabel : styles.inactiveLabel]}
-                    accessibilityElementsHidden
-                  >
-                    {tab.icon}
-                  </Text>
-                )}
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              style={[styles.tab, isActive && activeStyle]}
+              onPress={() => handleTabPress(tab.id)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={tab.label}
+              testID={config.testID ? `${config.testID}-${tab.id}` : `${config.id}-${tab.id}`}
+            >
+              {tab.icon != null && (
                 <Text
-                  style={[styles.tabLabel, isActive ? styles.activeLabel : styles.inactiveLabel]}
+                  style={[styles.tabIcon, isActive ? styles.activeLabel : styles.inactiveLabel]}
+                  accessibilityElementsHidden
                 >
-                  {tab.label}
+                  {tab.icon}
                 </Text>
-              </TouchableOpacity>
-            )
-          })}
-        </View>
-      </ScrollView>
+              )}
+              <Text style={[styles.tabLabel, isActive ? styles.activeLabel : styles.inactiveLabel]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          )
+        })}
+      </View>
     </ComponentWrapper>
   )
 }

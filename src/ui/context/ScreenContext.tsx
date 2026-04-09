@@ -42,10 +42,10 @@ export function ScreenContextProvider({
   }, [])
 
   const getValue = useCallback(
-    (key: string) => {
-      return values[key]
-    },
-    [values],
+    (key: string) => valuesRef.current[key],
+    // No deps — always reads latest via ref, no need to re-create the function
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 
   // Stable ref so dispatch always sees latest values without re-creating the function
@@ -70,7 +70,7 @@ export function ScreenContextProvider({
       },
     }
     return ctx
-  }, [values, getValue, setValue, api, queryClient, router])
+  }, [values, setValue, api, queryClient, router]) // getValue removed - it's stable
 
   return <ScreenContext.Provider value={contextValue}>{children}</ScreenContext.Provider>
 }

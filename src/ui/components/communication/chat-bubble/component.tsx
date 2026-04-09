@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { View, Text, ActivityIndicator, Image, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useTokens } from '../../../context/AppContext'
@@ -58,7 +58,7 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
       : undefined
   const isOwn = config.isOwn != null ? (resolveFromRef(config.isOwn, values) as boolean) : false
 
-  const dynamicStyles = makeDynamicStyles(tokens, isOwn)
+  const dynamicStyles = useMemo(() => makeDynamicStyles(tokens, isOwn), [tokens, isOwn])
 
   const bubbleContent = (
     <View style={dynamicStyles.bubble}>

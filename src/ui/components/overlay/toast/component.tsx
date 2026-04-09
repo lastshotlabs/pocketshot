@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, StyleSheet, Text, View } from 'react-native'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
@@ -33,7 +33,9 @@ function makeStyles(
       position: 'absolute',
       left: tokens.spacing[4],
       right: tokens.spacing[4],
-      ...(position === 'top' ? { top: 60 } : { bottom: 80 }),
+      ...(position === 'top'
+        ? { top: tokens.spacing[16] ?? 64 }
+        : { bottom: tokens.spacing[20] ?? 80 }),
       zIndex: 9999,
     },
     toast: {
@@ -127,9 +129,14 @@ export function Toast({ config }: { config: ToastConfig }) {
     }
   }, [toastPayload, config.position, translateY, opacity])
 
-  if (!activeToast) return null
+  const styles = useMemo(
+    () => (activeToast ? makeStyles(tokens, config.position, activeToast) : null),
+    // activeToast changes identity only when a new toast fires — safe to include
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tokens, config.position, activeToast?.variant, activeToast?.id],
+  )
 
-  const styles = makeStyles(tokens, config.position, activeToast)
+  if (!activeToast || !styles) return null
 
   return (
     <View style={styles.container} pointerEvents="none">

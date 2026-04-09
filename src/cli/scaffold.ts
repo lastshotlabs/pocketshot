@@ -118,17 +118,23 @@ export async function scaffold(config: PocketshotScaffoldConfig): Promise<void> 
   // Step: install dependencies
   const s = spinner()
   s.start('Installing dependencies')
+  let installOk = false
   try {
     exec('bun install', config.dir, true)
+    installOk = true
   } catch {
     try {
       exec('npm install', config.dir, true)
+      installOk = true
     } catch (err) {
-      s.stop('Dependency install failed')
-      log.warn(`Install failed: ${err instanceof Error ? err.message : String(err)}`)
+      s.stop('Dependency install failed — run install manually')
+      log.warn(
+        `Install failed: ${err instanceof Error ? err.message : String(err)}\n` +
+          `  cd ${config.dir} && npm install`,
+      )
     }
   }
-  s.stop('Dependencies installed')
+  if (installOk) s.stop('Dependencies installed')
 
   // Step: git init
   if (config.gitInit) {

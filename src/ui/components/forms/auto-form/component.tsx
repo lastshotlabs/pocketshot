@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -37,6 +37,7 @@ interface FieldProps {
 function TextField({ field, value, onChange, tokens, errorText, formId }: FieldProps) {
   const [focused, setFocused] = useState(false)
   const hasError = Boolean(errorText)
+  const fStyles = useMemo(() => fieldStyles(tokens), [tokens])
   const borderColor = hasError
     ? tokens.colors.error
     : focused
@@ -51,8 +52,8 @@ function TextField({ field, value, onChange, tokens, errorText, formId }: FieldP
         : ('default' as const)
 
   return (
-    <View style={fieldStyles(tokens).container}>
-      <Text style={fieldStyles(tokens).label}>
+    <View style={fStyles.container}>
+      <Text style={fStyles.label}>
         {field.label}
         {field.required && <Text style={{ color: tokens.colors.error }}> *</Text>}
       </Text>
@@ -66,13 +67,12 @@ function TextField({ field, value, onChange, tokens, errorText, formId }: FieldP
         secureTextEntry={field.type === 'password'}
         keyboardType={keyboardType}
         autoCapitalize={field.type === 'email' ? 'none' : 'sentences'}
-        style={[fieldStyles(tokens).input, { borderColor }]}
+        style={[fStyles.input, { borderColor }]}
         accessibilityLabel={field.label}
-        accessibilityRole="none"
         testID={`${formId}-field-${field.id}`}
       />
       {hasError && errorText ? (
-        <Text style={fieldStyles(tokens).errorText} accessibilityLiveRegion="polite">
+        <Text style={fStyles.errorText} accessibilityLiveRegion="polite">
           {errorText}
         </Text>
       ) : null}
@@ -82,21 +82,22 @@ function TextField({ field, value, onChange, tokens, errorText, formId }: FieldP
 
 function SelectField({ field, value, onChange, tokens, errorText, formId }: FieldProps) {
   const [modalVisible, setModalVisible] = useState(false)
+  const fStyles = useMemo(() => fieldStyles(tokens), [tokens])
   const options: FieldOption[] = field.options ?? []
   const selected = options.find((o) => o.value === value)
   const hasError = Boolean(errorText)
   const placeholder = field.placeholder ?? 'Select an option'
 
   return (
-    <View style={fieldStyles(tokens).container}>
-      <Text style={fieldStyles(tokens).label}>
+    <View style={fStyles.container}>
+      <Text style={fStyles.label}>
         {field.label}
         {field.required && <Text style={{ color: tokens.colors.error }}> *</Text>}
       </Text>
       <TouchableOpacity
         style={[
-          fieldStyles(tokens).input,
-          fieldStyles(tokens).selectTrigger,
+          fStyles.input,
+          fStyles.selectTrigger,
           hasError && { borderColor: tokens.colors.error },
         ]}
         onPress={() => setModalVisible(true)}
@@ -106,10 +107,7 @@ function SelectField({ field, value, onChange, tokens, errorText, formId }: Fiel
         testID={`${formId}-field-${field.id}`}
       >
         <Text
-          style={[
-            fieldStyles(tokens).inputText,
-            !selected && { color: tokens.colors.inputPlaceholder },
-          ]}
+          style={[fStyles.inputText, !selected && { color: tokens.colors.inputPlaceholder }]}
           numberOfLines={1}
         >
           {selected?.label ?? placeholder}
@@ -119,7 +117,7 @@ function SelectField({ field, value, onChange, tokens, errorText, formId }: Fiel
         </Text>
       </TouchableOpacity>
       {hasError && errorText ? (
-        <Text style={fieldStyles(tokens).errorText} accessibilityLiveRegion="polite">
+        <Text style={fStyles.errorText} accessibilityLiveRegion="polite">
           {errorText}
         </Text>
       ) : null}
@@ -222,9 +220,10 @@ function SelectField({ field, value, onChange, tokens, errorText, formId }: Fiel
 
 function CheckboxField({ field, value, onChange, tokens, errorText, formId }: FieldProps) {
   const checked = (value as boolean | undefined) ?? false
+  const fStyles = useMemo(() => fieldStyles(tokens), [tokens])
 
   return (
-    <View style={fieldStyles(tokens).container}>
+    <View style={fStyles.container}>
       <TouchableOpacity
         style={{ flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[3] }}
         onPress={() => onChange(!checked)}
@@ -267,7 +266,7 @@ function CheckboxField({ field, value, onChange, tokens, errorText, formId }: Fi
         </Text>
       </TouchableOpacity>
       {errorText ? (
-        <Text style={fieldStyles(tokens).errorText} accessibilityLiveRegion="polite">
+        <Text style={fStyles.errorText} accessibilityLiveRegion="polite">
           {errorText}
         </Text>
       ) : null}
@@ -277,11 +276,12 @@ function CheckboxField({ field, value, onChange, tokens, errorText, formId }: Fi
 
 function SwitchField({ field, value, onChange, tokens, errorText, formId }: FieldProps) {
   const isOn = (value as boolean | undefined) ?? false
+  const fStyles = useMemo(() => fieldStyles(tokens), [tokens])
 
   return (
-    <View style={fieldStyles(tokens).container}>
+    <View style={fStyles.container}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={[fieldStyles(tokens).label, { flex: 1, marginRight: tokens.spacing[3] }]}>
+        <Text style={[fStyles.label, { flex: 1, marginRight: tokens.spacing[3] }]}>
           {field.label}
           {field.required && <Text style={{ color: tokens.colors.error }}> *</Text>}
         </Text>
@@ -298,7 +298,7 @@ function SwitchField({ field, value, onChange, tokens, errorText, formId }: Fiel
         />
       </View>
       {errorText ? (
-        <Text style={fieldStyles(tokens).errorText} accessibilityLiveRegion="polite">
+        <Text style={fStyles.errorText} accessibilityLiveRegion="polite">
           {errorText}
         </Text>
       ) : null}
@@ -394,16 +394,16 @@ export function AutoForm({ config }: { config: AutoFormConfig }) {
     return initial
   })
 
-  function updateField(id: string, value: unknown) {
+  const updateField = useCallback((id: string, value: unknown) => {
     setFormState((prev) => ({ ...prev, [id]: value }))
-  }
+  }, [])
 
-  async function handleSubmit() {
+  const handleSubmit = useCallback(async () => {
     setValue(config.onSubmitKey ?? '__formData', formState)
     await dispatch(config.onSubmit)
-  }
+  }, [config.onSubmitKey, config.onSubmit, formState, setValue, dispatch])
 
-  const styles = makeStyles(tokens)
+  const styles = useMemo(() => makeStyles(tokens), [tokens])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
