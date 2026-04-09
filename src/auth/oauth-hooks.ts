@@ -95,8 +95,7 @@ export function createOAuthHooks(opts: {
   function useLinkAccount() {
     const queryClient = useQueryClient()
     return useMutation<void, Error, { provider: string; code: string }>({
-      mutationFn: ({ provider, code }) =>
-        api.post<void>(contract.oauthLinkUrl(provider), { code }),
+      mutationFn: ({ provider, code }) => api.post<void>(contract.oauthLinkUrl(provider), { code }),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
       },

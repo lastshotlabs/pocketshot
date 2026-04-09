@@ -7,11 +7,7 @@ import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { StepperConfig, StepItem, StepState } from './types'
 
-function getStepState(
-  step: StepItem,
-  index: number,
-  activeIndex: number,
-): StepState {
+function getStepState(step: StepItem, index: number, activeIndex: number): StepState {
   if (index < activeIndex) return 'completed'
   if (index === activeIndex) return 'active'
   return 'upcoming'
@@ -133,7 +129,15 @@ interface StepItemProps {
   onPress?: () => void
 }
 
-function HorizontalStepItem({ step, index, state, isLast, tokens, styles, onPress }: StepItemProps) {
+function HorizontalStepItem({
+  step,
+  index,
+  state,
+  isLast,
+  tokens,
+  styles,
+  onPress,
+}: StepItemProps) {
   const circleStyle = [
     styles.circle,
     state === 'completed' && styles.circleCompleted,
@@ -160,10 +164,7 @@ function HorizontalStepItem({ step, index, state, isLast, tokens, styles, onPres
     <View style={styles.horizontalStepRow}>
       <View style={circleStyle}>{circleContent}</View>
       <Text
-        style={[
-          styles.stepLabel,
-          state === 'active' && styles.stepLabelActive,
-        ]}
+        style={[styles.stepLabel, state === 'active' && styles.stepLabelActive]}
         numberOfLines={1}
       >
         {step.label}
@@ -235,12 +236,7 @@ function VerticalStepItem({ step, index, state, isLast, tokens, styles, onPress 
         ) : null}
       </View>
       <View style={styles.verticalContent}>
-        <Text
-          style={[
-            styles.stepLabel,
-            state === 'active' && styles.stepLabelActive,
-          ]}
-        >
+        <Text style={[styles.stepLabel, state === 'active' && styles.stepLabelActive]}>
           {step.label}
         </Text>
         {step.description != null ? (

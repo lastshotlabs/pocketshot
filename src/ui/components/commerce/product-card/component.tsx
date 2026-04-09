@@ -18,26 +18,55 @@ function formatPrice(amount: number, currency: string): string {
   }
 }
 
-function RatingStars({ rating, count, tokens }: { rating: number; count?: number; tokens: DesignTokens }) {
+function RatingStars({
+  rating,
+  count,
+  tokens,
+}: {
+  rating: number
+  count?: number
+  tokens: DesignTokens
+}) {
   const styles = StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     star: { fontSize: 13, color: tokens.colors.warning },
     emptyStar: { fontSize: 13, color: tokens.colors.border },
-    count: { fontSize: tokens.typography.fontSizeXs, color: tokens.colors.textMuted, marginLeft: 4 },
+    count: {
+      fontSize: tokens.typography.fontSizeXs,
+      color: tokens.colors.textMuted,
+      marginLeft: 4,
+    },
   })
 
   const full = Math.floor(rating)
   const empty = 5 - full
 
   return (
-    <View style={styles.row} accessibilityLabel={`Rated ${rating} out of 5${count != null ? `, ${count} reviews` : ''}`}>
+    <View
+      style={styles.row}
+      accessibilityLabel={`Rated ${rating} out of 5${count != null ? `, ${count} reviews` : ''}`}
+    >
       {Array.from({ length: full }).map((_, i) => (
-        <Text key={`full-${i}`} style={styles.star} accessibilityElementsHidden importantForAccessibility="no">★</Text>
+        <Text
+          key={`full-${i}`}
+          style={styles.star}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
+          ★
+        </Text>
       ))}
       {Array.from({ length: empty }).map((_, i) => (
-        <Text key={`empty-${i}`} style={styles.emptyStar} accessibilityElementsHidden importantForAccessibility="no">★</Text>
+        <Text
+          key={`empty-${i}`}
+          style={styles.emptyStar}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
+          ★
+        </Text>
       ))}
-      {count != null ? <Text style={styles.count}>({count})</Text> : null}
+      {count != null ? <Text style={styles.count}>{`(${count})`}</Text> : null}
     </View>
   )
 }
@@ -50,35 +79,40 @@ export function ProductCard({ config }: { config: ProductCardConfig }) {
     ? String(resolveFromRef(config.title, values) ?? '')
     : config.title
 
-  const resolvedDescription = config.description != null
-    ? isFromRef(config.description)
-      ? String(resolveFromRef(config.description, values) ?? '')
-      : config.description
-    : null
+  const resolvedDescription =
+    config.description != null
+      ? isFromRef(config.description)
+        ? String(resolveFromRef(config.description, values) ?? '')
+        : config.description
+      : null
 
-  const resolvedImage = config.image != null
-    ? isFromRef(config.image)
-      ? String(resolveFromRef(config.image, values) ?? '')
-      : config.image
-    : null
+  const resolvedImage =
+    config.image != null
+      ? isFromRef(config.image)
+        ? String(resolveFromRef(config.image, values) ?? '')
+        : config.image
+      : null
 
-  const resolvedPrice = config.price != null
-    ? isFromRef(config.price)
-      ? Number(resolveFromRef(config.price, values) ?? 0)
-      : config.price
-    : null
+  const resolvedPrice =
+    config.price != null
+      ? isFromRef(config.price)
+        ? Number(resolveFromRef(config.price, values) ?? 0)
+        : config.price
+      : null
 
-  const resolvedRating = config.rating != null
-    ? isFromRef(config.rating)
-      ? Number(resolveFromRef(config.rating, values) ?? 0)
-      : config.rating
-    : null
+  const resolvedRating =
+    config.rating != null
+      ? isFromRef(config.rating)
+        ? Number(resolveFromRef(config.rating, values) ?? 0)
+        : config.rating
+      : null
 
-  const resolvedReviewCount = config.reviewCount != null
-    ? isFromRef(config.reviewCount)
-      ? Number(resolveFromRef(config.reviewCount, values) ?? 0)
-      : config.reviewCount
-    : null
+  const resolvedReviewCount =
+    config.reviewCount != null
+      ? isFromRef(config.reviewCount)
+        ? Number(resolveFromRef(config.reviewCount, values) ?? 0)
+        : config.reviewCount
+      : null
 
   const handlePress = useCallback(async () => {
     if (!config.onPress) return
@@ -90,6 +124,7 @@ export function ProductCard({ config }: { config: ProductCardConfig }) {
     await dispatch(config.onAddToCart)
   }, [config.onAddToCart, dispatch])
 
+  const currency = config.currency ?? 'USD'
   const styles = makeStyles(tokens)
 
   const cardContent = (
@@ -123,12 +158,16 @@ export function ProductCard({ config }: { config: ProductCardConfig }) {
         ) : null}
         {resolvedRating != null ? (
           <View style={styles.ratingRow}>
-            <RatingStars rating={resolvedRating} count={resolvedReviewCount ?? undefined} tokens={tokens} />
+            <RatingStars
+              rating={resolvedRating}
+              count={resolvedReviewCount ?? undefined}
+              tokens={tokens}
+            />
           </View>
         ) : null}
         <View style={styles.priceRow}>
           {resolvedPrice != null ? (
-            <Text style={styles.price}>{formatPrice(resolvedPrice, config.currency)}</Text>
+            <Text style={styles.price}>{formatPrice(resolvedPrice, currency)}</Text>
           ) : null}
           {config.onAddToCart != null ? (
             <TouchableOpacity

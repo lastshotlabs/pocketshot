@@ -2,14 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }))
 vi.mock('expo-notifications', () => ({
-  getPermissionsAsync: vi.fn().mockResolvedValue({ status: 'undetermined', canAskAgain: true, granted: false }),
-  requestPermissionsAsync: vi.fn().mockResolvedValue({ status: 'granted', canAskAgain: true, granted: true }),
+  getPermissionsAsync: vi
+    .fn()
+    .mockResolvedValue({ status: 'undetermined', canAskAgain: true, granted: false }),
+  requestPermissionsAsync: vi
+    .fn()
+    .mockResolvedValue({ status: 'granted', canAskAgain: true, granted: true }),
   getExpoPushTokenAsync: vi.fn().mockResolvedValue({ data: 'ExponentPushToken[test-token]' }),
   addNotificationReceivedListener: vi.fn().mockReturnValue({ remove: vi.fn() }),
   addNotificationResponseReceivedListener: vi.fn().mockReturnValue({ remove: vi.fn() }),
   setNotificationHandler: vi.fn(),
 }))
-vi.mock('expo-constants', () => ({ default: { expoConfig: { extra: { eas: { projectId: 'test-project' } } } } }))
+vi.mock('expo-constants', () => ({
+  default: { expoConfig: { extra: { eas: { projectId: 'test-project' } } } },
+}))
 vi.mock('@tanstack/react-query', () => ({
   useQuery: vi.fn(),
   useMutation: vi.fn((opts: any) => ({ _opts: opts })),
@@ -31,7 +37,14 @@ import { useMutation } from '@tanstack/react-query'
 const mockUseMutation = useMutation as ReturnType<typeof vi.fn>
 
 function makeApi(): ApiClient {
-  return { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn(), fetch: vi.fn() } as unknown as ApiClient
+  return {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    fetch: vi.fn(),
+  } as unknown as ApiClient
 }
 
 describe('createPushHooks factory shape', () => {
@@ -59,8 +72,12 @@ describe('usePushRegistration', () => {
     // usePushRegistration wraps useMutation and returns its own shape,
     // so we capture the mutationFn from the useMutation call args directly.
     mockUseMutation.mockImplementation((opts: any) => ({
-      mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false,
-      isSuccess: false, error: null, data: undefined,
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(),
+      isPending: false,
+      isSuccess: false,
+      error: null,
+      data: undefined,
     }))
     const { usePushRegistration } = createPushHooks(api)
     usePushRegistration()

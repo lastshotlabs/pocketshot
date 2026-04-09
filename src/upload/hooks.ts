@@ -197,10 +197,11 @@ export function createUploadHooks(
           // Build multipart FormData.
           // React Native's FormData accepts { uri, type, name } for file blobs.
           const formData = new FormData()
-          formData.append(
-            'file',
-            { uri: file.uri, type: file.mimeType, name: file.name } as unknown as Blob,
-          )
+          formData.append('file', {
+            uri: file.uri,
+            type: file.mimeType,
+            name: file.name,
+          } as unknown as Blob)
 
           if (mergedOpts.fields) {
             for (const [key, value] of Object.entries(mergedOpts.fields)) {

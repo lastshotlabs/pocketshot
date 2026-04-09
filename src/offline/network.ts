@@ -7,8 +7,18 @@ function tryLoadNetInfo() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('@react-native-community/netinfo') as {
-      fetch(): Promise<{ isConnected: boolean | null; isInternetReachable: boolean | null; type: string }>
-      addEventListener(cb: (state: { isConnected: boolean | null; isInternetReachable: boolean | null; type: string }) => void): () => void
+      fetch(): Promise<{
+        isConnected: boolean | null
+        isInternetReachable: boolean | null
+        type: string
+      }>
+      addEventListener(
+        cb: (state: {
+          isConnected: boolean | null
+          isInternetReachable: boolean | null
+          type: string
+        }) => void,
+      ): () => void
     }
   } catch {
     return null

@@ -6,13 +6,7 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import type { DesignTokens } from '../../../tokens/types'
 import type { CardConfig } from './types'
 
-export function Card({
-  config,
-  children,
-}: {
-  config: CardConfig
-  children?: React.ReactNode
-}) {
+export function Card({ config, children }: { config: CardConfig; children?: React.ReactNode }) {
   const tokens = useTokens()
   const { dispatch } = useScreenContext()
   const styles = makeStyles(tokens, config)
@@ -44,14 +38,14 @@ export function Card({
 
 function makeStyles(tokens: DesignTokens, config: CardConfig) {
   const spacing = tokens.spacing
-  const shadow = tokens.shadows[config.shadow]
+  const shadow = tokens.shadows[config.shadow ?? 'md']
   const paddingValue =
-    spacing[config.padding as keyof typeof spacing] ?? (config.padding as number)
+    spacing[(config.padding ?? 4) as keyof typeof spacing] ?? (config.padding as number)
 
   return StyleSheet.create({
     card: {
       backgroundColor: config.backgroundColor ?? tokens.colors.surface,
-      borderRadius: tokens.radius[config.radius],
+      borderRadius: tokens.radius[config.radius ?? 'lg'],
       padding: paddingValue,
       ...shadow,
     },

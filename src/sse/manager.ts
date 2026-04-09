@@ -44,7 +44,10 @@ export class SseManager {
   }
 
   async connect(): Promise<void> {
-    let EventSource: new (url: string, opts?: { headers?: Record<string, string> }) => {
+    let EventSource: new (
+      url: string,
+      opts?: { headers?: Record<string, string> },
+    ) => {
       addEventListener(type: string, cb: (e: { data: string; type: string }) => void): void
       close(): void
       readyState: number
@@ -67,14 +70,20 @@ export class SseManager {
 
     const source = new EventSource(u.toString())
 
-    source.addEventListener('open' as never, (() => {
-      this.reconnectDelay = 1000 // reset backoff on successful connect
-    }) as never)
+    source.addEventListener(
+      'open' as never,
+      (() => {
+        this.reconnectDelay = 1000 // reset backoff on successful connect
+      }) as never,
+    )
 
-    source.addEventListener('error' as never, (() => {
-      this.closeSource()
-      if (!this.stopped) this.scheduleReconnect()
-    }) as never)
+    source.addEventListener(
+      'error' as never,
+      (() => {
+        this.closeSource()
+        if (!this.stopped) this.scheduleReconnect()
+      }) as never,
+    )
 
     // Wildcard message handler — dispatch to typed listeners
     source.addEventListener('message', (e: { data: string; type: string }) => {

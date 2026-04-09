@@ -29,14 +29,19 @@ describe('RegisterFormSchema', () => {
   })
 
   it('rejects invalid field names', () => {
-    expect(RegisterFormSchema.safeParse({
-      onSubmit: action,
-      fields: ['email', 'phone'],
-    }).success).toBe(false)
+    expect(
+      RegisterFormSchema.safeParse({
+        onSubmit: action,
+        fields: ['email', 'phone'],
+      }).success,
+    ).toBe(false)
   })
 
   it('accepts loginAction', () => {
-    const result = RegisterFormSchema.parse({ onSubmit: action, loginAction: { type: 'navigate', path: '/login' } })
+    const result = RegisterFormSchema.parse({
+      onSubmit: action,
+      loginAction: { type: 'navigate', path: '/login' },
+    })
     expect(result.loginAction).toBeDefined()
   })
 

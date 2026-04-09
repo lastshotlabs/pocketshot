@@ -24,7 +24,14 @@ import type { ApiClient } from '../../src/api/client'
 const mockUseQuery = useQuery as ReturnType<typeof vi.fn>
 
 function makeApi(): ApiClient {
-  return { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn(), fetch: vi.fn() } as unknown as ApiClient
+  return {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    fetch: vi.fn(),
+  } as unknown as ApiClient
 }
 
 describe('getDeviceInfo', () => {
@@ -71,11 +78,13 @@ describe('useDeviceInfo', () => {
     mockUseQuery.mockReturnValue({ data: null, isLoading: false })
     const { useDeviceInfo } = createDeviceHooks(makeApi())
     useDeviceInfo()
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: ['device', 'info'],
-      staleTime: Infinity,
-      retry: false,
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['device', 'info'],
+        staleTime: Infinity,
+        retry: false,
+      }),
+    )
   })
 
   it('returns null deviceInfo when data is undefined', () => {

@@ -22,7 +22,11 @@ const VARIANT_ICON: Record<ToastPayload['variant'], string> = {
   info: 'ℹ',
 }
 
-function makeStyles(tokens: DesignTokens, position: ToastConfig['position'], payload: ToastPayload) {
+function makeStyles(
+  tokens: DesignTokens,
+  position: ToastConfig['position'],
+  payload: ToastPayload,
+) {
   const variantKey = VARIANT_COLORS[payload.variant]
   return StyleSheet.create({
     container: {

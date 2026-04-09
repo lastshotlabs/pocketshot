@@ -6,8 +6,4 @@ export {
   useBiometricGate,
 } from './hooks'
 
-export type {
-  BiometricAuthResult,
-  BiometricAvailability,
-  BiometricPromptOptions,
-} from './types'
+export type { BiometricAuthResult, BiometricAvailability, BiometricPromptOptions } from './types'

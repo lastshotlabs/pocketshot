@@ -54,44 +54,44 @@ export interface ColorTokens {
 
 /** Spacing scale in logical pixels */
 export interface SpacingTokens {
-  0: number   // 0
-  1: number   // 4
-  2: number   // 8
-  3: number   // 12
-  4: number   // 16
-  5: number   // 20
-  6: number   // 24
-  8: number   // 32
-  10: number  // 40
-  12: number  // 48
-  16: number  // 64
-  20: number  // 80
+  0: number // 0
+  1: number // 4
+  2: number // 8
+  3: number // 12
+  4: number // 16
+  5: number // 20
+  6: number // 24
+  8: number // 32
+  10: number // 40
+  12: number // 48
+  16: number // 64
+  20: number // 80
 }
 
 /** Border radius scale in logical pixels */
 export interface RadiusTokens {
-  none: number   // 0
-  sm: number     // 4
-  md: number     // 8
-  lg: number     // 12
-  xl: number     // 16
-  '2xl': number  // 24
-  full: number   // 9999
+  none: number // 0
+  sm: number // 4
+  md: number // 8
+  lg: number // 12
+  xl: number // 16
+  '2xl': number // 24
+  full: number // 9999
 }
 
 /** Typography scale */
 export interface TypographyTokens {
-  fontSizeXs: number    // 11
-  fontSizeSm: number    // 13
-  fontSizeMd: number    // 15
-  fontSizeLg: number    // 17
-  fontSizeXl: number    // 20
-  fontSize2xl: number   // 24
-  fontSize3xl: number   // 30
-  fontSize4xl: number   // 36
-  lineHeightTight: number    // 1.2
-  lineHeightNormal: number   // 1.5
-  lineHeightRelaxed: number  // 1.75
+  fontSizeXs: number // 11
+  fontSizeSm: number // 13
+  fontSizeMd: number // 15
+  fontSizeLg: number // 17
+  fontSizeXl: number // 20
+  fontSize2xl: number // 24
+  fontSize3xl: number // 30
+  fontSize4xl: number // 36
+  lineHeightTight: number // 1.2
+  lineHeightNormal: number // 1.5
+  lineHeightRelaxed: number // 1.75
   fontWeightRegular: '400'
   fontWeightMedium: '500'
   fontWeightSemibold: '600'
@@ -104,7 +104,7 @@ export interface ShadowToken {
   shadowOffset: { width: number; height: number }
   shadowOpacity: number
   shadowRadius: number
-  elevation: number  // Android
+  elevation: number // Android
 }
 
 export interface ShadowTokens {

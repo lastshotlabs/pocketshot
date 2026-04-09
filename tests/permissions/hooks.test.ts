@@ -20,7 +20,14 @@ import type { ApiClient } from '../../src/api/client'
 const mockUseQuery = useQuery as ReturnType<typeof vi.fn>
 
 function makeApi(): ApiClient {
-  return { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn(), fetch: vi.fn() } as unknown as ApiClient
+  return {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    fetch: vi.fn(),
+  } as unknown as ApiClient
 }
 
 describe('createPermissionHooks factory shape', () => {
@@ -40,9 +47,11 @@ describe('createPermissionHooks factory shape', () => {
     mockUseQuery.mockReturnValue({ data: null, isLoading: false })
     const hooks = createPermissionHooks(api)
     hooks.useAccessClaims()
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: ['auth', 'permissions'],
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['auth', 'permissions'],
+      }),
+    )
   })
 
   it('accepts a custom endpoint', () => {
@@ -50,7 +59,9 @@ describe('createPermissionHooks factory shape', () => {
     mockUseQuery.mockReturnValue({ data: null, isLoading: false })
     const hooks = createPermissionHooks(api, { endpoint: '/v2/permissions' })
     hooks.useAccessClaims()
-    const call = mockUseQuery.mock.calls[mockUseQuery.mock.calls.length - 1]![0] as { queryFn: () => unknown }
+    const call = mockUseQuery.mock.calls[mockUseQuery.mock.calls.length - 1]![0] as {
+      queryFn: () => unknown
+    }
     call.queryFn()
     expect(api.get).toHaveBeenCalledWith('/v2/permissions')
   })
@@ -104,7 +115,12 @@ describe('useHasPermission', () => {
 
   it('returns true when user has the permission', () => {
     mockUseQuery.mockReturnValue({
-      data: { roles: [], permissions: ['posts:create', 'posts:read'], orgRoles: {}, orgPermissions: {} },
+      data: {
+        roles: [],
+        permissions: ['posts:create', 'posts:read'],
+        orgRoles: {},
+        orgPermissions: {},
+      },
       isLoading: false,
     })
     const { useHasPermission } = createPermissionHooks(makeApi())

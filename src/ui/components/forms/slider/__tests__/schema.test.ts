@@ -36,7 +36,10 @@ describe('SliderSchema', () => {
   })
 
   it('accepts onChangeAction', () => {
-    const result = SliderSchema.parse({ id: 'x', onChangeAction: { type: 'set-value', key: 'vol', value: 0 } })
+    const result = SliderSchema.parse({
+      id: 'x',
+      onChangeAction: { type: 'set-value', key: 'vol', value: 0 },
+    })
     expect(result.onChangeAction).toBeDefined()
   })
 })

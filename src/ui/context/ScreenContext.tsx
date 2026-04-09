@@ -80,7 +80,8 @@ export function ScreenContextProvider({
  */
 export function useScreenContext(): ScreenContextValue {
   const ctx = useContext(ScreenContext)
-  if (!ctx) throw new Error('[pocketshot] useScreenContext must be used inside ScreenContextProvider')
+  if (!ctx)
+    throw new Error('[pocketshot] useScreenContext must be used inside ScreenContextProvider')
   return ctx
 }
 

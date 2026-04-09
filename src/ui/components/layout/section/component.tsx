@@ -32,10 +32,7 @@ export function Section({
   )
 }
 
-function titleFontSize(
-  size: SectionConfig['titleSize'],
-  tokens: DesignTokens,
-): number {
+function titleFontSize(size: SectionConfig['titleSize'], tokens: DesignTokens): number {
   switch (size) {
     case 'sm':
       return tokens.typography.fontSizeSm
@@ -49,8 +46,7 @@ function titleFontSize(
 
 function makeStyles(tokens: DesignTokens, config: SectionConfig) {
   const spacing = tokens.spacing
-  const paddingValue =
-    spacing[config.padding as keyof typeof spacing] ?? (config.padding as number)
+  const paddingValue = spacing[config.padding as keyof typeof spacing] ?? (config.padding as number)
 
   return StyleSheet.create({
     container: {

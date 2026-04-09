@@ -4,7 +4,6 @@ import type { ApiClient } from '../api/client'
 import type { SearchParams, SearchResponse, SearchResult, UseSearchOptions } from './types'
 
 export function createSearchHooks(api: ApiClient) {
-
   /**
    * Debounced search hook. Fires a query to the search endpoint after the user
    * stops typing for `debounce` ms. Returns typed results.
@@ -36,9 +35,7 @@ export function createSearchHooks(api: ApiClient) {
       return () => clearTimeout(timer)
     }, [query, debounce])
 
-    const isEnabled = searchEmpty
-      ? debouncedQuery.length >= 0
-      : debouncedQuery.length >= minLength
+    const isEnabled = searchEmpty ? debouncedQuery.length >= 0 : debouncedQuery.length >= minLength
 
     const searchParams: SearchParams = {
       ...params,
@@ -87,19 +84,21 @@ export function createSearchHooks(api: ApiClient) {
     params: SearchParams,
     opts: Omit<UseSearchOptions, 'debounce'> = {},
   ) {
-    const {
-      minLength = 2,
-      endpoint = '/search',
-      staleTime = 60_000,
-    } = opts
+    const { minLength = 2, endpoint = '/search', staleTime = 60_000 } = opts
 
     const pageSize = params.limit ?? 20
     const isEnabled = params.query.length >= minLength
 
-    const { data, isLoading, isFetching, fetchNextPage, hasNextPage } = useInfiniteQuery<SearchResponse<T>>({
+    const { data, isLoading, isFetching, fetchNextPage, hasNextPage } = useInfiniteQuery<
+      SearchResponse<T>
+    >({
       queryKey: ['search', 'infinite', endpoint, params],
       queryFn: ({ pageParam = 0 }) =>
-        api.post<SearchResponse<T>>(endpoint, { ...params, offset: pageParam as number, limit: pageSize }),
+        api.post<SearchResponse<T>>(endpoint, {
+          ...params,
+          offset: pageParam as number,
+          limit: pageSize,
+        }),
       getNextPageParam: (lastPage, allPages) => {
         const fetched = allPages.reduce((sum, p) => sum + p.results.length, 0)
         return fetched < lastPage.total ? fetched : undefined

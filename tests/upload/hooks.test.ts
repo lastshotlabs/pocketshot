@@ -14,7 +14,14 @@ import type { ApiClient } from '../../src/api/client'
 import type { TokenStorage } from '../../src/auth/storage'
 
 function makeApi(): ApiClient {
-  return { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn(), fetch: vi.fn() } as unknown as ApiClient
+  return {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    fetch: vi.fn(),
+  } as unknown as ApiClient
 }
 
 function makeStorage(): TokenStorage {
@@ -126,7 +133,9 @@ describe('useDirectUpload', () => {
     ;(globalThis as any).XMLHttpRequest = vi.fn(() => mockXhr)
     ;(globalThis as any).FormData = class {
       private _data: Record<string, unknown> = {}
-      append(key: string, value: unknown) { this._data[key] = value }
+      append(key: string, value: unknown) {
+        this._data[key] = value
+      }
     }
 
     const hooks = createUploadHooks(makeApi(), {

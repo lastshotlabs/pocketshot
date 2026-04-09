@@ -41,7 +41,9 @@ function requireNotifications() {
 function tryLoadConstants() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const C = require('expo-constants') as { default: { expoConfig?: { extra?: { eas?: { projectId?: string } } } } }
+    const C = require('expo-constants') as {
+      default: { expoConfig?: { extra?: { eas?: { projectId?: string } } } }
+    }
     return C.default
   } catch {
     return null
@@ -58,7 +60,10 @@ function normalizePermissionStatus(raw: string): PushPermissionStatus {
 
 function normalizeNotification(raw: unknown): PushNotification {
   const n = raw as {
-    request?: { identifier?: string; content?: { title?: string | null; body?: string | null; data?: Record<string, unknown> } }
+    request?: {
+      identifier?: string
+      content?: { title?: string | null; body?: string | null; data?: Record<string, unknown> }
+    }
     date?: number
   }
   return {
@@ -76,7 +81,6 @@ function normalizeNotification(raw: unknown): PushNotification {
  * Creates push notification hooks bound to the provided API client.
  */
 export function createPushHooks(api: ApiClient) {
-
   /**
    * Queries the current push notification permission status.
    * Does NOT request permission — use `usePushPermissionRequest` for that.
@@ -152,13 +156,19 @@ export function createPushHooks(api: ApiClient) {
   function useExpoPushToken(opts: { enabled?: boolean } = {}) {
     const enabled = opts.enabled ?? true
 
-    const { data: pushToken = null, isLoading, error } = useQuery<string | null>({
+    const {
+      data: pushToken = null,
+      isLoading,
+      error,
+    } = useQuery<string | null>({
       queryKey: ['push', 'token'],
       queryFn: async () => {
         const Notifications = requireNotifications()
         const Constants = tryLoadConstants()
         const projectId = Constants?.expoConfig?.extra?.eas?.projectId
-        const result = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)
+        const result = await Notifications.getExpoPushTokenAsync(
+          projectId ? { projectId } : undefined,
+        )
         return result.data
       },
       enabled,
@@ -217,10 +227,12 @@ export function createPushHooks(api: ApiClient) {
    *   onNotificationTapped: (e) => router.push(`/notifications/${e.notification.notificationId}`),
    * })
    */
-  function usePushNotifications(opts: {
-    onNotificationReceived?: (notification: PushNotification) => void
-    onNotificationTapped?: (event: NotificationTapEvent) => void
-  } = {}) {
+  function usePushNotifications(
+    opts: {
+      onNotificationReceived?: (notification: PushNotification) => void
+      onNotificationTapped?: (event: NotificationTapEvent) => void
+    } = {},
+  ) {
     const onReceivedRef = useRef(opts.onNotificationReceived)
     const onTappedRef = useRef(opts.onNotificationTapped)
     onReceivedRef.current = opts.onNotificationReceived

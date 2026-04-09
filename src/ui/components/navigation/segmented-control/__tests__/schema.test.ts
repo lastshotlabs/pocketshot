@@ -21,7 +21,11 @@ describe('SegmentedControlSchema', () => {
   })
 
   it('accepts from-ref value', () => {
-    const result = SegmentedControlSchema.parse({ id: 'x', options: baseOptions, value: { from: 'filter' } })
+    const result = SegmentedControlSchema.parse({
+      id: 'x',
+      options: baseOptions,
+      value: { from: 'filter' },
+    })
     expect(result.value).toEqual({ from: 'filter' })
   })
 
@@ -31,6 +35,8 @@ describe('SegmentedControlSchema', () => {
   })
 
   it('option requires label and value', () => {
-    expect(SegmentedControlSchema.safeParse({ id: 'x', options: [{ label: 'Day' }] }).success).toBe(false)
+    expect(SegmentedControlSchema.safeParse({ id: 'x', options: [{ label: 'Day' }] }).success).toBe(
+      false,
+    )
   })
 })

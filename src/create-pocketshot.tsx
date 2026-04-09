@@ -24,9 +24,23 @@ import {
 } from './biometrics/index'
 import { haptics, useHaptics } from './haptics/index'
 import { createPushHooks } from './push/index'
-import { useDeepLink, useDeepLinkRouter, parseDeepLink, matchPattern, createDeepLinkUrl } from './deep-links/index'
+import {
+  useDeepLink,
+  useDeepLinkRouter,
+  parseDeepLink,
+  matchPattern,
+  createDeepLinkUrl,
+} from './deep-links/index'
 import { createOfflineHooks } from './offline/index'
-import { useShare, useClipboard, share, shareFile, getClipboardString, setClipboardString, hasClipboardString } from './share/index'
+import {
+  useShare,
+  useClipboard,
+  share,
+  shareFile,
+  getClipboardString,
+  setClipboardString,
+  hasClipboardString,
+} from './share/index'
 import { createOrgHooks } from './organizations/index'
 import { createPermissionHooks } from './permissions/index'
 import { createSearchHooks } from './search/index'

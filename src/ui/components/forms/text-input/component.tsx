@@ -12,11 +12,10 @@ export function TextInput({ config }: { config: TextInputConfig }) {
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedValue = config.value != null ? resolveFromRef(config.value, values) : undefined
-  const resolvedError = config.errorText != null ? resolveFromRef(config.errorText, values) : undefined
+  const resolvedError =
+    config.errorText != null ? resolveFromRef(config.errorText, values) : undefined
 
-  const [localValue, setLocalValue] = useState<string>(
-    resolvedValue ?? config.defaultValue ?? '',
-  )
+  const [localValue, setLocalValue] = useState<string>(resolvedValue ?? config.defaultValue ?? '')
   const [focused, setFocused] = useState(false)
 
   // Sync controlled value from screen context

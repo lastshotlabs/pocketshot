@@ -22,11 +22,7 @@ export function Label({ config }: { config: LabelConfig }) {
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
-      <Text
-        style={styles.label}
-        accessibilityRole="text"
-        testID={config.testID ?? config.id}
-      >
+      <Text style={styles.label} accessibilityRole="text" testID={config.testID ?? config.id}>
         {config.uppercase ? text.toUpperCase() : text}
       </Text>
     </ComponentWrapper>
@@ -47,7 +43,7 @@ function resolveColor(tokens: DesignTokens, variant: LabelConfig['variant']): st
 }
 
 function makeStyles(tokens: DesignTokens, config: LabelConfig) {
-  const fontSizeKey = FONT_SIZE_MAP[config.size]
+  const fontSizeKey = FONT_SIZE_MAP[config.size ?? 'sm']
 
   return StyleSheet.create({
     label: {

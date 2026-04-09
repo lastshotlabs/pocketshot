@@ -30,7 +30,8 @@ export function FormField({
             {config.label}
             {config.required && (
               <Text style={styles.required} accessibilityLabel="required">
-                {' '}*
+                {' '}
+                *
               </Text>
             )}
           </Text>
@@ -39,11 +40,7 @@ export function FormField({
         {children}
 
         {hasError && errorText ? (
-          <Text
-            style={styles.errorText}
-            accessibilityRole="text"
-            accessibilityLiveRegion="polite"
-          >
+          <Text style={styles.errorText} accessibilityRole="text" accessibilityLiveRegion="polite">
             {errorText}
           </Text>
         ) : config.helperText != null ? (

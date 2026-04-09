@@ -175,10 +175,9 @@ export function Slider({ config }: { config: SliderConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
 
-  const resolvedValue =
-    config.value != null ? resolveFromRef(config.value, values) : undefined
+  const resolvedValue = config.value != null ? resolveFromRef(config.value, values) : undefined
 
-  const initial = (resolvedValue as number | undefined) ?? config.defaultValue ?? config.min
+  const initial = (resolvedValue as number | undefined) ?? config.defaultValue ?? config.min ?? 0
 
   const [localValue, setLocalValue] = useState<number>(initial)
 
@@ -209,9 +208,7 @@ export function Slider({ config }: { config: SliderConfig }) {
     <ComponentWrapper id={config.id} testID={config.testID}>
       <View style={styles.container}>
         <View style={styles.header}>
-          {config.label != null && (
-            <Text style={styles.label}>{config.label}</Text>
-          )}
+          {config.label != null && <Text style={styles.label}>{config.label}</Text>}
           {config.showValue && (
             <Text style={styles.valueText} accessibilityRole="text">
               {displayValue}
@@ -222,9 +219,9 @@ export function Slider({ config }: { config: SliderConfig }) {
         {NativeSlider != null ? (
           <NativeSlider
             value={localValue}
-            minimumValue={config.min}
-            maximumValue={config.max}
-            step={config.step}
+            minimumValue={config.min ?? 0}
+            maximumValue={config.max ?? 100}
+            step={config.step ?? 1}
             minimumTrackTintColor={tokens.colors.primary}
             maximumTrackTintColor={tokens.colors.border}
             thumbTintColor={tokens.colors.primaryForeground}
@@ -236,9 +233,9 @@ export function Slider({ config }: { config: SliderConfig }) {
         ) : (
           <CustomSlider
             value={localValue}
-            min={config.min}
-            max={config.max}
-            step={config.step}
+            min={config.min ?? 0}
+            max={config.max ?? 100}
+            step={config.step ?? 1}
             onValueChange={handleValueChange}
             onSlidingComplete={handleSlidingComplete}
             tokens={tokens}

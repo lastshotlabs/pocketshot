@@ -3,10 +3,7 @@ import { useAppContext } from '../../context/AppContext'
 import { useScreenContext } from '../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from './fromRef'
 
-type DataSpec =
-  | string
-  | { from: string }
-  | { url: string; method?: 'GET' | 'POST'; body?: unknown }
+type DataSpec = string | { from: string } | { url: string; method?: 'GET' | 'POST'; body?: unknown }
 
 /**
  * Fetches data for a config-driven component.
@@ -32,9 +29,7 @@ export function useComponentData<T>(spec: DataSpec | undefined): {
   const { values } = useScreenContext()
 
   // from-ref: read from screen context synchronously, no fetch
-  const fromRefResult = isFromRef(spec)
-    ? (resolveFromRef(spec, values) as T | null)
-    : undefined
+  const fromRefResult = isFromRef(spec) ? (resolveFromRef(spec, values) as T | null) : undefined
   const isRef = isFromRef(spec)
 
   // Parse the spec outside of conditional paths so hooks are called unconditionally
@@ -54,7 +49,7 @@ export function useComponentData<T>(spec: DataSpec | undefined): {
       }
       enabled = !!path
     } else if (spec !== null && spec !== undefined && typeof spec === 'object' && 'url' in spec) {
-      method = (spec.method?.toUpperCase()) ?? 'GET'
+      method = spec.method?.toUpperCase() ?? 'GET'
       path = spec.url
       body = spec.body
       enabled = !!path

@@ -36,7 +36,7 @@ export function Link({ config }: { config: LinkConfig }) {
 }
 
 function makeStyles(tokens: DesignTokens, config: LinkConfig) {
-  const fontSizeKey = FONT_SIZE_MAP[config.size]
+  const fontSizeKey = FONT_SIZE_MAP[config.size ?? 'md']
 
   return StyleSheet.create({
     link: {

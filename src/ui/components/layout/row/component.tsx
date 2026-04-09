@@ -5,13 +5,7 @@ import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 import type { RowConfig } from './types'
 
-export function Row({
-  config,
-  children,
-}: {
-  config: RowConfig
-  children?: React.ReactNode
-}) {
+export function Row({ config, children }: { config: RowConfig; children?: React.ReactNode }) {
   const tokens = useTokens()
   const styles = makeStyles(tokens, config)
 

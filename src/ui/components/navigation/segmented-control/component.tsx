@@ -137,12 +137,12 @@ export function SegmentedControl({ config }: { config: SegmentedControlConfig })
               accessibilityState={{ selected: isActive }}
               accessibilityLabel={option.label}
               testID={
-                config.testID
-                  ? `${config.testID}-${option.value}`
-                  : `${config.id}-segment-${index}`
+                config.testID ? `${config.testID}-${option.value}` : `${config.id}-segment-${index}`
               }
             >
-              <Text style={[styles.segmentLabel, isActive ? styles.activeLabel : styles.inactiveLabel]}>
+              <Text
+                style={[styles.segmentLabel, isActive ? styles.activeLabel : styles.inactiveLabel]}
+              >
                 {option.label}
               </Text>
             </TouchableOpacity>

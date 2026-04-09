@@ -15,14 +15,17 @@ export function AvatarGroup({ config }: { config: AvatarGroupConfig }) {
   const { dispatch, values } = useScreenContext()
 
   const resolvedAvatars: AvatarGroupItem[] = isFromRef(config.avatars)
-    ? (((resolveFromRef(config.avatars as { from: string }, values) as unknown) as AvatarGroupItem[]) ?? [])
+    ? ((resolveFromRef(
+        config.avatars as { from: string },
+        values,
+      ) as unknown as AvatarGroupItem[]) ?? [])
     : (config.avatars as unknown as AvatarGroupItem[])
 
-  const size = config.size
+  const size = config.size ?? 'sm'
   const pixelSize = SIZE_MAP[size]
-  const overlap = config.overlap
-  const visible = resolvedAvatars.slice(0, config.maxVisible)
-  const overflowCount = Math.max(0, resolvedAvatars.length - config.maxVisible)
+  const overlap = config.overlap ?? 8
+  const visible = resolvedAvatars.slice(0, config.maxVisible ?? 4)
+  const overflowCount = Math.max(0, resolvedAvatars.length - (config.maxVisible ?? 4))
 
   const styles = makeStyles(tokens, pixelSize, overlap)
 
@@ -35,7 +38,13 @@ export function AvatarGroup({ config }: { config: AvatarGroupConfig }) {
 
   const inner = (
     <View
-      style={[styles.row, { width: pixelSize + (visible.length - 1 + (overflowCount > 0 ? 1 : 0)) * (pixelSize - overlap) }]}
+      style={[
+        styles.row,
+        {
+          width:
+            pixelSize + (visible.length - 1 + (overflowCount > 0 ? 1 : 0)) * (pixelSize - overlap),
+        },
+      ]}
       accessibilityLabel={groupLabel}
     >
       {visible.map((item, index) => (
@@ -51,12 +60,7 @@ export function AvatarGroup({ config }: { config: AvatarGroupConfig }) {
         </View>
       ))}
       {overflowCount > 0 ? (
-        <View
-          style={[
-            styles.overflowBadge,
-            { left: visible.length * (pixelSize - overlap) },
-          ]}
-        >
+        <View style={[styles.overflowBadge, { left: visible.length * (pixelSize - overlap) }]}>
           <Text style={styles.overflowText}>+{overflowCount}</Text>
         </View>
       ) : null}

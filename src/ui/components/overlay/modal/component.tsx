@@ -133,7 +133,9 @@ export function Modal({ config, children }: ModalProps) {
     setValue(`__modal_${config.id}`, false)
   }
 
-  const styles = makeStyles(tokens, config.size)
+  const size = config.size ?? 'md'
+  const showCloseButton = config.showCloseButton ?? true
+  const styles = makeStyles(tokens, size)
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
@@ -152,7 +154,7 @@ export function Modal({ config, children }: ModalProps) {
           <Animated.View style={[styles.backdrop, { opacity }]}>
             <TouchableWithoutFeedback>
               <Animated.View style={[styles.contentWrapper, { transform: [{ scale }] }]}>
-                {(config.title != null || config.showCloseButton) && (
+                {(config.title != null || showCloseButton) && (
                   <>
                     <View style={styles.header}>
                       {config.title != null ? (
@@ -162,7 +164,7 @@ export function Modal({ config, children }: ModalProps) {
                       ) : (
                         <View style={{ flex: 1 }} />
                       )}
-                      {config.showCloseButton && (
+                      {showCloseButton && (
                         <TouchableOpacity
                           onPress={handleClose}
                           style={styles.closeButton}

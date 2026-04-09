@@ -71,10 +71,7 @@ export function useDeepLink(onLink: (link: ParsedDeepLink) => void): void {
  *   },
  * ])
  */
-export function useDeepLinkRouter(
-  routes: DeepLinkRoute[],
-  opts: DeepLinkRouterOptions = {},
-): void {
+export function useDeepLinkRouter(routes: DeepLinkRoute[], opts: DeepLinkRouterOptions = {}): void {
   const { handleInitialUrl = true } = opts
   const routesRef = useRef(routes)
   routesRef.current = routes
@@ -119,10 +116,7 @@ export function useDeepLinkRouter(
  * const url = createDeepLinkUrl('/post/123', { ref: 'share' })
  * // → 'myapp://post/123?ref=share'
  */
-export function createDeepLinkUrl(
-  path: string,
-  queryParams?: Record<string, string>,
-): string {
+export function createDeepLinkUrl(path: string, queryParams?: Record<string, string>): string {
   const Linking = requireExpoLinking()
   return Linking.createURL(path, queryParams ? { queryParams } : undefined)
 }

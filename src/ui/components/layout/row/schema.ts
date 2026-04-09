@@ -6,10 +6,7 @@ export const RowSchema = z.object({
   padding: z.number().optional(),
   paddingHorizontal: z.number().optional(),
   paddingVertical: z.number().optional(),
-  align: z
-    .enum(['flex-start', 'center', 'flex-end', 'stretch'])
-    .optional()
-    .default('stretch'),
+  align: z.enum(['flex-start', 'center', 'flex-end', 'stretch']).optional().default('stretch'),
   justify: z
     .enum(['flex-start', 'center', 'flex-end', 'space-between', 'space-around'])
     .optional()

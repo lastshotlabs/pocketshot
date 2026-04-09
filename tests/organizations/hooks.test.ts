@@ -14,16 +14,32 @@ const mockUseQuery = useQuery as ReturnType<typeof vi.fn>
 const mockUseMutation = useMutation as ReturnType<typeof vi.fn>
 
 function makeApi(): ApiClient {
-  return { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn(), fetch: vi.fn() } as unknown as ApiClient
+  return {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    fetch: vi.fn(),
+  } as unknown as ApiClient
 }
 
 describe('createOrgHooks factory shape', () => {
   it('returns all expected hooks', () => {
     const hooks = createOrgHooks(makeApi())
     const expected = [
-      'useOrganizations', 'useOrganization', 'useCreateOrganization', 'useUpdateOrganization', 'useDeleteOrganization',
-      'useOrgMembers', 'useInviteMember', 'useRevokeInvite', 'useOrgInvites',
-      'useUpdateMemberRole', 'useRemoveMember', 'useLeaveOrganization',
+      'useOrganizations',
+      'useOrganization',
+      'useCreateOrganization',
+      'useUpdateOrganization',
+      'useDeleteOrganization',
+      'useOrgMembers',
+      'useInviteMember',
+      'useRevokeInvite',
+      'useOrgInvites',
+      'useUpdateMemberRole',
+      'useRemoveMember',
+      'useLeaveOrganization',
     ]
     for (const name of expected) {
       expect(typeof (hooks as Record<string, unknown>)[name]).toBe('function')
@@ -38,9 +54,11 @@ describe('useOrganizations', () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useOrganizations } = createOrgHooks(makeApi())
     useOrganizations()
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: expect.arrayContaining(['orgs']),
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: expect.arrayContaining(['orgs']),
+      }),
+    )
   })
 
   it('calls api.get with the org list endpoint', () => {
@@ -73,18 +91,22 @@ describe('useOrganization', () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useOrganization } = createOrgHooks(makeApi())
     useOrganization('org-123')
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: ['orgs', 'org-123'],
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['orgs', 'org-123'],
+      }),
+    )
   })
 
   it('is disabled when orgId is empty', () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useOrganization } = createOrgHooks(makeApi())
     useOrganization('')
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      enabled: false,
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enabled: false,
+      }),
+    )
   })
 })
 
@@ -109,8 +131,10 @@ describe('useOrgMembers', () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useOrgMembers } = createOrgHooks(makeApi())
     useOrgMembers('org-123')
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: expect.arrayContaining(['orgs', 'org-123', 'members']),
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: expect.arrayContaining(['orgs', 'org-123', 'members']),
+      }),
+    )
   })
 })

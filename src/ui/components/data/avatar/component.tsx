@@ -24,8 +24,16 @@ const SIZE_MAP = {
 // ---------------------------------------------------------------------------
 
 const INITIALS_PALETTE = [
-  '#E57373', '#F06292', '#BA68C8', '#7986CB', '#4FC3F7',
-  '#4DB6AC', '#81C784', '#FFD54F', '#FF8A65', '#A1887F',
+  '#E57373',
+  '#F06292',
+  '#BA68C8',
+  '#7986CB',
+  '#4FC3F7',
+  '#4DB6AC',
+  '#81C784',
+  '#FFD54F',
+  '#FF8A65',
+  '#A1887F',
 ]
 
 function pickInitialsColor(name: string): string {
@@ -125,7 +133,7 @@ export function Avatar({ config }: { config: AvatarConfig }) {
       : config.name
     : undefined
 
-  const size = SIZE_MAP[config.size]
+  const size = SIZE_MAP[config.size ?? 'md']
   const borderRadius =
     config.shape === 'circle'
       ? size / 2
@@ -135,7 +143,9 @@ export function Avatar({ config }: { config: AvatarConfig }) {
 
   const showImage = !!resolvedSrc && !imgError
   const initials = resolvedName ? getInitials(resolvedName) : '?'
-  const initialsBackground = resolvedName ? pickInitialsColor(resolvedName) : tokens.colors.surfaceAlt
+  const initialsBackground = resolvedName
+    ? pickInitialsColor(resolvedName)
+    : tokens.colors.surfaceAlt
 
   const styles = makeStyles(tokens, size, borderRadius, initialsBackground)
 

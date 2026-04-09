@@ -41,16 +41,12 @@ describe('validateConfig', () => {
 
   it('warns when apiUrl uses http://', () => {
     validateConfig(makeConfig({ apiUrl: 'http://api.example.com' }))
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('apiUrl uses http://'),
-    )
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('apiUrl uses http://'))
   })
 
   it('warns when loginPath is missing leading slash', () => {
     validateConfig(makeConfig({ loginPath: 'auth/login' }))
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('loginPath'),
-    )
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('loginPath'))
   })
 
   it('does NOT warn when loginPath has leading slash', () => {
@@ -60,16 +56,12 @@ describe('validateConfig', () => {
 
   it('warns when homePath is missing leading slash', () => {
     validateConfig(makeConfig({ homePath: 'app/home' }))
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('homePath'),
-    )
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('homePath'))
   })
 
   it('warns when mfaPath is missing leading slash', () => {
     validateConfig(makeConfig({ mfaPath: 'auth/mfa' }))
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('mfaPath'),
-    )
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('mfaPath'))
   })
 
   it('warns when wsEndpoint does not start with ws:// or wss://', () => {
@@ -92,9 +84,7 @@ describe('validateConfig', () => {
 
   it('warns when authErrors.verbose is true', () => {
     validateConfig(makeConfig({ authErrors: { verbose: true } }))
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('authErrors.verbose'),
-    )
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('authErrors.verbose'))
   })
 
   it('does not repeat a warning on second call', () => {

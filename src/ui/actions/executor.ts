@@ -73,7 +73,11 @@ export async function executeAction(action: Action, deps: ActionExecutorDeps): P
       // Lazy-load haptics to avoid hard dep
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { impact, notification: notif, selection } = require('../../haptics/core') as typeof import('../../haptics/core')
+        const {
+          impact,
+          notification: notif,
+          selection,
+        } = require('../../haptics/core') as typeof import('../../haptics/core')
         if (action.selection) selection()
         else if (action.notification) notif(action.notification)
         else impact(action.style ?? 'medium')
@@ -97,7 +101,8 @@ export async function executeAction(action: Action, deps: ActionExecutorDeps): P
     case 'clipboard': {
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { setClipboardString } = require('../../share/index') as typeof import('../../share/index')
+        const { setClipboardString } =
+          require('../../share/index') as typeof import('../../share/index')
         await setClipboardString(action.text)
       } catch {
         // clipboard not available — no-op

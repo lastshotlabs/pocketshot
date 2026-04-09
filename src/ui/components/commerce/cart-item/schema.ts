@@ -9,7 +9,10 @@ export const CartItemSchema = z.object({
   title: z.union([z.string(), z.object({ from: z.string() })]),
   variant: z.union([z.string(), z.object({ from: z.string() })]).optional(),
   price: z.union([z.number(), z.object({ from: z.string() })]),
-  quantity: z.union([z.number().int().nonnegative(), z.object({ from: z.string() })]).optional().default(1),
+  quantity: z
+    .union([z.number().int().nonnegative(), z.object({ from: z.string() })])
+    .optional()
+    .default(1),
   currency: z.string().optional().default('USD'),
   onQuantityChange: ActionSchema.optional(),
   onRemove: ActionSchema.optional(),

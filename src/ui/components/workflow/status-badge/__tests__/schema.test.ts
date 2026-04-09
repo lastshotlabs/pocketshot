@@ -34,18 +34,22 @@ describe('StatusBadgeSchema', () => {
   })
 
   it('rejects invalid color in statusMap', () => {
-    expect(StatusBadgeSchema.safeParse({
-      status: 'active',
-      statusMap: { active: { label: 'Active', color: 'red' } },
-    }).success).toBe(false)
+    expect(
+      StatusBadgeSchema.safeParse({
+        status: 'active',
+        statusMap: { active: { label: 'Active', color: 'red' } },
+      }).success,
+    ).toBe(false)
   })
 
   it('accepts all valid colors', () => {
     for (const color of ['primary', 'success', 'warning', 'error', 'info', 'default'] as const) {
-      expect(StatusBadgeSchema.safeParse({
-        status: 'x',
-        statusMap: { x: { label: 'X', color } },
-      }).success).toBe(true)
+      expect(
+        StatusBadgeSchema.safeParse({
+          status: 'x',
+          statusMap: { x: { label: 'X', color } },
+        }).success,
+      ).toBe(true)
     }
   })
 

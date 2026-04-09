@@ -729,4 +729,4 @@ export const flavorNames = [
   'sunset',
 ] as const
 
-export type FlavorName = typeof flavorNames[number]
+export type FlavorName = (typeof flavorNames)[number]

@@ -34,11 +34,7 @@ export function Heading({ config }: { config: HeadingConfig }) {
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
-      <Text
-        style={styles.heading}
-        accessibilityRole="header"
-        testID={config.testID ?? config.id}
-      >
+      <Text style={styles.heading} accessibilityRole="header" testID={config.testID ?? config.id}>
         {text}
       </Text>
     </ComponentWrapper>
@@ -46,7 +42,7 @@ export function Heading({ config }: { config: HeadingConfig }) {
 }
 
 function makeStyles(tokens: DesignTokens, config: HeadingConfig) {
-  const level = config.level
+  const level = config.level ?? 2
   const fontSizeKey = FONT_SIZE_MAP[level]
   const fontWeightKey = FONT_WEIGHT_MAP[level]
 
@@ -55,7 +51,7 @@ function makeStyles(tokens: DesignTokens, config: HeadingConfig) {
       fontSize: tokens.typography[fontSizeKey],
       fontWeight: tokens.typography[fontWeightKey],
       color: (config.color ?? tokens.colors.text) as string,
-      textAlign: config.align,
+      textAlign: config.align ?? 'left',
       lineHeight: tokens.typography[fontSizeKey] * tokens.typography.lineHeightTight,
     },
   })

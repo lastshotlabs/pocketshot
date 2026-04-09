@@ -135,7 +135,10 @@ export function defaultContract(apiUrl: string): PocketshotAuthContract {
  * @param apiUrl  - The base URL of the Pocketshot API.
  * @param partial - Optional overrides for endpoints, helpers, or headers.
  */
-export function mergeContract(apiUrl: string, partial?: PocketshotAuthContractConfig): PocketshotAuthContract {
+export function mergeContract(
+  apiUrl: string,
+  partial?: PocketshotAuthContractConfig,
+): PocketshotAuthContract {
   const def = defaultContract(apiUrl)
   if (!partial) return def
   return {

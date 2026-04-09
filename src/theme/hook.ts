@@ -50,10 +50,7 @@ async function persistTheme(
   colorScheme: 'light' | 'dark' | 'system',
 ): Promise<void> {
   try {
-    await SecureStore.setItemAsync(
-      THEME_STORAGE_KEY,
-      JSON.stringify({ flavor, colorScheme }),
-    )
+    await SecureStore.setItemAsync(THEME_STORAGE_KEY, JSON.stringify({ flavor, colorScheme }))
   } catch {
     // SecureStore not available in some test environments — ignore
   }

@@ -95,7 +95,11 @@ export function createAuthHooks(opts: {
    * not logged in rather than throwing.
    */
   function useUser() {
-    const { data: user = null, isLoading, isError } = useQuery<AuthUser | null>({
+    const {
+      data: user = null,
+      isLoading,
+      isError,
+    } = useQuery<AuthUser | null>({
       queryKey: AUTH_QUERY_KEY,
       queryFn: async () => {
         try {
@@ -124,7 +128,11 @@ export function createAuthHooks(opts: {
 
     return useMutation<AuthUser | MfaChallenge, Error, { email: string; password: string }>({
       mutationFn: async ({ email, password }) => {
-        const res = await api.post<LoginResult>(contract.endpoints.login, { email, password }, { skipAuth: true })
+        const res = await api.post<LoginResult>(
+          contract.endpoints.login,
+          { email, password },
+          { skipAuth: true },
+        )
 
         if (res.mfaRequired && res.mfaToken) {
           return { mfaToken: res.mfaToken, mfaMethods: res.mfaMethods ?? [] } as MfaChallenge
@@ -157,13 +165,15 @@ export function createAuthHooks(opts: {
     const queryClient = useQueryClient()
     const router = useRouter()
 
-    return useMutation<AuthUser, Error, { email: string; password: string; [key: string]: unknown }>({
+    return useMutation<
+      AuthUser,
+      Error,
+      { email: string; password: string; [key: string]: unknown }
+    >({
       mutationFn: async (body) => {
-        const res = await api.post<{ token?: string; refreshToken?: string } & Record<string, unknown>>(
-          contract.endpoints.register,
-          body,
-          { skipAuth: true },
-        )
+        const res = await api.post<
+          { token?: string; refreshToken?: string } & Record<string, unknown>
+        >(contract.endpoints.register, body, { skipAuth: true })
         if (typeof res.token === 'string') {
           await tokenStorage.setToken(res.token)
         }
@@ -212,7 +222,8 @@ export function createAuthHooks(opts: {
    */
   function useForgotPassword() {
     return useMutation<void, Error, { email: string }>({
-      mutationFn: (body) => api.post<void>(contract.endpoints.forgotPassword, body, { skipAuth: true }),
+      mutationFn: (body) =>
+        api.post<void>(contract.endpoints.forgotPassword, body, { skipAuth: true }),
     })
   }
 

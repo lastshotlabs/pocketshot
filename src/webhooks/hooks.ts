@@ -22,7 +22,6 @@ const keys = {
 // ── Factory ───────────────────────────────────────────────────────────────────
 
 export function createWebhookHooks(api: ApiClient) {
-
   // ── Endpoints ─────────────────────────────────────────────────────────────────
 
   function useWebhookEndpoints() {
@@ -52,7 +51,11 @@ export function createWebhookHooks(api: ApiClient) {
 
   function useUpdateWebhookEndpoint() {
     const queryClient = useQueryClient()
-    return useMutation<WebhookEndpointResponse, Error, { endpointId: string } & UpdateWebhookEndpointBody>({
+    return useMutation<
+      WebhookEndpointResponse,
+      Error,
+      { endpointId: string } & UpdateWebhookEndpointBody
+    >({
       mutationFn: ({ endpointId, ...body }) =>
         api.patch<WebhookEndpointResponse>(`/webhooks/endpoints/${endpointId}`, body),
       onSuccess: (_data, { endpointId }) => {

@@ -40,7 +40,7 @@ function createSQLiteStorage(): QueueStorage | null {
         body TEXT NOT NULL,
         queued_at TEXT NOT NULL,
         attempts INTEGER NOT NULL DEFAULT 0
-      );`
+      );`,
     )
     initialized = true
   }
@@ -49,7 +49,12 @@ function createSQLiteStorage(): QueueStorage | null {
     async load(): Promise<QueuedOperation[]> {
       await init()
       const rows = await db.getAllAsync<{
-        id: string; method: string; path: string; body: string; queued_at: string; attempts: number
+        id: string
+        method: string
+        path: string
+        body: string
+        queued_at: string
+        attempts: number
       }>('SELECT * FROM offline_queue ORDER BY queued_at ASC;')
       return rows.map((r) => ({
         id: r.id,
@@ -102,13 +107,17 @@ export class OfflineQueue {
     } else {
       console.warn(
         '[pocketshot] expo-sqlite not found. Offline queue is in-memory only (operations will be lost on restart).\n' +
-        'Install it: npx expo install expo-sqlite',
+          'Install it: npx expo install expo-sqlite',
       )
       let memOps: QueuedOperation[] = []
       this.storage = {
         load: async () => memOps,
-        save: async (ops) => { memOps = [...ops] },
-        clear: async () => { memOps = [] },
+        save: async (ops) => {
+          memOps = [...ops]
+        },
+        clear: async () => {
+          memOps = []
+        },
       }
     }
   }
@@ -119,7 +128,9 @@ export class OfflineQueue {
     this.loaded = true
   }
 
-  async enqueue(op: Omit<QueuedOperation, 'id' | 'queuedAt' | 'attempts'>): Promise<QueuedOperation> {
+  async enqueue(
+    op: Omit<QueuedOperation, 'id' | 'queuedAt' | 'attempts'>,
+  ): Promise<QueuedOperation> {
     await this.load()
     const queued: QueuedOperation = {
       ...op,

@@ -96,14 +96,12 @@ export function StatusBadge({ config }: { config: StatusBadgeConfig }) {
     return () => loop.stop()
   }, [config.showDot, pulseAnim])
 
-  const styles = makeStyles(tokens, config.size, colorPair)
+  const styles = makeStyles(tokens, config.size ?? 'md', colorPair)
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
       <View style={styles.container} accessibilityLabel={`Status: ${resolved.label}`}>
-        {config.showDot ? (
-          <Animated.View style={[styles.dot, { opacity: pulseAnim }]} />
-        ) : null}
+        {config.showDot ? <Animated.View style={[styles.dot, { opacity: pulseAnim }]} /> : null}
         <Text style={styles.label} numberOfLines={1}>
           {resolved.label}
         </Text>

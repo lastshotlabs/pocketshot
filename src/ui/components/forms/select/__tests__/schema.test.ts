@@ -5,7 +5,10 @@ describe('SelectSchema', () => {
   it('parses with array options', () => {
     const result = SelectSchema.parse({
       id: 'country',
-      options: [{ label: 'USA', value: 'us' }, { label: 'UK', value: 'uk' }],
+      options: [
+        { label: 'USA', value: 'us' },
+        { label: 'UK', value: 'uk' },
+      ],
     })
     expect(result.options).toHaveLength(2)
   })

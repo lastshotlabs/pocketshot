@@ -55,8 +55,8 @@ export function RegisterForm({ config }: { config: RegisterFormConfig }) {
   }
 
   function handleSubmit() {
-    const hasPassword = config.fields.includes('password')
-    const hasConfirm = config.fields.includes('confirmPassword')
+    const hasPassword = (config.fields ?? ['email', 'password']).includes('password')
+    const hasConfirm = (config.fields ?? ['email', 'password']).includes('confirmPassword')
 
     if (hasPassword && hasConfirm) {
       if (fieldValues.password !== fieldValues.confirmPassword) {
@@ -79,7 +79,7 @@ export function RegisterForm({ config }: { config: RegisterFormConfig }) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {config.fields.map((field) => {
+          {(config.fields ?? ['email', 'password']).map((field) => {
             const isSecure = field === 'password' || field === 'confirmPassword'
             const isEmail = field === 'email'
             const isFocused = focusedField === field
@@ -117,11 +117,7 @@ export function RegisterForm({ config }: { config: RegisterFormConfig }) {
                   returnKeyType="next"
                   accessibilityLabel={FIELD_LABELS[field]}
                   accessibilityRole="none"
-                  testID={
-                    config.testID
-                      ? `${config.testID}-${field}`
-                      : `register-${field}`
-                  }
+                  testID={config.testID ? `${config.testID}-${field}` : `register-${field}`}
                 />
                 {showError && (
                   <Text

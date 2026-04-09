@@ -95,13 +95,16 @@ export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
       wasOnline.current = networkStatus.isConnected
     }, [networkStatus.isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const enqueue = useCallback(async (
-      op: Omit<QueuedOperation, 'id' | 'queuedAt' | 'attempts'>,
-    ): Promise<QueuedOperation> => {
-      const queued = await queue.enqueue(op)
-      await refreshQueue()
-      return queued
-    }, [refreshQueue])
+    const enqueue = useCallback(
+      async (
+        op: Omit<QueuedOperation, 'id' | 'queuedAt' | 'attempts'>,
+      ): Promise<QueuedOperation> => {
+        const queued = await queue.enqueue(op)
+        await refreshQueue()
+        return queued
+      },
+      [refreshQueue],
+    )
 
     const flush = useCallback(async (): Promise<{ flushed: number; failed: number }> => {
       setIsFlushing(true)

@@ -36,13 +36,15 @@ export async function runManifestSync(opts: ManifestSyncOptions): Promise<void> 
   try {
     const res = await fetch(`${apiUrl.replace(/\/$/, '')}/manifest`)
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-    manifest = await res.json() as ManifestResponse
+    manifest = (await res.json()) as ManifestResponse
   } catch (err) {
     s.stop('Failed to fetch manifest')
     throw new Error(`Could not fetch manifest: ${err instanceof Error ? err.message : String(err)}`)
   }
 
-  s.stop(`Fetched manifest for "${manifest.name}" (${Object.keys(manifest.screens).length} screens)`)
+  s.stop(
+    `Fetched manifest for "${manifest.name}" (${Object.keys(manifest.screens).length} screens)`,
+  )
 
   await fs.mkdir(absOut, { recursive: true })
 

@@ -5,10 +5,7 @@ import type { Action } from '../../../actions/types'
 // so we accept z.unknown() and cast at runtime (opaque boundary).
 const ActionSchema = z.custom<Action>()
 
-const DataSpecSchema = z.union([
-  z.string(),
-  z.object({ from: z.string() }),
-])
+const DataSpecSchema = z.union([z.string(), z.object({ from: z.string() })])
 
 export const DataListSchema = z.object({
   id: z.string().optional(),

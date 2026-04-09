@@ -10,13 +10,15 @@ import { flavors } from './flavors'
  *
  * This is a pure function — no side effects, no React, testable in isolation.
  */
-export function resolveTokens(config: TokenConfig, systemColorScheme: 'light' | 'dark'): DesignTokens {
+export function resolveTokens(
+  config: TokenConfig,
+  systemColorScheme: 'light' | 'dark',
+): DesignTokens {
   const flavorName = config.flavor ?? 'neutral'
   const flavor = flavors[flavorName] ?? flavors['neutral']!
 
-  const scheme = config.colorScheme === 'system'
-    ? systemColorScheme
-    : (config.colorScheme ?? 'light')
+  const scheme =
+    config.colorScheme === 'system' ? systemColorScheme : (config.colorScheme ?? 'light')
 
   const colors = scheme === 'dark' ? flavor.dark : flavor.light
 
@@ -42,7 +44,10 @@ function deepMerge<T extends object>(base: T, overrides: DeepPartial<T>): T {
       typeof overrideVal === 'object' &&
       !Array.isArray(overrideVal)
     ) {
-      result[key] = deepMerge(base[key] as object, overrideVal as DeepPartial<object>) as T[typeof key]
+      result[key] = deepMerge(
+        base[key] as object,
+        overrideVal as DeepPartial<object>,
+      ) as T[typeof key]
     } else if (overrideVal !== undefined) {
       result[key] = overrideVal as T[typeof key]
     }

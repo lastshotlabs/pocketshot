@@ -53,7 +53,12 @@ describe('CartItemSchema', () => {
 
   it('accepts onQuantityChange and onRemove actions', () => {
     const action = { type: 'api' as const, endpoint: '/cart/update', method: 'PATCH' as const }
-    const result = CartItemSchema.parse({ title: 'X', price: 10, onQuantityChange: action, onRemove: action })
+    const result = CartItemSchema.parse({
+      title: 'X',
+      price: 10,
+      onQuantityChange: action,
+      onRemove: action,
+    })
     expect(result.onQuantityChange).toBeDefined()
     expect(result.onRemove).toBeDefined()
   })

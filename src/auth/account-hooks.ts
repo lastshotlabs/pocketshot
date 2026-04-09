@@ -35,7 +35,8 @@ export function createAccountHooks(opts: {
    */
   function useResetPassword() {
     return useMutation<void, Error, { token: string; password: string }>({
-      mutationFn: (body) => api.post<void>(contract.endpoints.resetPassword, body, { skipAuth: true }),
+      mutationFn: (body) =>
+        api.post<void>(contract.endpoints.resetPassword, body, { skipAuth: true }),
     })
   }
 

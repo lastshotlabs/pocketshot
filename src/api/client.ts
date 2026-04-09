@@ -24,7 +24,11 @@ export class ApiClient {
   private isRefreshing = false
   private refreshPromise: Promise<string | null> | null = null
 
-  constructor(opts: { baseUrl: string; tokenStorage: TokenStorage; contract: PocketshotAuthContract }) {
+  constructor(opts: {
+    baseUrl: string
+    tokenStorage: TokenStorage
+    contract: PocketshotAuthContract
+  }) {
     this.baseUrl = opts.baseUrl.replace(/\/$/, '')
     this.tokenStorage = opts.tokenStorage
     this.contract = opts.contract
@@ -41,7 +45,7 @@ export class ApiClient {
         body: JSON.stringify({ refreshToken }),
       })
       if (!res.ok) return null
-      const data = await res.json() as { token: string; refreshToken?: string }
+      const data = (await res.json()) as { token: string; refreshToken?: string }
       await this.tokenStorage.setToken(data.token)
       if (data.refreshToken) {
         await this.tokenStorage.setRefreshToken(data.refreshToken)
@@ -80,7 +84,9 @@ export class ApiClient {
 
     // Merge any caller-supplied headers
     if (init.headers) {
-      new Headers(init.headers as Record<string, string>).forEach((val, key) => headers.set(key, val))
+      new Headers(init.headers as Record<string, string>).forEach((val, key) =>
+        headers.set(key, val),
+      )
     }
 
     const res = await fetch(`${this.baseUrl}${path}`, { ...init, headers })
@@ -101,8 +107,10 @@ export class ApiClient {
   private async handleResponse<T>(res: Response): Promise<T> {
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({ error: res.statusText }))
-      const msg: string = (errBody as Record<string, unknown>).error as string ?? 'Request failed'
-      const code: string | undefined = (errBody as Record<string, unknown>).code as string | undefined
+      const msg: string = ((errBody as Record<string, unknown>).error as string) ?? 'Request failed'
+      const code: string | undefined = (errBody as Record<string, unknown>).code as
+        | string
+        | undefined
       throw new ApiError(msg, res.status, code, errBody)
     }
     const contentType = res.headers.get('content-type')

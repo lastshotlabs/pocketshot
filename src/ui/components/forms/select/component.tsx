@@ -90,9 +90,7 @@ export function Select({ config }: { config: SelectConfig }) {
                         accessibilityState={{ selected: isSelected }}
                         testID={`${config.id}-option-${item.value}`}
                       >
-                        <Text
-                          style={[styles.optionText, isSelected && styles.optionTextSelected]}
-                        >
+                        <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                           {item.label}
                         </Text>
                         {isSelected && <Text style={styles.checkmark}>✓</Text>}

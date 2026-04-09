@@ -66,7 +66,12 @@ export type {
 } from './ui/actions/types'
 
 // ── Component base ────────────────────────────────────────────────────────────
-export { ComponentWrapper, useComponentData, resolveFromRef, isFromRef } from './ui/components/_base/index'
+export {
+  ComponentWrapper,
+  useComponentData,
+  resolveFromRef,
+  isFromRef,
+} from './ui/components/_base/index'
 export type { ComponentWrapperProps } from './ui/components/_base/index'
 
 // ── Manifest ──────────────────────────────────────────────────────────────────
@@ -142,3 +147,7 @@ export { StatusBadge } from './ui/components/workflow/status-badge'
 export { PriceDisplay } from './ui/components/commerce/price-display'
 export { ProductCard } from './ui/components/commerce/product-card'
 export { CartItem } from './ui/components/commerce/cart-item'
+
+// ── Headless hooks ────────────────────────────────────────────────────────────
+export { useDataList, useAutoForm } from './ui/hooks/index'
+export type { UseDataListReturn, UseAutoFormReturn } from './ui/hooks/index'

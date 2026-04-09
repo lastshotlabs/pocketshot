@@ -20,11 +20,7 @@ export function AppContextProvider({
   tokens,
   tokenConfig,
 }: AppContextValue & { children: React.ReactNode }) {
-  return (
-    <AppContext.Provider value={{ api, tokens, tokenConfig }}>
-      {children}
-    </AppContext.Provider>
-  )
+  return <AppContext.Provider value={{ api, tokens, tokenConfig }}>{children}</AppContext.Provider>
 }
 
 /**

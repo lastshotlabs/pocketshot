@@ -29,7 +29,11 @@ export function Timeline({ config }: { config: TimelineConfig }) {
           <View style={styles.leftColumn}>
             <View style={[styles.dot, { backgroundColor: dotColor }]}>
               {item.icon != null ? (
-                <Text style={styles.dotIcon} accessibilityElementsHidden importantForAccessibility="no">
+                <Text
+                  style={styles.dotIcon}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                >
                   {item.icon}
                 </Text>
               ) : null}
@@ -41,9 +45,7 @@ export function Timeline({ config }: { config: TimelineConfig }) {
             {item.description != null ? (
               <Text style={styles.description}>{item.description}</Text>
             ) : null}
-            {item.timestamp != null ? (
-              <Text style={styles.timestamp}>{item.timestamp}</Text>
-            ) : null}
+            {item.timestamp != null ? <Text style={styles.timestamp}>{item.timestamp}</Text> : null}
           </View>
         </View>
       )

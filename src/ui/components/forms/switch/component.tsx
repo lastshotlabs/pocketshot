@@ -11,11 +11,10 @@ export function Switch({ config }: { config: SwitchConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
 
-  const resolvedValue =
-    config.value != null ? resolveFromRef(config.value, values) : undefined
+  const resolvedValue = config.value != null ? resolveFromRef(config.value, values) : undefined
 
   const [localValue, setLocalValue] = useState<boolean>(
-    (resolvedValue as boolean | undefined) ?? config.defaultValue,
+    (resolvedValue as boolean | undefined) ?? config.defaultValue ?? false,
   )
 
   useEffect(() => {

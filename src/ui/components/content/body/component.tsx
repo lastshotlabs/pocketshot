@@ -42,15 +42,15 @@ export function Body({ config }: { config: BodyConfig }) {
 }
 
 function makeStyles(tokens: DesignTokens, config: BodyConfig) {
-  const fontSizeKey = FONT_SIZE_MAP[config.size]
-  const fontWeightKey = FONT_WEIGHT_MAP[config.weight]
+  const fontSizeKey = FONT_SIZE_MAP[config.size ?? 'md']
+  const fontWeightKey = FONT_WEIGHT_MAP[config.weight ?? 'regular']
 
   return StyleSheet.create({
     body: {
       fontSize: tokens.typography[fontSizeKey],
       fontWeight: tokens.typography[fontWeightKey],
       color: (config.color ?? tokens.colors.text) as string,
-      textAlign: config.align,
+      textAlign: config.align ?? 'left',
       lineHeight: tokens.typography[fontSizeKey] * tokens.typography.lineHeightNormal,
     },
   })

@@ -31,32 +31,49 @@ describe('AutoFormSchema', () => {
   it('parses field with options', () => {
     const result = AutoFormSchema.parse({
       id: 'x',
-      fields: [{
-        id: 'role',
-        type: 'select',
-        label: 'Role',
-        options: [{ label: 'Admin', value: 'admin' }, { label: 'User', value: 'user' }],
-      }],
+      fields: [
+        {
+          id: 'role',
+          type: 'select',
+          label: 'Role',
+          options: [
+            { label: 'Admin', value: 'admin' },
+            { label: 'User', value: 'user' },
+          ],
+        },
+      ],
       onSubmit: baseAction,
     })
     expect(result.fields[0].type).toBe('select')
   })
 
   it('rejects invalid field type', () => {
-    expect(AutoFormSchema.safeParse({
-      id: 'x',
-      fields: [{ id: 'x', type: 'date', label: 'Date' }],
-      onSubmit: baseAction,
-    }).success).toBe(false)
+    expect(
+      AutoFormSchema.safeParse({
+        id: 'x',
+        fields: [{ id: 'x', type: 'date', label: 'Date' }],
+        onSubmit: baseAction,
+      }).success,
+    ).toBe(false)
   })
 
   it('accepts all valid field types', () => {
-    for (const type of ['text', 'email', 'password', 'number', 'select', 'checkbox', 'switch'] as const) {
-      expect(AutoFormSchema.safeParse({
-        id: 'x',
-        fields: [{ id: 'f', type, label: 'Field' }],
-        onSubmit: baseAction,
-      }).success).toBe(true)
+    for (const type of [
+      'text',
+      'email',
+      'password',
+      'number',
+      'select',
+      'checkbox',
+      'switch',
+    ] as const) {
+      expect(
+        AutoFormSchema.safeParse({
+          id: 'x',
+          fields: [{ id: 'f', type, label: 'Field' }],
+          onSubmit: baseAction,
+        }).success,
+      ).toBe(true)
     }
   })
 
@@ -71,10 +88,12 @@ describe('AutoFormSchema', () => {
   })
 
   it('field requires id and label', () => {
-    expect(AutoFormSchema.safeParse({
-      id: 'x',
-      fields: [{ type: 'text', label: 'Name' }],
-      onSubmit: baseAction,
-    }).success).toBe(false)
+    expect(
+      AutoFormSchema.safeParse({
+        id: 'x',
+        fields: [{ type: 'text', label: 'Name' }],
+        onSubmit: baseAction,
+      }).success,
+    ).toBe(false)
   })
 })

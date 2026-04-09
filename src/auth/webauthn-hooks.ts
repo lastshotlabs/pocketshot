@@ -92,7 +92,7 @@ export function createWebAuthnHooks(opts: {
         } catch {
           throw new Error(
             '[pocketshot] usePasskeyRegister() requires react-native-passkeys.\n' +
-            'Install it: npx expo install react-native-passkeys',
+              'Install it: npx expo install react-native-passkeys',
           )
         }
         const options = await api.get<any>(contract.passkey.registerOptions, { skipAuth: false })
@@ -129,7 +129,7 @@ export function createWebAuthnHooks(opts: {
         } catch {
           throw new Error(
             '[pocketshot] usePasskeyLogin() requires react-native-passkeys.\n' +
-            'Install it: npx expo install react-native-passkeys',
+              'Install it: npx expo install react-native-passkeys',
           )
         }
         const loginOptionsPath = username

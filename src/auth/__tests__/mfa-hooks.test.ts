@@ -15,7 +15,6 @@ import type { PocketshotAuthContract } from '../contract'
 import type { ApiClient } from '../../api/client'
 
 // ── Globals ───────────────────────────────────────────────────────────────────
-
 ;(globalThis as any).__DEV__ = true
 
 // ── Stub native / expo deps ───────────────────────────────────────────────────
@@ -104,7 +103,14 @@ function makeHooks(api: ApiClient) {
   const { atom } = require('jotai')
   return createMfaHooks({
     api,
-    tokenStorage: { getToken: vi.fn(), setToken: vi.fn(), clearToken: vi.fn(), getRefreshToken: vi.fn(), setRefreshToken: vi.fn(), clearRefreshToken: vi.fn() } as any,
+    tokenStorage: {
+      getToken: vi.fn(),
+      setToken: vi.fn(),
+      clearToken: vi.fn(),
+      getRefreshToken: vi.fn(),
+      setRefreshToken: vi.fn(),
+      clearRefreshToken: vi.fn(),
+    } as any,
     queryClient: new QueryClient(),
     config: { apiUrl: 'https://api.example.com' },
     contract: makeContract(),

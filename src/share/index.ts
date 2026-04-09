@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Share as RNShare } from 'react-native'
-import type {
-  ShareContent,
-  ShareOptions,
-  ShareResult,
-  ClipboardWriteOptions,
-} from './types'
+import type { ShareContent, ShareOptions, ShareResult, ClipboardWriteOptions } from './types'
 
 export type { ShareContent, ShareOptions, ShareResult, ClipboardWriteOptions } from './types'
 
@@ -16,7 +11,10 @@ function tryLoadSharing() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('expo-sharing') as {
       isAvailableAsync(): Promise<boolean>
-      shareAsync(url: string, opts?: { mimeType?: string; dialogTitle?: string; UTI?: string }): Promise<void>
+      shareAsync(
+        url: string,
+        opts?: { mimeType?: string; dialogTitle?: string; UTI?: string },
+      ): Promise<void>
     }
   } catch {
     return null
@@ -52,7 +50,10 @@ function requireClipboard() {
  * @example
  * await share({ message: 'Check this out!', url: 'https://example.com/post/123' })
  */
-export async function share(content: ShareContent, options: ShareOptions = {}): Promise<ShareResult> {
+export async function share(
+  content: ShareContent,
+  options: ShareOptions = {},
+): Promise<ShareResult> {
   try {
     // RNShare content type requires `message: string` but accepts url alone on iOS.
     // We cast to satisfy TS while preserving the correct runtime shape.
@@ -61,13 +62,10 @@ export async function share(content: ShareContent, options: ShareOptions = {}): 
       url: content.url,
       title: content.title,
     } as unknown as Parameters<typeof RNShare.share>[0]
-    const result = await RNShare.share(
-      shareContent,
-      {
-        excludedActivityTypes: options.excludedActivityTypes,
-        dialogTitle: options.dialogTitle,
-      },
-    )
+    const result = await RNShare.share(shareContent, {
+      excludedActivityTypes: options.excludedActivityTypes,
+      dialogTitle: options.dialogTitle,
+    })
 
     if (result.action === RNShare.sharedAction) {
       return {
@@ -125,7 +123,10 @@ export async function getClipboardString(): Promise<string> {
  * Writes a string to the clipboard.
  * @throws If expo-clipboard is not installed.
  */
-export async function setClipboardString(text: string, _opts: ClipboardWriteOptions = {}): Promise<void> {
+export async function setClipboardString(
+  text: string,
+  _opts: ClipboardWriteOptions = {},
+): Promise<void> {
   const Clipboard = requireClipboard()
   // expo-clipboard setStringAsync returns boolean (true = success)
   await Clipboard.setStringAsync(text)
@@ -152,28 +153,31 @@ export function useShare() {
   const [isPending, setIsPending] = useState(false)
   const [lastResult, setLastResult] = useState<ShareResult | null>(null)
 
-  const shareContent = useCallback(async (content: ShareContent, opts?: ShareOptions): Promise<ShareResult> => {
-    setIsPending(true)
-    try {
-      const result = await share(content, opts)
-      setLastResult(result)
-      return result
-    } finally {
-      setIsPending(false)
-    }
-  }, [])
+  const shareContent = useCallback(
+    async (content: ShareContent, opts?: ShareOptions): Promise<ShareResult> => {
+      setIsPending(true)
+      try {
+        const result = await share(content, opts)
+        setLastResult(result)
+        return result
+      } finally {
+        setIsPending(false)
+      }
+    },
+    [],
+  )
 
-  const shareFileContent = useCallback(async (
-    fileUri: string,
-    opts?: { mimeType?: string; dialogTitle?: string },
-  ): Promise<void> => {
-    setIsPending(true)
-    try {
-      await shareFile(fileUri, opts)
-    } finally {
-      setIsPending(false)
-    }
-  }, [])
+  const shareFileContent = useCallback(
+    async (fileUri: string, opts?: { mimeType?: string; dialogTitle?: string }): Promise<void> => {
+      setIsPending(true)
+      try {
+        await shareFile(fileUri, opts)
+      } finally {
+        setIsPending(false)
+      }
+    },
+    [],
+  )
 
   return { shareContent, shareFileContent, isPending, lastResult }
 }
@@ -197,7 +201,7 @@ export function useClipboard() {
     try {
       Clipboard = requireClipboard()
     } catch {
-      return  // graceful no-op if not installed
+      return // graceful no-op if not installed
     }
 
     // Load initial value

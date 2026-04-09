@@ -28,12 +28,19 @@ describe('ForgotPasswordFormSchema', () => {
   })
 
   it('accepts custom submitLabel', () => {
-    const result = ForgotPasswordFormSchema.parse({ onSubmit: action, submitLabel: 'Reset Password' })
+    const result = ForgotPasswordFormSchema.parse({
+      onSubmit: action,
+      submitLabel: 'Reset Password',
+    })
     expect(result.submitLabel).toBe('Reset Password')
   })
 
   it('accepts id and testID', () => {
-    const result = ForgotPasswordFormSchema.parse({ onSubmit: action, id: 'forgot', testID: 'forgot-form' })
+    const result = ForgotPasswordFormSchema.parse({
+      onSubmit: action,
+      id: 'forgot',
+      testID: 'forgot-form',
+    })
     expect(result.id).toBe('forgot')
   })
 })

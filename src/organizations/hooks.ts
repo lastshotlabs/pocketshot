@@ -59,8 +59,7 @@ export function createOrgHooks(api: ApiClient) {
     const query = buildOrgListQuery(params)
     return useQuery<PaginatedOrgResponse<OrgResponse>>({
       queryKey: [...keys.orgs(), params] as const,
-      queryFn: () =>
-        api.get<PaginatedOrgResponse<OrgResponse>>(`${contract.list}${query}`),
+      queryFn: () => api.get<PaginatedOrgResponse<OrgResponse>>(`${contract.list}${query}`),
     })
   }
 
@@ -130,8 +129,7 @@ export function createOrgHooks(api: ApiClient) {
     const query = buildMemberListQuery(params)
     return useQuery<PaginatedOrgResponse<OrgMember>>({
       queryKey: [...keys.members(orgId), params] as const,
-      queryFn: () =>
-        api.get<PaginatedOrgResponse<OrgMember>>(`${contract.members(orgId)}${query}`),
+      queryFn: () => api.get<PaginatedOrgResponse<OrgMember>>(`${contract.members(orgId)}${query}`),
       enabled: !!orgId,
     })
   }
@@ -157,8 +155,7 @@ export function createOrgHooks(api: ApiClient) {
   function useRevokeInvite(orgId: string) {
     const queryClient = useQueryClient()
     return useMutation<void, Error, { inviteId: string }>({
-      mutationFn: ({ inviteId }) =>
-        api.delete<void>(contract.revokeInvite(orgId, inviteId)),
+      mutationFn: ({ inviteId }) => api.delete<void>(contract.revokeInvite(orgId, inviteId)),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: keys.invites(orgId) })
       },
@@ -172,8 +169,7 @@ export function createOrgHooks(api: ApiClient) {
   function useOrgInvites(orgId: string) {
     return useQuery<PaginatedOrgResponse<InviteResponse>>({
       queryKey: keys.invites(orgId),
-      queryFn: () =>
-        api.get<PaginatedOrgResponse<InviteResponse>>(contract.invites(orgId)),
+      queryFn: () => api.get<PaginatedOrgResponse<InviteResponse>>(contract.invites(orgId)),
       enabled: !!orgId,
     })
   }
@@ -185,8 +181,7 @@ export function createOrgHooks(api: ApiClient) {
   function useRemoveMember(orgId: string) {
     const queryClient = useQueryClient()
     return useMutation<void, Error, { userId: string }>({
-      mutationFn: ({ userId }) =>
-        api.delete<void>(contract.member(orgId, userId)),
+      mutationFn: ({ userId }) => api.delete<void>(contract.member(orgId, userId)),
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: keys.members(orgId) })
       },

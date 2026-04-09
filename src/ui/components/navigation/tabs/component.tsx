@@ -64,7 +64,9 @@ export function Tabs({ config }: { config: TabsConfig }) {
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedActiveTab =
-    config.activeTab != null ? (resolveFromRef(config.activeTab, values) as string | undefined) : undefined
+    config.activeTab != null
+      ? (resolveFromRef(config.activeTab, values) as string | undefined)
+      : undefined
 
   const defaultTab = config.defaultTab ?? config.tabs[0]?.id ?? ''
   const [localActive, setLocalActive] = useState<string>(resolvedActiveTab ?? defaultTab)
@@ -126,7 +128,9 @@ export function Tabs({ config }: { config: TabsConfig }) {
                     {tab.icon}
                   </Text>
                 )}
-                <Text style={[styles.tabLabel, isActive ? styles.activeLabel : styles.inactiveLabel]}>
+                <Text
+                  style={[styles.tabLabel, isActive ? styles.activeLabel : styles.inactiveLabel]}
+                >
                   {tab.label}
                 </Text>
               </TouchableOpacity>

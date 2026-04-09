@@ -141,7 +141,7 @@ export function DataList({ config }: { config: DataListConfig }) {
 
   const keyExtractor = useCallback(
     (item: unknown, index: number): string => {
-      const key = getNestedValue(item, config.keyExtractor)
+      const key = getNestedValue(item, config.keyExtractor ?? 'id')
       return key !== undefined ? String(key) : String(index)
     },
     [config.keyExtractor],
@@ -169,7 +169,7 @@ export function DataList({ config }: { config: DataListConfig }) {
   if (isLoading && !data) {
     return (
       <ComponentWrapper id={config.id} testID={config.testID}>
-        <LoadingSkeleton count={config.loadingCount} tokens={tokens} />
+        <LoadingSkeleton count={config.loadingCount ?? 3} tokens={tokens} />
       </ComponentWrapper>
     )
   }
@@ -192,7 +192,9 @@ export function DataList({ config }: { config: DataListConfig }) {
         renderItem={renderItem}
         numColumns={config.numColumns}
         contentContainerStyle={items.length === 0 ? styles.emptyContent : undefined}
-        ListEmptyComponent={<InlineEmptyState message={config.emptyMessage} tokens={tokens} />}
+        ListEmptyComponent={
+          <InlineEmptyState message={config.emptyMessage ?? 'Nothing here yet'} tokens={tokens} />
+        }
         refreshControl={
           config.refreshable ? (
             <RefreshControl

@@ -12,7 +12,8 @@ import type { HeaderConfig } from './types'
 function useTopInset(): number {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { useSafeAreaInsets } = require('react-native-safe-area-context') as typeof import('react-native-safe-area-context')
+    const { useSafeAreaInsets } =
+      require('react-native-safe-area-context') as typeof import('react-native-safe-area-context')
     // This hook is called conditionally — acceptable here since the require
     // either always resolves or always throws per device environment.
     // eslint-disable-next-line react-hooks/rules-of-hooks

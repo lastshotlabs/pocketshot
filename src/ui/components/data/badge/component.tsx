@@ -51,9 +51,9 @@ export function Badge({ config }: { config: BadgeConfig }) {
     ? String(resolveFromRef(config.label, values) ?? '')
     : config.label
 
-  const variantColors = resolveVariantColors(config.variant, tokens.colors)
-  const sizeStyle = SIZE_PADDING[config.size]
-  const fontSize = SIZE_FONT[config.size]
+  const variantColors = resolveVariantColors(config.variant ?? 'default', tokens.colors)
+  const sizeStyle = SIZE_PADDING[config.size ?? 'md']
+  const fontSize = SIZE_FONT[config.size ?? 'md']
 
   const styles = makeStyles(tokens, variantColors, sizeStyle, fontSize)
 

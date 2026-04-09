@@ -37,11 +37,13 @@ describe('StatCardSchema', () => {
   })
 
   it('rejects invalid trend direction', () => {
-    expect(StatCardSchema.safeParse({
-      label: 'Sales',
-      value: 100,
-      trend: { direction: 'sideways', value: '0%' },
-    }).success).toBe(false)
+    expect(
+      StatCardSchema.safeParse({
+        label: 'Sales',
+        value: 100,
+        trend: { direction: 'sideways', value: '0%' },
+      }).success,
+    ).toBe(false)
   })
 
   it('all optional fields are optional', () => {

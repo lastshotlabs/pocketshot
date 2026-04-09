@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // expo-sqlite is not installed in test env — OfflineQueue uses in-memory fallback
-vi.mock('expo-sqlite', () => { throw new Error('not installed') })
+vi.mock('expo-sqlite', () => {
+  throw new Error('not installed')
+})
 
 import { OfflineQueue } from '../../src/offline/queue'
 

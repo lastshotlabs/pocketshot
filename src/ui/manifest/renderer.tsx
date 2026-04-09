@@ -28,9 +28,7 @@ export function ScreenRenderer({ screen, api, componentRegistry }: ScreenRendere
             if (__DEV__) {
               return (
                 <View key={componentConfig.id ?? index} style={styles.unknownComponent}>
-                  <Text style={styles.unknownText}>
-                    Unknown component: {componentConfig.type}
-                  </Text>
+                  <Text style={styles.unknownText}>Unknown component: {componentConfig.type}</Text>
                 </View>
               )
             }

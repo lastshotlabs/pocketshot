@@ -15,24 +15,32 @@ async function main() {
     intro('@lastshotlabs/pocketshot sync')
     const apiIdx = args.indexOf('--api')
     const apiUrl =
-      apiIdx !== -1
-        ? args[apiIdx + 1]
-        : args.find((a) => a.startsWith('--api='))?.slice(6)
+      apiIdx !== -1 ? args[apiIdx + 1] : args.find((a) => a.startsWith('--api='))?.slice(6)
     const fileIdx = args.indexOf('--file')
     const filePath =
-      fileIdx !== -1
-        ? args[fileIdx + 1]
-        : args.find((a) => a.startsWith('--file='))?.slice(7)
+      fileIdx !== -1 ? args[fileIdx + 1] : args.find((a) => a.startsWith('--file='))?.slice(7)
     const watch = args.includes('--watch') || args.includes('-w')
     const zod = args.includes('--zod')
     const apiDirIdx = args.indexOf('--api-dir')
-    const apiDirArg = apiDirIdx !== -1 ? args[apiDirIdx + 1] : args.find((a) => a.startsWith('--api-dir='))?.slice(10)
+    const apiDirArg =
+      apiDirIdx !== -1
+        ? args[apiDirIdx + 1]
+        : args.find((a) => a.startsWith('--api-dir='))?.slice(10)
     const hooksDirIdx = args.indexOf('--hooks-dir')
-    const hooksDirArg = hooksDirIdx !== -1 ? args[hooksDirIdx + 1] : args.find((a) => a.startsWith('--hooks-dir='))?.slice(13)
+    const hooksDirArg =
+      hooksDirIdx !== -1
+        ? args[hooksDirIdx + 1]
+        : args.find((a) => a.startsWith('--hooks-dir='))?.slice(13)
     const typesPathIdx = args.indexOf('--types-path')
-    const typesPathArg = typesPathIdx !== -1 ? args[typesPathIdx + 1] : args.find((a) => a.startsWith('--types-path='))?.slice(13)
+    const typesPathArg =
+      typesPathIdx !== -1
+        ? args[typesPathIdx + 1]
+        : args.find((a) => a.startsWith('--types-path='))?.slice(13)
     const pocketshotImportIdx = args.indexOf('--pocketshot-import')
-    const pocketshotImportArg = pocketshotImportIdx !== -1 ? args[pocketshotImportIdx + 1] : args.find((a) => a.startsWith('--pocketshot-import='))?.slice(20)
+    const pocketshotImportArg =
+      pocketshotImportIdx !== -1
+        ? args[pocketshotImportIdx + 1]
+        : args.find((a) => a.startsWith('--pocketshot-import='))?.slice(20)
     await runSync({
       apiUrl,
       filePath,
@@ -52,9 +60,7 @@ async function main() {
     intro('@lastshotlabs/pocketshot manifest')
     const apiIdx = args.indexOf('--api')
     const apiUrl =
-      apiIdx !== -1
-        ? args[apiIdx + 1]
-        : args.find((a) => a.startsWith('--api='))?.slice(6)
+      apiIdx !== -1 ? args[apiIdx + 1] : args.find((a) => a.startsWith('--api='))?.slice(6)
     const outIdx = args.indexOf('--out')
     const outDir =
       outIdx !== -1
@@ -122,7 +128,9 @@ Options:
       process.exit(0)
     }
 
-    log.info(`Initialising ${config.projectName} in ${path.relative(process.cwd(), config.dir) || config.dir}`)
+    log.info(
+      `Initialising ${config.projectName} in ${path.relative(process.cwd(), config.dir) || config.dir}`,
+    )
 
     await scaffold(config)
 

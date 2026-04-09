@@ -111,12 +111,28 @@ export type {
 } from './push/index'
 
 // ── Deep links ────────────────────────────────────────────────────────────────
-export { parseDeepLink, matchPattern, useDeepLink, useDeepLinkRouter, createDeepLinkUrl } from './deep-links/index'
+export {
+  parseDeepLink,
+  matchPattern,
+  useDeepLink,
+  useDeepLinkRouter,
+  createDeepLinkUrl,
+} from './deep-links/index'
 export type { ParsedDeepLink, DeepLinkRoute, DeepLinkRouterOptions } from './deep-links/index'
 
 // ── Offline ───────────────────────────────────────────────────────────────────
-export { OfflineQueue, checkNetworkStatus, useNetworkStatus, createOfflineHooks } from './offline/index'
-export type { OfflineHooks, NetworkStatus, QueuedOperation, OfflineQueueOptions } from './offline/index'
+export {
+  OfflineQueue,
+  checkNetworkStatus,
+  useNetworkStatus,
+  createOfflineHooks,
+} from './offline/index'
+export type {
+  OfflineHooks,
+  NetworkStatus,
+  QueuedOperation,
+  OfflineQueueOptions,
+} from './offline/index'
 
 // ── Share / Clipboard ─────────────────────────────────────────────────────────
 export {

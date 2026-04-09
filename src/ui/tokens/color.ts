@@ -3,7 +3,13 @@ import type { HexColor } from './types'
 /** Parse a 6-digit hex color to { r, g, b } */
 function hexToRgb(hex: HexColor): { r: number; g: number; b: number } {
   const h = hex.replace('#', '')
-  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+  const full =
+    h.length === 3
+      ? h
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : h
   return {
     r: parseInt(full.slice(0, 2), 16),
     g: parseInt(full.slice(2, 4), 16),
@@ -13,7 +19,13 @@ function hexToRgb(hex: HexColor): { r: number; g: number; b: number } {
 
 /** Convert { r, g, b } back to a HexColor */
 function rgbToHex(r: number, g: number, b: number): HexColor {
-  return `#${[r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')}` as HexColor
+  return `#${[r, g, b]
+    .map((v) =>
+      Math.max(0, Math.min(255, Math.round(v)))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}` as HexColor
 }
 
 /**

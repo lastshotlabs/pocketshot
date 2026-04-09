@@ -21,7 +21,7 @@ describe('scaffold', () => {
       oauthScreens: true,
       webSocket: true,
       communityScreens: false,
-      gitInit: false,  // skip git for test speed
+      gitInit: false, // skip git for test speed
       pushNotifications: false,
       deepLinks: false,
       offlineSupport: false,

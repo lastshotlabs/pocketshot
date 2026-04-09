@@ -12,19 +12,11 @@ export type {
   DeepPartial,
 } from './types'
 
-export {
-  defaultSpacing,
-  defaultRadius,
-  defaultTypography,
-  defaultShadows,
-} from './schema'
+export { defaultSpacing, defaultRadius, defaultTypography, defaultShadows } from './schema'
 
 export { lighten, darken, alpha, mix } from './color'
 
-export {
-  flavors,
-  flavorNames,
-} from './flavors'
+export { flavors, flavorNames } from './flavors'
 export type { FlavorName } from './flavors'
 
 export { resolveTokens } from './resolve'

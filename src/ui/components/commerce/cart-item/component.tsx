@@ -25,17 +25,19 @@ export function CartItem({ config }: { config: CartItemConfig }) {
     ? String(resolveFromRef(config.title, values) ?? '')
     : config.title
 
-  const resolvedVariant = config.variant != null
-    ? isFromRef(config.variant)
-      ? String(resolveFromRef(config.variant, values) ?? '')
-      : config.variant
-    : null
+  const resolvedVariant =
+    config.variant != null
+      ? isFromRef(config.variant)
+        ? String(resolveFromRef(config.variant, values) ?? '')
+        : config.variant
+      : null
 
-  const resolvedImage = config.image != null
-    ? isFromRef(config.image)
-      ? String(resolveFromRef(config.image, values) ?? '')
-      : config.image
-    : null
+  const resolvedImage =
+    config.image != null
+      ? isFromRef(config.image)
+        ? String(resolveFromRef(config.image, values) ?? '')
+        : config.image
+      : null
 
   const resolvedPrice = isFromRef(config.price)
     ? Number(resolveFromRef(config.price, values) ?? 0)
@@ -45,6 +47,7 @@ export function CartItem({ config }: { config: CartItemConfig }) {
     ? Number(resolveFromRef(config.quantity, values) ?? 1)
     : (config.quantity ?? 1)
 
+  const currency = config.currency ?? 'USD'
   const total = resolvedPrice * resolvedQuantity
 
   const handleDecrement = useCallback(async () => {
@@ -84,7 +87,11 @@ export function CartItem({ config }: { config: CartItemConfig }) {
           />
         ) : (
           <View style={styles.thumbnailPlaceholder}>
-            <Text style={styles.thumbnailPlaceholderText} accessibilityElementsHidden importantForAccessibility="no">
+            <Text
+              style={styles.thumbnailPlaceholderText}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
               🛍
             </Text>
           </View>
@@ -100,7 +107,7 @@ export function CartItem({ config }: { config: CartItemConfig }) {
               {resolvedVariant}
             </Text>
           ) : null}
-          <Text style={styles.price}>{formatPrice(resolvedPrice, config.currency)}</Text>
+          <Text style={styles.price}>{formatPrice(resolvedPrice, currency)}</Text>
         </View>
 
         {/* Right column: quantity + remove */}
@@ -130,10 +137,7 @@ export function CartItem({ config }: { config: CartItemConfig }) {
             >
               <Text style={styles.quantityButtonText}>−</Text>
             </TouchableOpacity>
-            <Text
-              style={styles.quantityValue}
-              accessibilityLabel={`Quantity: ${resolvedQuantity}`}
-            >
+            <Text style={styles.quantityValue} accessibilityLabel={`Quantity: ${resolvedQuantity}`}>
               {resolvedQuantity}
             </Text>
             <TouchableOpacity
@@ -149,8 +153,8 @@ export function CartItem({ config }: { config: CartItemConfig }) {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.total} accessibilityLabel={`Total: ${formatPrice(total, config.currency)}`}>
-            {formatPrice(total, config.currency)}
+          <Text style={styles.total} accessibilityLabel={`Total: ${formatPrice(total, currency)}`}>
+            {formatPrice(total, currency)}
           </Text>
         </View>
       </View>

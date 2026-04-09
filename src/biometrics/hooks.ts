@@ -65,7 +65,9 @@ export async function checkBiometricAvailability(): Promise<BiometricAvailabilit
  *
  * @throws If expo-local-authentication is not installed.
  */
-export async function promptBiometric(opts: BiometricPromptOptions = {}): Promise<BiometricAuthResult> {
+export async function promptBiometric(
+  opts: BiometricPromptOptions = {},
+): Promise<BiometricAuthResult> {
   const LocalAuth = requireLocalAuth()
   const {
     promptMessage = 'Authenticate to continue',
@@ -135,16 +137,19 @@ export function useBiometricAuth() {
   const [isPending, setIsPending] = useState(false)
   const [lastResult, setLastResult] = useState<BiometricAuthResult | null>(null)
 
-  const authenticate = useCallback(async (opts: BiometricPromptOptions = {}): Promise<BiometricAuthResult> => {
-    setIsPending(true)
-    try {
-      const result = await promptBiometric(opts)
-      setLastResult(result)
-      return result
-    } finally {
-      setIsPending(false)
-    }
-  }, [])
+  const authenticate = useCallback(
+    async (opts: BiometricPromptOptions = {}): Promise<BiometricAuthResult> => {
+      setIsPending(true)
+      try {
+        const result = await promptBiometric(opts)
+        setLastResult(result)
+        return result
+      } finally {
+        setIsPending(false)
+      }
+    },
+    [],
+  )
 
   return { authenticate, isPending, lastResult }
 }

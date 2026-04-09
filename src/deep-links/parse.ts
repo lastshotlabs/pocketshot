@@ -14,9 +14,7 @@ import type { ParsedDeepLink } from './types'
 export function parseDeepLink(url: string): ParsedDeepLink {
   try {
     const parsed = new URL(url)
-    const pathSegments = parsed.pathname
-      .split('/')
-      .filter(Boolean)
+    const pathSegments = parsed.pathname.split('/').filter(Boolean)
 
     const queryParams: Record<string, string> = {}
     parsed.searchParams.forEach((value, key) => {
@@ -38,10 +36,13 @@ export function parseDeepLink(url: string): ParsedDeepLink {
       const pathSegments = path.split('/').filter(Boolean)
       const queryParams: Record<string, string> = {}
       if (search) {
-        search.replace(/^\?/, '').split('&').forEach((pair) => {
-          const [k, v = ''] = pair.split('=').map(decodeURIComponent)
-          if (k) queryParams[k] = v
-        })
+        search
+          .replace(/^\?/, '')
+          .split('&')
+          .forEach((pair) => {
+            const [k, v = ''] = pair.split('=').map(decodeURIComponent)
+            if (k) queryParams[k] = v
+          })
       }
       return { url, scheme: scheme ?? null, hostname: hostname ?? null, pathSegments, queryParams }
     }
@@ -62,7 +63,10 @@ export function parseDeepLink(url: string): ParsedDeepLink {
  * matchPattern('/post/:id', ['post', '123']) // { id: '123' }
  * matchPattern('/post/:id', ['comment', '123']) // null
  */
-export function matchPattern(pattern: string, pathSegments: string[]): Record<string, string> | null {
+export function matchPattern(
+  pattern: string,
+  pathSegments: string[],
+): Record<string, string> | null {
   const patternSegments = pattern.split('/').filter(Boolean)
 
   if (patternSegments.length !== pathSegments.length) return null

@@ -117,8 +117,7 @@ export function createDeviceHooks(api: ApiClient) {
         const info = await getDeviceInfo()
         const payload: DeviceRegistrationPayload = {
           deviceId,
-          platform:
-            Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web',
+          platform: Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web',
           brand: info.brand,
           modelName: info.modelName,
           osVersion: info.osVersion,

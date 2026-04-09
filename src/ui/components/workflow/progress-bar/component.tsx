@@ -60,10 +60,10 @@ export function ProgressBar({ config }: { config: ProgressBarConfig }) {
     }
   }, [resolvedValue, config.animated, animatedWidth])
 
-  const fillColor = resolveVariantColor(config.variant, tokens)
-  const borderRadius = resolveRadius(config.radius, tokens)
+  const fillColor = resolveVariantColor(config.variant ?? 'default', tokens)
+  const borderRadius = resolveRadius(config.radius ?? 'full', tokens)
 
-  const styles = makeStyles(tokens, config.height, borderRadius, fillColor)
+  const styles = makeStyles(tokens, config.height ?? 8, borderRadius, fillColor)
 
   const widthInterpolated = animatedWidth.interpolate({
     inputRange: [0, 100],
@@ -76,9 +76,7 @@ export function ProgressBar({ config }: { config: ProgressBarConfig }) {
       <View style={styles.wrapper}>
         {config.label != null || config.showValue ? (
           <View style={styles.labelRow}>
-            {config.label != null ? (
-              <Text style={styles.label}>{config.label}</Text>
-            ) : null}
+            {config.label != null ? <Text style={styles.label}>{config.label}</Text> : null}
             {config.showValue ? (
               <Text style={styles.valueText}>{Math.round(resolvedValue)}%</Text>
             ) : null}
@@ -97,12 +95,7 @@ export function ProgressBar({ config }: { config: ProgressBarConfig }) {
   )
 }
 
-function makeStyles(
-  tokens: DesignTokens,
-  height: number,
-  borderRadius: number,
-  fillColor: string,
-) {
+function makeStyles(tokens: DesignTokens, height: number, borderRadius: number, fillColor: string) {
   return StyleSheet.create({
     wrapper: {
       width: '100%',

@@ -70,7 +70,7 @@ export function LoadingState({ config }: { config: LoadingStateConfig }) {
           />
         </View>
       ) : (
-        <SkeletonRows count={config.count} height={config.height} tokens={tokens} />
+        <SkeletonRows count={config.count ?? 3} height={config.height ?? 48} tokens={tokens} />
       )}
     </ComponentWrapper>
   )

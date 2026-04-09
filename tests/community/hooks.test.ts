@@ -14,7 +14,14 @@ const mockUseQuery = useQuery as ReturnType<typeof vi.fn>
 const mockUseMutation = useMutation as ReturnType<typeof vi.fn>
 
 function makeApi(): ApiClient {
-  return { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn(), fetch: vi.fn() } as unknown as ApiClient
+  return {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    fetch: vi.fn(),
+  } as unknown as ApiClient
 }
 
 describe('createCommunityHooks factory shape', () => {
@@ -82,9 +89,11 @@ describe('useContainers', () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useContainers } = createCommunityHooks(makeApi())
     useContainers()
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: ['community', 'containers'],
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['community', 'containers'],
+      }),
+    )
   })
 
   it('calls api.get with the containers endpoint', () => {
@@ -117,10 +126,12 @@ describe('useContainer', () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useContainer } = createCommunityHooks(makeApi())
     useContainer('container-123')
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: ['community', 'containers', 'container-123'],
-      enabled: true,
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['community', 'containers', 'container-123'],
+        enabled: true,
+      }),
+    )
   })
 
   it('is disabled when containerId is empty', () => {
@@ -141,7 +152,10 @@ describe('useCreateContainer mutation', () => {
     const { useCreateContainer } = createCommunityHooks(api)
     const { _opts } = useCreateContainer() as any
     await _opts.mutationFn({ slug: 'general', name: 'General', isPrivate: false })
-    expect(api.post).toHaveBeenCalledWith('/community/containers', expect.objectContaining({ slug: 'general' }))
+    expect(api.post).toHaveBeenCalledWith(
+      '/community/containers',
+      expect.objectContaining({ slug: 'general' }),
+    )
   })
 })
 
@@ -169,17 +183,21 @@ describe('useCheckBan', () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useCheckBan } = createCommunityHooks(makeApi())
     useCheckBan('user-123', 'container-abc')
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: ['community', 'bans', 'user-123', 'check', 'container-abc'],
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['community', 'bans', 'user-123', 'check', 'container-abc'],
+      }),
+    )
   })
 
   it('uses null containerId when not provided', () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useCheckBan } = createCommunityHooks(makeApi())
     useCheckBan('user-123')
-    expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: ['community', 'bans', 'user-123', 'check', null],
-    }))
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['community', 'bans', 'user-123', 'check', null],
+      }),
+    )
   })
 })

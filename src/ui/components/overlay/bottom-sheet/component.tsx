@@ -62,7 +62,7 @@ interface CustomBottomSheetProps {
 }
 
 function CustomBottomSheet({ config, isOpen, onClose, tokens, children }: CustomBottomSheetProps) {
-  const snapHeights = config.snapPoints.map(parseSnapPoint)
+  const snapHeights = (config.snapPoints ?? ['50%']).map(parseSnapPoint)
   const primaryHeight =
     snapHeights[Math.floor(snapHeights.length / 2)] ?? snapHeights[0] ?? WINDOW_HEIGHT * 0.5
 
@@ -260,9 +260,7 @@ function GorhomBottomSheet({
       enablePanDownToClose
       onClose={onClose}
       handleIndicatorStyle={
-        config.showHandle
-          ? { backgroundColor: tokens.colors.border, width: 40 }
-          : { height: 0 }
+        config.showHandle ? { backgroundColor: tokens.colors.border, width: 40 } : { height: 0 }
       }
       backgroundStyle={{
         backgroundColor: tokens.colors.surface,

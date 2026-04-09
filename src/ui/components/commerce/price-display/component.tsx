@@ -41,18 +41,23 @@ export function PriceDisplay({ config }: { config: PriceDisplayConfig }) {
     ? (resolveFromRef(config.amount, values) as unknown as number | string)
     : config.amount
 
-  const resolvedOriginal: number | null = config.originalAmount != null
-    ? isFromRef(config.originalAmount)
-      ? (resolveFromRef(config.originalAmount, values) as unknown as number)
-      : config.originalAmount
-    : null
+  const resolvedOriginal: number | null =
+    config.originalAmount != null
+      ? isFromRef(config.originalAmount)
+        ? (resolveFromRef(config.originalAmount, values) as unknown as number)
+        : config.originalAmount
+      : null
 
-  const formattedPrice = formatPrice(resolvedAmount, config.currency, config.locale)
+  const currency = config.currency ?? 'USD'
+  const locale = config.locale ?? 'en-US'
+  const size = config.size ?? 'md'
+
+  const formattedPrice = formatPrice(resolvedAmount, currency, locale)
   const formattedOriginal =
-    resolvedOriginal != null ? formatPrice(resolvedOriginal, config.currency, config.locale) : null
+    resolvedOriginal != null ? formatPrice(resolvedOriginal, currency, locale) : null
 
   const textColor = config.color ?? tokens.colors.text
-  const styles = makeStyles(tokens, config.size, textColor)
+  const styles = makeStyles(tokens, size, textColor)
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>

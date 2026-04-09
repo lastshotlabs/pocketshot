@@ -24,26 +24,32 @@ export function useTokenEditor() {
    * @example setOverride(['colors', 'primary'], '#ff0000')
    * @example setOverride(['spacing', '4'], 20)
    */
-  const setOverride = useCallback(<K1 extends keyof DesignTokens>(
-    path: [K1, keyof DesignTokens[K1]],
-    value: DesignTokens[K1][typeof path[1]],
-  ) => {
-    setOverrides((prev) => {
-      const [topKey, subKey] = path
-      return {
-        ...prev,
-        [topKey]: {
-          ...(prev[topKey] as object ?? {}),
-          [subKey]: value,
-        },
-      }
-    })
-  }, [setOverrides])
+  const setOverride = useCallback(
+    <K1 extends keyof DesignTokens>(
+      path: [K1, keyof DesignTokens[K1]],
+      value: DesignTokens[K1][(typeof path)[1]],
+    ) => {
+      setOverrides((prev) => {
+        const [topKey, subKey] = path
+        return {
+          ...prev,
+          [topKey]: {
+            ...((prev[topKey] as object) ?? {}),
+            [subKey]: value,
+          },
+        }
+      })
+    },
+    [setOverrides],
+  )
 
   /** Replace the entire overrides object */
-  const setAllOverrides = useCallback((next: DeepPartial<DesignTokens>) => {
-    setOverrides(next)
-  }, [setOverrides])
+  const setAllOverrides = useCallback(
+    (next: DeepPartial<DesignTokens>) => {
+      setOverrides(next)
+    },
+    [setOverrides],
+  )
 
   /** Clear all runtime overrides */
   const clearOverrides = useCallback(() => {

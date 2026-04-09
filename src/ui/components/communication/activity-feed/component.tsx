@@ -55,9 +55,7 @@ function ActivityItemRow({
           {item.action != null && <Text style={styles.actionText}> {item.action}</Text>}
           {item.target != null && <Text style={styles.targetText}> {item.target}</Text>}
         </Text>
-        {item.timestamp != null && (
-          <Text style={styles.timestamp}>{item.timestamp}</Text>
-        )}
+        {item.timestamp != null && <Text style={styles.timestamp}>{item.timestamp}</Text>}
       </View>
     </View>
   )
@@ -75,7 +73,7 @@ export function ActivityFeed({ config }: { config: ActivityFeedConfig }) {
           item={item}
           isLast={index === items.length - 1}
           tokens={tokens}
-          itemHeight={config.itemHeight}
+          itemHeight={config.itemHeight ?? 72}
         />
       )
     },
@@ -123,8 +121,8 @@ export function ActivityFeed({ config }: { config: ActivityFeedConfig }) {
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         getItemLayout={(_d, index) => ({
-          length: config.itemHeight,
-          offset: config.itemHeight * index,
+          length: config.itemHeight ?? 72,
+          offset: (config.itemHeight ?? 72) * index,
           index,
         })}
         showsVerticalScrollIndicator={false}

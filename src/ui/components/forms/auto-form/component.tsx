@@ -66,10 +66,7 @@ function TextField({ field, value, onChange, tokens, errorText, formId }: FieldP
         secureTextEntry={field.type === 'password'}
         keyboardType={keyboardType}
         autoCapitalize={field.type === 'email' ? 'none' : 'sentences'}
-        style={[
-          fieldStyles(tokens).input,
-          { borderColor },
-        ]}
+        style={[fieldStyles(tokens).input, { borderColor }]}
         accessibilityLabel={field.label}
         accessibilityRole="none"
         testID={`${formId}-field-${field.id}`}
@@ -202,7 +199,12 @@ function SelectField({ field, value, onChange, tokens, errorText, formId }: Fiel
                         {item.label}
                       </Text>
                       {isSelected && (
-                        <Text style={{ color: tokens.colors.primary, fontSize: tokens.typography.fontSizeMd }}>
+                        <Text
+                          style={{
+                            color: tokens.colors.primary,
+                            fontSize: tokens.typography.fontSizeMd,
+                          }}
+                        >
                           ✓
                         </Text>
                       )}
@@ -257,7 +259,9 @@ function CheckboxField({ field, value, onChange, tokens, errorText, formId }: Fi
             </Text>
           )}
         </View>
-        <Text style={{ flex: 1, fontSize: tokens.typography.fontSizeMd, color: tokens.colors.text }}>
+        <Text
+          style={{ flex: 1, fontSize: tokens.typography.fontSizeMd, color: tokens.colors.text }}
+        >
           {field.label}
           {field.required && <Text style={{ color: tokens.colors.error }}> *</Text>}
         </Text>
@@ -395,7 +399,7 @@ export function AutoForm({ config }: { config: AutoFormConfig }) {
   }
 
   async function handleSubmit() {
-    setValue(config.onSubmitKey, formState)
+    setValue(config.onSubmitKey ?? '__formData', formState)
     await dispatch(config.onSubmit)
   }
 

@@ -89,7 +89,7 @@ export function ConfigImage({ config }: { config: ImageConfig }) {
 }
 
 function makeStyles(tokens: DesignTokens, config: ImageConfig) {
-  const borderRadius = tokens.radius[config.radius]
+  const borderRadius = tokens.radius[config.radius ?? 'none']
   const width = typeof config.width === 'number' ? config.width : undefined
   const height = config.height
 

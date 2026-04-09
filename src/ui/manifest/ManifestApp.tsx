@@ -39,11 +39,7 @@ export function ManifestApp({
 }: ManifestAppProps) {
   return (
     <AppContextProvider api={api} tokens={tokens} tokenConfig={tokenConfig}>
-      <ScreenRenderer
-        screen={currentScreen}
-        api={api}
-        componentRegistry={componentRegistry}
-      />
+      <ScreenRenderer screen={currentScreen} api={api} componentRegistry={componentRegistry} />
     </AppContextProvider>
   )
 }

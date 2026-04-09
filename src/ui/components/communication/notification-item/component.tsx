@@ -23,13 +23,13 @@ export function NotificationItem({ config }: { config: NotificationItemConfig })
   const { values, dispatch } = useScreenContext()
 
   const title = resolveFromRef(config.title, values) as string
-  const body = config.body != null ? (resolveFromRef(config.body, values) as string | undefined) : undefined
-  const timestamp = config.timestamp != null
-    ? (resolveFromRef(config.timestamp, values) as string | undefined)
-    : undefined
-  const read = config.read != null
-    ? (resolveFromRef(config.read, values) as boolean)
-    : false
+  const body =
+    config.body != null ? (resolveFromRef(config.body, values) as string | undefined) : undefined
+  const timestamp =
+    config.timestamp != null
+      ? (resolveFromRef(config.timestamp, values) as string | undefined)
+      : undefined
+  const read = config.read != null ? (resolveFromRef(config.read, values) as boolean) : false
 
   const translateX = useRef(new Animated.Value(0)).current
   const itemOpacity = useRef(new Animated.Value(1)).current
@@ -99,9 +99,7 @@ export function NotificationItem({ config }: { config: NotificationItemConfig })
             {body}
           </Text>
         )}
-        {timestamp != null && (
-          <Text style={styles.timestamp}>{timestamp}</Text>
-        )}
+        {timestamp != null && <Text style={styles.timestamp}>{timestamp}</Text>}
       </View>
 
       {/* Dismiss button */}

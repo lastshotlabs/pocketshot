@@ -43,10 +43,12 @@ describe('HeaderSchema', () => {
   })
 
   it('rejects rightActions with more than 2 items', () => {
-    expect(HeaderSchema.safeParse({
-      title: 'Home',
-      rightActions: [headerAction, headerAction, headerAction],
-    }).success).toBe(false)
+    expect(
+      HeaderSchema.safeParse({
+        title: 'Home',
+        rightActions: [headerAction, headerAction, headerAction],
+      }).success,
+    ).toBe(false)
   })
 
   it('headerAction requires icon and label (action is z.custom — runtime-transparent)', () => {

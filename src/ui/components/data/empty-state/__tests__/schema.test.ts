@@ -30,6 +30,8 @@ describe('EmptyStateSchema', () => {
 
   it('requires action.label when action provided', () => {
     // action.onPress is z.custom() — runtime-transparent, so only label is enforced
-    expect(EmptyStateSchema.safeParse({ action: { onPress: { type: 'navigate', path: '/' } } }).success).toBe(false)
+    expect(
+      EmptyStateSchema.safeParse({ action: { onPress: { type: 'navigate', path: '/' } } }).success,
+    ).toBe(false)
   })
 })

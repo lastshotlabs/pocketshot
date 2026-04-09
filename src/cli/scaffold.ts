@@ -134,11 +134,7 @@ export async function scaffold(config: PocketshotScaffoldConfig): Promise<void> 
   if (config.gitInit) {
     s.start('Initialising git repository')
     try {
-      exec(
-        'git init && git add -A && git commit -m "init: pocketshot scaffold"',
-        config.dir,
-        true,
-      )
+      exec('git init && git add -A && git commit -m "init: pocketshot scaffold"', config.dir, true)
       s.stop('Git repository initialised')
     } catch (err) {
       s.stop('Git init failed')

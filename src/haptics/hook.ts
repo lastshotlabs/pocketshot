@@ -14,7 +14,11 @@ import type { ImpactStyle, NotificationType, HapticOptions } from './types'
 export function useHaptics(globalOptions: HapticOptions = {}) {
   const triggerImpact = useCallback(
     (style: ImpactStyle = 'medium', opts: HapticOptions = {}) => {
-      impact(style, { ...globalOptions, ...opts, disabled: globalOptions.disabled || opts.disabled })
+      impact(style, {
+        ...globalOptions,
+        ...opts,
+        disabled: globalOptions.disabled || opts.disabled,
+      })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [globalOptions.disabled],

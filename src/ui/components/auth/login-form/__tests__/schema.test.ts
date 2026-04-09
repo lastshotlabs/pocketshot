@@ -22,12 +22,18 @@ describe('LoginFormSchema', () => {
   })
 
   it('accepts forgotPasswordAction', () => {
-    const result = LoginFormSchema.parse({ onSubmit: action, forgotPasswordAction: { type: 'navigate', path: '/forgot' } })
+    const result = LoginFormSchema.parse({
+      onSubmit: action,
+      forgotPasswordAction: { type: 'navigate', path: '/forgot' },
+    })
     expect(result.forgotPasswordAction).toBeDefined()
   })
 
   it('accepts registerAction', () => {
-    const result = LoginFormSchema.parse({ onSubmit: action, registerAction: { type: 'navigate', path: '/register' } })
+    const result = LoginFormSchema.parse({
+      onSubmit: action,
+      registerAction: { type: 'navigate', path: '/register' },
+    })
     expect(result.registerAction).toBeDefined()
   })
 
@@ -41,15 +47,19 @@ describe('LoginFormSchema', () => {
   })
 
   it('rejects invalid social provider', () => {
-    expect(LoginFormSchema.safeParse({
-      onSubmit: action,
-      socialProviders: ['twitter'],
-    }).success).toBe(false)
+    expect(
+      LoginFormSchema.safeParse({
+        onSubmit: action,
+        socialProviders: ['twitter'],
+      }).success,
+    ).toBe(false)
   })
 
   it('accepts all valid social providers', () => {
     for (const provider of ['google', 'apple', 'github'] as const) {
-      expect(LoginFormSchema.safeParse({ onSubmit: action, socialProviders: [provider] }).success).toBe(true)
+      expect(
+        LoginFormSchema.safeParse({ onSubmit: action, socialProviders: [provider] }).success,
+      ).toBe(true)
     }
   })
 })

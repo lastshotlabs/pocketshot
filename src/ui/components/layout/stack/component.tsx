@@ -5,13 +5,7 @@ import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 import type { StackConfig } from './types'
 
-export function Stack({
-  config,
-  children,
-}: {
-  config: StackConfig
-  children?: React.ReactNode
-}) {
+export function Stack({ config, children }: { config: StackConfig; children?: React.ReactNode }) {
   const tokens = useTokens()
   const styles = makeStyles(tokens, config)
 

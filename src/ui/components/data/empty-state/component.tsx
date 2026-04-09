@@ -20,20 +20,14 @@ export function EmptyState({ config }: { config: EmptyStateConfig }) {
     <ComponentWrapper id={config.id} testID={config.testID}>
       <View style={styles.container} accessibilityRole="none">
         {config.icon ? (
-          <Text
-            style={styles.icon}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-          >
+          <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
             {config.icon}
           </Text>
         ) : null}
         <Text style={styles.title} accessibilityRole="header">
           {config.title}
         </Text>
-        {config.description ? (
-          <Text style={styles.description}>{config.description}</Text>
-        ) : null}
+        {config.description ? <Text style={styles.description}>{config.description}</Text> : null}
         {config.action ? (
           <TouchableOpacity
             style={styles.actionButton}

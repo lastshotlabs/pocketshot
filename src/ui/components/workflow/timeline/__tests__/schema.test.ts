@@ -33,7 +33,16 @@ describe('TimelineSchema', () => {
 
   it('item accepts optional fields', () => {
     const result = TimelineSchema.parse({
-      items: [{ id: 'e1', title: 'Event', description: 'Desc', timestamp: '2024-01-01', icon: 'check', color: '#00ff00' }],
+      items: [
+        {
+          id: 'e1',
+          title: 'Event',
+          description: 'Desc',
+          timestamp: '2024-01-01',
+          icon: 'check',
+          color: '#00ff00',
+        },
+      ],
     })
     expect(result.items![0].icon).toBe('check')
     expect(result.items![0].color).toBe('#00ff00')

@@ -13,14 +13,16 @@ function StatusIndicator({ status, color }: { status: ChatBubbleConfig['status']
     return <ActivityIndicator size="small" color={color} style={styles.statusIcon} />
   }
   const label = status === 'read' ? '✓✓' : status === 'sent' ? '✓' : '⚠'
-  return (
-    <Text style={[styles.statusText, { color }]}>
-      {label}
-    </Text>
-  )
+  return <Text style={[styles.statusText, { color }]}>{label}</Text>
 }
 
-function AvatarView({ avatar, tokens }: { avatar: ChatBubbleConfig['avatar']; tokens: DesignTokens }) {
+function AvatarView({
+  avatar,
+  tokens,
+}: {
+  avatar: ChatBubbleConfig['avatar']
+  tokens: DesignTokens
+}) {
   if (!avatar) {
     return <View style={styles.avatarPlaceholder} />
   }
@@ -50,12 +52,11 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
   const { values } = useScreenContext()
 
   const message = resolveFromRef(config.message, values) as string
-  const timestamp = config.timestamp != null
-    ? (resolveFromRef(config.timestamp, values) as string | undefined)
-    : undefined
-  const isOwn = config.isOwn != null
-    ? (resolveFromRef(config.isOwn, values) as boolean)
-    : false
+  const timestamp =
+    config.timestamp != null
+      ? (resolveFromRef(config.timestamp, values) as string | undefined)
+      : undefined
+  const isOwn = config.isOwn != null ? (resolveFromRef(config.isOwn, values) as boolean) : false
 
   const dynamicStyles = makeDynamicStyles(tokens, isOwn)
 
@@ -65,14 +66,9 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
         {message}
       </Text>
       <View style={dynamicStyles.footer}>
-        {timestamp != null && (
-          <Text style={dynamicStyles.timestamp}>{timestamp}</Text>
-        )}
+        {timestamp != null && <Text style={dynamicStyles.timestamp}>{timestamp}</Text>}
         {isOwn && (
-          <StatusIndicator
-            status={config.status}
-            color={tokens.colors.primaryForeground}
-          />
+          <StatusIndicator status={config.status} color={tokens.colors.primaryForeground} />
         )}
       </View>
     </View>
@@ -139,9 +135,7 @@ const styles = StyleSheet.create({
 function makeDynamicStyles(tokens: DesignTokens, isOwn: boolean) {
   const backgroundColor = isOwn ? tokens.colors.primary : tokens.colors.surface
   const textColor = isOwn ? tokens.colors.primaryForeground : tokens.colors.text
-  const timestampColor = isOwn
-    ? tokens.colors.primaryForeground
-    : tokens.colors.textMuted
+  const timestampColor = isOwn ? tokens.colors.primaryForeground : tokens.colors.textMuted
 
   return StyleSheet.create({
     bubble: {

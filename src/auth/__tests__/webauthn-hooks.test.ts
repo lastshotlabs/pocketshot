@@ -15,7 +15,6 @@ import type { ApiClient } from '../../api/client'
 import type { TokenStorage } from '../storage'
 
 // ── Globals ───────────────────────────────────────────────────────────────────
-
 ;(globalThis as any).__DEV__ = true
 
 // ── Stub useMutation / useQuery ───────────────────────────────────────────────
@@ -221,7 +220,9 @@ describe('useListPasskeys', () => {
 
   it('queryFn calls GET /auth/passkey/credentials', async () => {
     const api = makeApi()
-    const credentials = [{ id: '1', credentialId: 'cred-1', createdAt: '2026-01-01T00:00:00Z', platform: 'ios' }]
+    const credentials = [
+      { id: '1', credentialId: 'cred-1', createdAt: '2026-01-01T00:00:00Z', platform: 'ios' },
+    ]
     vi.mocked(api.get).mockResolvedValue(credentials)
 
     const hooks = makeHooks(api)

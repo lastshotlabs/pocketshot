@@ -46,7 +46,10 @@ describe('share', () => {
   })
 
   it('returns shared: true when action is sharedAction', async () => {
-    rnShareMocks.share.mockResolvedValue({ action: 'sharedAction', activityType: 'com.apple.UIKit.activity.CopyToPasteboard' })
+    rnShareMocks.share.mockResolvedValue({
+      action: 'sharedAction',
+      activityType: 'com.apple.UIKit.activity.CopyToPasteboard',
+    })
     const result = await share({ message: 'Hello' })
     expect(result.shared).toBe(true)
     expect(result.activityType).toBe('com.apple.UIKit.activity.CopyToPasteboard')
@@ -79,7 +82,9 @@ describe('share', () => {
 describe('shareFile', () => {
   it('resolves without throwing when sharing is available', async () => {
     // Stub in node_modules/expo-sharing returns isAvailableAsync() → true
-    await expect(shareFile('file:///export.pdf', { mimeType: 'application/pdf' })).resolves.toBeUndefined()
+    await expect(
+      shareFile('file:///export.pdf', { mimeType: 'application/pdf' }),
+    ).resolves.toBeUndefined()
   })
 
   it('throws when expo-sharing is not available', async () => {

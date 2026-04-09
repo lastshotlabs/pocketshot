@@ -130,18 +130,16 @@ export function LoginForm({ config }: { config: LoginFormConfig }) {
           </TouchableOpacity>
 
           {/* Social buttons */}
-          {config.showSocialButtons && config.socialProviders.length > 0 && (
+          {config.showSocialButtons && (config.socialProviders ?? []).length > 0 && (
             <View style={styles.socialSection}>
               <View style={styles.dividerRow}>
                 <View style={styles.divider} />
                 <Text style={styles.dividerText}>or</Text>
                 <View style={styles.divider} />
               </View>
-              {config.socialProviders.map((provider) => (
+              {(config.socialProviders ?? []).map((provider) => (
                 <View key={provider} style={styles.socialButton}>
-                  <Text style={styles.socialButtonText}>
-                    {SOCIAL_LABELS[provider] ?? provider}
-                  </Text>
+                  <Text style={styles.socialButtonText}>{SOCIAL_LABELS[provider] ?? provider}</Text>
                 </View>
               ))}
             </View>

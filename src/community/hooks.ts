@@ -53,7 +53,6 @@ const keys = {
 // ── Factory ───────────────────────────────────────────────────────────────────
 
 export function createCommunityHooks(api: ApiClient) {
-
   // ── Containers ───────────────────────────────────────────────────────────────
 
   function useContainers(params?: ListParams) {
@@ -140,7 +139,11 @@ export function createCommunityHooks(api: ApiClient) {
 
   function useUpdateThread() {
     const queryClient = useQueryClient()
-    return useMutation<ThreadResponse, Error, { threadId: string; containerId: string } & UpdateThreadBody>({
+    return useMutation<
+      ThreadResponse,
+      Error,
+      { threadId: string; containerId: string } & UpdateThreadBody
+    >({
       mutationFn: ({ threadId, containerId: _cid, ...body }) =>
         api.patch<ThreadResponse>(`/community/threads/${threadId}`, body),
       onSuccess: (_data, { threadId, containerId }) => {
@@ -217,9 +220,7 @@ export function createCommunityHooks(api: ApiClient) {
     return useQuery<PaginatedResponse<ReplyResponse>>({
       queryKey: keys.replies(threadId),
       queryFn: () =>
-        api.get<PaginatedResponse<ReplyResponse>>(
-          `/community/threads/${threadId}/replies${query}`,
-        ),
+        api.get<PaginatedResponse<ReplyResponse>>(`/community/threads/${threadId}/replies${query}`),
       enabled: !!threadId,
     })
   }
@@ -246,7 +247,11 @@ export function createCommunityHooks(api: ApiClient) {
 
   function useUpdateReply() {
     const queryClient = useQueryClient()
-    return useMutation<ReplyResponse, Error, { replyId: string; threadId: string } & UpdateReplyBody>({
+    return useMutation<
+      ReplyResponse,
+      Error,
+      { replyId: string; threadId: string } & UpdateReplyBody
+    >({
       mutationFn: ({ replyId, threadId: _tid, ...body }) =>
         api.patch<ReplyResponse>(`/community/replies/${replyId}`, body),
       onSuccess: (_data, { replyId, threadId }) => {
@@ -448,8 +453,7 @@ export function createCommunityHooks(api: ApiClient) {
     const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
     return useQuery<PaginatedResponse<ReportResponse>>({
       queryKey: keys.reports(),
-      queryFn: () =>
-        api.get<PaginatedResponse<ReportResponse>>(`/community/reports${query}`),
+      queryFn: () => api.get<PaginatedResponse<ReportResponse>>(`/community/reports${query}`),
     })
   }
 
@@ -501,8 +505,7 @@ export function createCommunityHooks(api: ApiClient) {
     const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
     return useQuery<PaginatedResponse<BanResponse>>({
       queryKey: keys.bans(),
-      queryFn: () =>
-        api.get<PaginatedResponse<BanResponse>>(`/community/bans${query}`),
+      queryFn: () => api.get<PaginatedResponse<BanResponse>>(`/community/bans${query}`),
     })
   }
 

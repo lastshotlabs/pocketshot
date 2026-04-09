@@ -8,58 +8,116 @@ export function libPocketshotTemplate(config: PocketshotScaffoldConfig): string 
 
   const createArgs: Record<string, string> = { apiUrl: 'API_BASE_URL' }
   if (config.webSocket) createArgs.wsEndpoint = 'WS_ENDPOINT'
-  const createArgsStr = Object.entries(createArgs).map(([k, v]) => `${k}: ${v}`).join(', ')
+  const createArgsStr = Object.entries(createArgs)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(', ')
 
   // Build destructure list based on config
   const hooks = [
-    'useUser', 'useLogin', 'useRegister', 'useLogout',
-    'useVerifyMfa', 'useExchangeOAuthCode',
+    'useUser',
+    'useLogin',
+    'useRegister',
+    'useLogout',
+    'useVerifyMfa',
+    'useExchangeOAuthCode',
   ]
   if (config.authScreens) {
     hooks.push(
-      'useForgotPassword', 'useResetPassword', 'useVerifyEmail', 'useResendVerification',
-      'useSetPassword', 'useSessions', 'useRevokeSession', 'useDeleteAccount', 'useCancelDeletion',
+      'useForgotPassword',
+      'useResetPassword',
+      'useVerifyEmail',
+      'useResendVerification',
+      'useSetPassword',
+      'useSessions',
+      'useRevokeSession',
+      'useDeleteAccount',
+      'useCancelDeletion',
     )
   }
   if (config.mfaScreens) {
     hooks.push(
-      'useMfaSetup', 'useMfaVerifySetup', 'useMfaDisable', 'useMfaMethods', 'useMfaResend',
-      'useEmailOtpEnable', 'useEmailOtpVerifySetup',
+      'useMfaSetup',
+      'useMfaVerifySetup',
+      'useMfaDisable',
+      'useMfaMethods',
+      'useMfaResend',
+      'useEmailOtpEnable',
+      'useEmailOtpVerifySetup',
     )
   }
   if (config.webSocket) hooks.push('useRoom', 'useRoomEvent')
   if (config.communityScreens) {
     hooks.push(
       // Containers
-      'useContainers', 'useContainer', 'useCreateContainer', 'useUpdateContainer', 'useDeleteContainer',
+      'useContainers',
+      'useContainer',
+      'useCreateContainer',
+      'useUpdateContainer',
+      'useDeleteContainer',
       // Threads
-      'useContainerThreads', 'useContainerThread', 'useCreateThread', 'useUpdateThread', 'useDeleteThread',
-      'usePublishThread', 'useLockThread', 'usePinThread', 'useUnpinThread',
+      'useContainerThreads',
+      'useContainerThread',
+      'useCreateThread',
+      'useUpdateThread',
+      'useDeleteThread',
+      'usePublishThread',
+      'useLockThread',
+      'usePinThread',
+      'useUnpinThread',
       // Replies
-      'useThreadReplies', 'useReply', 'useCreateReply', 'useUpdateReply', 'useDeleteReply',
+      'useThreadReplies',
+      'useReply',
+      'useCreateReply',
+      'useUpdateReply',
+      'useDeleteReply',
       // Reactions
-      'useThreadReactions', 'useReplyReactions',
-      'useAddThreadReaction', 'useRemoveThreadReaction', 'useAddReplyReaction', 'useRemoveReplyReaction',
+      'useThreadReactions',
+      'useReplyReactions',
+      'useAddThreadReaction',
+      'useRemoveThreadReaction',
+      'useAddReplyReaction',
+      'useRemoveReplyReaction',
       // Members / Roles
-      'useContainerMembers', 'useContainerModerators', 'useContainerOwners',
-      'useAddMember', 'useRemoveMember',
-      'useAssignModerator', 'useRemoveModerator',
-      'useAssignOwner', 'useRemoveOwner',
+      'useContainerMembers',
+      'useContainerModerators',
+      'useContainerOwners',
+      'useAddMember',
+      'useRemoveMember',
+      'useAssignModerator',
+      'useRemoveModerator',
+      'useAssignOwner',
+      'useRemoveOwner',
       // Reports
-      'useReports', 'useReport', 'useCreateReport', 'useResolveReport', 'useDismissReport',
+      'useReports',
+      'useReport',
+      'useCreateReport',
+      'useResolveReport',
+      'useDismissReport',
       // Bans
-      'useBans', 'useCheckBan', 'useCreateBan', 'useRemoveBan',
+      'useBans',
+      'useCheckBan',
+      'useCreateBan',
+      'useRemoveBan',
       // Notifications
-      'useNotifications', 'useNotificationsUnreadCount', 'useMarkNotificationRead', 'useMarkAllNotificationsRead',
+      'useNotifications',
+      'useNotificationsUnreadCount',
+      'useMarkNotificationRead',
+      'useMarkAllNotificationsRead',
       // Search
-      'useSearchThreads', 'useSearchReplies',
+      'useSearchThreads',
+      'useSearchReplies',
     )
   }
   // Webhook hooks are always available — createPocketshot instantiates them unconditionally
   hooks.push(
-    'useWebhookEndpoints', 'useWebhookEndpoint', 'useCreateWebhookEndpoint',
-    'useUpdateWebhookEndpoint', 'useDeleteWebhookEndpoint',
-    'useWebhookDeliveries', 'useWebhookDelivery', 'useTestWebhookEndpoint',
+    'useWebhookEndpoints',
+    'useWebhookEndpoint',
+    'useCreateWebhookEndpoint',
+    'useUpdateWebhookEndpoint',
+    'useDeleteWebhookEndpoint',
+    'useWebhookDeliveries',
+    'useWebhookDelivery',
+    'useTestWebhookEndpoint',
   )
   hooks.push('formatAuthError', 'Providers', 'api', 'queryClient', 'tokenStorage')
 

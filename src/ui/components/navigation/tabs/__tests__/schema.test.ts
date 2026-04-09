@@ -32,7 +32,9 @@ describe('TabsSchema', () => {
   })
 
   it('rejects invalid variant', () => {
-    expect(TabsSchema.safeParse({ id: 'x', tabs: baseTabs, variant: 'bordered' }).success).toBe(false)
+    expect(TabsSchema.safeParse({ id: 'x', tabs: baseTabs, variant: 'bordered' }).success).toBe(
+      false,
+    )
   })
 
   it('accepts from-ref activeTab', () => {
@@ -51,7 +53,10 @@ describe('TabsSchema', () => {
   })
 
   it('accepts optional tab icon', () => {
-    const result = TabsSchema.parse({ id: 'x', tabs: [{ id: 'home', label: 'Home', icon: 'home-outline' }] })
+    const result = TabsSchema.parse({
+      id: 'x',
+      tabs: [{ id: 'home', label: 'Home', icon: 'home-outline' }],
+    })
     expect(result.tabs[0].icon).toBe('home-outline')
   })
 })

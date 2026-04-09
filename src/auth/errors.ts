@@ -1,6 +1,11 @@
 import type { ApiError } from '../api/client'
 
-export type AuthErrorContext = 'login' | 'register' | 'forgot-password' | 'reset-password' | 'verify-email'
+export type AuthErrorContext =
+  | 'login'
+  | 'register'
+  | 'forgot-password'
+  | 'reset-password'
+  | 'verify-email'
 
 export interface AuthErrorConfig {
   verbose?: boolean
@@ -9,8 +14,8 @@ export interface AuthErrorConfig {
 }
 
 const DEFAULT_MESSAGES: Record<AuthErrorContext, string> = {
-  'login': 'Invalid email or password.',
-  'register': 'Unable to create account. Please try again.',
+  login: 'Invalid email or password.',
+  register: 'Unable to create account. Please try again.',
   'forgot-password': "If that email is registered, you'll receive a password reset link shortly.",
   'reset-password': 'Unable to reset password. The link may have expired.',
   'verify-email': 'Unable to verify email. The link may have expired or already been used.',
