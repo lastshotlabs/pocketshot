@@ -97,6 +97,39 @@ export type {
   DeviceRegistrationResponse,
 } from './device/index'
 
+// ── Push notifications ────────────────────────────────────────────────────────
+export { createPushHooks } from './push/index'
+export type {
+  PushHooks,
+  PushPermissionStatus,
+  PushPermissionResult,
+  PushNotification,
+  NotificationTapEvent,
+  PushRegistrationOptions,
+  PushTokenRegistrationPayload,
+  PushTokenRegistrationResponse,
+} from './push/index'
+
+// ── Deep links ────────────────────────────────────────────────────────────────
+export { parseDeepLink, matchPattern, useDeepLink, useDeepLinkRouter, createDeepLinkUrl } from './deep-links/index'
+export type { ParsedDeepLink, DeepLinkRoute, DeepLinkRouterOptions } from './deep-links/index'
+
+// ── Offline ───────────────────────────────────────────────────────────────────
+export { OfflineQueue, checkNetworkStatus, useNetworkStatus, createOfflineHooks } from './offline/index'
+export type { OfflineHooks, NetworkStatus, QueuedOperation, OfflineQueueOptions } from './offline/index'
+
+// ── Share / Clipboard ─────────────────────────────────────────────────────────
+export {
+  share,
+  shareFile,
+  getClipboardString,
+  setClipboardString,
+  hasClipboardString,
+  useShare,
+  useClipboard,
+} from './share/index'
+export type { ShareContent, ShareOptions, ShareResult, ClipboardWriteOptions } from './share/index'
+
 // ── Biometrics ────────────────────────────────────────────────────────────────
 export {
   checkBiometricAvailability,

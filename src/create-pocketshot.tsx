@@ -23,6 +23,10 @@ import {
   promptBiometric,
 } from './biometrics/index'
 import { haptics, useHaptics } from './haptics/index'
+import { createPushHooks } from './push/index'
+import { useDeepLink, useDeepLinkRouter, parseDeepLink, matchPattern, createDeepLinkUrl } from './deep-links/index'
+import { createOfflineHooks } from './offline/index'
+import { useShare, useClipboard, share, shareFile, getClipboardString, setClipboardString, hasClipboardString } from './share/index'
 
 export interface PocketshotConfig {
   apiUrl: string
@@ -70,6 +74,8 @@ export function createPocketshot(config: PocketshotConfig) {
   const communityHooks = createCommunityHooks(api)
   const webhookHooks = createWebhookHooks(api)
   const deviceHooks = createDeviceHooks(api)
+  const pushHooks = createPushHooks(api)
+  const offlineHooks = createOfflineHooks({ api, appStateManager })
 
   function Providers({ children }: { children: ReactNode }) {
     return (
@@ -93,6 +99,20 @@ export function createPocketshot(config: PocketshotConfig) {
     promptBiometric,
     haptics,
     useHaptics,
+    ...pushHooks,
+    useDeepLink,
+    useDeepLinkRouter,
+    parseDeepLink,
+    matchPattern,
+    createDeepLinkUrl,
+    ...offlineHooks,
+    useShare,
+    useClipboard,
+    share,
+    shareFile,
+    getClipboardString,
+    setClipboardString,
+    hasClipboardString,
     Providers,
     api,
     queryClient,
