@@ -21,7 +21,7 @@ function formatPrice(amount: number, currency: string): string {
 function RatingStars({ rating, count, tokens }: { rating: number; count?: number; tokens: DesignTokens }) {
   const styles = StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    star: { fontSize: 13, color: '#F59E0B' },
+    star: { fontSize: 13, color: tokens.colors.warning },
     emptyStar: { fontSize: 13, color: tokens.colors.border },
     count: { fontSize: tokens.typography.fontSizeXs, color: tokens.colors.textMuted, marginLeft: 4 },
   })

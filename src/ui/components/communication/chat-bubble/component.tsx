@@ -20,7 +20,7 @@ function StatusIndicator({ status, color }: { status: ChatBubbleConfig['status']
   )
 }
 
-function AvatarView({ avatar }: { avatar: ChatBubbleConfig['avatar'] }) {
+function AvatarView({ avatar, tokens }: { avatar: ChatBubbleConfig['avatar']; tokens: DesignTokens }) {
   if (!avatar) {
     return <View style={styles.avatarPlaceholder} />
   }
@@ -39,8 +39,8 @@ function AvatarView({ avatar }: { avatar: ChatBubbleConfig['avatar'] }) {
   // Initials fallback — rendered below in the bubble row
   const initials = avatar.name ? avatar.name.slice(0, 2).toUpperCase() : '?'
   return (
-    <View style={styles.avatarInitials}>
-      <Text style={styles.avatarInitialsText}>{initials}</Text>
+    <View style={[styles.avatarInitials, { backgroundColor: tokens.colors.surfaceAlt }]}>
+      <Text style={[styles.avatarInitialsText, { color: tokens.colors.text }]}>{initials}</Text>
     </View>
   )
 }
@@ -81,7 +81,7 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
       <View style={isOwn ? styles.rowOwn : styles.rowOther}>
-        {!isOwn && <AvatarView avatar={config.avatar} />}
+        {!isOwn && <AvatarView avatar={config.avatar} tokens={tokens} />}
         {bubbleContent}
         {isOwn && <View style={styles.avatarPlaceholder} />}
       </View>
@@ -116,7 +116,6 @@ const styles = StyleSheet.create({
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: '#cccccc',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -124,7 +123,6 @@ const styles = StyleSheet.create({
   avatarInitialsText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#ffffff',
   },
   avatarPlaceholder: {
     width: AVATAR_SIZE + 8,
