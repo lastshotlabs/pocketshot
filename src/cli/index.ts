@@ -4,6 +4,7 @@ import { intro, outro, cancel, log } from '@clack/prompts'
 import { runPrompts } from './prompts'
 import { scaffold } from './scaffold'
 import { runSync } from './sync'
+import { runManifestSync } from './manifest-sync'
 
 async function main() {
   const args = process.argv.slice(2)
@@ -46,6 +47,31 @@ async function main() {
     return
   }
 
+  // Subcommand: pocketshot manifest
+  if (positionals[0] === 'manifest') {
+    intro('@lastshotlabs/pocketshot manifest')
+    const apiIdx = args.indexOf('--api')
+    const apiUrl =
+      apiIdx !== -1
+        ? args[apiIdx + 1]
+        : args.find((a) => a.startsWith('--api='))?.slice(6)
+    const outIdx = args.indexOf('--out')
+    const outDir =
+      outIdx !== -1
+        ? args[outIdx + 1]
+        : (args.find((a) => a.startsWith('--out='))?.slice(6) ?? 'app/manifest')
+
+    if (!apiUrl) {
+      log.error('--api <url> is required for manifest command')
+      log.info('Usage: pocketshot manifest --api https://api.example.com --out app/manifest')
+      process.exit(1)
+    }
+
+    await runManifestSync({ apiUrl, outDir, cwd: process.cwd() })
+    outro('Manifest screens generated successfully')
+    return
+  }
+
   // Help — must come before init, which catches the no-command case
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
@@ -55,12 +81,15 @@ Commands:
   init [--yes] [--dir <path>]    Scaffold a new pocketshot app
   sync [--file <path>] [--api <url>] [--watch]
                                  Generate API client + hooks from OpenAPI spec
+  manifest --api <url> [--out <dir>]
+                                 Fetch and generate screens from a bunshot manifest
 
 Options:
   --yes, -y        Skip prompts, use defaults
   --dir <path>     Output directory for init
   --file <path>    OpenAPI spec file path
-  --api <url>      OpenAPI spec URL
+  --api <url>      OpenAPI spec URL or manifest URL
+  --out <dir>      Output directory for manifest (default: app/manifest)
   --watch, -w      Watch mode for sync
   --pocketshot-import <path>  Import path override (default: @/lib/pocketshot)
   --api-dir <dir>  API output dir (default: lib/api)

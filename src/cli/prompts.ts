@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { text, confirm, isCancel } from '@clack/prompts'
+import { text, confirm, isCancel, cancel } from '@clack/prompts'
 import { slugify, schemeify } from './utils'
 import type { PocketshotScaffoldConfig } from './types'
 
@@ -43,6 +43,10 @@ export async function runPrompts(opts: PromptOptions): Promise<PocketshotScaffol
       webSocket: true,
       communityScreens: false,
       gitInit: true,
+      pushNotifications: true,
+      deepLinks: true,
+      offlineSupport: false,
+      orgSupport: false,
     }
   }
 
@@ -131,6 +135,38 @@ export async function runPrompts(opts: PromptOptions): Promise<PocketshotScaffol
   if (isCancel(gitVal)) return null
   const gitInit = gitVal as boolean
 
+  // 11. Push notifications
+  const pushVal = await confirm({
+    message: 'Set up push notifications?',
+    initialValue: false,
+  })
+  if (isCancel(pushVal)) { cancel('Cancelled'); process.exit(0) }
+  const pushNotifications = pushVal as boolean
+
+  // 12. Deep links / universal links
+  const deepLinksVal = await confirm({
+    message: 'Configure deep links / universal links?',
+    initialValue: false,
+  })
+  if (isCancel(deepLinksVal)) { cancel('Cancelled'); process.exit(0) }
+  const deepLinks = deepLinksVal as boolean
+
+  // 13. Offline support
+  const offlineVal = await confirm({
+    message: 'Add offline queue support?',
+    initialValue: false,
+  })
+  if (isCancel(offlineVal)) { cancel('Cancelled'); process.exit(0) }
+  const offlineSupport = offlineVal as boolean
+
+  // 14. Org / multi-tenant support
+  const orgVal = await confirm({
+    message: 'Add organization / multi-tenant support?',
+    initialValue: false,
+  })
+  if (isCancel(orgVal)) { cancel('Cancelled'); process.exit(0) }
+  const orgSupport = orgVal as boolean
+
   return {
     projectName,
     packageName,
@@ -143,5 +179,9 @@ export async function runPrompts(opts: PromptOptions): Promise<PocketshotScaffol
     webSocket,
     communityScreens,
     gitInit,
+    pushNotifications,
+    deepLinks,
+    offlineSupport,
+    orgSupport,
   }
 }

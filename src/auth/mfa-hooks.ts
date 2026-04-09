@@ -1,11 +1,17 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAtom } from 'jotai'
+import { useRouter } from 'expo-router'
+import type { WritableAtom } from 'jotai'
 import type { ApiClient } from '../api/client'
+import type { TokenStorage } from './storage'
 import type { QueryClient } from '@tanstack/react-query'
 import type { PocketshotConfig } from '../create-pocketshot'
 import type { PocketshotAuthContract } from './contract'
-import type { MfaMethod, MfaSetupResult } from './hooks'
+import type { AuthUser, MfaChallenge, MfaMethod, MfaSetupResult } from './hooks'
 
 export type { MfaMethod, MfaSetupResult }
+
+const AUTH_QUERY_KEY = ['auth', 'me'] as const
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,11 +40,13 @@ const MFA_RECOVERY_CODES_QUERY_KEY = ['mfa', 'recovery-codes'] as const
  */
 export function createMfaHooks(opts: {
   api: ApiClient
+  tokenStorage: TokenStorage
   queryClient: QueryClient
   config: PocketshotConfig
   contract: PocketshotAuthContract
+  pendingMfaChallengeAtom: WritableAtom<MfaChallenge | null, [MfaChallenge | null], void>
 }) {
-  const { api, contract } = opts
+  const { api, tokenStorage, config, contract, pendingMfaChallengeAtom } = opts
 
   // ── useMfaMethods ──────────────────────────────────────────────────────────
 
@@ -142,7 +150,37 @@ export function createMfaHooks(opts: {
     })
   }
 
+  // ── useVerifyMfa ────────────────────────────────────────────────────────────
+
+  /**
+   * Verifies an MFA code during login. Reads the pending MFA challenge (set by
+   * `useLogin`), posts the code to the verify endpoint, stores the returned token,
+   * and navigates to the home route on success.
+   */
+  function useVerifyMfa() {
+    const queryClient = useQueryClient()
+    const router = useRouter()
+    const [pendingChallenge, setPendingChallenge] = useAtom(pendingMfaChallengeAtom)
+
+    return useMutation<AuthUser, Error, { code: string }>({
+      mutationFn: async ({ code }) => {
+        const res = await api.post<{ token: string }>(contract.endpoints.mfaVerify, {
+          code,
+          token: pendingChallenge?.mfaToken,
+        })
+        await tokenStorage.setToken(res.token)
+        return api.get<AuthUser>(contract.endpoints.me)
+      },
+      onSuccess: (user) => {
+        setPendingChallenge(null)
+        queryClient.setQueryData(AUTH_QUERY_KEY, user)
+        router.replace((config.homePath ?? '/(app)/') as never)
+      },
+    })
+  }
+
   return {
+    useVerifyMfa,
     useMfaMethods,
     useMfaSetup,
     useMfaVerifySetup,

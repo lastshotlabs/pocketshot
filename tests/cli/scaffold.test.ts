@@ -22,6 +22,10 @@ describe('scaffold', () => {
       webSocket: true,
       communityScreens: false,
       gitInit: false,  // skip git for test speed
+      pushNotifications: false,
+      deepLinks: false,
+      offlineSupport: false,
+      orgSupport: false,
     }
     await scaffold(config)
   }, 60_000)
@@ -150,6 +154,10 @@ describe('scaffold without optional features', () => {
       webSocket: false,
       communityScreens: false,
       gitInit: false,
+      pushNotifications: false,
+      deepLinks: false,
+      offlineSupport: false,
+      orgSupport: false,
     }
     await scaffold(config)
   }, 60_000)

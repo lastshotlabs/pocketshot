@@ -10,4 +10,8 @@ export interface PocketshotScaffoldConfig {
   webSocket: boolean      // WS client + useRoom/useRoomEvent
   communityScreens: boolean  // community containers, thread list, thread detail screens
   gitInit: boolean
+  pushNotifications: boolean  // add expo-notifications setup
+  deepLinks: boolean          // add universal links + scheme config
+  offlineSupport: boolean     // add offline queue provider setup
+  orgSupport: boolean         // add org/permissions hooks in pocketshot.ts
 }

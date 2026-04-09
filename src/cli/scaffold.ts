@@ -30,6 +30,9 @@ import { appMfaSetupTemplate } from './templates/app/app-mfa-setup'
 import { communityContainersTemplate } from './templates/app/community-containers'
 import { communityThreadListTemplate } from './templates/app/community-thread-list'
 import { communityThreadTemplate } from './templates/app/community-thread'
+import { pushSetupTemplate } from './templates/app/push-setup'
+import { deepLinksSetupTemplate } from './templates/app/deep-links-setup'
+import { offlineProviderTemplate } from './templates/lib/offline-provider'
 
 const GITIGNORE_CONTENT = `node_modules/
 .expo/
@@ -98,6 +101,18 @@ export async function scaffold(config: PocketshotScaffoldConfig): Promise<void> 
     await write('app/(app)/community/index.tsx', communityContainersTemplate())
     await write('app/(app)/community/[containerId]/threads.tsx', communityThreadListTemplate())
     await write('app/(app)/community/threads/[threadId].tsx', communityThreadTemplate())
+  }
+
+  if (config.pushNotifications) {
+    await write('lib/usePushSetup.ts', pushSetupTemplate(config))
+  }
+
+  if (config.deepLinks) {
+    await write('lib/useDeepLinks.ts', deepLinksSetupTemplate(config))
+  }
+
+  if (config.offlineSupport) {
+    await write('lib/useOfflineSync.ts', offlineProviderTemplate())
   }
 
   // Step: install dependencies

@@ -219,7 +219,7 @@ export function createAuthHooks(opts: {
   // ── Compose sub-factories ──────────────────────────────────────────────────
 
   const accountHooks = createAccountHooks(opts)
-  const mfaHooks = createMfaHooks(opts)
+  const mfaHooks = createMfaHooks({ ...opts, pendingMfaChallengeAtom })
   const oauthHooks = createOAuthHooks(opts)
   const webauthnHooks = createWebAuthnHooks(opts)
 
