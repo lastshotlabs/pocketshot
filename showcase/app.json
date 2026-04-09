@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Pocketshot Showcase",
+    "slug": "pocketshot-showcase",
+    "version": "1.0.0",
+    "scheme": "showcase",
+    "platforms": ["ios", "android"],
+    "ios": { "supportsTablet": true },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}
