@@ -232,7 +232,7 @@ function makeSkeletonStyles(tokens: DesignTokens) {
       paddingTop: tokens.spacing[2],
     },
     row: {
-      height: 48,
+      height: tokens.spacing[12],
       borderRadius: tokens.radius.md,
       backgroundColor: tokens.colors.surfaceAlt,
       marginBottom: tokens.spacing[3],

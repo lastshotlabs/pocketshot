@@ -9,6 +9,9 @@ import type { PriceDisplayConfig } from './types'
 
 type Size = NonNullable<PriceDisplayConfig['size']>
 
+// Tight vertical padding for the discount badge pill; below the 4px grid
+const DISCOUNT_BADGE_PADDING_VERTICAL = 2
+
 const SIZE_FONT: Record<Size, number> = {
   sm: 14,
   md: 18,
@@ -122,7 +125,7 @@ function makeStyles(tokens: DesignTokens, size: Size, textColor: string) {
       backgroundColor: tokens.colors.error,
       borderRadius: tokens.radius.sm,
       paddingHorizontal: tokens.spacing[2],
-      paddingVertical: 2,
+      paddingVertical: DISCOUNT_BADGE_PADDING_VERTICAL,
     },
     badgeText: {
       fontSize: tokens.typography.fontSizeXs,

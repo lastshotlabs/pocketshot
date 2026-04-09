@@ -89,6 +89,7 @@ export interface TypographyTokens {
   fontSize2xl: number // 24
   fontSize3xl: number // 30
   fontSize4xl: number // 36
+  fontSize5xl: number // 48
   lineHeightTight: number // 1.2
   lineHeightNormal: number // 1.5
   lineHeightRelaxed: number // 1.75

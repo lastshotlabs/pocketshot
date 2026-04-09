@@ -185,7 +185,7 @@ function makeStyles(tokens: DesignTokens) {
       gap: tokens.spacing[4],
     },
     successIcon: {
-      fontSize: 48,
+      fontSize: tokens.typography.fontSize5xl,
     },
     successTitle: {
       fontSize: tokens.typography.fontSize2xl,

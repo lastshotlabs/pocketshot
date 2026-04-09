@@ -9,6 +9,9 @@ import type { ProductCardConfig } from './types'
 
 const IMAGE_ASPECT_RATIO = 4 / 3
 const IMAGE_HEIGHT_APPROX = 180
+// Sub-spacing values for component-specific micro-layout; below the 4px grid
+const STAR_GAP = 2
+const BADGE_PADDING_VERTICAL = 3
 
 function formatPrice(amount: number, currency: string): string {
   try {
@@ -28,13 +31,13 @@ function RatingStars({
   tokens: DesignTokens
 }) {
   const styles = StyleSheet.create({
-    row: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    star: { fontSize: 13, color: tokens.colors.warning },
-    emptyStar: { fontSize: 13, color: tokens.colors.border },
+    row: { flexDirection: 'row', alignItems: 'center', gap: STAR_GAP },
+    star: { fontSize: tokens.typography.fontSizeSm, color: tokens.colors.warning },
+    emptyStar: { fontSize: tokens.typography.fontSizeSm, color: tokens.colors.border },
     count: {
       fontSize: tokens.typography.fontSizeXs,
       color: tokens.colors.textMuted,
-      marginLeft: 4,
+      marginLeft: tokens.spacing[1],
     },
   })
 
@@ -236,7 +239,7 @@ function makeStyles(tokens: DesignTokens) {
       backgroundColor: tokens.colors.primary,
       borderRadius: tokens.radius.sm,
       paddingHorizontal: tokens.spacing[2],
-      paddingVertical: 3,
+      paddingVertical: BADGE_PADDING_VERTICAL,
     },
     badgeText: {
       fontSize: tokens.typography.fontSizeXs,

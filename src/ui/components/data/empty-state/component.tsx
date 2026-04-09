@@ -53,7 +53,7 @@ function makeStyles(tokens: DesignTokens) {
       padding: tokens.spacing[8],
     },
     icon: {
-      fontSize: 48,
+      fontSize: tokens.typography.fontSize5xl,
       marginBottom: tokens.spacing[4],
       textAlign: 'center',
     },

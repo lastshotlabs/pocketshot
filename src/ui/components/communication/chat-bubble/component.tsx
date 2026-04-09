@@ -7,7 +7,21 @@ import { resolveFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { ChatBubbleConfig } from './types'
 
-function StatusIndicator({ status, color }: { status: ChatBubbleConfig['status']; color: string }) {
+const AVATAR_SIZE = 32
+// Sub-spacing gap between message body and timestamp row; below the 4px grid
+const FOOTER_MARGIN_TOP = 2
+
+type ChatBubbleStyles = ReturnType<typeof makeStyles>
+
+function StatusIndicator({
+  status,
+  color,
+  styles,
+}: {
+  status: ChatBubbleConfig['status']
+  color: string
+  styles: Pick<ChatBubbleStyles, 'statusIcon' | 'statusText'>
+}) {
   if (!status) return null
   if (status === 'sending') {
     return <ActivityIndicator size="small" color={color} style={styles.statusIcon} />
@@ -19,9 +33,11 @@ function StatusIndicator({ status, color }: { status: ChatBubbleConfig['status']
 function AvatarView({
   avatar,
   tokens,
+  styles,
 }: {
   avatar: ChatBubbleConfig['avatar']
   tokens: DesignTokens
+  styles: Pick<ChatBubbleStyles, 'avatar' | 'avatarInitials' | 'avatarInitialsText' | 'avatarPlaceholder'>
 }) {
   if (!avatar) {
     return <View style={styles.avatarPlaceholder} />
@@ -38,7 +54,6 @@ function AvatarView({
     )
   }
 
-  // Initials fallback — rendered below in the bubble row
   const initials = avatar.name ? avatar.name.slice(0, 2).toUpperCase() : '?'
   return (
     <View style={[styles.avatarInitials, { backgroundColor: tokens.colors.surfaceAlt }]}>
@@ -58,17 +73,17 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
       : undefined
   const isOwn = config.isOwn != null ? (resolveFromRef(config.isOwn, values) as boolean) : false
 
-  const dynamicStyles = useMemo(() => makeDynamicStyles(tokens, isOwn), [tokens, isOwn])
+  const styles = useMemo(() => makeStyles(tokens, isOwn), [tokens, isOwn])
 
   const bubbleContent = (
-    <View style={dynamicStyles.bubble}>
-      <Text style={dynamicStyles.messageText} accessibilityRole="text">
+    <View style={styles.bubble}>
+      <Text style={styles.messageText} accessibilityRole="text">
         {message}
       </Text>
-      <View style={dynamicStyles.footer}>
-        {timestamp != null && <Text style={dynamicStyles.timestamp}>{timestamp}</Text>}
+      <View style={styles.footer}>
+        {timestamp != null && <Text style={styles.timestamp}>{timestamp}</Text>}
         {isOwn && (
-          <StatusIndicator status={config.status} color={tokens.colors.primaryForeground} />
+          <StatusIndicator status={config.status} color={tokens.colors.primaryForeground} styles={styles} />
         )}
       </View>
     </View>
@@ -77,7 +92,7 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
   return (
     <ComponentWrapper id={config.id} testID={config.testID}>
       <View style={isOwn ? styles.rowOwn : styles.rowOther}>
-        {!isOwn && <AvatarView avatar={config.avatar} tokens={tokens} />}
+        {!isOwn && <AvatarView avatar={config.avatar} tokens={tokens} styles={styles} />}
         {bubbleContent}
         {isOwn && <View style={styles.avatarPlaceholder} />}
       </View>
@@ -85,59 +100,54 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
   )
 }
 
-const AVATAR_SIZE = 32
-
-const styles = StyleSheet.create({
-  rowOwn: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
-    marginVertical: 4,
-    paddingHorizontal: 12,
-  },
-  rowOther: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-    marginVertical: 4,
-    paddingHorizontal: 12,
-  },
-  avatar: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    marginRight: 8,
-  },
-  avatarInitials: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  avatarInitialsText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  avatarPlaceholder: {
-    width: AVATAR_SIZE + 8,
-  },
-  statusIcon: {
-    marginLeft: 4,
-  },
-  statusText: {
-    fontSize: 11,
-    marginLeft: 4,
-  },
-})
-
-function makeDynamicStyles(tokens: DesignTokens, isOwn: boolean) {
+function makeStyles(tokens: DesignTokens, isOwn: boolean) {
   const backgroundColor = isOwn ? tokens.colors.primary : tokens.colors.surface
   const textColor = isOwn ? tokens.colors.primaryForeground : tokens.colors.text
   const timestampColor = isOwn ? tokens.colors.primaryForeground : tokens.colors.textMuted
 
   return StyleSheet.create({
+    rowOwn: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'flex-end',
+      marginVertical: tokens.spacing[1],
+      paddingHorizontal: tokens.spacing[3],
+    },
+    rowOther: {
+      flexDirection: 'row',
+      justifyContent: 'flex-start',
+      alignItems: 'flex-end',
+      marginVertical: tokens.spacing[1],
+      paddingHorizontal: tokens.spacing[3],
+    },
+    avatar: {
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: AVATAR_SIZE / 2,
+      marginRight: tokens.spacing[2],
+    },
+    avatarInitials: {
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: AVATAR_SIZE / 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: tokens.spacing[2],
+    },
+    avatarInitialsText: {
+      fontSize: tokens.typography.fontSizeXs,
+      fontWeight: tokens.typography.fontWeightSemibold,
+    },
+    avatarPlaceholder: {
+      width: AVATAR_SIZE + tokens.spacing[2],
+    },
+    statusIcon: {
+      marginLeft: tokens.spacing[1],
+    },
+    statusText: {
+      fontSize: tokens.typography.fontSizeXs,
+      marginLeft: tokens.spacing[1],
+    },
     bubble: {
       backgroundColor,
       borderRadius: tokens.radius.lg,
@@ -154,7 +164,7 @@ function makeDynamicStyles(tokens: DesignTokens, isOwn: boolean) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: isOwn ? 'flex-end' : 'flex-start',
-      marginTop: 2,
+      marginTop: FOOTER_MARGIN_TOP,
     },
     timestamp: {
       fontSize: tokens.typography.fontSizeXs,

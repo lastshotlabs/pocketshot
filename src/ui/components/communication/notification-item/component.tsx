@@ -17,6 +17,8 @@ import type { NotificationItemConfig } from './types'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 const DISMISS_THRESHOLD = SCREEN_WIDTH * 0.4
+// Sub-spacing gap between body text and adjacent elements; below the 4px grid
+const BODY_MARGIN_TOP = 2
 
 export function NotificationItem({ config }: { config: NotificationItemConfig }) {
   const tokens = useTokens()
@@ -154,18 +156,18 @@ function makeStyles(tokens: DesignTokens, read: boolean) {
       borderBottomColor: tokens.colors.divider,
     },
     iconArea: {
-      width: 40,
+      width: tokens.spacing[10],
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: tokens.spacing[3],
     },
     icon: {
-      fontSize: 20,
+      fontSize: tokens.typography.fontSizeXl,
     },
     iconDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
+      width: tokens.spacing[2],
+      height: tokens.spacing[2],
+      borderRadius: tokens.radius.sm,
       backgroundColor: read ? tokens.colors.textMuted : tokens.colors.primary,
     },
     content: {
@@ -179,7 +181,7 @@ function makeStyles(tokens: DesignTokens, read: boolean) {
     body: {
       fontSize: tokens.typography.fontSizeSm,
       color: tokens.colors.textMuted,
-      marginTop: 2,
+      marginTop: BODY_MARGIN_TOP,
       lineHeight: tokens.typography.fontSizeSm * tokens.typography.lineHeightNormal,
     },
     timestamp: {

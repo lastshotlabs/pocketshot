@@ -8,6 +8,8 @@ import type { ActivityFeedConfig, ActivityFeedItem } from './types'
 
 const AVATAR_SIZE = 36
 const TIMELINE_DOT_SIZE = 8
+// 2px structural width for the timeline connector line; not a spacing unit
+const TIMELINE_LINE_WIDTH = 2
 
 function ActivityItemRow({
   item,
@@ -160,7 +162,7 @@ function makeItemStyles(tokens: DesignTokens, isLast: boolean, itemHeight: numbe
       minHeight: itemHeight,
     },
     timelineColumn: {
-      width: 24,
+      width: tokens.spacing[6],
       alignItems: 'center',
     },
     timelineDot: {
@@ -171,10 +173,10 @@ function makeItemStyles(tokens: DesignTokens, isLast: boolean, itemHeight: numbe
       marginTop: (AVATAR_SIZE - TIMELINE_DOT_SIZE) / 2,
     },
     timelineLine: {
-      width: 2,
+      width: TIMELINE_LINE_WIDTH,
       flex: 1,
       backgroundColor: tokens.colors.divider,
-      marginTop: 4,
+      marginTop: tokens.spacing[1],
       display: isLast ? 'none' : 'flex',
     },
     avatarColumn: {

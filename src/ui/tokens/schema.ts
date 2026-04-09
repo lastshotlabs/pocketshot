@@ -34,6 +34,7 @@ export const defaultTypography: TypographyTokens = {
   fontSize2xl: 24,
   fontSize3xl: 30,
   fontSize4xl: 36,
+  fontSize5xl: 48,
   lineHeightTight: 1.2,
   lineHeightNormal: 1.5,
   lineHeightRelaxed: 1.75,

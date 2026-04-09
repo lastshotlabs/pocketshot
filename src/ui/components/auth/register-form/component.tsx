@@ -17,6 +17,9 @@ import type { RegisterFormConfig } from './types'
 
 type FieldName = 'email' | 'username' | 'password' | 'confirmPassword'
 
+// Sub-spacing gap between input field and its error message; below the 4px grid
+const ERROR_MARGIN_TOP = 2
+
 const FIELD_LABELS: Record<FieldName, string> = {
   email: 'Email',
   username: 'Username',
@@ -197,7 +200,7 @@ function makeStyles(tokens: DesignTokens) {
     errorText: {
       fontSize: tokens.typography.fontSizeXs,
       color: tokens.colors.error,
-      marginTop: 2,
+      marginTop: ERROR_MARGIN_TOP,
     },
     submitButton: {
       backgroundColor: tokens.colors.primary,

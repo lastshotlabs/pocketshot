@@ -8,6 +8,8 @@ import type { DesignTokens } from '../../../tokens/types'
 import type { CartItemConfig } from './types'
 
 const THUMBNAIL_SIZE = 56
+// Sub-spacing gap between title and variant; below the 4px grid
+const TITLE_MARGIN_BOTTOM = 2
 
 function formatPrice(amount: number, currency: string): string {
   try {
@@ -190,7 +192,7 @@ function makeStyles(tokens: DesignTokens) {
       justifyContent: 'center',
     },
     thumbnailPlaceholderText: {
-      fontSize: 24,
+      fontSize: tokens.typography.fontSize2xl,
     },
     content: {
       flex: 1,
@@ -200,7 +202,7 @@ function makeStyles(tokens: DesignTokens) {
       fontSize: tokens.typography.fontSizeSm,
       color: tokens.colors.text,
       fontWeight: tokens.typography.fontWeightSemibold,
-      marginBottom: 2,
+      marginBottom: TITLE_MARGIN_BOTTOM,
     },
     variant: {
       fontSize: tokens.typography.fontSizeXs,
@@ -216,7 +218,7 @@ function makeStyles(tokens: DesignTokens) {
       gap: tokens.spacing[2],
     },
     removeButton: {
-      padding: 4,
+      padding: tokens.spacing[1],
     },
     removeButtonText: {
       fontSize: tokens.typography.fontSizeSm,

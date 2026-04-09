@@ -4,7 +4,7 @@ import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { ColorTokens, DesignTokens } from '../../../tokens/types'
+import type { ColorTokens, DesignTokens, TypographyTokens } from '../../../tokens/types'
 import type { BadgeConfig } from './types'
 
 type Variant = NonNullable<BadgeConfig['variant']>
@@ -37,10 +37,10 @@ const SIZE_PADDING: Record<Size, { paddingHorizontal: number; paddingVertical: n
   lg: { paddingHorizontal: 14, paddingVertical: 6 },
 }
 
-const SIZE_FONT: Record<Size, number> = {
-  sm: 11,
-  md: 13,
-  lg: 15,
+const SIZE_FONT_TOKEN: Record<Size, keyof TypographyTokens> = {
+  sm: 'fontSizeXs',
+  md: 'fontSizeSm',
+  lg: 'fontSizeMd',
 }
 
 export function Badge({ config }: { config: BadgeConfig }) {
@@ -53,7 +53,7 @@ export function Badge({ config }: { config: BadgeConfig }) {
 
   const variantColors = resolveVariantColors(config.variant ?? 'default', tokens.colors)
   const sizeStyle = SIZE_PADDING[config.size ?? 'md']
-  const fontSize = SIZE_FONT[config.size ?? 'md']
+  const fontSize = tokens.typography[SIZE_FONT_TOKEN[config.size ?? 'md']] as number
 
   const styles = makeStyles(tokens, variantColors, sizeStyle, fontSize)
 
