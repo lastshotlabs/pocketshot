@@ -130,6 +130,56 @@ export {
 } from './share/index'
 export type { ShareContent, ShareOptions, ShareResult, ClipboardWriteOptions } from './share/index'
 
+// ── Organizations ─────────────────────────────────────────────────────────────
+export { defaultOrgContract, createOrgHooks } from './organizations/index'
+export type {
+  OrgHooks,
+  OrgResponse,
+  CreateOrgBody,
+  UpdateOrgBody,
+  OrgRole,
+  OrgMember,
+  InviteBody,
+  InviteResponse,
+  UpdateMemberRoleBody,
+  OrgListParams,
+  OrgMemberListParams,
+  PaginatedOrgResponse,
+} from './organizations/index'
+
+// ── Permissions ───────────────────────────────────────────────────────────────
+export { createPermissionHooks } from './permissions/index'
+export type {
+  PermissionHooks,
+  Permission,
+  Role,
+  AccessClaims,
+  PermissionCheckOptions,
+  OrgPermissionCheckOptions,
+} from './permissions/index'
+
+// ── Search ────────────────────────────────────────────────────────────────────
+export { createSearchHooks } from './search/index'
+export type {
+  SearchHooks,
+  SearchResult,
+  SearchParams,
+  SearchResponse as GlobalSearchResponse,
+  UseSearchOptions,
+} from './search/index'
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+export { createUploadHooks } from './upload/index'
+export type {
+  UploadHooks,
+  UploadFile,
+  UploadProgress,
+  PresignedUploadResponse,
+  UploadResult,
+  PresignedUploadOptions,
+  DirectUploadOptions,
+} from './upload/index'
+
 // ── Biometrics ────────────────────────────────────────────────────────────────
 export {
   checkBiometricAvailability,

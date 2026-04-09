@@ -27,6 +27,10 @@ import { createPushHooks } from './push/index'
 import { useDeepLink, useDeepLinkRouter, parseDeepLink, matchPattern, createDeepLinkUrl } from './deep-links/index'
 import { createOfflineHooks } from './offline/index'
 import { useShare, useClipboard, share, shareFile, getClipboardString, setClipboardString, hasClipboardString } from './share/index'
+import { createOrgHooks } from './organizations/index'
+import { createPermissionHooks } from './permissions/index'
+import { createSearchHooks } from './search/index'
+import { createUploadHooks } from './upload/index'
 
 export interface PocketshotConfig {
   apiUrl: string
@@ -76,6 +80,10 @@ export function createPocketshot(config: PocketshotConfig) {
   const deviceHooks = createDeviceHooks(api)
   const pushHooks = createPushHooks(api)
   const offlineHooks = createOfflineHooks({ api, appStateManager })
+  const orgHooks = createOrgHooks(api)
+  const permissionHooks = createPermissionHooks(api)
+  const searchHooks = createSearchHooks(api)
+  const uploadHooks = createUploadHooks(api, { baseUrl: config.apiUrl, tokenStorage })
 
   function Providers({ children }: { children: ReactNode }) {
     return (
@@ -113,6 +121,10 @@ export function createPocketshot(config: PocketshotConfig) {
     getClipboardString,
     setClipboardString,
     hasClipboardString,
+    ...orgHooks,
+    ...permissionHooks,
+    ...searchHooks,
+    ...uploadHooks,
     Providers,
     api,
     queryClient,
