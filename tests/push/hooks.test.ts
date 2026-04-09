@@ -56,10 +56,16 @@ describe('usePushRegistration', () => {
   it('posts the push token to the backend', async () => {
     const api = makeApi()
     ;(api.post as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true })
-    mockUseMutation.mockImplementation((opts: any) => ({ _opts: opts }))
+    // usePushRegistration wraps useMutation and returns its own shape,
+    // so we capture the mutationFn from the useMutation call args directly.
+    mockUseMutation.mockImplementation((opts: any) => ({
+      mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false,
+      isSuccess: false, error: null, data: undefined,
+    }))
     const { usePushRegistration } = createPushHooks(api)
-    const { _opts } = usePushRegistration() as any
-    await _opts.mutationFn({ pushToken: 'ExponentPushToken[abc]' })
+    usePushRegistration()
+    const mutationOpts = mockUseMutation.mock.calls[0]![0] as { mutationFn: (...a: any[]) => any }
+    await mutationOpts.mutationFn({ pushToken: 'ExponentPushToken[abc]' })
     expect(api.post).toHaveBeenCalledWith(
       expect.stringContaining('/device/push-token'),
       expect.objectContaining({ pushToken: 'ExponentPushToken[abc]' }),

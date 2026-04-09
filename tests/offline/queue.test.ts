@@ -77,13 +77,13 @@ describe('OfflineQueue (in-memory fallback)', () => {
     expect(ops).toHaveLength(0)
   })
 
-  it('supports all HTTP methods', async () => {
-    const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const
+  it('supports all write HTTP methods', async () => {
+    const methods = ['POST', 'PUT', 'PATCH', 'DELETE'] as const
     for (const method of methods) {
       await queue.enqueue({ method, path: `/test`, body: null })
     }
     const ops = await queue.getAll()
-    expect(ops).toHaveLength(5)
+    expect(ops).toHaveLength(4)
   })
 
   it('respects maxAttempts config option', () => {

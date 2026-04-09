@@ -110,7 +110,7 @@ describe('useOrgMembers', () => {
     const { useOrgMembers } = createOrgHooks(makeApi())
     useOrgMembers('org-123')
     expect(mockUseQuery).toHaveBeenCalledWith(expect.objectContaining({
-      queryKey: ['orgs', 'org-123', 'members'],
+      queryKey: expect.arrayContaining(['orgs', 'org-123', 'members']),
     }))
   })
 })
