@@ -8,10 +8,21 @@ import { createAuthErrorFormatter } from './auth/errors'
 import type { AuthErrorConfig } from './auth/errors'
 import { createAuthHooks } from './auth/hooks'
 import { createSecureStoreStorage } from './auth/storage'
+import { validateConfig } from './auth/warnings'
 import { createCommunityHooks } from './community/hooks'
 import { createWebhookHooks } from './webhooks/hooks'
-import { warnOnce } from './lib/warnings'
+import { createDeviceHooks } from './device/index'
+import { AppStateManager } from './app-state/manager'
 import { PocketshotWS, createWsHooks, notConfigured } from './ws/index'
+import { createSseHooks } from './sse/index'
+import {
+  useBiometricAvailability,
+  useBiometricAuth,
+  useBiometricGate,
+  checkBiometricAvailability,
+  promptBiometric,
+} from './biometrics/index'
+import { haptics, useHaptics } from './haptics/index'
 
 export interface PocketshotConfig {
   apiUrl: string
@@ -25,15 +36,20 @@ export interface PocketshotConfig {
   authErrors?: AuthErrorConfig
 }
 
+/**
+ * Bootstraps the Pocketshot SDK. Call this once — typically in a module-level
+ * singleton — and spread the returned hooks into your components.
+ *
+ * In development builds, `validateConfig` emits one-time console warnings for
+ * common misconfigurations (insecure URLs, missing leading slashes, etc.).
+ *
+ * @param config - SDK configuration options.
+ * @returns A flat object containing all hooks, helpers, and the `Providers` wrapper.
+ */
 export function createPocketshot(config: PocketshotConfig) {
-  const contract = mergeContract(config.apiUrl, config.contract)
+  validateConfig(config)
 
-  if (config.apiUrl.startsWith('http://')) {
-    warnOnce('insecure-url', '[pocketshot] apiUrl uses http:// — insecure in production')
-  }
-  if (config.authErrors?.verbose) {
-    warnOnce('verbose-errors', '[pocketshot] authErrors.verbose is enabled — disable in production')
-  }
+  const contract = mergeContract(config.apiUrl, config.contract)
 
   const formatAuthError = createAuthErrorFormatter(config.authErrors)
   const tokenStorage = createSecureStoreStorage(config.tokenKey ?? 'pocketshot_token')
@@ -41,13 +57,19 @@ export function createPocketshot(config: PocketshotConfig) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: config.staleTime ?? 300_000, retry: false } },
   })
-  const wsManager = config.wsEndpoint ? new PocketshotWS(config.wsEndpoint, tokenStorage) : null
+  const appStateManager = new AppStateManager()
+  appStateManager.start()
+  const wsManager = config.wsEndpoint
+    ? new PocketshotWS(config.wsEndpoint, tokenStorage, appStateManager)
+    : null
   const hooks = createAuthHooks({ api, tokenStorage, queryClient, config, contract })
   const wsHooks = wsManager
     ? createWsHooks(wsManager)
     : { useRoom: notConfigured, useRoomEvent: notConfigured }
+  const sseHooks = createSseHooks({ tokenStorage, appStateManager })
   const communityHooks = createCommunityHooks(api)
   const webhookHooks = createWebhookHooks(api)
+  const deviceHooks = createDeviceHooks(api)
 
   function Providers({ children }: { children: ReactNode }) {
     return (
@@ -57,5 +79,25 @@ export function createPocketshot(config: PocketshotConfig) {
     )
   }
 
-  return { ...hooks, ...wsHooks, ...communityHooks, ...webhookHooks, Providers, api, queryClient, tokenStorage, formatAuthError }
+  return {
+    ...hooks,
+    ...wsHooks,
+    ...sseHooks,
+    ...communityHooks,
+    ...webhookHooks,
+    ...deviceHooks,
+    useBiometricAvailability,
+    useBiometricAuth,
+    useBiometricGate,
+    checkBiometricAvailability,
+    promptBiometric,
+    haptics,
+    useHaptics,
+    Providers,
+    api,
+    queryClient,
+    tokenStorage,
+    formatAuthError,
+    appStateManager,
+  }
 }

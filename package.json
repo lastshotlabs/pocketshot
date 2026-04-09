@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "import": "./dist/ui.js",
+      "require": "./dist/ui.cjs"
     }
   },
   "scripts": {
@@ -21,11 +26,21 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": ">=5.0.0",
+    "expo-application": ">=5.0.0",
+    "expo-device": ">=6.0.0",
+    "expo-haptics": ">=14.0.0",
+    "expo-local-authentication": ">=14.0.0",
     "expo-router": ">=4.0.0",
     "expo-secure-store": ">=14.0.0",
     "jotai": ">=2.0.0",
     "react": ">=19.0.0",
     "react-native": ">=0.76.0"
+  },
+  "peerDependenciesMeta": {
+    "expo-application": { "optional": true },
+    "expo-device": { "optional": true },
+    "expo-haptics": { "optional": true },
+    "expo-local-authentication": { "optional": true }
   },
   "dependencies": { "@clack/prompts": "^1.1.0" },
   "devDependencies": {

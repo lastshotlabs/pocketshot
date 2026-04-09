@@ -20,7 +20,7 @@ export default defineConfig([
     outDir: 'dist',
   },
   {
-    entry: { index: 'src/index.ts' },
+    entry: { index: 'src/index.ts', ui: 'src/ui.ts' },
     format: ['esm', 'cjs'],
     dts: true,
     external: peerDeps,

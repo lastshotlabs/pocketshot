@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { AppState, type AppStateStatus } from 'react-native'
 import type { TokenStorage } from '../auth/storage'
+import type { AppStateManager } from '../app-state/manager'
 
 type RoomListener = (payload: unknown) => void
 
@@ -11,11 +11,22 @@ export class PocketshotWS {
   private subscribedRooms = new Set<string>()
   private listeners = new Map<string, Set<RoomListener>>()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null
+  private unsubscribeForeground: (() => void) | null = null
 
-  constructor(endpointUrl: string, storage: TokenStorage) {
+  /**
+   * @param endpointUrl     - Full WebSocket URL, e.g. wss://api.example.com/ws
+   * @param storage         - Token storage for auth header injection
+   * @param appStateManager - Shared AppStateManager; WS reconnects on foreground
+   */
+  constructor(endpointUrl: string, storage: TokenStorage, appStateManager: AppStateManager) {
     this.endpointUrl = endpointUrl.replace(/\/$/, '')
     this.storage = storage
+    // Subscribe to foreground events via the centralized manager (not AppState directly)
+    this.unsubscribeForeground = appStateManager.onForeground(() => {
+      if (!this.ws || this.ws.readyState > WebSocket.OPEN) {
+        void this.connect()
+      }
+    })
   }
 
   async connect() {
@@ -57,13 +68,6 @@ export class PocketshotWS {
     this.ws.onerror = () => {
       this.scheduleReconnect()
     }
-
-    this.appStateSubscription?.remove()
-    this.appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
-      if (state === 'active' && (!this.ws || this.ws.readyState > WebSocket.OPEN)) {
-        void this.connect()
-      }
-    })
   }
 
   subscribe(room: string, listener: RoomListener) {
@@ -100,7 +104,8 @@ export class PocketshotWS {
   }
 
   disconnect() {
-    this.appStateSubscription?.remove()
+    this.unsubscribeForeground?.()
+    this.unsubscribeForeground = null
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
     this.ws?.close(1000)
     this.ws = null

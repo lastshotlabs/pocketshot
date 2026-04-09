@@ -6,9 +6,14 @@ import type { TokenStorage } from './storage'
 import type { QueryClient } from '@tanstack/react-query'
 import type { PocketshotConfig } from '../create-pocketshot'
 import type { PocketshotAuthContract } from './contract'
+import { createAccountHooks } from './account-hooks'
+import { createMfaHooks } from './mfa-hooks'
+import { createOAuthHooks } from './oauth-hooks'
+import { createWebAuthnHooks } from './webauthn-hooks'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+/** Profile of the currently authenticated user. */
 export interface AuthUser {
   id: string
   email?: string
@@ -18,11 +23,13 @@ export interface AuthUser {
   [key: string]: unknown
 }
 
+/** Pending MFA challenge returned when a login attempt requires a second factor. */
 export interface MfaChallenge {
   mfaToken: string
   mfaMethods: string[]
 }
 
+/** Raw response from the login endpoint. */
 export interface LoginResult {
   token?: string
   mfaRequired?: boolean
@@ -30,6 +37,7 @@ export interface LoginResult {
   mfaMethods?: string[]
 }
 
+/** A single active session for the authenticated user. */
 export interface SessionInfo {
   sessionId: string
   ip?: string
@@ -38,23 +46,35 @@ export interface SessionInfo {
   lastActiveAt?: string
 }
 
+/** A configured MFA factor on the user's account. */
 export interface MfaMethod {
   type: 'totp' | 'email_otp' | 'webauthn'
   enabled: boolean
 }
 
+/** Result of initiating TOTP MFA setup. */
 export interface MfaSetupResult {
   secret: string
   qrCodeUrl: string
   recoveryCodes: string[]
 }
 
-// ── Factory ───────────────────────────────────────────────────────────────────
+// ── Shared query key ──────────────────────────────────────────────────────────
 
 const AUTH_QUERY_KEY = ['auth', 'me'] as const
-const SESSIONS_QUERY_KEY = ['sessions'] as const
-const MFA_METHODS_QUERY_KEY = ['mfa', 'methods'] as const
 
+// ── Factory ───────────────────────────────────────────────────────────────────
+
+/**
+ * Creates all auth hooks, bound to the provided API client, token storage, query
+ * client, config, and contract. The returned object is spread into the top-level
+ * Pocketshot instance by `createPocketshot`.
+ *
+ * The factory is split into focused sub-factories internally but exposes a single
+ * flat object so consumers keep one import point.
+ *
+ * @param opts - Shared SDK dependencies.
+ */
 export function createAuthHooks(opts: {
   api: ApiClient
   tokenStorage: TokenStorage
@@ -64,11 +84,16 @@ export function createAuthHooks(opts: {
 }) {
   const { api, tokenStorage, config, contract } = opts
 
-  // Internal MFA pending state atom — not exported to consumers
+  // Shared MFA pending state — kept here so useLogin and useVerifyMfa (now in
+  // mfa-hooks) can share the same atom instance via closure.
   const pendingMfaChallengeAtom = atom<MfaChallenge | null>(null)
 
   // ── useUser ────────────────────────────────────────────────────────────────
 
+  /**
+   * Queries the authenticated user's profile. Returns `null` when the user is
+   * not logged in rather than throwing.
+   */
   function useUser() {
     const { data: user = null, isLoading, isError } = useQuery<AuthUser | null>({
       queryKey: AUTH_QUERY_KEY,
@@ -87,6 +112,11 @@ export function createAuthHooks(opts: {
 
   // ── useLogin ───────────────────────────────────────────────────────────────
 
+  /**
+   * Submits email/password credentials. On success, either stores the token and
+   * navigates to the home route, or stores the MFA challenge and navigates to the
+   * MFA route when a second factor is required.
+   */
   function useLogin() {
     const queryClient = useQueryClient()
     const router = useRouter()
@@ -119,6 +149,10 @@ export function createAuthHooks(opts: {
 
   // ── useRegister ────────────────────────────────────────────────────────────
 
+  /**
+   * Registers a new user account, stores the returned tokens, and navigates to
+   * the home route on success.
+   */
   function useRegister() {
     const queryClient = useQueryClient()
     const router = useRouter()
@@ -147,6 +181,10 @@ export function createAuthHooks(opts: {
 
   // ── useLogout ──────────────────────────────────────────────────────────────
 
+  /**
+   * Signs the current user out: calls the server logout endpoint (best-effort),
+   * clears all local tokens, clears the query cache, and navigates to the login route.
+   */
   function useLogout() {
     const queryClient = useQueryClient()
     const router = useRouter()
@@ -166,199 +204,24 @@ export function createAuthHooks(opts: {
     })
   }
 
-  // ── useVerifyMfa ───────────────────────────────────────────────────────────
+  // ── useForgotPassword ──────────────────────────────────────────────────────
 
-  function useVerifyMfa() {
-    const queryClient = useQueryClient()
-    const router = useRouter()
-    const [, setMfaChallenge] = useAtom(pendingMfaChallengeAtom)
-
-    return useMutation<AuthUser, Error, { mfaToken: string; code: string; method: string }>({
-      mutationFn: async ({ mfaToken, code, method }) => {
-        const res = await api.post<{ token: string; refreshToken?: string }>(
-          contract.endpoints.mfaVerify,
-          { mfaToken, code, method },
-          { skipAuth: true },
-        )
-        await tokenStorage.setToken(res.token)
-        if (res.refreshToken) {
-          await tokenStorage.setRefreshToken(res.refreshToken)
-        }
-        return api.get<AuthUser>(contract.endpoints.me)
-      },
-      onSuccess: (user) => {
-        setMfaChallenge(null)
-        queryClient.setQueryData(AUTH_QUERY_KEY, user)
-        router.replace((config.homePath ?? '/(app)/') as never)
-      },
-    })
-  }
-
-  // ── useExchangeOAuthCode ───────────────────────────────────────────────────
-
-  function useExchangeOAuthCode() {
-    const queryClient = useQueryClient()
-    const router = useRouter()
-
-    return useMutation<AuthUser, Error, { code: string }>({
-      mutationFn: async ({ code }) => {
-        const res = await api.post<{ token: string; refreshToken?: string }>(
-          contract.endpoints.oauthExchange,
-          { code },
-          { skipAuth: true },
-        )
-        await tokenStorage.setToken(res.token)
-        if (res.refreshToken) {
-          await tokenStorage.setRefreshToken(res.refreshToken)
-        }
-        return api.get<AuthUser>(contract.endpoints.me)
-      },
-      onSuccess: (user) => {
-        queryClient.setQueryData(AUTH_QUERY_KEY, user)
-        router.replace((config.homePath ?? '/(app)/') as never)
-      },
-    })
-  }
-
-  // ── Account management hooks ───────────────────────────────────────────────
-
+  /**
+   * Sends a password-reset email to the supplied address.
+   * Does not require an active session.
+   */
   function useForgotPassword() {
     return useMutation<void, Error, { email: string }>({
       mutationFn: (body) => api.post<void>(contract.endpoints.forgotPassword, body, { skipAuth: true }),
     })
   }
 
-  function useResetPassword() {
-    return useMutation<void, Error, { token: string; password: string }>({
-      mutationFn: (body) => api.post<void>(contract.endpoints.resetPassword, body, { skipAuth: true }),
-    })
-  }
+  // ── Compose sub-factories ──────────────────────────────────────────────────
 
-  function useVerifyEmail() {
-    return useMutation<void, Error, { token: string }>({
-      mutationFn: (body) => api.post<void>(contract.endpoints.verifyEmail, body),
-    })
-  }
-
-  function useResendVerification() {
-    return useMutation<void, Error, void>({
-      mutationFn: () => api.post<void>(contract.endpoints.resendVerification, {}),
-    })
-  }
-
-  function useSetPassword() {
-    return useMutation<void, Error, { currentPassword: string; newPassword: string }>({
-      mutationFn: (body) => api.post<void>(contract.endpoints.setPassword, body),
-    })
-  }
-
-  function useSessions() {
-    return useQuery<SessionInfo[]>({
-      queryKey: SESSIONS_QUERY_KEY,
-      queryFn: () => api.get<SessionInfo[]>(contract.endpoints.sessions),
-    })
-  }
-
-  function useRevokeSession() {
-    const queryClient = useQueryClient()
-    return useMutation<void, Error, string>({
-      mutationFn: (sessionId) => api.delete<void>(contract.sessionRevoke(sessionId)),
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: SESSIONS_QUERY_KEY })
-      },
-    })
-  }
-
-  function useDeleteAccount() {
-    const queryClient = useQueryClient()
-    return useMutation<void, Error, void>({
-      mutationFn: () => api.delete<void>(contract.endpoints.deleteAccount),
-      onSuccess: async () => {
-        await tokenStorage.clearToken()
-        await tokenStorage.clearRefreshToken()
-        queryClient.clear()
-      },
-    })
-  }
-
-  function useCancelDeletion() {
-    return useMutation<void, Error, { token: string }>({
-      mutationFn: (body) => api.post<void>(contract.endpoints.cancelDeletion, body),
-    })
-  }
-
-  // ── MFA hooks ──────────────────────────────────────────────────────────────
-
-  function useMfaSetup() {
-    return useMutation<MfaSetupResult, Error, void>({
-      mutationFn: () => api.post<MfaSetupResult>(contract.endpoints.mfaSetup, {}),
-    })
-  }
-
-  function useMfaVerifySetup() {
-    return useMutation<void, Error, { code: string }>({
-      mutationFn: (body) => api.post<void>(contract.endpoints.mfaVerifySetup, body),
-    })
-  }
-
-  function useMfaDisable() {
-    return useMutation<void, Error, { code: string }>({
-      mutationFn: (body) => api.delete<void>(contract.endpoints.mfaDisable, body),
-    })
-  }
-
-  function useMfaMethods() {
-    return useQuery<MfaMethod[]>({
-      queryKey: MFA_METHODS_QUERY_KEY,
-      queryFn: () => api.get<MfaMethod[]>(contract.endpoints.mfaMethods),
-    })
-  }
-
-  function useMfaResend() {
-    return useMutation<void, Error, void>({
-      mutationFn: () => api.post<void>(contract.endpoints.mfaResend, {}),
-    })
-  }
-
-  function useEmailOtpEnable() {
-    return useMutation<void, Error, void>({
-      mutationFn: () => api.post<void>(contract.endpoints.mfaEmailOtpEnable, {}),
-    })
-  }
-
-  function useEmailOtpVerifySetup() {
-    return useMutation<void, Error, { code: string }>({
-      mutationFn: (body) => api.post<void>(contract.endpoints.mfaEmailOtpVerifySetup, body),
-    })
-  }
-
-  function useMfaEmailOtpDisable() {
-    return useMutation<void, Error, void>({
-      mutationFn: () => api.delete<void>(contract.endpoints.mfaEmailOtpDisable),
-    })
-  }
-
-  // ── OAuth helpers ──────────────────────────────────────────────────────────
-
-  function getOAuthUrl(provider: string, redirectUri: string): string {
-    return `${contract.oauthUrl(provider)}?redirect_uri=${encodeURIComponent(redirectUri)}`
-  }
-
-  function getLinkUrl(provider: string): string {
-    return contract.oauthLinkUrl(provider)
-  }
-
-  function useOAuthUnlink() {
-    const queryClient = useQueryClient()
-    return useMutation<void, Error, string>({
-      mutationFn: (provider) => api.delete<void>(contract.oauthUnlink(provider)),
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
-      },
-    })
-  }
-
-  // ── Return all hooks ───────────────────────────────────────────────────────
+  const accountHooks = createAccountHooks(opts)
+  const mfaHooks = createMfaHooks(opts)
+  const oauthHooks = createOAuthHooks(opts)
+  const webauthnHooks = createWebAuthnHooks(opts)
 
   return {
     // Core auth
@@ -366,32 +229,17 @@ export function createAuthHooks(opts: {
     useLogin,
     useRegister,
     useLogout,
-    useVerifyMfa,
-    useExchangeOAuthCode,
-    // Account management
     useForgotPassword,
-    useResetPassword,
-    useVerifyEmail,
-    useResendVerification,
-    useSetPassword,
-    useSessions,
-    useRevokeSession,
-    useDeleteAccount,
-    useCancelDeletion,
+    // Account management
+    ...accountHooks,
     // MFA
-    useMfaSetup,
-    useMfaVerifySetup,
-    useMfaDisable,
-    useMfaMethods,
-    useMfaResend,
-    useEmailOtpEnable,
-    useEmailOtpVerifySetup,
-    useMfaEmailOtpDisable,
-    // OAuth helpers
-    getOAuthUrl,
-    getLinkUrl,
-    useOAuthUnlink,
+    ...mfaHooks,
+    // OAuth
+    ...oauthHooks,
+    // WebAuthn / passkeys
+    ...webauthnHooks,
   }
 }
 
+/** Type of the object returned by {@link createAuthHooks}. */
 export type AuthHooks = ReturnType<typeof createAuthHooks>
