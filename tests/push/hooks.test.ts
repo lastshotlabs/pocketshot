@@ -38,11 +38,11 @@ describe('createPushHooks factory shape', () => {
   it('returns all expected hooks', () => {
     const hooks = createPushHooks(makeApi())
     const expected = [
-      'useRequestPushPermission',
       'usePushPermissionStatus',
-      'useRegisterPushToken',
-      'useNotificationListener',
-      'useNotificationTapListener',
+      'usePushPermissionRequest',
+      'useExpoPushToken',
+      'usePushRegistration',
+      'usePushNotifications',
     ]
     for (const name of expected) {
       expect(typeof (hooks as Record<string, unknown>)[name]).toBe('function')
@@ -50,19 +50,19 @@ describe('createPushHooks factory shape', () => {
   })
 })
 
-describe('useRegisterPushToken', () => {
+describe('usePushRegistration', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('posts the push token to the backend', async () => {
     const api = makeApi()
     ;(api.post as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true })
     mockUseMutation.mockImplementation((opts: any) => ({ _opts: opts }))
-    const { useRegisterPushToken } = createPushHooks(api)
-    const { _opts } = useRegisterPushToken() as any
-    await _opts.mutationFn({ token: 'ExponentPushToken[abc]', platform: 'ios' })
+    const { usePushRegistration } = createPushHooks(api)
+    const { _opts } = usePushRegistration() as any
+    await _opts.mutationFn({ pushToken: 'ExponentPushToken[abc]' })
     expect(api.post).toHaveBeenCalledWith(
-      expect.stringContaining('/push'),
-      expect.objectContaining({ token: 'ExponentPushToken[abc]' }),
+      expect.stringContaining('/device/push-token'),
+      expect.objectContaining({ pushToken: 'ExponentPushToken[abc]' }),
     )
   })
 })

@@ -58,7 +58,7 @@ describe('usePresignedUpload', () => {
 
   it('calls api.post with the presign endpoint to get upload URL', async () => {
     const api = makeApi()
-    // Mock presign response
+    // Mock presign response — resolves immediately
     ;(api.post as ReturnType<typeof vi.fn>).mockResolvedValue({
       uploadUrl: 'https://storage.example.com/upload/123',
       fileUrl: 'https://cdn.example.com/file/123',
@@ -84,18 +84,16 @@ describe('usePresignedUpload', () => {
     })
     const { upload } = hooks.usePresignedUpload()
 
-    // Start upload — we don't await to avoid XHR resolution complexity
-    const uploadPromise = upload(
+    // api.post is called synchronously before the first await in the upload function
+    upload(
       { uri: 'file:///photo.jpg', mimeType: 'image/jpeg', name: 'photo.jpg' },
       { presignEndpoint: '/files/presign' },
-    ).catch(() => {}) // XHR mock won't resolve, ignore
+    ).catch(() => {}) // XHR mock won't fire onload — ignore rejection
 
     expect(api.post).toHaveBeenCalledWith(
       '/files/presign',
-      expect.objectContaining({ mimeType: 'image/jpeg', name: 'photo.jpg' }),
+      expect.objectContaining({ mimeType: 'image/jpeg', fileName: 'photo.jpg' }),
     )
-
-    await uploadPromise
   })
 })
 
@@ -137,12 +135,15 @@ describe('useDirectUpload', () => {
     })
     const { upload } = hooks.useDirectUpload()
 
-    const uploadPromise = upload(
+    // Start upload without awaiting — let it run until XHR is invoked
+    upload(
       { uri: 'file:///photo.jpg', mimeType: 'image/jpeg', name: 'photo.jpg' },
       { endpoint: '/files/upload' },
     ).catch(() => {})
 
+    // Flush one microtask cycle so tokenStorage.getToken() resolves and XHR.open is called
+    await Promise.resolve()
+
     expect(mockXhr.open).toHaveBeenCalledWith('POST', 'https://api.example.com/files/upload')
-    await uploadPromise
   })
 })

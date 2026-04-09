@@ -21,8 +21,9 @@ describe('createOrgHooks factory shape', () => {
   it('returns all expected hooks', () => {
     const hooks = createOrgHooks(makeApi())
     const expected = [
-      'useOrganizations', 'useOrganization', 'useCreateOrg', 'useUpdateOrg', 'useDeleteOrg',
-      'useOrgMembers', 'useInviteMember', 'useUpdateMemberRole', 'useRemoveMember', 'useLeaveOrg',
+      'useOrganizations', 'useOrganization', 'useCreateOrganization', 'useUpdateOrganization', 'useDeleteOrganization',
+      'useOrgMembers', 'useInviteMember', 'useRevokeInvite', 'useOrgInvites',
+      'useUpdateMemberRole', 'useRemoveMember', 'useLeaveOrganization',
     ]
     for (const name of expected) {
       expect(typeof (hooks as Record<string, unknown>)[name]).toBe('function')
@@ -87,15 +88,15 @@ describe('useOrganization', () => {
   })
 })
 
-describe('useCreateOrg', () => {
+describe('useCreateOrganization', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('posts to the org create endpoint', async () => {
     const api = makeApi()
     ;(api.post as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'org-new', name: 'ACME' })
     mockUseMutation.mockImplementation((opts: any) => ({ _opts: opts }))
-    const { useCreateOrg } = createOrgHooks(api)
-    const { _opts } = useCreateOrg() as any
+    const { useCreateOrganization } = createOrgHooks(api)
+    const { _opts } = useCreateOrganization() as any
     await _opts.mutationFn({ name: 'ACME' })
     expect(api.post).toHaveBeenCalledWith(expect.stringMatching(/\/orgs/), { name: 'ACME' })
   })

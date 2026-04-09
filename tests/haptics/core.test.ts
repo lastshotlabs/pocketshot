@@ -1,15 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// ── Mock expo-haptics ─────────────────────────────────────────────────────────
+// ── Inline mock factories (must not reference variables — vi.mock is hoisted) ──
 
-const mockExpoHaptics = {
+vi.mock('expo-haptics', () => ({
   impactAsync: vi.fn().mockResolvedValue(undefined),
   notificationAsync: vi.fn().mockResolvedValue(undefined),
   selectionAsync: vi.fn().mockResolvedValue(undefined),
-}
+}))
 
-vi.mock('expo-haptics', () => mockExpoHaptics)
-
+import * as ExpoHaptics from 'expo-haptics'
 import { impact, notification, selection, haptics } from '../../src/haptics/core'
 
 describe('impact', () => {
@@ -18,13 +17,13 @@ describe('impact', () => {
   it('calls expo-haptics impactAsync with medium by default', async () => {
     impact()
     await Promise.resolve() // flush microtasks
-    expect(mockExpoHaptics.impactAsync).toHaveBeenCalledWith('medium')
+    expect(vi.mocked(ExpoHaptics.impactAsync)).toHaveBeenCalledWith('medium')
   })
 
   it('calls impactAsync with the specified style', async () => {
     impact('light')
     await Promise.resolve()
-    expect(mockExpoHaptics.impactAsync).toHaveBeenCalledWith('light')
+    expect(vi.mocked(ExpoHaptics.impactAsync)).toHaveBeenCalledWith('light')
   })
 
   it('accepts all valid impact styles', async () => {
@@ -33,18 +32,18 @@ describe('impact', () => {
       vi.clearAllMocks()
       impact(style)
       await Promise.resolve()
-      expect(mockExpoHaptics.impactAsync).toHaveBeenCalledWith(style)
+      expect(vi.mocked(ExpoHaptics.impactAsync)).toHaveBeenCalledWith(style)
     }
   })
 
   it('is a no-op when disabled option is true', async () => {
     impact('medium', { disabled: true })
     await Promise.resolve()
-    expect(mockExpoHaptics.impactAsync).not.toHaveBeenCalled()
+    expect(vi.mocked(ExpoHaptics.impactAsync)).not.toHaveBeenCalled()
   })
 
   it('never throws even if expo-haptics errors', () => {
-    mockExpoHaptics.impactAsync.mockRejectedValueOnce(new Error('Haptics unavailable'))
+    vi.mocked(ExpoHaptics.impactAsync).mockRejectedValueOnce(new Error('Haptics unavailable'))
     expect(() => impact()).not.toThrow()
   })
 })
@@ -55,7 +54,7 @@ describe('notification', () => {
   it('calls expo-haptics notificationAsync with success by default', async () => {
     notification()
     await Promise.resolve()
-    expect(mockExpoHaptics.notificationAsync).toHaveBeenCalledWith('success')
+    expect(vi.mocked(ExpoHaptics.notificationAsync)).toHaveBeenCalledWith('success')
   })
 
   it('accepts all valid notification types', async () => {
@@ -64,14 +63,14 @@ describe('notification', () => {
       vi.clearAllMocks()
       notification(type)
       await Promise.resolve()
-      expect(mockExpoHaptics.notificationAsync).toHaveBeenCalledWith(type)
+      expect(vi.mocked(ExpoHaptics.notificationAsync)).toHaveBeenCalledWith(type)
     }
   })
 
   it('is a no-op when disabled option is true', async () => {
     notification('success', { disabled: true })
     await Promise.resolve()
-    expect(mockExpoHaptics.notificationAsync).not.toHaveBeenCalled()
+    expect(vi.mocked(ExpoHaptics.notificationAsync)).not.toHaveBeenCalled()
   })
 })
 
@@ -81,13 +80,13 @@ describe('selection', () => {
   it('calls expo-haptics selectionAsync', async () => {
     selection()
     await Promise.resolve()
-    expect(mockExpoHaptics.selectionAsync).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(ExpoHaptics.selectionAsync)).toHaveBeenCalledTimes(1)
   })
 
   it('is a no-op when disabled option is true', async () => {
     selection({ disabled: true })
     await Promise.resolve()
-    expect(mockExpoHaptics.selectionAsync).not.toHaveBeenCalled()
+    expect(vi.mocked(ExpoHaptics.selectionAsync)).not.toHaveBeenCalled()
   })
 })
 
@@ -102,6 +101,6 @@ describe('haptics convenience object', () => {
     vi.clearAllMocks()
     haptics.impact('heavy')
     await Promise.resolve()
-    expect(mockExpoHaptics.impactAsync).toHaveBeenCalledWith('heavy')
+    expect(vi.mocked(ExpoHaptics.impactAsync)).toHaveBeenCalledWith('heavy')
   })
 })
