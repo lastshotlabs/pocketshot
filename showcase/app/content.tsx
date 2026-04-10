@@ -246,29 +246,72 @@ export default function ContentShowcase() {
 
         <Divider config={{ marginVertical: 4 }} />
 
-        <SectionLabel label="LinkEmbed — URL previews" />
-        <Stack config={{ gap: 12 }}>
-          <LinkEmbed
-            config={{
-              url: 'https://lastshotlabs.com/blog/config-driven-ui',
-              title: 'Config-Driven UI: Build Mobile Apps Without Code',
-              description:
-                'Learn how Pocketshot turns JSON manifests into fully native React Native screens with data binding, theming, and actions.',
-              imageUrl: 'https://picsum.photos/seed/linkembed1/800/400',
-              domain: 'lastshotlabs.com',
-            }}
-          />
-          <LinkEmbed
-            config={{
-              url: 'https://github.com/lastshotlabs/pocketshot',
-              title: 'lastshotlabs/pocketshot: React Native SDK for bunshot backends',
-              description:
-                'TypeScript SDK with 80+ config-addressable components, token-based theming, and CLI code generation from OpenAPI specs.',
-              imageUrl: 'https://picsum.photos/seed/linkembed2/800/400',
-              domain: 'github.com',
-            }}
-          />
-        </Stack>
+        <SectionLabel label="LinkEmbed — YouTube" />
+        <LinkEmbed
+          config={{
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            title: 'Building Config-Driven Mobile Apps with Pocketshot',
+            description: 'A deep dive into how Pocketshot turns JSON manifests into native iOS and Android screens.',
+            videoId: 'dQw4w9WgXcQ',
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — Twitter / X" />
+        <LinkEmbed
+          config={{
+            url: 'https://x.com/lastshotlabs/status/123456',
+            authorName: 'LastShot Labs',
+            authorHandle: 'lastshotlabs',
+            tweetText: 'Just shipped Pocketshot 2.0 — 125 config-driven components, 8 design flavors, and full manifest-to-native rendering. The mobile SDK that actually has parity with web. 🚀',
+            metrics: { likes: 2430, retweets: 312, replies: 89 },
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — GitHub" />
+        <LinkEmbed
+          config={{
+            url: 'https://github.com/lastshotlabs/pocketshot',
+            repoOwner: 'lastshotlabs',
+            repoName: 'pocketshot',
+            repoDescription: 'React Native/Expo SDK for bunshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation from OpenAPI specs.',
+            language: 'TypeScript',
+            languageColor: '#3178C6',
+            stars: 4821,
+            forks: 387,
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — Spotify" />
+        <LinkEmbed
+          config={{
+            url: 'https://open.spotify.com/track/example',
+            trackName: 'Midnight City',
+            artistName: 'M83',
+            albumArtUrl: 'https://picsum.photos/seed/spotify/300/300',
+            durationMs: 243000,
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — Figma" />
+        <LinkEmbed
+          config={{
+            url: 'https://www.figma.com/file/abc123/Pocketshot-Design-System',
+            fileName: 'Pocketshot Design System',
+            lastModified: 'April 8, 2026',
+            thumbnailUrl: 'https://picsum.photos/seed/figma/800/400',
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — generic URL" />
+        <LinkEmbed
+          config={{
+            url: 'https://lastshotlabs.com/blog/config-driven-ui',
+            title: 'Config-Driven UI: Build Mobile Apps Without Code',
+            description: 'Learn how Pocketshot turns JSON manifests into fully native React Native screens.',
+            imageUrl: 'https://picsum.photos/seed/linkembed1/800/400',
+            favicon: '🚀',
+          }}
+        />
 
         <Divider config={{ marginVertical: 4 }} />
 

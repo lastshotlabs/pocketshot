@@ -42,6 +42,7 @@ export function GifPicker({ config }: { config: GifPickerConfig }) {
   const styles = useMemo(() => makeStyles(tokens), [tokens])
 
   const hasEndpoint = !!config.apiEndpoint
+  const hasSamples = config.sampleGifs && config.sampleGifs.length > 0
 
   // Publish visibility to ScreenContext
   useEffect(() => {
@@ -192,17 +193,33 @@ export function GifPicker({ config }: { config: GifPickerConfig }) {
               placeholderTextColor={tokens.colors.inputPlaceholder}
               accessibilityLabel="Search GIFs"
               testID={config.testID ? `${config.testID}-search` : 'gif-picker-search'}
-              editable={hasEndpoint}
+              editable={hasEndpoint || hasSamples}
             />
 
             {/* Content */}
-            {!hasEndpoint ? (
+            {!hasEndpoint && !hasSamples ? (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyIcon}>🎬</Text>
                 <Text style={styles.emptyText}>
                   Configure apiEndpoint to enable GIF search
                 </Text>
               </View>
+            ) : !hasEndpoint && hasSamples ? (
+              <FlatList
+                data={(config.sampleGifs ?? []).map((g) => ({
+                  id: g.id,
+                  url: g.url,
+                  preview: g.preview ?? g.url,
+                  width: g.width ?? 200,
+                  height: g.height ?? 150,
+                }))}
+                renderItem={renderGif}
+                keyExtractor={keyExtractor}
+                numColumns={NUM_COLUMNS}
+                contentContainerStyle={styles.gridContent}
+                showsVerticalScrollIndicator={false}
+                testID={config.testID ? `${config.testID}-grid` : 'gif-picker-grid'}
+              />
             ) : isSearching ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator color={tokens.colors.primary} />

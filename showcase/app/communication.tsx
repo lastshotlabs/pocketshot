@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { View } from 'react-native'
 import {
   ChatBubble,
   NotificationItem,
@@ -16,6 +17,7 @@ import {
   EmojiPicker,
   GifPicker,
   ReactionPicker,
+  LinkEmbed,
   useScreenContext,
 } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
@@ -25,6 +27,7 @@ export default function CommunicationShowcase() {
   return (
     <ShowcaseScreen title="Communication">
       <MockProviders>
+        {/* ── ChatBubble ────────────────────────────────────────────── */}
         <SectionLabel label="ChatBubble — conversation thread" />
         <Stack config={{ gap: 8 }}>
           <ChatBubble
@@ -88,6 +91,7 @@ export default function CommunicationShowcase() {
 
         <Divider config={{ marginVertical: 8 }} />
 
+        {/* ── NotificationItem ──────────────────────────────────────── */}
         <SectionLabel label="NotificationItem — read + unread" />
         <Stack config={{ gap: 4 }}>
           <NotificationItem
@@ -129,46 +133,28 @@ export default function CommunicationShowcase() {
               icon: '💬',
             }}
           />
-          <NotificationItem
-            config={{
-              title: 'System maintenance tonight',
-              body: 'Scheduled downtime 2:00 AM – 3:00 AM UTC.',
-              timestamp: 'Yesterday',
-              read: true,
-              icon: '⚙️',
-              onDismiss: { type: 'toast', message: 'Dismissed' },
-            }}
-          />
         </Stack>
 
         <Divider config={{ marginVertical: 8 }} />
 
-        <SectionLabel label="ActivityFeed — empty state" />
-        <ActivityFeed
-          config={{
-            emptyMessage: 'No activity yet — invite your team to get started.',
-            itemHeight: 72,
-          }}
-        />
-
-        <Divider config={{ marginVertical: 8 }} />
-
+        {/* ── ReactionBar ───────────────────────────────────────────── */}
         <SectionLabel label="ReactionBar — reactions with counts" />
         <ReactionBar
           config={{
             reactions: [
-              { emoji: '\ud83d\udc4d', label: 'Like', count: 12, reacted: true },
-              { emoji: '\u2764\ufe0f', label: 'Love', count: 8, reacted: false },
-              { emoji: '\ud83d\ude02', label: 'Laugh', count: 5, reacted: true },
-              { emoji: '\ud83d\ude2e', label: 'Wow', count: 2, reacted: false },
-              { emoji: '\ud83c\udf89', label: 'Celebrate', count: 3, reacted: false },
-              { emoji: '\ud83d\udd25', label: 'Fire', count: 1, reacted: false },
+              { emoji: '👍', label: 'Like', count: 12, reacted: true },
+              { emoji: '❤️', label: 'Love', count: 8, reacted: false },
+              { emoji: '😂', label: 'Laugh', count: 5, reacted: true },
+              { emoji: '😮', label: 'Wow', count: 2, reacted: false },
+              { emoji: '🎉', label: 'Celebrate', count: 3, reacted: false },
+              { emoji: '🔥', label: 'Fire', count: 1, reacted: false },
             ],
           }}
         />
 
         <Divider config={{ marginVertical: 8 }} />
 
+        {/* ── Presence + Typing ──────────────────────────────────────── */}
         <SectionLabel label="PresenceIndicator — all statuses" />
         <Row config={{ gap: 16, align: 'center' }}>
           <PresenceIndicator config={{ status: 'online' }} />
@@ -187,16 +173,109 @@ export default function CommunicationShowcase() {
           <PresenceIndicator config={{ status: 'idle', showLabel: true }} />
         </Row>
 
-        <Divider config={{ marginVertical: 8 }} />
-
-        <SectionLabel label="TypingIndicator — active with user name" />
+        <SectionLabel label="TypingIndicator" />
         <TypingIndicator config={{ isTyping: true, userName: 'Alice' }} />
 
-        <SectionLabel label="TypingIndicator — inactive" />
-        <TypingIndicator config={{ isTyping: false }} />
+        <Divider config={{ marginVertical: 8 }} />
+
+        {/* ── Pickers — grouped compact ─────────────────────────────── */}
+        <SectionLabel label="Pickers — emoji, GIF, reaction" />
+        <Row config={{ gap: 12, align: 'center', wrap: true }}>
+          <EmojiPicker
+            config={{
+              id: 'showcase-emoji-picker',
+              onSelect: { type: 'toast', message: 'Emoji selected' },
+              recentEmojis: ['😀', '🚀', '🎨', '🔥', '✅', '💯'],
+            }}
+          />
+          <GifPicker
+            config={{
+              id: 'showcase-gif-picker',
+              onSelect: { type: 'toast', message: 'GIF selected' },
+              placeholder: 'Search GIFs...',
+              sampleGifs: [
+                { id: 'gif-1', url: 'https://picsum.photos/seed/gif1/200/150' },
+                { id: 'gif-2', url: 'https://picsum.photos/seed/gif2/200/150' },
+                { id: 'gif-3', url: 'https://picsum.photos/seed/gif3/200/150' },
+                { id: 'gif-4', url: 'https://picsum.photos/seed/gif4/200/150' },
+                { id: 'gif-5', url: 'https://picsum.photos/seed/gif5/200/150' },
+                { id: 'gif-6', url: 'https://picsum.photos/seed/gif6/200/150' },
+              ],
+            }}
+          />
+          <ReactionPicker
+            config={{
+              id: 'showcase-reaction-picker',
+              reactions: ['👍', '❤️', '😂', '😮', '😢', '🔥'],
+              onSelect: { type: 'toast', message: 'Reaction selected' },
+              triggerLabel: 'React',
+            }}
+          />
+        </Row>
 
         <Divider config={{ marginVertical: 8 }} />
 
+        {/* ── LinkEmbed — rich provider embeds ───────────────────────── */}
+        <SectionLabel label="LinkEmbed — YouTube" />
+        <LinkEmbed
+          config={{
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            title: 'Building Config-Driven Mobile Apps with Pocketshot',
+            description: 'A deep dive into how Pocketshot turns JSON manifests into native iOS and Android screens.',
+            videoId: 'dQw4w9WgXcQ',
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — Twitter / X" />
+        <LinkEmbed
+          config={{
+            url: 'https://x.com/lastshotlabs/status/123456',
+            authorName: 'LastShot Labs',
+            authorHandle: 'lastshotlabs',
+            tweetText: 'Just shipped Pocketshot 2.0 — 125 config-driven components, 8 design flavors, and full manifest-to-native rendering. The mobile SDK that actually has parity with web. 🚀',
+            metrics: { likes: 2430, retweets: 312, replies: 89 },
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — GitHub" />
+        <LinkEmbed
+          config={{
+            url: 'https://github.com/lastshotlabs/pocketshot',
+            repoOwner: 'lastshotlabs',
+            repoName: 'pocketshot',
+            repoDescription: 'React Native/Expo SDK for bunshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation.',
+            language: 'TypeScript',
+            languageColor: '#3178C6',
+            stars: 4821,
+            forks: 387,
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — Spotify" />
+        <LinkEmbed
+          config={{
+            url: 'https://open.spotify.com/track/example',
+            trackName: 'Midnight City',
+            artistName: 'M83',
+            albumArtUrl: 'https://picsum.photos/seed/spotify/300/300',
+            durationMs: 243000,
+          }}
+        />
+
+        <SectionLabel label="LinkEmbed — generic" />
+        <LinkEmbed
+          config={{
+            url: 'https://lastshotlabs.com/blog/config-driven-ui',
+            title: 'Config-Driven UI: Build Mobile Apps Without Code',
+            description: 'Learn how Pocketshot turns JSON manifests into fully native React Native screens.',
+            imageUrl: 'https://picsum.photos/seed/linkembed1/800/400',
+            favicon: '🚀',
+          }}
+        />
+
+        <Divider config={{ marginVertical: 8 }} />
+
+        {/* ── Data-driven components ─────────────────────────────────── */}
         <CommunicationDemos />
       </MockProviders>
     </ShowcaseScreen>
@@ -227,18 +306,10 @@ function CommunicationDemos() {
       {
         id: 'feed-3',
         title: 'Maestro E2E Testing Guide',
-        body: 'Step-by-step guide for setting up Maestro flows against a local bunshot dev instance. Covers auth, community, and push flows.',
+        body: 'Step-by-step guide for setting up Maestro flows against a local bunshot dev instance.',
         author: { name: 'Carol Davis' },
         createdAt: '2026-04-07T11:15:00Z',
         tags: ['testing', 'docs'],
-      },
-      {
-        id: 'feed-4',
-        title: 'WebSocket Reconnection Improvements',
-        body: 'Exponential backoff now respects AppState transitions. Connections pause on background and resume on foreground automatically.',
-        author: { name: 'Dan Wilson', avatarUrl: 'https://picsum.photos/seed/dan/100/100' },
-        createdAt: '2026-04-06T09:45:00Z',
-        tags: ['websocket', 'reliability'],
       },
     ])
 
@@ -247,29 +318,43 @@ function CommunicationDemos() {
         id: 'msg-1',
         senderId: 'user-alice',
         senderName: 'Alice',
-        body: 'Has anyone tested the new offline sync module?',
+        content: 'Has anyone tested the new offline sync module?',
         createdAt: '2026-04-09T10:00:00Z',
       },
       {
         id: 'msg-2',
         senderId: 'user-me',
         senderName: 'Me',
-        body: 'Yes, it works great with expo-sqlite. Queued mutations replay perfectly after reconnect.',
+        content: 'Yes, it works great with expo-sqlite. Queued mutations replay perfectly after reconnect.',
         createdAt: '2026-04-09T10:01:00Z',
       },
       {
         id: 'msg-3',
         senderId: 'user-alice',
         senderName: 'Alice',
-        body: 'Nice! What about conflict resolution when two devices edit the same record?',
+        content: 'Nice! What about conflict resolution when two devices edit the same record?',
         createdAt: '2026-04-09T10:02:00Z',
       },
       {
         id: 'msg-4',
         senderId: 'user-me',
         senderName: 'Me',
-        body: 'Last-write-wins by default, but you can provide a custom merge function in the sync config.',
+        content: 'Last-write-wins by default, but you can provide a custom merge function in the sync config.',
         createdAt: '2026-04-09T10:03:00Z',
+      },
+      {
+        id: 'msg-5',
+        senderId: 'user-alice',
+        senderName: 'Alice',
+        content: 'That is really well thought out. Great API design.',
+        createdAt: '2026-04-09T10:04:00Z',
+      },
+      {
+        id: 'msg-6',
+        senderId: 'user-me',
+        senderName: 'Me',
+        content: 'Thanks! We also added automatic retry with exponential backoff for failed syncs.',
+        createdAt: '2026-04-09T10:05:00Z',
       },
     ]
 
@@ -279,18 +364,16 @@ function CommunicationDemos() {
     setValue('commentData', [
       {
         id: 'comment-1',
-        authorId: 'user-alice',
-        authorName: 'Alice Chen',
-        body: 'This config-driven approach is a game changer for rapid prototyping.',
-        createdAt: '2026-04-09T09:00:00Z',
+        author: { name: 'Alice Chen' },
+        content: 'This config-driven approach is a game changer for rapid prototyping.',
+        timestamp: '2026-04-09T09:00:00Z',
         likes: 5,
         replies: [
           {
             id: 'comment-1-1',
-            authorId: 'user-bob',
-            authorName: 'Bob Martinez',
-            body: 'Agreed! We cut our scaffold time in half.',
-            createdAt: '2026-04-09T09:15:00Z',
+            author: { name: 'Bob Martinez' },
+            content: 'Agreed! We cut our scaffold time in half.',
+            timestamp: '2026-04-09T09:15:00Z',
             likes: 2,
             replies: [],
           },
@@ -298,27 +381,24 @@ function CommunicationDemos() {
       },
       {
         id: 'comment-2',
-        authorId: 'user-me',
-        authorName: 'Me',
-        body: 'The token system makes theming trivial. One flavor swap and everything updates.',
-        createdAt: '2026-04-09T09:30:00Z',
+        author: { name: 'Me' },
+        content: 'The token system makes theming trivial. One flavor swap and everything updates.',
+        timestamp: '2026-04-09T09:30:00Z',
         likes: 3,
         replies: [],
       },
       {
         id: 'comment-3',
-        authorId: 'user-carol',
-        authorName: 'Carol Davis',
-        body: 'Has anyone benchmarked FlatList performance with 1000+ comments?',
-        createdAt: '2026-04-09T10:00:00Z',
+        author: { name: 'Carol Davis' },
+        content: 'Has anyone benchmarked FlatList performance with 1000+ comments?',
+        timestamp: '2026-04-09T10:00:00Z',
         likes: 1,
         replies: [
           {
             id: 'comment-3-1',
-            authorId: 'user-alice',
-            authorName: 'Alice Chen',
-            body: 'Virtualization handles it fine. No jank on mid-range Android devices.',
-            createdAt: '2026-04-09T10:10:00Z',
+            author: { name: 'Alice Chen' },
+            content: 'Virtualization handles it fine. No jank on mid-range Android devices.',
+            timestamp: '2026-04-09T10:10:00Z',
             likes: 4,
             replies: [],
           },
@@ -329,87 +409,76 @@ function CommunicationDemos() {
 
   return (
     <Stack config={{ gap: 16 }}>
+      {/* ── Feed ──────────────────────────────────────────────────── */}
       <SectionLabel label="Feed — data-driven post list" />
-      <Feed
-        config={{
-          data: { from: 'feedData' },
-          showAvatars: true,
-          emptyMessage: 'No posts yet',
-        }}
-      />
+      <View style={{ height: 480, borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 12, overflow: 'hidden' }}>
+        <Feed
+          config={{
+            data: { from: 'feedData' },
+            showAvatars: true,
+            emptyMessage: 'No posts yet',
+          }}
+        />
+      </View>
 
       <Divider config={{ marginVertical: 8 }} />
 
+      {/* ── MessageThread ─────────────────────────────────────────── */}
       <SectionLabel label="MessageThread — conversation history" />
-      <MessageThread
-        config={{
-          data: { from: 'threadMessages' },
-          currentUserId: 'user-me',
-          showAvatars: true,
-        }}
-      />
+      <View style={{ height: 380, borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 12, overflow: 'hidden' }}>
+        <MessageThread
+          config={{
+            data: { from: 'threadMessages' },
+            currentUserId: 'user-me',
+            showAvatars: true,
+          }}
+        />
+      </View>
 
       <Divider config={{ marginVertical: 8 }} />
 
+      {/* ── ChatWindow ────────────────────────────────────────────── */}
       <SectionLabel label="ChatWindow — interactive chat" />
-      <ChatWindow
-        config={{
-          id: 'showcase-chat',
-          data: { from: 'chatMessages' },
-          currentUserId: 'user-me',
-          placeholder: 'Type a message...',
-          onSendAction: { type: 'toast', message: 'Message sent' },
-          showAvatars: true,
-        }}
-      />
+      <View style={{ height: 420, borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 12, overflow: 'hidden' }}>
+        <ChatWindow
+          config={{
+            id: 'showcase-chat',
+            data: { from: 'chatMessages' },
+            currentUserId: 'user-me',
+            placeholder: 'Type a message...',
+            onSendAction: { type: 'toast', message: 'Message sent' },
+            showAvatars: true,
+          }}
+        />
+      </View>
 
       <Divider config={{ marginVertical: 8 }} />
 
+      {/* ── CommentSection ────────────────────────────────────────── */}
       <SectionLabel label="CommentSection — threaded comments" />
-      <CommentSection
-        config={{
-          id: 'showcase-comments',
-          data: { from: 'commentData' },
-          currentUserId: 'user-me',
-          maxNestingLevel: 2,
-          allowReplies: true,
-          onSubmitComment: { type: 'toast', message: 'Comment submitted' },
-          onLikeComment: { type: 'toast', message: 'Comment liked' },
-          onDeleteComment: { type: 'toast', message: 'Comment deleted' },
-        }}
-      />
+      <View style={{ height: 420, borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 12, overflow: 'hidden' }}>
+        <CommentSection
+          config={{
+            id: 'showcase-comments',
+            data: { from: 'commentData' },
+            currentUserId: 'user-me',
+            maxNestingLevel: 2,
+            allowReplies: true,
+            onSubmitComment: { type: 'toast', message: 'Comment submitted' },
+            onLikeComment: { type: 'toast', message: 'Comment liked' },
+            onDeleteComment: { type: 'toast', message: 'Comment deleted' },
+          }}
+        />
+      </View>
 
       <Divider config={{ marginVertical: 8 }} />
 
-      <SectionLabel label="EmojiPicker — tap to open" />
-      <EmojiPicker
+      {/* ── ActivityFeed — empty state ────────────────────────────── */}
+      <SectionLabel label="ActivityFeed — empty state" />
+      <ActivityFeed
         config={{
-          id: 'showcase-emoji-picker',
-          onSelect: { type: 'toast', message: 'Emoji selected' },
-          recentEmojis: ['😀', '🚀', '🎨', '🔥', '✅', '💯'],
-        }}
-      />
-
-      <Divider config={{ marginVertical: 8 }} />
-
-      <SectionLabel label="GifPicker — tap to open" />
-      <GifPicker
-        config={{
-          id: 'showcase-gif-picker',
-          onSelect: { type: 'toast', message: 'GIF selected' },
-          placeholder: 'Search GIFs...',
-        }}
-      />
-
-      <Divider config={{ marginVertical: 8 }} />
-
-      <SectionLabel label="ReactionPicker — quick reactions" />
-      <ReactionPicker
-        config={{
-          id: 'showcase-reaction-picker',
-          reactions: ['\ud83d\udc4d', '\u2764\ufe0f', '\ud83d\ude02', '\ud83d\ude2e', '\ud83d\ude22', '\ud83d\udd25'],
-          onSelect: { type: 'toast', message: 'Reaction selected' },
-          triggerLabel: 'React',
+          emptyMessage: 'No activity yet — invite your team to get started.',
+          itemHeight: 72,
         }}
       />
     </Stack>
