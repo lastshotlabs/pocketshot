@@ -379,7 +379,7 @@ export function Feed({ config }: { config: FeedConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} style={{ flex: 1 }}>
       <FlatList
         data={resolvedData}
         keyExtractor={keyExtractor}

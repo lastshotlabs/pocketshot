@@ -446,7 +446,7 @@ export function MessageThread({ config }: { config: MessageThreadConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} style={{ flex: 1 }}>
       <FlatList
         data={listItems}
         renderItem={renderItem}

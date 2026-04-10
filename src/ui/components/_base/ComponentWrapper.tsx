@@ -1,5 +1,5 @@
 import React, { type ReactNode, Component } from 'react'
-import { View, Text } from 'react-native'
+import { View, Text, type ViewStyle } from 'react-native'
 
 // ── Error Boundary ─────────────────────────────────────────────────────────────
 
@@ -63,6 +63,8 @@ export interface ComponentWrapperProps {
   id?: string
   /** Override testID. Defaults to id if provided. */
   testID?: string
+  /** Pass `{ flex: 1 }` for components that fill their parent (chat, lists, etc.). */
+  style?: ViewStyle
   children: ReactNode
 }
 
@@ -73,10 +75,10 @@ export interface ComponentWrapperProps {
  *
  * Place this as the outermost element of every config-addressable component.
  */
-export function ComponentWrapper({ id, testID, children }: ComponentWrapperProps) {
+export function ComponentWrapper({ id, testID, style, children }: ComponentWrapperProps) {
   return (
     <ComponentErrorBoundary id={id} testID={testID ?? id}>
-      <View testID={testID ?? id} style={{ flexShrink: 1 }}>
+      <View testID={testID ?? id} style={style}>
         {children}
       </View>
     </ComponentErrorBoundary>

@@ -497,7 +497,7 @@ export function CommentSection({ config }: { config: CommentSectionConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} style={{ flex: 1 }}>
       <View style={styles.container}>
         <FlatList
           data={flatItems}
