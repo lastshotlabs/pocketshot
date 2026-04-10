@@ -5,10 +5,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import * as SplashScreen from 'expo-splash-screen'
 import { pocketshot } from '@/lib/pocketshot'
 
-LogBox.ignoreLogs([
-  "Codegen didn't run for",
-  '[pocketshot] expo-sqlite not found',
-])
+// react-native-screens + react-native-safe-area-context haven't shipped
+// New Architecture codegen specs yet. Development-only, not in prod builds.
+LogBox.ignoreLogs(["Codegen didn't run for"])
 
 SplashScreen.preventAutoHideAsync()
 

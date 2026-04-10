@@ -23,13 +23,16 @@ const TOOLBAR_LABELS: Record<EditorToolbarItem, string> = {
   bold: 'B',
   italic: 'I',
   underline: 'U',
-  'list-bullet': '\u2022',
+  'list-bullet': '≡',
   'list-number': '1.',
-  blockquote: '\u201C',
-  code: '`',
-  link: '\u{1F517}',
-  image: '\u{1F5BC}',
+  blockquote: '❝',
+  code: '</>',
+  link: '⟁',
+  image: '▣',
 }
+
+const INLINE_ITEMS = new Set<EditorToolbarItem>(['bold', 'italic', 'underline'])
+const BLOCK_ITEMS = new Set<EditorToolbarItem>(['list-bullet', 'list-number', 'blockquote'])
 
 const TOOLBAR_A11Y: Record<EditorToolbarItem, string> = {
   heading: 'Heading',
@@ -239,31 +242,44 @@ export function RichTextEditor({ config }: { config: RichTextEditorConfig }) {
           accessibilityRole="toolbar"
         >
           {(config.toolbar ?? ['heading', 'bold', 'italic', 'list-bullet', 'blockquote', 'code']).map(
-            (item) => {
+            (item, idx, arr) => {
               const isActive = activeItem === item
+              const typedItem = item as EditorToolbarItem
+              const prevItem = idx > 0 ? (arr[idx - 1] as EditorToolbarItem) : null
+              const needsSeparator =
+                prevItem != null &&
+                ((INLINE_ITEMS.has(prevItem) && !INLINE_ITEMS.has(typedItem)) ||
+                 (BLOCK_ITEMS.has(prevItem) && !BLOCK_ITEMS.has(typedItem)) ||
+                 (typedItem === 'heading' && prevItem !== 'heading') ||
+                 (prevItem === 'heading' && typedItem !== 'heading'))
+
               return (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() => handleToolbarPress(item as EditorToolbarItem)}
-                  style={[styles.toolbarButton, isActive && styles.toolbarButtonActive]}
-                  accessibilityRole="button"
-                  accessibilityLabel={TOOLBAR_A11Y[item as EditorToolbarItem]}
-                  testID={`${testId}-toolbar-${item}`}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.toolbarLabel,
-                      isActive && styles.toolbarLabelActive,
-                      item === 'bold' && { fontWeight: tokens.typography.fontWeightBold },
-                      item === 'italic' && { fontStyle: 'italic' as const },
-                      item === 'underline' && { textDecorationLine: 'underline' as const },
-                    ]}
-                    selectable={false}
+                <React.Fragment key={item}>
+                  {needsSeparator && <View style={styles.toolbarSeparator} />}
+                  <TouchableOpacity
+                    onPress={() => handleToolbarPress(typedItem)}
+                    style={[styles.toolbarButton, isActive && styles.toolbarButtonActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={TOOLBAR_A11Y[typedItem]}
+                    testID={`${testId}-toolbar-${item}`}
+                    activeOpacity={0.7}
                   >
-                    {TOOLBAR_LABELS[item as EditorToolbarItem]}
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.toolbarLabel,
+                        isActive && styles.toolbarLabelActive,
+                        typedItem === 'heading' && styles.toolbarLabelHeading,
+                        typedItem === 'bold' && { fontWeight: '800' as const },
+                        typedItem === 'italic' && { fontStyle: 'italic' as const },
+                        typedItem === 'underline' && { textDecorationLine: 'underline' as const },
+                        typedItem === 'code' && styles.toolbarLabelMono,
+                      ]}
+                      selectable={false}
+                    >
+                      {TOOLBAR_LABELS[typedItem]}
+                    </Text>
+                  </TouchableOpacity>
+                </React.Fragment>
               )
             },
           )}
@@ -301,44 +317,60 @@ export function RichTextEditor({ config }: { config: RichTextEditorConfig }) {
 function makeStyles(tokens: DesignTokens, focused: boolean) {
   return StyleSheet.create({
     toolbar: {
-      borderTopLeftRadius: tokens.radius.md,
-      borderTopRightRadius: tokens.radius.md,
-      backgroundColor: tokens.colors.surfaceAlt,
+      borderTopLeftRadius: tokens.radius.lg,
+      borderTopRightRadius: tokens.radius.lg,
+      backgroundColor: tokens.colors.surface,
       borderWidth: 1,
       borderColor: focused ? tokens.colors.borderFocus : tokens.colors.inputBorder,
-      borderBottomWidth: 0,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: tokens.colors.divider,
     },
     toolbarContent: {
       paddingHorizontal: tokens.spacing[2],
-      paddingVertical: tokens.spacing[1],
-      gap: tokens.spacing[1],
+      paddingVertical: tokens.spacing[2],
+      gap: 2,
+      alignItems: 'center',
+    },
+    toolbarSeparator: {
+      width: StyleSheet.hairlineWidth,
+      height: 20,
+      backgroundColor: tokens.colors.divider,
+      marginHorizontal: tokens.spacing[1],
     },
     toolbarButton: {
-      width: 36,
-      height: 36,
+      width: 34,
+      height: 34,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: tokens.radius.sm,
-      backgroundColor: tokens.colors.surfaceAlt,
+      borderRadius: tokens.radius.md,
     },
     toolbarButtonActive: {
       backgroundColor: tokens.colors.primary,
     },
     toolbarLabel: {
       fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
+      fontWeight: tokens.typography.fontWeightMedium,
+      color: tokens.colors.textMuted,
     },
     toolbarLabelActive: {
       color: tokens.colors.primaryForeground,
+    },
+    toolbarLabelHeading: {
+      fontSize: tokens.typography.fontSizeMd,
+      fontWeight: tokens.typography.fontWeightBold,
+    },
+    toolbarLabelMono: {
+      fontSize: tokens.typography.fontSizeXs,
+      fontFamily: 'monospace',
+      letterSpacing: -0.5,
     },
     input: {
       backgroundColor: tokens.colors.inputBackground,
       borderWidth: 1,
       borderColor: focused ? tokens.colors.borderFocus : tokens.colors.inputBorder,
       borderTopWidth: 0,
-      borderBottomLeftRadius: tokens.radius.md,
-      borderBottomRightRadius: tokens.radius.md,
+      borderBottomLeftRadius: tokens.radius.lg,
+      borderBottomRightRadius: tokens.radius.lg,
       paddingHorizontal: tokens.spacing[3],
       paddingVertical: tokens.spacing[3],
       fontSize: tokens.typography.fontSizeMd,
