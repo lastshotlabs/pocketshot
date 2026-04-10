@@ -1,5 +1,13 @@
 import type { DesignTokens, TokenConfig, DeepPartial } from './types'
-import { defaultSpacing, defaultRadius, defaultTypography, defaultShadows } from './schema'
+import {
+  defaultSpacing,
+  defaultRadius,
+  defaultTypography,
+  defaultShadows,
+  defaultAnimation,
+  defaultOpacity,
+  defaultZIndex,
+} from './schema'
 import { flavors } from './flavors'
 
 /**
@@ -28,6 +36,9 @@ export function resolveTokens(
     radius: defaultRadius,
     typography: defaultTypography,
     shadows: defaultShadows,
+    animation: defaultAnimation,
+    opacity: defaultOpacity,
+    zIndex: defaultZIndex,
   }
 
   if (!config.overrides) return base

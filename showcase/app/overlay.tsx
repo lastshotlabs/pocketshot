@@ -4,6 +4,9 @@ import {
   Modal,
   Toast,
   ActionSheet,
+  Drawer,
+  Popover,
+  DropdownMenu,
   Stack,
   Row,
   Body,
@@ -192,6 +195,102 @@ function OverlayControls() {
       </TouchableOpacity>
 
       <ActionSheet config={{ id: 'demo-action-sheet' }} />
+
+      <SectionLabel label="Drawer — left position" />
+      <TouchableOpacity
+        style={styles.triggerButton}
+        onPress={() => setValue('__drawer_left-drawer', true)}
+        accessibilityRole="button"
+        accessibilityLabel="Open left drawer"
+        testID="overlay-open-left-drawer"
+      >
+        <Text style={styles.triggerText}>Open Left Drawer</Text>
+      </TouchableOpacity>
+
+      <Drawer
+        config={{
+          id: 'left-drawer',
+          position: 'left',
+          widthPercent: 80,
+          title: 'Navigation',
+          content: 'Browse your workspace, recent projects, and saved items from this panel.',
+          showHandle: true,
+          closeOnBackdrop: true,
+        }}
+      />
+
+      <SectionLabel label="Drawer — right position" />
+      <TouchableOpacity
+        style={[styles.triggerButton, styles.triggerButtonPurple]}
+        onPress={() => setValue('__drawer_right-drawer', true)}
+        accessibilityRole="button"
+        accessibilityLabel="Open right drawer"
+        testID="overlay-open-right-drawer"
+      >
+        <Text style={[styles.triggerText, { color: '#fff' }]}>Open Right Drawer</Text>
+      </TouchableOpacity>
+
+      <Drawer
+        config={{
+          id: 'right-drawer',
+          position: 'right',
+          widthPercent: 75,
+          title: 'Activity Feed',
+          content: 'Recent activity across your team: comments, reviews, and deployments.',
+          showHandle: true,
+          closeOnBackdrop: true,
+        }}
+      />
+
+      <SectionLabel label="Popover — with title and content" />
+      <Popover
+        config={{
+          id: 'info-popover',
+          triggerLabel: 'What is this?',
+          title: 'Token System',
+          content: 'Tokens are design primitives that drive all visual properties. Colors, spacing, typography, and radii are all token-driven.',
+          position: 'bottom',
+        }}
+      />
+
+      <SectionLabel label="Popover — content only" />
+      <Popover
+        config={{
+          id: 'hint-popover',
+          triggerLabel: 'Show Hint',
+          content: 'Tap and hold any item to see additional options.',
+          position: 'bottom',
+        }}
+      />
+
+      <SectionLabel label="DropdownMenu — with destructive and disabled items" />
+      <DropdownMenu
+        config={{
+          id: 'post-menu',
+          trigger: { label: 'Post Options', icon: '⋯' },
+          items: [
+            { id: 'edit', label: 'Edit Post', icon: '✏️', onPress: { type: 'toast', message: 'Edit tapped' } },
+            { id: 'duplicate', label: 'Duplicate', icon: '📋', onPress: { type: 'toast', message: 'Duplicated' } },
+            { id: 'archive', label: 'Archive', icon: '📦', onPress: { type: 'toast', message: 'Archived' } },
+            { id: 'export', label: 'Export as PDF', icon: '📄', onPress: { type: 'toast', message: 'Exporting...' }, disabled: true },
+            { id: 'delete', label: 'Delete Post', icon: '🗑️', onPress: { type: 'toast', message: 'Deleted' }, destructive: true },
+          ],
+        }}
+      />
+
+      <SectionLabel label="DropdownMenu — simple" />
+      <DropdownMenu
+        config={{
+          id: 'sort-menu',
+          trigger: { label: 'Sort By' },
+          items: [
+            { id: 'newest', label: 'Newest First', onPress: { type: 'toast', message: 'Sorted by newest' } },
+            { id: 'oldest', label: 'Oldest First', onPress: { type: 'toast', message: 'Sorted by oldest' } },
+            { id: 'popular', label: 'Most Popular', onPress: { type: 'toast', message: 'Sorted by popularity' } },
+          ],
+          align: 'end',
+        }}
+      />
     </Stack>
   )
 }

@@ -47,6 +47,10 @@ export interface ColorTokens {
   destructive: HexColor
   destructiveForeground: HexColor
 
+  // Muted
+  muted: HexColor
+  mutedForeground: HexColor
+
   // Badges / tags
   badgeBackground: HexColor
   badgeForeground: HexColor
@@ -116,6 +120,40 @@ export interface ShadowTokens {
   xl: ShadowToken
 }
 
+/** Animation duration and easing tokens */
+export interface AnimationTokens {
+  durationFast: number
+  durationNormal: number
+  durationSlow: number
+  durationVSlow: number
+  easingDefault: string
+  easingSpring: string
+  easingEaseOut: string
+  easingEaseInOut: string
+}
+
+/** Opacity scale tokens */
+export interface OpacityTokens {
+  transparent: 0
+  subtle: 0.08
+  light: 0.16
+  medium: 0.38
+  heavy: 0.62
+  opaque: 0.87
+  full: 1
+}
+
+/** Z-index scale tokens */
+export interface ZIndexTokens {
+  base: number
+  dropdown: number
+  sticky: number
+  overlay: number
+  modal: number
+  popover: number
+  toast: number
+}
+
 /** Full resolved token set */
 export interface DesignTokens {
   colors: ColorTokens
@@ -123,6 +161,9 @@ export interface DesignTokens {
   radius: RadiusTokens
   typography: TypographyTokens
   shadows: ShadowTokens
+  animation: AnimationTokens
+  opacity: OpacityTokens
+  zIndex: ZIndexTokens
 }
 
 /** A flavor defines light and dark color token sets */

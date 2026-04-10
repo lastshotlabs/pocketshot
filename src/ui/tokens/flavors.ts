@@ -38,6 +38,9 @@ const neutralLight: ColorTokens = {
   inputText: '#18181b',
   inputPlaceholder: '#a1a1aa',
 
+  muted: '#f4f4f5',
+  mutedForeground: '#71717a',
+
   destructive: '#dc2626',
   destructiveForeground: '#ffffff',
 
@@ -79,6 +82,9 @@ const neutralDark: ColorTokens = {
   inputBorder: '#3f3f46',
   inputText: '#fafafa',
   inputPlaceholder: '#71717a',
+
+  muted: '#27272a',
+  mutedForeground: '#a1a1aa',
 
   destructive: '#ef4444',
   destructiveForeground: '#fff1f2',
@@ -125,6 +131,9 @@ const slateLight: ColorTokens = {
   inputText: '#0f172a',
   inputPlaceholder: '#94a3b8',
 
+  muted: '#f1f5f9',
+  mutedForeground: '#64748b',
+
   destructive: '#dc2626',
   destructiveForeground: '#ffffff',
 
@@ -166,6 +175,9 @@ const slateDark: ColorTokens = {
   inputBorder: '#334155',
   inputText: '#f1f5f9',
   inputPlaceholder: '#64748b',
+
+  muted: '#1e293b',
+  mutedForeground: '#94a3b8',
 
   destructive: '#ef4444',
   destructiveForeground: '#fff1f2',
@@ -212,6 +224,9 @@ const midnightLight: ColorTokens = {
   inputText: '#0d1f2d',
   inputPlaceholder: '#7a9ab8',
 
+  muted: '#d6e4f0',
+  mutedForeground: '#4a6080',
+
   destructive: '#dc2626',
   destructiveForeground: '#ffffff',
 
@@ -253,6 +268,9 @@ const midnightDark: ColorTokens = {
   inputBorder: '#1e3a5f',
   inputText: '#e8f0f8',
   inputPlaceholder: '#4a6080',
+
+  muted: '#112238',
+  mutedForeground: '#7a9ab8',
 
   destructive: '#ef4444',
   destructiveForeground: '#fff1f2',
@@ -299,6 +317,9 @@ const violetLight: ColorTokens = {
   inputText: '#2e1065',
   inputPlaceholder: '#a78bfa',
 
+  muted: '#ede9fe',
+  mutedForeground: '#7c3aed',
+
   destructive: '#dc2626',
   destructiveForeground: '#ffffff',
 
@@ -340,6 +361,9 @@ const violetDark: ColorTokens = {
   inputBorder: '#4c1d95',
   inputText: '#f5f3ff',
   inputPlaceholder: '#7c3aed',
+
+  muted: '#2e1065',
+  mutedForeground: '#c4b5fd',
 
   destructive: '#ef4444',
   destructiveForeground: '#fff1f2',
@@ -386,6 +410,9 @@ const roseLight: ColorTokens = {
   inputText: '#881337',
   inputPlaceholder: '#fb7185',
 
+  muted: '#ffe4e6',
+  mutedForeground: '#e11d48',
+
   destructive: '#be123c',
   destructiveForeground: '#ffffff',
 
@@ -427,6 +454,9 @@ const roseDark: ColorTokens = {
   inputBorder: '#881337',
   inputText: '#fff1f2',
   inputPlaceholder: '#e11d48',
+
+  muted: '#57102a',
+  mutedForeground: '#fda4af',
 
   destructive: '#ef4444',
   destructiveForeground: '#fff1f2',
@@ -473,6 +503,9 @@ const emeraldLight: ColorTokens = {
   inputText: '#052e16',
   inputPlaceholder: '#34d399',
 
+  muted: '#dcfce7',
+  mutedForeground: '#059669',
+
   destructive: '#dc2626',
   destructiveForeground: '#ffffff',
 
@@ -514,6 +547,9 @@ const emeraldDark: ColorTokens = {
   inputBorder: '#047857',
   inputText: '#ecfdf5',
   inputPlaceholder: '#059669',
+
+  muted: '#064e24',
+  mutedForeground: '#6ee7b7',
 
   destructive: '#ef4444',
   destructiveForeground: '#fff1f2',
@@ -560,6 +596,9 @@ const oceanLight: ColorTokens = {
   inputText: '#0c4a6e',
   inputPlaceholder: '#38bdf8',
 
+  muted: '#e0f2fe',
+  mutedForeground: '#0891b2',
+
   destructive: '#dc2626',
   destructiveForeground: '#ffffff',
 
@@ -601,6 +640,9 @@ const oceanDark: ColorTokens = {
   inputBorder: '#0e7490',
   inputText: '#e0f2fe',
   inputPlaceholder: '#0891b2',
+
+  muted: '#0a3248',
+  mutedForeground: '#7dd3fc',
 
   destructive: '#ef4444',
   destructiveForeground: '#fff1f2',
@@ -647,6 +689,9 @@ const sunsetLight: ColorTokens = {
   inputText: '#431407',
   inputPlaceholder: '#fb923c',
 
+  muted: '#ffedd5',
+  mutedForeground: '#ea580c',
+
   destructive: '#dc2626',
   destructiveForeground: '#ffffff',
 
@@ -688,6 +733,9 @@ const sunsetDark: ColorTokens = {
   inputBorder: '#7c2d12',
   inputText: '#fff7ed',
   inputPlaceholder: '#ea580c',
+
+  muted: '#571c00',
+  mutedForeground: '#fdba74',
 
   destructive: '#ef4444',
   destructiveForeground: '#fff1f2',

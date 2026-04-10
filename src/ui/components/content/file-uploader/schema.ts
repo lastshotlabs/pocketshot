@@ -1,0 +1,17 @@
+import { z } from 'zod'
+import type { Action } from '../../../actions/types'
+
+const ActionSchema = z.custom<Action>()
+const FromRefSchema = z.object({ from: z.string() })
+
+export const FileUploaderSchema = z.object({
+  id: z.string(),
+  label: z.string().optional(),
+  accept: z.enum(['image', 'video', 'document', 'any']).optional().default('any'),
+  multiple: z.boolean().optional().default(false),
+  maxFiles: z.number().optional().default(5),
+  maxSizeMb: z.number().optional().default(10),
+  value: z.union([z.array(z.string()), FromRefSchema]).optional(),
+  onChangeAction: ActionSchema.optional(),
+  testID: z.string().optional(),
+})

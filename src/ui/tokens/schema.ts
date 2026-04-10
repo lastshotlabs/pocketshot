@@ -1,4 +1,12 @@
-import type { SpacingTokens, RadiusTokens, TypographyTokens, ShadowTokens } from './types'
+import type {
+  SpacingTokens,
+  RadiusTokens,
+  TypographyTokens,
+  ShadowTokens,
+  AnimationTokens,
+  OpacityTokens,
+  ZIndexTokens,
+} from './types'
 
 export const defaultSpacing: SpacingTokens = {
   0: 0,
@@ -42,6 +50,37 @@ export const defaultTypography: TypographyTokens = {
   fontWeightMedium: '500',
   fontWeightSemibold: '600',
   fontWeightBold: '700',
+}
+
+export const defaultAnimation: AnimationTokens = {
+  durationFast: 100,
+  durationNormal: 250,
+  durationSlow: 400,
+  durationVSlow: 800,
+  easingDefault: 'default',
+  easingSpring: 'spring',
+  easingEaseOut: 'ease-out',
+  easingEaseInOut: 'ease-in-out',
+}
+
+export const defaultOpacity: OpacityTokens = {
+  transparent: 0,
+  subtle: 0.08,
+  light: 0.16,
+  medium: 0.38,
+  heavy: 0.62,
+  opaque: 0.87,
+  full: 1,
+}
+
+export const defaultZIndex: ZIndexTokens = {
+  base: 0,
+  dropdown: 1000,
+  sticky: 1100,
+  overlay: 1300,
+  modal: 1400,
+  popover: 1500,
+  toast: 1600,
 }
 
 export const defaultShadows: ShadowTokens = {

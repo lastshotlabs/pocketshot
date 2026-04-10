@@ -6,13 +6,24 @@ export type {
   TypographyTokens,
   ShadowToken,
   ShadowTokens,
+  AnimationTokens,
+  OpacityTokens,
+  ZIndexTokens,
   DesignTokens,
   TokenFlavor,
   TokenConfig,
   DeepPartial,
 } from './types'
 
-export { defaultSpacing, defaultRadius, defaultTypography, defaultShadows } from './schema'
+export {
+  defaultSpacing,
+  defaultRadius,
+  defaultTypography,
+  defaultShadows,
+  defaultAnimation,
+  defaultOpacity,
+  defaultZIndex,
+} from './schema'
 
 export { lighten, darken, alpha, mix } from './color'
 

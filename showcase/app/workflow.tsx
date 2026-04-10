@@ -1,14 +1,189 @@
+import { useEffect } from 'react'
 import {
   ProgressBar,
   Stepper,
   Timeline,
   StatusBadge,
+  Calendar,
+  AuditLog,
+  NotificationFeed,
   Stack,
   Row,
   Divider,
+  useScreenContext,
 } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
 import { MockProviders } from '@/lib/MockProviders'
+
+function WorkflowDemos() {
+  const { setValue } = useScreenContext()
+
+  useEffect(() => {
+    setValue('auditData', [
+      {
+        id: '1',
+        actor: { name: 'Alice' },
+        action: 'created',
+        target: 'Invoice #1234',
+        createdAt: new Date(Date.now() - 120000).toISOString(),
+        severity: 'info',
+      },
+      {
+        id: '2',
+        actor: { name: 'Bob' },
+        action: 'updated',
+        target: 'User Profile',
+        detail: 'Changed role from viewer to admin',
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        severity: 'warning',
+      },
+      {
+        id: '3',
+        actor: { name: 'Charlie' },
+        action: 'deleted',
+        target: 'Comment #892',
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+        severity: 'error',
+      },
+      {
+        id: '4',
+        actor: { name: 'Diana' },
+        action: 'approved',
+        target: 'Pull Request #47',
+        detail: 'Merged to main',
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        severity: 'info',
+      },
+      {
+        id: '5',
+        actor: { name: 'Eve' },
+        action: 'exported',
+        target: 'Q1 Report',
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+        severity: 'info',
+      },
+    ])
+
+    setValue('notificationData', [
+      {
+        id: 'n1',
+        title: 'New comment on your post',
+        body: 'Alice replied to "Quarterly Review"',
+        type: 'comment',
+        read: false,
+        createdAt: new Date(Date.now() - 60000).toISOString(),
+      },
+      {
+        id: 'n2',
+        title: 'You were mentioned',
+        body: 'Bob mentioned you in #general',
+        type: 'mention',
+        read: false,
+        createdAt: new Date(Date.now() - 1800000).toISOString(),
+      },
+      {
+        id: 'n3',
+        title: 'Task assigned to you',
+        body: 'Charlie assigned "Fix login bug" to you',
+        type: 'task',
+        read: true,
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+      },
+      {
+        id: 'n4',
+        title: 'Deployment succeeded',
+        body: 'Production deploy v2.4.1 completed',
+        type: 'system',
+        read: true,
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        id: 'n5',
+        title: 'Invitation accepted',
+        body: 'Diana joined the workspace',
+        type: 'social',
+        read: false,
+        createdAt: new Date(Date.now() - 43200000).toISOString(),
+      },
+      {
+        id: 'n6',
+        title: 'Weekly digest',
+        body: '12 updates in your projects this week',
+        type: 'digest',
+        read: true,
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+      },
+    ])
+  }, [setValue])
+
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+
+  return (
+    <>
+      <SectionLabel label="Calendar — with events and navigation" />
+      <Calendar
+        config={{
+          id: 'cal-nav',
+          showNavigation: true,
+          mode: 'single',
+          events: [
+            { date: `${year}-${month}-03`, title: 'Team standup', color: '#2563eb' },
+            { date: `${year}-${month}-10`, title: 'Sprint review', color: '#16a34a' },
+            { date: `${year}-${month}-15`, title: 'Design sync', color: '#9333ea' },
+            { date: `${year}-${month}-21`, title: 'Release day', color: '#dc2626' },
+            { date: `${year}-${month}-27`, title: 'Retro', color: '#f59e0b' },
+          ],
+          testID: 'calendar-nav',
+        }}
+      />
+
+      <SectionLabel label="Calendar — no navigation" />
+      <Calendar
+        config={{
+          id: 'cal-static',
+          showNavigation: false,
+          mode: 'single',
+          events: [
+            { date: `${year}-${month}-05`, title: 'Kickoff meeting' },
+            { date: `${year}-${month}-12`, title: 'Client call' },
+            { date: `${year}-${month}-18`, title: 'Deadline' },
+            { date: `${year}-${month}-22`, title: 'All hands' },
+            { date: `${year}-${month}-28`, title: 'Demo day' },
+          ],
+          testID: 'calendar-static',
+        }}
+      />
+
+      <Divider config={{ marginVertical: 4 }} />
+
+      <SectionLabel label="AuditLog — grouped by date" />
+      <AuditLog
+        config={{
+          id: 'audit-demo',
+          data: { from: 'auditData' },
+          groupByDate: true,
+          showActor: true,
+          testID: 'audit-log',
+        }}
+      />
+
+      <Divider config={{ marginVertical: 4 }} />
+
+      <SectionLabel label="NotificationFeed — with mark all read" />
+      <NotificationFeed
+        config={{
+          id: 'notif-demo',
+          data: { from: 'notificationData' },
+          showMarkAllRead: true,
+          refreshable: true,
+          testID: 'notification-feed',
+        }}
+      />
+    </>
+  )
+}
 
 export default function WorkflowShowcase() {
   return (
@@ -195,6 +370,10 @@ export default function WorkflowShowcase() {
             showDot: false,
           }}
         />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <WorkflowDemos />
       </MockProviders>
     </ShowcaseScreen>
   )

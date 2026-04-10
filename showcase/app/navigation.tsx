@@ -4,6 +4,8 @@ import {
   SegmentedControl,
   Header,
   BackButton,
+  Accordion,
+  TreeView,
   Stack,
 } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
@@ -118,6 +120,81 @@ export default function NavigationShowcase() {
           <BackButton config={{ label: 'Go to Home', action: { type: 'navigate', path: '/' } }} />
           <BackButton config={{ label: 'Cancel' }} />
         </Stack>
+
+        <SectionLabel label="Accordion — FAQ style (default variant)" />
+        <Accordion
+          config={{
+            id: 'faq-accordion',
+            sections: [
+              { id: 'what', title: 'What is Pocketshot?', content: 'Pocketshot is the React Native SDK for bunshot-powered backends. It provides hooks, typed API clients, and a config-driven UI layer.' },
+              { id: 'how', title: 'How do I get started?', content: 'Run `pocketshot init` in your Expo project, configure your backend URL, and start using the generated hooks.' },
+              { id: 'tokens', title: 'What are design tokens?', content: 'Tokens are semantic design primitives — colors, spacing, typography, and radii — that drive all visual properties across components.' },
+              { id: 'offline', title: 'Does it work offline?', content: 'Yes. The offline module uses expo-sqlite for local persistence and automatically syncs queued mutations when connectivity is restored.' },
+            ],
+            defaultOpenIds: ['what'],
+            allowMultiple: true,
+            variant: 'default',
+          }}
+        />
+
+        <SectionLabel label="Accordion — bordered variant" />
+        <Accordion
+          config={{
+            id: 'settings-accordion',
+            sections: [
+              { id: 'account', title: 'Account Settings', icon: '👤', content: 'Manage your profile, email preferences, and connected accounts.' },
+              { id: 'security', title: 'Security & Privacy', icon: '🔒', content: 'Enable two-factor authentication, manage sessions, and configure privacy controls.' },
+              { id: 'billing', title: 'Billing & Plans', icon: '💳', subtitle: 'Pro Plan', content: 'View invoices, update payment methods, and manage your subscription.' },
+            ],
+            allowMultiple: false,
+            variant: 'bordered',
+          }}
+        />
+
+        <SectionLabel label="TreeView — file system" />
+        <TreeView
+          config={{
+            id: 'file-tree',
+            data: [
+              {
+                id: 'src',
+                label: 'src',
+                icon: '📁',
+                children: [
+                  {
+                    id: 'components',
+                    label: 'components',
+                    icon: '📁',
+                    children: [
+                      { id: 'button', label: 'Button.tsx', icon: '📄' },
+                      { id: 'alert', label: 'Alert.tsx', icon: '📄' },
+                    ],
+                  },
+                  {
+                    id: 'hooks',
+                    label: 'hooks',
+                    icon: '📁',
+                    children: [
+                      { id: 'useauth', label: 'useAuth.ts', icon: '📄' },
+                    ],
+                  },
+                  { id: 'index', label: 'index.ts', icon: '📄' },
+                ],
+              },
+              {
+                id: 'tests',
+                label: 'tests',
+                icon: '📁',
+                children: [
+                  { id: 'button-test', label: 'Button.test.tsx', icon: '📄' },
+                ],
+              },
+            ],
+            defaultExpandedIds: ['src', 'components'],
+            showConnectors: true,
+            onItemPress: { type: 'toast', message: 'File selected' },
+          }}
+        />
 
         <View style={styles.spacer} />
       </MockProviders>

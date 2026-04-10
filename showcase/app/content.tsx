@@ -7,6 +7,11 @@ import {
   Image,
   Stack,
   Divider,
+  Markdown,
+  CodeBlock,
+  RichInput,
+  FileUploader,
+  LinkEmbed,
 } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
 import { MockProviders } from '@/lib/MockProviders'
@@ -142,6 +147,119 @@ export default function ContentShowcase() {
             }}
           />
         </View>
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="Markdown — rich content" />
+        <Markdown
+          config={{
+            content:
+              '# Welcome to Pocketshot\n\nThis is a **bold** and *italic* text example.\n\n## Features\n\n- Config-driven UI\n- 80+ components\n- Token system\n\n> Mobile-first, always.\n\n`inline code` and:\n\n```\nconst app = createPocketshot({ apiUrl })\n```',
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="CodeBlock — TypeScript with line numbers" />
+        <CodeBlock
+          config={{
+            code: "import { createPocketshot } from '@lastshotlabs/pocketshot'\n\nconst pocket = createPocketshot({\n  apiUrl: 'https://api.example.com',\n  appName: 'MyApp',\n})\n\nexport const { useLogin, useUser, useLogout } = pocket",
+            language: 'typescript',
+            showLineNumbers: true,
+          }}
+        />
+
+        <SectionLabel label="CodeBlock — JSON without line numbers" />
+        <CodeBlock
+          config={{
+            code: '{\n  "name": "my-app",\n  "version": "1.0.0",\n  "dependencies": {\n    "@lastshotlabs/pocketshot": "^0.9.0"\n  }\n}',
+            language: 'json',
+            showLineNumbers: false,
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="RichInput — default toolbar" />
+        <RichInput
+          config={{
+            id: 'rich-input-default',
+            placeholder: 'Write something...',
+            label: 'Comment',
+          }}
+        />
+
+        <SectionLabel label="RichInput — all toolbar options" />
+        <RichInput
+          config={{
+            id: 'rich-input-full',
+            placeholder: 'Compose your message...',
+            label: 'Full Editor',
+            toolbar: [
+              'bold',
+              'italic',
+              'underline',
+              'strikethrough',
+              'code',
+              'list-bullet',
+              'list-number',
+              'link',
+              'quote',
+            ],
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="FileUploader — images only" />
+        <FileUploader
+          config={{
+            id: 'file-uploader-images',
+            label: 'Upload Photos',
+            accept: 'image',
+            multiple: true,
+            maxFiles: 4,
+            maxSizeMb: 5,
+          }}
+        />
+
+        <SectionLabel label="FileUploader — any file type" />
+        <FileUploader
+          config={{
+            id: 'file-uploader-any',
+            label: 'Attach Files',
+            accept: 'any',
+            multiple: true,
+            maxFiles: 10,
+            maxSizeMb: 25,
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="LinkEmbed — URL previews" />
+        <Stack config={{ gap: 12 }}>
+          <LinkEmbed
+            config={{
+              url: 'https://lastshotlabs.com/blog/config-driven-ui',
+              title: 'Config-Driven UI: Build Mobile Apps Without Code',
+              description:
+                'Learn how Pocketshot turns JSON manifests into fully native React Native screens with data binding, theming, and actions.',
+              imageUrl: 'https://picsum.photos/seed/linkembed1/800/400',
+              domain: 'lastshotlabs.com',
+            }}
+          />
+          <LinkEmbed
+            config={{
+              url: 'https://github.com/lastshotlabs/pocketshot',
+              title: 'lastshotlabs/pocketshot: React Native SDK for bunshot backends',
+              description:
+                'TypeScript SDK with 80+ config-addressable components, token-based theming, and CLI code generation from OpenAPI specs.',
+              imageUrl: 'https://picsum.photos/seed/linkembed2/800/400',
+              domain: 'github.com',
+            }}
+          />
+        </Stack>
       </MockProviders>
     </ShowcaseScreen>
   )

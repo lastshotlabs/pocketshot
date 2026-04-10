@@ -1,0 +1,16 @@
+import { z } from 'zod'
+import type { Action } from '../../../actions/types'
+
+const ActionSchema = z.custom<Action>()
+const FromRefSchema = z.object({ from: z.string() })
+
+export const NotificationFeedSchema = z.object({
+  id: z.string().optional(),
+  data: z.union([z.string(), FromRefSchema]),
+  onItemPress: ActionSchema.optional(),
+  onMarkAllRead: ActionSchema.optional(),
+  refreshable: z.boolean().default(true),
+  emptyMessage: z.string().default('All caught up! 🎉'),
+  showMarkAllRead: z.boolean().default(true),
+  testID: z.string().optional(),
+})

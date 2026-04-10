@@ -2,6 +2,7 @@ import {
   PriceDisplay,
   ProductCard,
   CartItem,
+  PricingTable,
   Stack,
   Row,
   Heading,
@@ -155,6 +156,82 @@ export default function CommerceShowcase() {
             <PriceDisplay config={{ amount: 359.97, currency: 'USD', size: 'xl' }} />
           </Row>
         </Stack>
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="PricingTable — 3-tier plans" />
+        <PricingTable
+          config={{
+            title: 'Choose Your Plan',
+            subtitle: 'Start free, upgrade when you need more.',
+            tiers: [
+              {
+                id: 'free',
+                name: 'Free',
+                price: '$0',
+                period: '/mo',
+                description: 'For individuals getting started',
+                features: [
+                  '1 project',
+                  '500 MB storage',
+                  'Community support',
+                  'Basic analytics',
+                  'Email notifications',
+                ],
+                cta: {
+                  label: 'Get Started',
+                  onPress: { type: 'toast', message: 'Selected Free plan' },
+                },
+              },
+              {
+                id: 'pro',
+                name: 'Pro',
+                price: '$29',
+                period: '/mo',
+                description: 'For growing teams',
+                features: [
+                  'Unlimited projects',
+                  '50 GB storage',
+                  'Priority support',
+                  'Advanced analytics',
+                  'Custom domains',
+                  'Team collaboration',
+                  'API access',
+                  'Webhooks',
+                ],
+                cta: {
+                  label: 'Start Free Trial',
+                  onPress: { type: 'toast', message: 'Selected Pro plan' },
+                },
+                highlighted: true,
+              },
+              {
+                id: 'enterprise',
+                name: 'Enterprise',
+                price: '$99',
+                period: '/mo',
+                description: 'For large organizations',
+                features: [
+                  'Everything in Pro',
+                  '500 GB storage',
+                  'Dedicated support',
+                  'SSO / SAML',
+                  'Audit logs',
+                  'Custom contracts',
+                  'SLA guarantee',
+                  'On-premise option',
+                  'Role-based access',
+                  'Data residency',
+                ],
+                cta: {
+                  label: 'Contact Sales',
+                  onPress: { type: 'toast', message: 'Selected Enterprise plan' },
+                },
+              },
+            ],
+            highlightedLabel: 'Most Popular',
+            testID: 'pricing-table',
+          }}
+        />
       </MockProviders>
     </ShowcaseScreen>
   )

@@ -1,0 +1,20 @@
+import { z } from 'zod'
+import type { Action } from '../../../actions/types'
+
+const ActionSchema = z.custom<Action>()
+
+export const ContextMenuSchema = z.object({
+  id: z.string().optional(),
+  triggerLabel: z.string().optional(),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      label: z.string(),
+      icon: z.string().optional(),
+      destructive: z.boolean().optional().default(false),
+      disabled: z.boolean().optional().default(false),
+      onPress: ActionSchema,
+    }),
+  ),
+  testID: z.string().optional(),
+})
