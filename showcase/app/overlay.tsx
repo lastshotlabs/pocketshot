@@ -7,6 +7,9 @@ import {
   Drawer,
   Popover,
   DropdownMenu,
+  ContextMenu,
+  ConfirmDialog,
+  CommandPalette,
   Stack,
   Row,
   Body,
@@ -289,6 +292,95 @@ function OverlayControls() {
             { id: 'popular', label: 'Most Popular', onPress: { type: 'toast', message: 'Sorted by popularity' } },
           ],
           align: 'end',
+        }}
+      />
+
+      <SectionLabel label="ContextMenu — long-press to open" />
+      <ContextMenu
+        config={{
+          id: 'demo-context-menu',
+          triggerLabel: 'Long-press this area to open the context menu',
+          items: [
+            { id: 'copy', label: 'Copy', icon: '📋', onPress: { type: 'toast', message: 'Copied' } },
+            { id: 'paste', label: 'Paste', icon: '📌', onPress: { type: 'toast', message: 'Pasted' } },
+            { id: 'select-all', label: 'Select All', icon: '✅', onPress: { type: 'toast', message: 'All selected' } },
+            { id: 'delete', label: 'Delete', icon: '🗑️', onPress: { type: 'toast', message: 'Deleted' }, destructive: true },
+          ],
+        }}
+      />
+
+      <SectionLabel label="ConfirmDialog — default variant" />
+      <TouchableOpacity
+        style={styles.triggerButton}
+        onPress={() => setValue('__confirm_save-confirm', true)}
+        accessibilityRole="button"
+        accessibilityLabel="Open save confirmation dialog"
+        testID="overlay-open-save-confirm"
+      >
+        <Text style={styles.triggerText}>Open Save Confirmation</Text>
+      </TouchableOpacity>
+
+      <ConfirmDialog
+        config={{
+          id: 'save-confirm',
+          title: 'Save Changes',
+          message: 'You have unsaved changes. Do you want to save before leaving?',
+          confirmLabel: 'Save',
+          cancelLabel: 'Discard',
+          variant: 'default',
+          onConfirm: { type: 'toast', message: 'Changes saved' },
+          onCancel: { type: 'toast', message: 'Changes discarded' },
+        }}
+      />
+
+      <SectionLabel label="ConfirmDialog — destructive variant" />
+      <TouchableOpacity
+        style={[styles.triggerButton, styles.triggerButtonPurple]}
+        onPress={() => setValue('__confirm_delete-confirm', true)}
+        accessibilityRole="button"
+        accessibilityLabel="Open destructive confirmation dialog"
+        testID="overlay-open-delete-confirm"
+      >
+        <Text style={[styles.triggerText, { color: '#fff' }]}>Open Delete Confirmation</Text>
+      </TouchableOpacity>
+
+      <ConfirmDialog
+        config={{
+          id: 'delete-confirm',
+          title: 'Delete Project',
+          message: 'This will permanently delete the project and all associated data. This action cannot be undone.',
+          confirmLabel: 'Delete Project',
+          cancelLabel: 'Keep Project',
+          variant: 'destructive',
+          onConfirm: { type: 'toast', message: 'Project deleted' },
+          onCancel: { type: 'toast', message: 'Deletion cancelled' },
+        }}
+      />
+
+      <SectionLabel label="CommandPalette — with grouped items" />
+      <TouchableOpacity
+        style={styles.triggerButton}
+        onPress={() => setValue('__commandPalette_demo-palette', true)}
+        accessibilityRole="button"
+        accessibilityLabel="Open command palette"
+        testID="overlay-open-command-palette"
+      >
+        <Text style={styles.triggerText}>Open Command Palette</Text>
+      </TouchableOpacity>
+
+      <CommandPalette
+        config={{
+          id: 'demo-palette',
+          placeholder: 'Search commands...',
+          items: [
+            { id: 'new-project', label: 'New Project', description: 'Create a new project from scratch', icon: '📁', group: 'Create', onSelect: { type: 'toast', message: 'New project' } },
+            { id: 'new-file', label: 'New File', description: 'Add a file to the current project', icon: '📄', group: 'Create', onSelect: { type: 'toast', message: 'New file' } },
+            { id: 'search', label: 'Search Files', description: 'Find files across all projects', icon: '🔍', group: 'Navigation', shortcut: '⌘P', onSelect: { type: 'toast', message: 'Searching...' } },
+            { id: 'goto-settings', label: 'Go to Settings', description: 'Open application settings', icon: '⚙️', group: 'Navigation', shortcut: '⌘,', onSelect: { type: 'toast', message: 'Opening settings' } },
+            { id: 'toggle-theme', label: 'Toggle Theme', description: 'Switch between light and dark mode', icon: '🌗', group: 'Appearance', onSelect: { type: 'toast', message: 'Theme toggled' } },
+            { id: 'export', label: 'Export Data', description: 'Export project data as JSON', icon: '📤', group: 'Actions', onSelect: { type: 'toast', message: 'Exporting...' } },
+          ],
+          maxResults: 10,
         }}
       />
     </Stack>

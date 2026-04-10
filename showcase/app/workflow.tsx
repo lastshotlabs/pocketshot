@@ -7,6 +7,7 @@ import {
   Calendar,
   AuditLog,
   NotificationFeed,
+  KanbanBoard,
   Stack,
   Row,
   Divider,
@@ -179,6 +180,93 @@ function WorkflowDemos() {
           showMarkAllRead: true,
           refreshable: true,
           testID: 'notification-feed',
+        }}
+      />
+
+      <Divider config={{ marginVertical: 4 }} />
+
+      <SectionLabel label="KanbanBoard — 3 columns with cards" />
+      <KanbanBoard
+        config={{
+          id: 'kanban-demo',
+          columns: [
+            {
+              id: 'todo',
+              title: 'To Do',
+              color: '#6366f1',
+              items: [
+                {
+                  id: 'task-1',
+                  title: 'Design token audit',
+                  description: 'Review all color tokens for dark mode compliance',
+                  tags: ['design', 'tokens'],
+                  priority: 'high',
+                  assignee: { name: 'Alice' },
+                },
+                {
+                  id: 'task-2',
+                  title: 'Write E2E tests for auth flow',
+                  description: 'Cover login, register, MFA, and password reset',
+                  tags: ['testing'],
+                  priority: 'medium',
+                  assignee: { name: 'Bob' },
+                },
+                {
+                  id: 'task-3',
+                  title: 'Add haptic feedback to buttons',
+                  tags: ['enhancement'],
+                  priority: 'low',
+                },
+              ],
+            },
+            {
+              id: 'in-progress',
+              title: 'In Progress',
+              color: '#f59e0b',
+              items: [
+                {
+                  id: 'task-4',
+                  title: 'Kanban board component',
+                  description: 'Implement drag-and-drop card movement',
+                  tags: ['ui', 'feature'],
+                  priority: 'high',
+                  assignee: { name: 'Charlie' },
+                },
+                {
+                  id: 'task-5',
+                  title: 'Offline sync improvements',
+                  description: 'Handle conflict resolution for concurrent edits',
+                  tags: ['offline'],
+                  priority: 'urgent',
+                  assignee: { name: 'Diana' },
+                },
+              ],
+            },
+            {
+              id: 'done',
+              title: 'Done',
+              color: '#16a34a',
+              items: [
+                {
+                  id: 'task-6',
+                  title: 'Bottom sheet animations',
+                  description: 'Reanimated enter/exit transitions',
+                  tags: ['ui', 'animation'],
+                  priority: 'medium',
+                  assignee: { name: 'Eve' },
+                },
+                {
+                  id: 'task-7',
+                  title: 'Push notification setup',
+                  tags: ['infra'],
+                  priority: 'high',
+                  assignee: { name: 'Alice' },
+                },
+              ],
+            },
+          ],
+          onItemPress: { type: 'toast', message: 'Card tapped' },
+          testID: 'kanban-demo',
         }}
       />
     </>

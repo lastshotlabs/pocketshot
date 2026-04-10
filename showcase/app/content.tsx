@@ -12,6 +12,15 @@ import {
   RichInput,
   FileUploader,
   LinkEmbed,
+  RichTextViewer,
+  RichTextEditor,
+  ImageViewer,
+  MediaPicker,
+  VideoPlayer,
+  AudioPlayer,
+  QrCode,
+  QrScanner,
+  CompareView,
 } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
 import { MockProviders } from '@/lib/MockProviders'
@@ -260,6 +269,224 @@ export default function ContentShowcase() {
             }}
           />
         </Stack>
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="RichTextViewer — rendered rich text" />
+        <RichTextViewer
+          config={{
+            content:
+              '<h2>Release Notes v2.4</h2><p>We shipped <strong>config-driven theming</strong> with full dark mode support. Key changes:</p><ul><li>Token system now resolves at runtime</li><li>All 80+ components respect flavor overrides</li><li>New <em>CompareView</em> component for diffs</li></ul><p>See the <a href="https://docs.example.com">full docs</a> for details.</p>',
+          }}
+        />
+
+        <SectionLabel label="RichTextViewer — truncated with expand" />
+        <RichTextViewer
+          config={{
+            content:
+              '<p>This is a long block of rich text content that should be truncated after a few lines. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p><p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>',
+            maxLines: 3,
+            showExpandButton: true,
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="RichTextEditor — default toolbar" />
+        <RichTextEditor
+          config={{
+            id: 'rich-editor-default',
+            placeholder: 'Start writing your article...',
+          }}
+        />
+
+        <SectionLabel label="RichTextEditor — full toolbar" />
+        <RichTextEditor
+          config={{
+            id: 'rich-editor-full',
+            placeholder: 'Compose with all formatting options...',
+            toolbar: [
+              'heading',
+              'bold',
+              'italic',
+              'underline',
+              'list-bullet',
+              'list-number',
+              'blockquote',
+              'code',
+              'link',
+              'image',
+            ],
+            minHeight: 160,
+            maxHeight: 500,
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="ImageViewer — zoomable image" />
+        <ImageViewer
+          config={{
+            source: 'https://picsum.photos/400/300',
+            alt: 'Mountain landscape at sunset',
+            enableZoom: true,
+            maxZoom: 3,
+          }}
+        />
+
+        <SectionLabel label="ImageViewer — fixed dimensions, no zoom" />
+        <ImageViewer
+          config={{
+            source: 'https://picsum.photos/seed/arch/400/300',
+            alt: 'Architecture detail',
+            width: 300,
+            height: 200,
+            enableZoom: false,
+            showCloseButton: false,
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="MediaPicker — single image" />
+        <MediaPicker
+          config={{
+            id: 'media-picker-single',
+            mediaTypes: ['image'],
+            maxSelections: 1,
+            quality: 0.8,
+            onSelect: { type: 'toast', message: 'Image selected' },
+          }}
+        />
+
+        <SectionLabel label="MediaPicker — multiple media types" />
+        <MediaPicker
+          config={{
+            id: 'media-picker-multi',
+            mediaTypes: ['image', 'video', 'document'],
+            maxSelections: 5,
+            quality: 0.7,
+            onSelect: { type: 'toast', message: 'Media selected' },
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="VideoPlayer — with poster" />
+        <VideoPlayer
+          config={{
+            source: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+            poster: 'https://picsum.photos/seed/vidposter/800/450',
+            controls: true,
+            aspectRatio: 1.78,
+          }}
+        />
+
+        <SectionLabel label="VideoPlayer — muted, looping" />
+        <VideoPlayer
+          config={{
+            source: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+            muted: true,
+            loop: true,
+            controls: true,
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="AudioPlayer — podcast episode" />
+        <AudioPlayer
+          config={{
+            source: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+            title: 'Building Config-Driven Mobile Apps',
+            artist: 'LastShot Labs Podcast',
+            showWaveform: true,
+          }}
+        />
+
+        <SectionLabel label="AudioPlayer — minimal" />
+        <AudioPlayer
+          config={{
+            source: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+            title: 'Notification Sound',
+            showWaveform: false,
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="QrCode — URL" />
+        <QrCode
+          config={{
+            value: 'https://lastshotlabs.com/download',
+            size: 200,
+            errorCorrectionLevel: 'M',
+          }}
+        />
+
+        <SectionLabel label="QrCode — styled with logo" />
+        <QrCode
+          config={{
+            value: 'https://lastshotlabs.com/invite/abc123',
+            size: 240,
+            color: '#1e293b',
+            backgroundColor: '#f8fafc',
+            logo: 'https://picsum.photos/seed/logo/60/60',
+            errorCorrectionLevel: 'H',
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="QrScanner — with overlay" />
+        <QrScanner
+          config={{
+            id: 'qr-scanner-demo',
+            onScan: { type: 'toast', message: 'QR code scanned' },
+            showOverlay: true,
+            overlayText: 'Point your camera at a QR code',
+          }}
+        />
+
+        <Divider config={{ marginVertical: 4 }} />
+
+        <SectionLabel label="CompareView — side by side code diff" />
+        <CompareView
+          config={{
+            left: {
+              label: 'Before',
+              content:
+                'function greet(name) {\n  console.log("Hello " + name)\n  return name\n}',
+            },
+            right: {
+              label: 'After',
+              content:
+                'function greet(name: string): string {\n  console.log(`Hello ${name}`)\n  return name\n}',
+            },
+            mode: 'side-by-side',
+            showLineNumbers: true,
+            highlightDiffs: true,
+          }}
+        />
+
+        <SectionLabel label="CompareView — inline diff" />
+        <CompareView
+          config={{
+            left: {
+              label: 'Original',
+              content:
+                'const config = {\n  apiUrl: "http://localhost:3000",\n  debug: true,\n  timeout: 5000,\n}',
+            },
+            right: {
+              label: 'Updated',
+              content:
+                'const config = {\n  apiUrl: "https://api.example.com",\n  debug: false,\n  timeout: 10000,\n  retries: 3,\n}',
+            },
+            mode: 'inline',
+            showLineNumbers: true,
+            highlightDiffs: true,
+          }}
+        />
       </MockProviders>
     </ShowcaseScreen>
   )

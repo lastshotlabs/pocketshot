@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import {
   Tabs,
   SegmentedControl,
@@ -6,7 +6,11 @@ import {
   BackButton,
   Accordion,
   TreeView,
+  TopBar,
+  BottomTabBar,
+  DrawerMenu,
   Stack,
+  useScreenContext,
 } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
 import { MockProviders } from '@/lib/MockProviders'
@@ -197,11 +201,100 @@ export default function NavigationShowcase() {
         />
 
         <View style={styles.spacer} />
+
+        <NavigationNewDemos />
       </MockProviders>
     </ShowcaseScreen>
   )
 }
 
+function NavigationNewDemos() {
+  const { setValue } = useScreenContext()
+
+  return (
+    <>
+      <SectionLabel label="TopBar — with title, subtitle, back + right actions" />
+      <TopBar
+        config={{
+          id: 'top-bar-demo',
+          title: 'Messages',
+          subtitle: '3 unread',
+          leftAction: 'back',
+          rightActions: [
+            { icon: '🔍', onPress: { type: 'toast', message: 'Search tapped' } },
+            { icon: '✏️', onPress: { type: 'toast', message: 'Compose tapped' } },
+          ],
+          testID: 'top-bar-demo',
+        }}
+      />
+
+      <SectionLabel label="BottomTabBar — 4 tabs with badge" />
+      <BottomTabBar
+        config={{
+          id: 'bottom-tabs-demo',
+          tabs: [
+            { id: 'home', label: 'Home', icon: '🏠', onPress: { type: 'toast', message: 'Home tapped' } },
+            { id: 'search', label: 'Search', icon: '🔍', onPress: { type: 'toast', message: 'Search tapped' } },
+            { id: 'notifications', label: 'Alerts', icon: '🔔', badge: 5, onPress: { type: 'toast', message: 'Notifications tapped' } },
+            { id: 'profile', label: 'Profile', icon: '👤', onPress: { type: 'toast', message: 'Profile tapped' } },
+          ],
+          activeTab: 'home',
+          showLabels: true,
+          testID: 'bottom-tabs-demo',
+        }}
+      />
+
+      <SectionLabel label="DrawerMenu — with header, grouped items, footer" />
+      <Pressable
+        style={styles.drawerTrigger}
+        onPress={() => setValue('drawer-menu-demo-open', true)}
+        testID="drawer-menu-trigger"
+        accessibilityLabel="Open drawer menu"
+        accessibilityRole="button"
+      >
+        <Text style={styles.drawerTriggerText}>Open Drawer Menu</Text>
+      </Pressable>
+      <DrawerMenu
+        config={{
+          id: 'drawer-menu-demo',
+          header: {
+            title: 'Jane Smith',
+            subtitle: 'jane@example.com',
+            avatar: '👩',
+          },
+          items: [
+            { id: 'home', label: 'Home', icon: '🏠', section: 'Main', onPress: { type: 'toast', message: 'Home tapped' } },
+            { id: 'projects', label: 'Projects', icon: '📁', section: 'Main', onPress: { type: 'toast', message: 'Projects tapped' } },
+            { id: 'messages', label: 'Messages', icon: '💬', section: 'Main', badge: 3, onPress: { type: 'toast', message: 'Messages tapped' } },
+            { id: 'settings', label: 'Settings', icon: '⚙️', section: 'Preferences', onPress: { type: 'toast', message: 'Settings tapped' } },
+            { id: 'help', label: 'Help & Support', icon: '❓', section: 'Preferences', onPress: { type: 'toast', message: 'Help tapped' } },
+          ],
+          footer: {
+            label: 'Sign Out',
+            onPress: { type: 'toast', message: 'Sign out tapped' },
+          },
+          testID: 'drawer-menu-demo',
+        }}
+      />
+
+      <View style={styles.spacerLg} />
+    </>
+  )
+}
+
 const styles = StyleSheet.create({
   spacer: { height: 32 },
+  spacerLg: { height: 48 },
+  drawerTrigger: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  drawerTriggerText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 })

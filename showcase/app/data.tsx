@@ -17,6 +17,12 @@ import {
   NotificationBell,
   Chart,
   EntityPicker,
+  FilterSheet,
+  SortPicker,
+  Pagination,
+  PullToRefresh,
+  ProgressCircle,
+  Skeleton,
   Stack,
   Row,
   useScreenContext,
@@ -492,8 +498,157 @@ export default function DataShowcase() {
             onChangeAction: { type: 'toast', message: 'Project changed' },
           }}
         />
+
+        {/* ── FilterSheet ──────────────────────────────────────────────── */}
+        <SectionLabel label="FilterSheet — multi-section" />
+        <FilterSheetDemo />
+
+        {/* ── SortPicker ───────────────────────────────────────────────── */}
+        <SectionLabel label="SortPicker — default" />
+        <SortPickerDemo />
+
+        {/* ── Pagination ───────────────────────────────────────────────── */}
+        <SectionLabel label="Pagination — pages mode" />
+        <Pagination
+          config={{
+            id: 'pagination-pages',
+            mode: 'pages',
+            totalPages: 8,
+            currentPage: 1,
+            onPageChange: { type: 'toast', message: 'Page changed' },
+          }}
+        />
+
+        <SectionLabel label="Pagination — load-more mode" />
+        <Pagination
+          config={{
+            id: 'pagination-load-more',
+            mode: 'load-more',
+            onLoadMore: { type: 'toast', message: 'Loading more items' },
+          }}
+        />
+
+        {/* ── PullToRefresh ────────────────────────────────────────────── */}
+        <SectionLabel label="PullToRefresh — default" />
+        <PullToRefresh
+          config={{
+            id: 'pull-refresh-demo',
+            refreshing: false,
+            onRefresh: { type: 'toast', message: 'Refreshing data' },
+          }}
+        />
+
+        {/* ── ProgressCircle ───────────────────────────────────────────── */}
+        <SectionLabel label="ProgressCircle — sizes" />
+        <Row config={{ gap: 16, align: 'center' }}>
+          <ProgressCircle config={{ value: 25, size: 'sm', label: '25%' }} />
+          <ProgressCircle config={{ value: 60, size: 'md', label: '60%' }} />
+          <ProgressCircle config={{ value: 90, size: 'lg', label: '90%' }} />
+        </Row>
+
+        <SectionLabel label="ProgressCircle — without value label" />
+        <Row config={{ gap: 16, align: 'center' }}>
+          <ProgressCircle config={{ value: 33, size: 'md', showValue: false }} />
+          <ProgressCircle config={{ value: 75, size: 'md', showValue: false }} />
+          <ProgressCircle config={{ value: 100, size: 'md', showValue: false }} />
+        </Row>
+
+        {/* ── Skeleton ─────────────────────────────────────────────────── */}
+        <SectionLabel label="Skeleton — text variant" />
+        <Skeleton config={{ variant: 'text', lines: 4 }} />
+
+        <SectionLabel label="Skeleton — card + list-item + avatar" />
+        <Stack config={{ gap: 12 }}>
+          <Skeleton config={{ variant: 'card', count: 2 }} />
+          <Skeleton config={{ variant: 'list-item', count: 3 }} />
+          <Row config={{ gap: 12 }}>
+            <Skeleton config={{ variant: 'avatar' }} />
+            <Skeleton config={{ variant: 'avatar' }} />
+            <Skeleton config={{ variant: 'avatar' }} />
+          </Row>
+        </Stack>
       </MockProviders>
     </ShowcaseScreen>
+  )
+}
+
+function FilterSheetDemo() {
+  const { setValue } = useScreenContext()
+
+  useEffect(() => {
+    setValue('filter-sheet-demo-open', true)
+  }, [])
+
+  return (
+    <FilterSheet
+      config={{
+        id: 'filter-sheet-demo',
+        title: 'Filters',
+        sections: [
+          {
+            id: 'status',
+            label: 'Status',
+            type: 'select',
+            options: [
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+              { value: 'pending', label: 'Pending' },
+            ],
+          },
+          {
+            id: 'department',
+            label: 'Department',
+            type: 'multi-select',
+            options: [
+              { value: 'engineering', label: 'Engineering' },
+              { value: 'design', label: 'Design' },
+              { value: 'product', label: 'Product' },
+              { value: 'marketing', label: 'Marketing' },
+            ],
+          },
+          {
+            id: 'experience',
+            label: 'Years of Experience',
+            type: 'range',
+            min: 0,
+            max: 20,
+            step: 1,
+          },
+          {
+            id: 'remote',
+            label: 'Remote Only',
+            type: 'toggle',
+          },
+        ],
+        onApply: { type: 'toast', message: 'Filters applied' },
+        onReset: { type: 'toast', message: 'Filters reset' },
+      }}
+    />
+  )
+}
+
+function SortPickerDemo() {
+  const { setValue } = useScreenContext()
+
+  useEffect(() => {
+    setValue('sort-picker-demo-open', true)
+  }, [])
+
+  return (
+    <SortPicker
+      config={{
+        id: 'sort-picker-demo',
+        options: [
+          { value: 'name-asc', label: 'Name (A-Z)' },
+          { value: 'name-desc', label: 'Name (Z-A)' },
+          { value: 'date-newest', label: 'Newest First' },
+          { value: 'date-oldest', label: 'Oldest First' },
+          { value: 'popularity', label: 'Most Popular' },
+        ],
+        defaultValue: 'date-newest',
+        onSelect: { type: 'toast', message: 'Sort changed' },
+      }}
+    />
   )
 }
 

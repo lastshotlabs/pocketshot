@@ -7,31 +7,6 @@ import { resolveFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { QrCodeConfig } from './types'
 
-// ── Duck-type react-native-qrcode-svg ──────────────────────────────────────────
-
-interface QrCodeSvgProps {
-  value: string
-  size: number
-  color?: string
-  backgroundColor?: string
-  logo?: { uri: string }
-  logoSize?: number
-  logoBorderRadius?: number
-  logoBackgroundColor?: string
-  ecl?: 'L' | 'M' | 'Q' | 'H'
-}
-
-type QrCodeSvgComponent = React.ComponentType<QrCodeSvgProps>
-
-let QrCodeSvg: QrCodeSvgComponent | null = null
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('react-native-qrcode-svg') as { default: QrCodeSvgComponent }
-  QrCodeSvg = mod.default
-} catch {
-  // not installed — fallback rendering
-}
-
 // ── Fallback: simple hash-based dot matrix ─────────────────────────────────────
 
 function simpleHash(str: string): number {
@@ -151,31 +126,7 @@ export function QrCode({ config }: { config: QrCodeConfig }) {
         accessibilityRole="image"
         accessibilityLabel={`QR code containing: ${value ?? ''}`}
       >
-        {QrCodeSvg != null && value != null ? (
-          <View style={styles.qrWrapper}>
-            <QrCodeSvg
-              value={value}
-              size={size}
-              color={color}
-              backgroundColor={bgColor}
-              logo={config.logo != null ? { uri: config.logo } : undefined}
-              logoSize={config.logo != null ? size * 0.2 : undefined}
-              logoBorderRadius={config.logo != null ? 4 : undefined}
-              logoBackgroundColor={bgColor}
-              ecl={config.errorCorrectionLevel ?? 'M'}
-            />
-            {config.logo != null && (
-              <View style={styles.logoOverlay} pointerEvents="none">
-                <Image
-                  source={{ uri: config.logo }}
-                  style={styles.logoImage}
-                  resizeMode="contain"
-                  accessibilityLabel="QR code logo"
-                />
-              </View>
-            )}
-          </View>
-        ) : value != null ? (
+        {value != null ? (
           <FallbackQrCode
             value={value}
             size={size}

@@ -12,6 +12,10 @@ import {
   TypingIndicator,
   MessageThread,
   ChatWindow,
+  CommentSection,
+  EmojiPicker,
+  GifPicker,
+  ReactionPicker,
   useScreenContext,
 } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
@@ -271,6 +275,56 @@ function CommunicationDemos() {
 
     setValue('threadMessages', messages)
     setValue('chatMessages', messages)
+
+    setValue('commentData', [
+      {
+        id: 'comment-1',
+        authorId: 'user-alice',
+        authorName: 'Alice Chen',
+        body: 'This config-driven approach is a game changer for rapid prototyping.',
+        createdAt: '2026-04-09T09:00:00Z',
+        likes: 5,
+        replies: [
+          {
+            id: 'comment-1-1',
+            authorId: 'user-bob',
+            authorName: 'Bob Martinez',
+            body: 'Agreed! We cut our scaffold time in half.',
+            createdAt: '2026-04-09T09:15:00Z',
+            likes: 2,
+            replies: [],
+          },
+        ],
+      },
+      {
+        id: 'comment-2',
+        authorId: 'user-me',
+        authorName: 'Me',
+        body: 'The token system makes theming trivial. One flavor swap and everything updates.',
+        createdAt: '2026-04-09T09:30:00Z',
+        likes: 3,
+        replies: [],
+      },
+      {
+        id: 'comment-3',
+        authorId: 'user-carol',
+        authorName: 'Carol Davis',
+        body: 'Has anyone benchmarked FlatList performance with 1000+ comments?',
+        createdAt: '2026-04-09T10:00:00Z',
+        likes: 1,
+        replies: [
+          {
+            id: 'comment-3-1',
+            authorId: 'user-alice',
+            authorName: 'Alice Chen',
+            body: 'Virtualization handles it fine. No jank on mid-range Android devices.',
+            createdAt: '2026-04-09T10:10:00Z',
+            likes: 4,
+            replies: [],
+          },
+        ],
+      },
+    ])
   }, [])
 
   return (
@@ -306,6 +360,56 @@ function CommunicationDemos() {
           placeholder: 'Type a message...',
           onSendAction: { type: 'toast', message: 'Message sent' },
           showAvatars: true,
+        }}
+      />
+
+      <Divider config={{ marginVertical: 8 }} />
+
+      <SectionLabel label="CommentSection — threaded comments" />
+      <CommentSection
+        config={{
+          id: 'showcase-comments',
+          data: { from: 'commentData' },
+          currentUserId: 'user-me',
+          maxNestingLevel: 2,
+          allowReplies: true,
+          onSubmitComment: { type: 'toast', message: 'Comment submitted' },
+          onLikeComment: { type: 'toast', message: 'Comment liked' },
+          onDeleteComment: { type: 'toast', message: 'Comment deleted' },
+        }}
+      />
+
+      <Divider config={{ marginVertical: 8 }} />
+
+      <SectionLabel label="EmojiPicker — tap to open" />
+      <EmojiPicker
+        config={{
+          id: 'showcase-emoji-picker',
+          onSelect: { type: 'toast', message: 'Emoji selected' },
+          recentEmojis: ['😀', '🚀', '🎨', '🔥', '✅', '💯'],
+        }}
+      />
+
+      <Divider config={{ marginVertical: 8 }} />
+
+      <SectionLabel label="GifPicker — tap to open" />
+      <GifPicker
+        config={{
+          id: 'showcase-gif-picker',
+          onSelect: { type: 'toast', message: 'GIF selected' },
+          placeholder: 'Search GIFs...',
+        }}
+      />
+
+      <Divider config={{ marginVertical: 8 }} />
+
+      <SectionLabel label="ReactionPicker — quick reactions" />
+      <ReactionPicker
+        config={{
+          id: 'showcase-reaction-picker',
+          reactions: ['\ud83d\udc4d', '\u2764\ufe0f', '\ud83d\ude02', '\ud83d\ude2e', '\ud83d\ude22', '\ud83d\udd25'],
+          onSelect: { type: 'toast', message: 'Reaction selected' },
+          triggerLabel: 'React',
         }}
       />
     </Stack>

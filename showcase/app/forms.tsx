@@ -14,6 +14,18 @@ import {
   TagSelector,
   InlineEdit,
   Wizard,
+  PasswordInput,
+  CheckboxGroup,
+  RadioGroup,
+  RatingInput,
+  SearchBar,
+  QuickAdd,
+  PinInput,
+  PhoneInput,
+  DatePicker,
+  TimePicker,
+  DateRangePicker,
+  LocationInput,
 } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
 import { MockProviders } from '@/lib/MockProviders'
@@ -544,6 +556,297 @@ export default function FormsShowcase() {
             onCancel: { type: 'toast', message: 'Wizard cancelled' },
           }}
         />
+        <SectionLabel label="PasswordInput — secure text entry with visibility toggle" />
+        <Stack config={{ gap: 12 }}>
+          <PasswordInput
+            config={{
+              id: 'password-basic',
+              label: 'Password',
+              placeholder: 'Enter your password',
+            }}
+          />
+          <PasswordInput
+            config={{
+              id: 'password-confirm',
+              label: 'Confirm Password',
+              placeholder: 'Re-enter your password',
+              showToggle: true,
+              maxLength: 64,
+              onSubmitAction: { type: 'toast', message: 'Password submitted' },
+            }}
+          />
+          <PasswordInput
+            config={{
+              id: 'password-error',
+              label: 'New Password',
+              placeholder: 'Min 8 characters',
+              errorText: 'Password must be at least 8 characters',
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="CheckboxGroup — multiple selection from options" />
+        <Stack config={{ gap: 12 }}>
+          <CheckboxGroup
+            config={{
+              id: 'interests',
+              label: 'Interests',
+              options: [
+                { value: 'music', label: 'Music' },
+                { value: 'sports', label: 'Sports' },
+                { value: 'travel', label: 'Travel' },
+                { value: 'cooking', label: 'Cooking' },
+                { value: 'gaming', label: 'Gaming' },
+              ],
+              defaultValue: ['music', 'travel'],
+              onChangeAction: { type: 'toast', message: 'Interests updated' },
+            }}
+          />
+          <CheckboxGroup
+            config={{
+              id: 'permissions',
+              label: 'Permissions',
+              orientation: 'horizontal',
+              options: [
+                { value: 'read', label: 'Read' },
+                { value: 'write', label: 'Write' },
+                { value: 'admin', label: 'Admin', disabled: true },
+              ],
+              defaultValue: ['read'],
+              onChangeAction: { type: 'toast', message: 'Permissions changed' },
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="RadioGroup — single selection from options" />
+        <Stack config={{ gap: 12 }}>
+          <RadioGroup
+            config={{
+              id: 'shipping',
+              label: 'Shipping Method',
+              options: [
+                { value: 'standard', label: 'Standard (5-7 days)' },
+                { value: 'express', label: 'Express (2-3 days)' },
+                { value: 'overnight', label: 'Overnight' },
+              ],
+              defaultValue: 'standard',
+              onChangeAction: { type: 'toast', message: 'Shipping method selected' },
+            }}
+          />
+          <RadioGroup
+            config={{
+              id: 'priority',
+              label: 'Priority',
+              orientation: 'horizontal',
+              options: [
+                { value: 'low', label: 'Low' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'high', label: 'High' },
+                { value: 'critical', label: 'Critical', disabled: true },
+              ],
+              defaultValue: 'medium',
+              onChangeAction: { type: 'toast', message: 'Priority set' },
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="RatingInput — star rating selector" />
+        <Stack config={{ gap: 12 }}>
+          <RatingInput
+            config={{
+              id: 'product-rating',
+              label: 'Rate this product',
+              maxStars: 5,
+              defaultValue: 4,
+              onChangeAction: { type: 'toast', message: 'Rating submitted' },
+            }}
+          />
+          <RatingInput
+            config={{
+              id: 'precision-rating',
+              label: 'How was your experience?',
+              maxStars: 5,
+              allowHalf: true,
+              defaultValue: 3.5,
+              size: 'lg',
+              onChangeAction: { type: 'toast', message: 'Experience rated' },
+            }}
+          />
+          <RatingInput
+            config={{
+              id: 'readonly-rating',
+              label: 'Average Rating',
+              maxStars: 5,
+              defaultValue: 4,
+              readOnly: true,
+              size: 'sm',
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="SearchBar — instant search with debounce" />
+        <Stack config={{ gap: 12 }}>
+          <SearchBar
+            config={{
+              id: 'search-default',
+              placeholder: 'Search products...',
+              onChangeAction: { type: 'toast', message: 'Searching...' },
+              onSubmitAction: { type: 'toast', message: 'Search submitted' },
+            }}
+          />
+          <SearchBar
+            config={{
+              id: 'search-cancel',
+              placeholder: 'Search users...',
+              showCancelButton: true,
+              debounceMs: 500,
+              onChangeAction: { type: 'toast', message: 'Filtering users...' },
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="QuickAdd — inline item creation" />
+        <QuickAdd
+          config={{
+            id: 'quick-add-task',
+            placeholder: 'Add a new task...',
+            submitLabel: 'Add',
+            icon: 'plus',
+            onSubmit: { type: 'toast', message: 'Task added' },
+          }}
+        />
+
+        <SectionLabel label="PinInput — numeric code entry" />
+        <Stack config={{ gap: 12 }}>
+          <PinInput
+            config={{
+              id: 'verification-code',
+              label: 'Verification Code',
+              length: 6,
+              onComplete: { type: 'toast', message: 'Code verified' },
+            }}
+          />
+          <PinInput
+            config={{
+              id: 'secure-pin',
+              label: 'Enter PIN',
+              length: 4,
+              secureEntry: true,
+              onComplete: { type: 'toast', message: 'PIN accepted' },
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="PhoneInput — international phone number entry" />
+        <Stack config={{ gap: 12 }}>
+          <PhoneInput
+            config={{
+              id: 'phone-us',
+              label: 'Phone Number',
+              defaultCountry: 'US',
+              onChangeAction: { type: 'toast', message: 'Phone number updated' },
+            }}
+          />
+          <PhoneInput
+            config={{
+              id: 'phone-error',
+              label: 'Emergency Contact',
+              defaultCountry: 'GB',
+              helperText: 'Include area code',
+              errorText: 'Please enter a valid phone number',
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="DatePicker — calendar date selection" />
+        <Stack config={{ gap: 12 }}>
+          <DatePicker
+            config={{
+              id: 'birth-date',
+              label: 'Date of Birth',
+              placeholder: 'Select your birthday',
+              maxDate: '2008-12-31',
+              format: 'MM/DD/YYYY',
+              onChangeAction: { type: 'toast', message: 'Date selected' },
+            }}
+          />
+          <DatePicker
+            config={{
+              id: 'appointment-date',
+              label: 'Appointment Date',
+              placeholder: 'Pick a date',
+              minDate: '2026-04-09',
+              maxDate: '2026-12-31',
+              defaultValue: '2026-04-15',
+              onChangeAction: { type: 'toast', message: 'Appointment date set' },
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="TimePicker — time selection" />
+        <Stack config={{ gap: 12 }}>
+          <TimePicker
+            config={{
+              id: 'meeting-time',
+              label: 'Meeting Time',
+              placeholder: 'Select a time',
+              minuteInterval: 15,
+              defaultValue: '09:00',
+              onChangeAction: { type: 'toast', message: 'Meeting time set' },
+            }}
+          />
+          <TimePicker
+            config={{
+              id: 'alarm-time',
+              label: 'Alarm',
+              is24Hour: true,
+              minuteInterval: 5,
+              defaultValue: '07:30',
+              onChangeAction: { type: 'toast', message: 'Alarm set' },
+            }}
+          />
+        </Stack>
+
+        <SectionLabel label="DateRangePicker — start and end date selection" />
+        <DateRangePicker
+          config={{
+            id: 'vacation-range',
+            label: 'Vacation Dates',
+            startPlaceholder: 'Check-in',
+            endPlaceholder: 'Check-out',
+            minDate: '2026-04-09',
+            defaultStart: '2026-06-01',
+            defaultEnd: '2026-06-14',
+            onChangeAction: { type: 'toast', message: 'Date range updated' },
+          }}
+        />
+
+        <SectionLabel label="LocationInput — address and coordinates entry" />
+        <Stack config={{ gap: 12 }}>
+          <LocationInput
+            config={{
+              id: 'delivery-address',
+              label: 'Delivery Address',
+              placeholder: 'Enter delivery address',
+              showPreview: true,
+              onChangeAction: { type: 'toast', message: 'Location updated' },
+            }}
+          />
+          <LocationInput
+            config={{
+              id: 'office-location',
+              label: 'Office Location',
+              placeholder: 'Search for your office',
+              defaultValue: {
+                latitude: 40.7128,
+                longitude: -74.006,
+                address: '350 Fifth Avenue, New York, NY 10118',
+              },
+              showPreview: true,
+              onChangeAction: { type: 'toast', message: 'Office location set' },
+            }}
+          />
+        </Stack>
       </MockProviders>
     </ShowcaseScreen>
   )

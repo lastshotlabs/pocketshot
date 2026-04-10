@@ -8,8 +8,9 @@ const peerDeps = [
   'react',
   'react-native',
   // Optional native peers — duck-typed at runtime
-  'react-native-qrcode-svg',
   'react-native-maps',
+  'react-native-markdown-display',
+  'react-native-svg',
   'expo-camera',
   'expo-barcode-scanner',
   'expo-location',

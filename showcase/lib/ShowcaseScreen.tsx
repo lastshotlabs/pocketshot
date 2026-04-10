@@ -1,5 +1,5 @@
 import React from 'react'
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { FlatList, View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 
@@ -7,6 +7,8 @@ interface Props {
   title: string
   children: React.ReactNode
 }
+
+const EMPTY: never[] = []
 
 export function ShowcaseScreen({ title, children }: Props) {
   const router = useRouter()
@@ -24,9 +26,14 @@ export function ShowcaseScreen({ title, children }: Props) {
         </TouchableOpacity>
         <Text style={styles.title}>{title}</Text>
       </View>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {children}
-      </ScrollView>
+      <FlatList
+        data={EMPTY}
+        renderItem={null}
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        ListHeaderComponent={<>{children}</>}
+        keyboardShouldPersistTaps="handled"
+      />
     </SafeAreaView>
   )
 }
