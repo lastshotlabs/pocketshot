@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react'
-import { View, Text, Animated, StyleSheet } from 'react-native'
+import React, { useEffect, useMemo, useRef } from 'react'
+import { View, Text, Animated, StyleSheet, type DimensionValue } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeStyleProps, toNativeDimensionValue } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
@@ -8,7 +9,6 @@ import type { DesignTokens } from '../../../tokens/types'
 import type { ProgressBarConfig } from './types'
 
 type Variant = NonNullable<ProgressBarConfig['variant']>
-type Radius = NonNullable<ProgressBarConfig['radius']>
 
 function resolveVariantColor(variant: Variant, tokens: DesignTokens): string {
   switch (variant) {
@@ -21,20 +21,6 @@ function resolveVariantColor(variant: Variant, tokens: DesignTokens): string {
     case 'default':
     default:
       return tokens.colors.primary
-  }
-}
-
-function resolveRadius(radius: Radius, tokens: DesignTokens): number {
-  switch (radius) {
-    case 'none':
-      return tokens.radius.none
-    case 'sm':
-      return tokens.radius.sm
-    case 'md':
-      return tokens.radius.md
-    case 'full':
-    default:
-      return tokens.radius.full
   }
 }
 
@@ -61,9 +47,8 @@ export function ProgressBar({ config }: { config: ProgressBarConfig }) {
   }, [resolvedValue, config.animated, animatedWidth])
 
   const fillColor = resolveVariantColor(config.variant ?? 'default', tokens)
-  const borderRadius = resolveRadius(config.radius ?? 'full', tokens)
-
-  const styles = makeStyles(tokens, config.height ?? 8, borderRadius, fillColor)
+  const trackFrame = useMemo(() => resolveTrackFrame(tokens, config), [config, tokens])
+  const styles = makeStyles(tokens, trackFrame.height, trackFrame.borderRadius, fillColor)
 
   const widthInterpolated = animatedWidth.interpolate({
     inputRange: [0, 100],
@@ -95,7 +80,12 @@ export function ProgressBar({ config }: { config: ProgressBarConfig }) {
   )
 }
 
-function makeStyles(tokens: DesignTokens, height: number, borderRadius: number, fillColor: string) {
+function makeStyles(
+  tokens: DesignTokens,
+  height: DimensionValue,
+  borderRadius: number,
+  fillColor: string,
+) {
   return StyleSheet.create({
     wrapper: {
       width: '100%',
@@ -130,5 +120,26 @@ function makeStyles(tokens: DesignTokens, height: number, borderRadius: number, 
       backgroundColor: fillColor,
     },
   })
+}
+
+function resolveTrackFrame(tokens: DesignTokens, config: ProgressBarConfig): {
+  height: DimensionValue
+  borderRadius: number
+} {
+  const resolvedStyle = resolveNativeStyleProps(
+    {
+      height: config.height,
+      borderRadius: config.borderRadius,
+    },
+    tokens,
+  )
+
+  return {
+    height: toNativeDimensionValue(resolvedStyle.height) ?? 8,
+    borderRadius:
+      typeof resolvedStyle.borderRadius === 'number'
+        ? resolvedStyle.borderRadius
+        : tokens.radius.full,
+  }
 }
 

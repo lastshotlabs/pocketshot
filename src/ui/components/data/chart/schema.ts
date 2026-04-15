@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { dimensionValueSchema, extendComponentSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ChartDataItemSchema = z.object({
@@ -13,7 +13,7 @@ export const ChartSchema = extendComponentSchema({
   type: z.enum(['bar', 'line', 'donut', 'pie']).default('bar'),
   data: z.union([z.array(ChartDataItemSchema), FromRefSchema]),
   title: z.string().optional(),
-  height: z.number().int().min(40).default(200),
+  height: dimensionValueSchema.default(200),
   showLabels: z.boolean().default(true),
   showValues: z.boolean().default(false),
   showLegend: z.boolean().default(false),

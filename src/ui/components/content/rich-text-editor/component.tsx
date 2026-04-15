@@ -7,8 +7,10 @@ import {
   StyleSheet,
   TextInput as RNTextInput,
   Alert,
+  type DimensionValue,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeStyleProps, toNumericDimensionValue } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import type { DesignTokens } from '../../../tokens/types'
@@ -184,8 +186,7 @@ export function RichTextEditor({ config }: { config: RichTextEditorConfig }) {
   const [activeItem, setActiveItem] = useState<EditorToolbarItem | null>(null)
   const inputRef = useRef<RNTextInput>(null)
 
-  const minHeight = config.minHeight ?? 120
-  const maxHeight = config.maxHeight ?? 400
+  const { minHeight, maxHeight } = useMemo(() => resolveEditorHeights(tokens, config), [config, tokens])
   const [inputHeight, setInputHeight] = useState(minHeight)
 
   // Publish initial value
@@ -297,7 +298,7 @@ export function RichTextEditor({ config }: { config: RichTextEditorConfig }) {
           multiline
           placeholder={config.placeholder ?? 'Start writing...'}
           placeholderTextColor={tokens.colors.inputPlaceholder}
-          style={[styles.input, { height: inputHeight }]}
+          style={[styles.input, { height: inputHeight as DimensionValue }]}
           testID={`${testId}-input`}
           accessibilityLabel={config.placeholder ?? 'Rich text editor'}
           accessibilityRole="text"
@@ -388,5 +389,26 @@ function makeStyles(tokens: DesignTokens, focused: boolean) {
       color: tokens.colors.textMuted,
     },
   })
+}
+
+function resolveEditorHeights(tokens: DesignTokens, config: RichTextEditorConfig): {
+  minHeight: number
+  maxHeight: number
+} {
+  const resolvedStyle = resolveNativeStyleProps(
+    {
+      minHeight: config.minHeight,
+      maxHeight: config.maxHeight,
+    },
+    tokens,
+  )
+
+  const resolvedMinHeight = toNumericDimensionValue(resolvedStyle.minHeight) ?? 120
+  const resolvedMaxHeight = toNumericDimensionValue(resolvedStyle.maxHeight) ?? 400
+
+  return {
+    minHeight: resolvedMinHeight,
+    maxHeight: Math.max(resolvedMinHeight, resolvedMaxHeight),
+  }
 }
 

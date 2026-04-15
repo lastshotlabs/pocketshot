@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { dimensionValueSchema, extendComponentSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -25,8 +25,7 @@ export const RichTextEditorSchema = extendComponentSchema({
     )
     .optional()
     .default(['heading', 'bold', 'italic', 'list-bullet', 'blockquote', 'code']),
-  minHeight: z.number().optional().default(120),
-  maxHeight: z.number().optional().default(400),
+  minHeight: dimensionValueSchema.optional().default(120),
+  maxHeight: dimensionValueSchema.optional().default(400),
   onChangeAction: ActionSchema.optional(),
-  testID: z.string().optional(),
 })

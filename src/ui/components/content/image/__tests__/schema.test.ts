@@ -24,7 +24,6 @@ describe('ImageSchema', () => {
   it('applies defaults', () => {
     const result = ImageSchema.parse({ src: 'https://x.com/img.png', alt: 'X' })
     expect(result.resizeMode).toBe('cover')
-    expect(result.radius).toBe('none')
   })
 
   it('accepts numeric width', () => {
@@ -32,13 +31,9 @@ describe('ImageSchema', () => {
     expect(result.width).toBe(200)
   })
 
-  it('accepts "100%" width', () => {
-    const result = ImageSchema.parse({ src: 'x', alt: 'X', width: '100%' })
-    expect(result.width).toBe('100%')
-  })
-
-  it('rejects non-numeric non-100% width', () => {
-    expect(ImageSchema.safeParse({ src: 'x', alt: 'X', width: '50%' }).success).toBe(false)
+  it('accepts percentage widths from the shared dimension contract', () => {
+    const result = ImageSchema.parse({ src: 'x', alt: 'X', width: '50%' })
+    expect(result.width).toBe('50%')
   })
 
   it('accepts all valid resizeModes', () => {
@@ -47,9 +42,9 @@ describe('ImageSchema', () => {
     }
   })
 
-  it('accepts all valid radius values', () => {
-    for (const radius of ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const) {
-      expect(ImageSchema.safeParse({ src: 'x', alt: 'X', radius }).success).toBe(true)
+  it('accepts shared borderRadius values', () => {
+    for (const borderRadius of ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const) {
+      expect(ImageSchema.safeParse({ src: 'x', alt: 'X', borderRadius }).success).toBe(true)
     }
   })
 

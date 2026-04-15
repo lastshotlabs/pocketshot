@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react'
-import { ActivityIndicator, Animated, View, StyleSheet } from 'react-native'
+import React, { useEffect, useMemo, useRef } from 'react'
+import { ActivityIndicator, Animated, View, StyleSheet, type DimensionValue } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeStyleProps, toNativeDimensionValue } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 import type { LoadingStateConfig } from './types'
@@ -12,10 +13,12 @@ import type { LoadingStateConfig } from './types'
 function SkeletonRows({
   count,
   height,
+  borderRadius,
   tokens,
 }: {
   count: number
-  height: number
+  height: DimensionValue
+  borderRadius: number
   tokens: DesignTokens
 }) {
   const opacity = useRef(new Animated.Value(0.4)).current
@@ -31,7 +34,7 @@ function SkeletonRows({
     return () => anim.stop()
   }, [opacity])
 
-  const styles = makeSkeletonStyles(tokens, height)
+  const styles = makeSkeletonStyles(tokens, height, borderRadius)
 
   return (
     <View
@@ -54,6 +57,7 @@ function SkeletonRows({
 export function LoadingState({ config }: { config: LoadingStateConfig }) {
   const tokens = useTokens()
   const styles = makeContainerStyles(tokens)
+  const skeletonFrame = useMemo(() => resolveLoadingSkeletonFrame(tokens, config), [config, tokens])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
@@ -70,7 +74,12 @@ export function LoadingState({ config }: { config: LoadingStateConfig }) {
           />
         </View>
       ) : (
-        <SkeletonRows count={config.count ?? 3} height={config.height ?? 48} tokens={tokens} />
+        <SkeletonRows
+          count={config.count ?? 3}
+          height={skeletonFrame.height}
+          borderRadius={skeletonFrame.borderRadius}
+          tokens={tokens}
+        />
       )}
     </ComponentWrapper>
   )
@@ -91,7 +100,7 @@ function makeContainerStyles(tokens: DesignTokens) {
   })
 }
 
-function makeSkeletonStyles(tokens: DesignTokens, height: number) {
+function makeSkeletonStyles(tokens: DesignTokens, height: DimensionValue, borderRadius: number) {
   return StyleSheet.create({
     container: {
       paddingHorizontal: tokens.spacing[4],
@@ -99,10 +108,29 @@ function makeSkeletonStyles(tokens: DesignTokens, height: number) {
     },
     row: {
       height,
-      borderRadius: tokens.radius.md,
+      borderRadius,
       backgroundColor: tokens.colors.surfaceAlt,
       marginBottom: tokens.spacing[3],
     },
   })
+}
+
+function resolveLoadingSkeletonFrame(tokens: DesignTokens, config: LoadingStateConfig): {
+  height: DimensionValue
+  borderRadius: number
+} {
+  const resolvedStyle = resolveNativeStyleProps(
+    {
+      height: config.height,
+      borderRadius: config.borderRadius,
+    },
+    tokens,
+  )
+
+  return {
+    height: toNativeDimensionValue(resolvedStyle.height) ?? 48,
+    borderRadius:
+      typeof resolvedStyle.borderRadius === 'number' ? resolvedStyle.borderRadius : tokens.radius.md,
+  }
 }
 

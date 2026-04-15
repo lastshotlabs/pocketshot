@@ -12,6 +12,7 @@ import {
   StyleSheet,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeStyleProps, toNativeDimensionValue } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -29,9 +30,9 @@ export function ImageViewer({ config }: { config: ImageViewerConfig }) {
   const enableZoom = config.enableZoom ?? true
   const maxZoom = config.maxZoom ?? 3
   const showCloseButton = config.showCloseButton ?? true
-
-  const imageWidth = config.width ?? SCREEN.width
-  const imageHeight = config.height ?? SCREEN.width * 0.75
+  const thumbnailFrame = useMemo(() => resolveThumbnailFrame(tokens, config), [config, tokens])
+  const imageWidth = thumbnailFrame.width ?? SCREEN.width
+  const imageHeight = thumbnailFrame.height ?? SCREEN.width * 0.75
 
   const [modalVisible, setModalVisible] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -141,7 +142,7 @@ export function ImageViewer({ config }: { config: ImageViewerConfig }) {
     resetTransform()
   }, [resetTransform])
 
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const styles = useMemo(() => makeStyles(tokens, thumbnailFrame.borderRadius), [tokens, thumbnailFrame.borderRadius])
   const testId = config.testID ?? config.id
 
   return (
@@ -166,7 +167,13 @@ export function ImageViewer({ config }: { config: ImageViewerConfig }) {
             )}
             <Image
               source={{ uri: source }}
-              style={{ width: imageWidth, height: imageHeight }}
+              style={{
+                width: imageWidth,
+                height: imageHeight,
+                ...(thumbnailFrame.borderRadius != null
+                  ? { borderRadius: thumbnailFrame.borderRadius }
+                  : undefined),
+              }}
               resizeMode="cover"
               onLoadEnd={() => setLoading(false)}
               accessibilityLabel={config.alt ?? 'Image'}
@@ -237,10 +244,10 @@ export function ImageViewer({ config }: { config: ImageViewerConfig }) {
   )
 }
 
-function makeStyles(tokens: DesignTokens) {
+function makeStyles(tokens: DesignTokens, borderRadius?: number) {
   return StyleSheet.create({
     imageContainer: {
-      borderRadius: tokens.radius.md,
+      borderRadius: borderRadius ?? tokens.radius.md,
       overflow: 'hidden',
       backgroundColor: tokens.colors.surfaceAlt,
     },
@@ -292,5 +299,27 @@ function makeStyles(tokens: DesignTokens) {
       textAlign: 'center',
     },
   })
+}
+
+function resolveThumbnailFrame(tokens: DesignTokens, config: ImageViewerConfig): {
+  width?: ReturnType<typeof toNativeDimensionValue>
+  height?: ReturnType<typeof toNativeDimensionValue>
+  borderRadius?: number
+} {
+  const resolvedStyle = resolveNativeStyleProps(
+    {
+      width: config.width,
+      height: config.height,
+      borderRadius: config.borderRadius,
+    },
+    tokens,
+  )
+
+  return {
+    width: toNativeDimensionValue(resolvedStyle.width),
+    height: toNativeDimensionValue(resolvedStyle.height),
+    borderRadius:
+      typeof resolvedStyle.borderRadius === 'number' ? resolvedStyle.borderRadius : undefined,
+  }
 }
 

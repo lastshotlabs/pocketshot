@@ -16,23 +16,25 @@ describe('Body', () => {
     expect(getByText('Body text content')).toBeTruthy()
   })
 
-  it('renders all size variants without crashing', () => {
-    for (const size of ['sm', 'md', 'lg'] as const) {
-      const { getByText } = renderWithProviders(<Body config={{ text: size, size }} />)
-      expect(getByText(size)).toBeTruthy()
+  it('renders shared fontSize variants without crashing', () => {
+    for (const fontSize of ['sm', 'base', 'lg', 'xl'] as const) {
+      const { getByText } = renderWithProviders(<Body config={{ text: String(fontSize), fontSize }} />)
+      expect(getByText(String(fontSize))).toBeTruthy()
     }
   })
 
-  it('renders all weight variants without crashing', () => {
-    for (const weight of ['regular', 'medium', 'semibold', 'bold'] as const) {
-      const { getByText } = renderWithProviders(<Body config={{ text: weight, weight }} />)
-      expect(getByText(weight)).toBeTruthy()
+  it('renders shared fontWeight variants without crashing', () => {
+    for (const fontWeight of ['normal', 'medium', 'semibold', 'bold'] as const) {
+      const { getByText } = renderWithProviders(
+        <Body config={{ text: String(fontWeight), fontWeight }} />,
+      )
+      expect(getByText(String(fontWeight))).toBeTruthy()
     }
   })
 
-  it('renders all align variants without crashing', () => {
-    for (const align of ['left', 'center', 'right'] as const) {
-      const { toJSON } = renderWithProviders(<Body config={{ text: 'Aligned', align }} />)
+  it('renders all textAlign variants without crashing', () => {
+    for (const textAlign of ['left', 'center', 'right', 'justify'] as const) {
+      const { toJSON } = renderWithProviders(<Body config={{ text: 'Aligned', textAlign }} />)
       expect(toJSON()).toBeTruthy()
     }
   })

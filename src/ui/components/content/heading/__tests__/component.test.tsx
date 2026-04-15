@@ -25,9 +25,9 @@ describe('Heading', () => {
     }
   })
 
-  it('renders all align variants without crashing', () => {
-    for (const align of ['left', 'center', 'right'] as const) {
-      const { toJSON } = renderWithProviders(<Heading config={{ text: 'Aligned', align }} />)
+  it('renders all textAlign variants without crashing', () => {
+    for (const textAlign of ['left', 'center', 'right', 'justify'] as const) {
+      const { toJSON } = renderWithProviders(<Heading config={{ text: 'Aligned', textAlign }} />)
       expect(toJSON()).toBeTruthy()
     }
   })

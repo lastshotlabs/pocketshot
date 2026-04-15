@@ -19,7 +19,7 @@ describe('HeadingSchema', () => {
   it('applies defaults', () => {
     const result = HeadingSchema.parse({ text: 'Hello' })
     expect(result.level).toBe(2)
-    expect(result.align).toBe('left')
+    expect(result.textAlign).toBe('left')
   })
 
   it('accepts all valid levels', () => {
@@ -33,13 +33,13 @@ describe('HeadingSchema', () => {
     expect(HeadingSchema.safeParse({ text: 'X', level: 0 }).success).toBe(false)
   })
 
-  it('accepts all valid align values', () => {
-    for (const align of ['left', 'center', 'right'] as const) {
-      expect(HeadingSchema.safeParse({ text: 'X', align }).success).toBe(true)
+  it('accepts all valid textAlign values', () => {
+    for (const textAlign of ['left', 'center', 'right', 'justify'] as const) {
+      expect(HeadingSchema.safeParse({ text: 'X', textAlign }).success).toBe(true)
     }
   })
 
-  it('rejects invalid align', () => {
-    expect(HeadingSchema.safeParse({ text: 'X', align: 'justify' }).success).toBe(false)
+  it('rejects invalid textAlign', () => {
+    expect(HeadingSchema.safeParse({ text: 'X', textAlign: 'sideways' }).success).toBe(false)
   })
 })

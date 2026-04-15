@@ -1,6 +1,7 @@
 import React from 'react'
 import { Text, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -45,14 +46,18 @@ function makeStyles(tokens: DesignTokens, config: HeadingConfig) {
   const level = config.level ?? 2
   const fontSizeKey = FONT_SIZE_MAP[level]
   const fontWeightKey = FONT_WEIGHT_MAP[level]
+  const textStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const fontSize =
+    typeof textStyle.fontSize === 'number' ? textStyle.fontSize : tokens.typography[fontSizeKey]
 
   return StyleSheet.create({
     heading: {
       fontSize: tokens.typography[fontSizeKey],
       fontWeight: tokens.typography[fontWeightKey],
-      color: (config.color ?? tokens.colors.text) as string,
-      textAlign: config.align ?? 'left',
-      lineHeight: tokens.typography[fontSizeKey] * tokens.typography.lineHeightTight,
+      color: tokens.colors.text,
+      textAlign: 'left',
+      lineHeight: fontSize * tokens.typography.lineHeightTight,
+      ...textStyle,
     },
   })
 }

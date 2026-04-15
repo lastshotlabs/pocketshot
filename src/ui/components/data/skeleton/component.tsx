@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 import { View, Animated, StyleSheet, type DimensionValue } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeStyleProps, toNativeDimensionValue } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 import type { SkeletonConfig } from './types'
@@ -57,10 +58,7 @@ function ShimmerOverlay({
 
   return (
     <Animated.View
-      style={{
-        ...StyleSheet.absoluteFillObject,
-        transform: [{ translateX }],
-      }}
+      style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}
     >
       <View
         style={{
@@ -86,7 +84,7 @@ function SkeletonBox({
   shimmerAnim,
 }: {
   width: DimensionValue
-  height: number
+  height: DimensionValue
   borderRadius: number
   tokens: DesignTokens
   shimmerAnim: Animated.Value
@@ -214,11 +212,13 @@ function CustomSkeleton({
   tokens: DesignTokens
   shimmerAnim: Animated.Value
 }) {
+  const frame = resolveCustomSkeletonFrame(tokens, config)
+
   return (
     <SkeletonBox
-      width={(config.width ?? '100%') as DimensionValue}
-      height={config.height ?? 48}
-      borderRadius={config.borderRadius ?? tokens.radius.md}
+      width={frame.width}
+      height={frame.height}
+      borderRadius={frame.borderRadius}
       tokens={tokens}
       shimmerAnim={shimmerAnim}
     />
@@ -283,5 +283,27 @@ function makeStyles(tokens: DesignTokens) {
       marginBottom: tokens.spacing[4],
     },
   })
+}
+
+function resolveCustomSkeletonFrame(tokens: DesignTokens, config: SkeletonConfig): {
+  width: DimensionValue
+  height: DimensionValue
+  borderRadius: number
+} {
+  const resolvedStyle = resolveNativeStyleProps(
+    {
+      width: config.width,
+      height: config.height,
+      borderRadius: config.borderRadius,
+    },
+    tokens,
+  )
+
+  return {
+    width: toNativeDimensionValue(resolvedStyle.width) ?? '100%',
+    height: toNativeDimensionValue(resolvedStyle.height) ?? 48,
+    borderRadius:
+      typeof resolvedStyle.borderRadius === 'number' ? resolvedStyle.borderRadius : tokens.radius.md,
+  }
 }
 

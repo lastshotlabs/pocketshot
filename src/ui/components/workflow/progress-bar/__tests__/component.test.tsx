@@ -41,10 +41,10 @@ describe('ProgressBar', () => {
     }
   })
 
-  it('renders all radius values without crashing', () => {
-    const radiusValues = ['none', 'sm', 'md', 'full'] as const
-    for (const radius of radiusValues) {
-      const { toJSON } = renderWithProviders(<ProgressBar config={{ value: 50, radius }} />)
+  it('renders all shared borderRadius values without crashing', () => {
+    const borderRadiusValues = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const
+    for (const borderRadius of borderRadiusValues) {
+      const { toJSON } = renderWithProviders(<ProgressBar config={{ value: 50, borderRadius }} />)
       expect(toJSON()).toBeTruthy()
     }
   })

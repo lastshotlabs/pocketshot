@@ -1,21 +1,12 @@
 import React, { useMemo } from 'react'
-import { Text, StyleSheet } from 'react-native'
+import { Text } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { HighlightedTextConfig } from './types'
-
-type FontSize = NonNullable<HighlightedTextConfig['fontSize']>
-
-const FONT_SIZE_TOKEN_MAP: Record<FontSize, keyof DesignTokens['typography']> = {
-  xs: 'fontSizeXs',
-  sm: 'fontSizeSm',
-  md: 'fontSizeMd',
-  lg: 'fontSizeLg',
-  xl: 'fontSizeXl',
-}
 
 interface Segment {
   text: string
@@ -71,9 +62,18 @@ export function HighlightedText({ config }: { config: HighlightedTextConfig }) {
   const resolvedHighlights: string[] = isFromRef(config.highlights)
     ? ((resolveFromRef(config.highlights, values) as unknown as string[]) ?? [])
     : (config.highlights as string[]) ?? []
+  const baseTextStyle = useMemo(() => {
+    const resolved = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+    const fontSize =
+      typeof resolved.fontSize === 'number' ? resolved.fontSize : tokens.typography.fontSizeMd
 
-  const fontSize = config.fontSize ?? 'md'
-  const fontSizeValue = tokens.typography[FONT_SIZE_TOKEN_MAP[fontSize]] as number
+    return {
+      color: tokens.colors.text,
+      fontSize,
+      lineHeight: fontSize * tokens.typography.lineHeightNormal,
+      ...resolved,
+    }
+  }, [config, tokens])
 
   const highlightBg = useMemo(
     () => resolveColor(config.highlightColor, tokens.colors.warning, tokens),
@@ -93,7 +93,7 @@ export function HighlightedText({ config }: { config: HighlightedTextConfig }) {
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Text
-        style={{ fontSize: fontSizeValue, color: tokens.colors.text }}
+        style={baseTextStyle}
         accessibilityRole="text"
         accessibilityLabel={resolvedText}
       >
@@ -102,18 +102,15 @@ export function HighlightedText({ config }: { config: HighlightedTextConfig }) {
             <Text
               key={index}
               style={{
+                ...baseTextStyle,
                 backgroundColor: highlightBg,
                 color: highlightFg,
-                fontSize: fontSizeValue,
               }}
             >
               {segment.text}
             </Text>
           ) : (
-            <Text
-              key={index}
-              style={{ color: tokens.colors.text, fontSize: fontSizeValue }}
-            >
+            <Text key={index} style={baseTextStyle}>
               {segment.text}
             </Text>
           ),

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, StyleSheet, Text, View } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeStyleProps, toNumericDimensionValue } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
@@ -453,7 +454,7 @@ export function Chart({ config }: { config: ChartConfig }) {
   const isEmpty = resolvedData.length === 0
 
   const chartType = config.type ?? 'bar'
-  const height = config.height ?? 200
+  const height = useMemo(() => resolveChartHeight(tokens, config), [config, tokens])
 
   const renderChart = useCallback(() => {
     if (isEmpty) {
@@ -650,5 +651,10 @@ function makeStyles(tokens: DesignTokens) {
       color: tokens.colors.textMuted,
     },
   })
+}
+
+function resolveChartHeight(tokens: DesignTokens, config: ChartConfig): number {
+  const resolvedStyle = resolveNativeStyleProps({ height: config.height }, tokens)
+  return toNumericDimensionValue(resolvedStyle.height) ?? 200
 }
 

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import { extendComponentSchema } from '../../_base/schema'
+import { dimensionValueSchema, extendComponentSchema, radiusValueSchema } from '../../_base/schema'
 
 export const ProgressBarSchema = extendComponentSchema({
   id: z.string().optional(),
@@ -9,7 +9,7 @@ export const ProgressBarSchema = extendComponentSchema({
   showValue: z.boolean().optional().default(false),
   variant: z.enum(['default', 'success', 'warning', 'error']).optional().default('default'),
   animated: z.boolean().optional().default(true),
-  height: z.number().positive().optional().default(8),
-  radius: z.enum(['none', 'sm', 'md', 'full']).optional().default('full'),
+  height: dimensionValueSchema.optional().default(8),
+  borderRadius: radiusValueSchema.optional().default('full'),
   testID: z.string().optional(),
 })

@@ -1,14 +1,16 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import {
+  componentTextAlignSchema,
+  extendComponentSchema,
+  fontSizeValueSchema,
+  fontWeightValueSchema,
+} from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 export const BodySchema = extendComponentSchema({
-  id: z.string().optional(),
   text: z.union([z.string(), FromRefSchema]),
-  size: z.enum(['sm', 'md', 'lg']).optional().default('md'),
-  weight: z.enum(['regular', 'medium', 'semibold', 'bold']).optional().default('regular'),
-  color: z.string().optional(),
-  align: z.enum(['left', 'center', 'right']).optional().default('left'),
+  fontSize: fontSizeValueSchema.optional().default('base'),
+  fontWeight: fontWeightValueSchema.optional().default('normal'),
+  textAlign: componentTextAlignSchema.optional().default('left'),
   numberOfLines: z.number().optional(),
-  testID: z.string().optional(),
 })

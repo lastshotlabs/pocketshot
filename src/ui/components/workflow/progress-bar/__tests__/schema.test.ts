@@ -22,7 +22,7 @@ describe('ProgressBarSchema', () => {
     expect(result.variant).toBe('default')
     expect(result.animated).toBe(true)
     expect(result.height).toBe(8)
-    expect(result.radius).toBe('full')
+    expect(result.borderRadius).toBe('full')
   })
 
   it('rejects value below 0', () => {
@@ -48,9 +48,9 @@ describe('ProgressBarSchema', () => {
     expect(ProgressBarSchema.safeParse({ value: 50, variant: 'info' }).success).toBe(false)
   })
 
-  it('accepts all valid radius values', () => {
-    for (const radius of ['none', 'sm', 'md', 'full'] as const) {
-      expect(ProgressBarSchema.safeParse({ value: 50, radius }).success).toBe(true)
+  it('accepts all valid shared borderRadius values', () => {
+    for (const borderRadius of ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const) {
+      expect(ProgressBarSchema.safeParse({ value: 50, borderRadius }).success).toBe(true)
     }
   })
 

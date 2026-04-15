@@ -3,13 +3,9 @@ import { extendComponentSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 export const ImageViewerSchema = extendComponentSchema({
-  id: z.string().optional(),
   source: z.union([z.string(), FromRefSchema]),
   alt: z.string().optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
   enableZoom: z.boolean().optional().default(true),
   maxZoom: z.number().optional().default(3),
   showCloseButton: z.boolean().optional().default(true),
-  testID: z.string().optional(),
 })

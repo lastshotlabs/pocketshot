@@ -38,7 +38,7 @@ export const pricingPreset: PresetFactory<PricingPresetConfig> = (config) => {
       type: 'Body',
       id: `${config.id}-subtitle`,
       text: config.subtitle,
-      align: 'center',
+      textAlign: 'center',
     })
   }
 

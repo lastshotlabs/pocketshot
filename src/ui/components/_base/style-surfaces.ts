@@ -64,7 +64,7 @@ export function resolveSurfacePresentation(params: {
   itemSurface?: Record<string, unknown>
   activeStates?: RuntimeSurfaceState[]
 }): {
-  style?: Record<string, string | number>
+  style?: Record<string, unknown>
   resolvedConfigForWrapper?: Record<string, unknown>
 } {
   const implementationBase = toSurfaceConfig(params.implementationBase)

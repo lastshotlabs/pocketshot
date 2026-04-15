@@ -2,11 +2,21 @@ import { describe, expect, it } from 'vitest'
 
 import { ProductCardSchema } from '../../src/ui/components/commerce/product-card/schema'
 import { ChatBubbleSchema } from '../../src/ui/components/communication/chat-bubble/schema'
+import { BodySchema } from '../../src/ui/components/content/body/schema'
+import { HeadingSchema } from '../../src/ui/components/content/heading/schema'
+import { ImageSchema } from '../../src/ui/components/content/image/schema'
+import { ImageViewerSchema } from '../../src/ui/components/content/image-viewer/schema'
+import { MarkdownSchema } from '../../src/ui/components/content/markdown/schema'
+import { RichTextEditorSchema } from '../../src/ui/components/content/rich-text-editor/schema'
+import { ChartSchema } from '../../src/ui/components/data/chart/schema'
+import { LoadingStateSchema } from '../../src/ui/components/data/loading-state/schema'
+import { SkeletonSchema } from '../../src/ui/components/data/skeleton/schema'
 import { TextInputSchema } from '../../src/ui/components/forms/text-input/schema'
 import { RowSchema } from '../../src/ui/components/layout/row/schema'
 import { CardSchema } from '../../src/ui/components/layout/card/schema'
 import { AccordionSchema } from '../../src/ui/components/navigation/accordion/schema'
 import { DrawerSchema } from '../../src/ui/components/overlay/drawer/schema'
+import { ProgressBarSchema } from '../../src/ui/components/workflow/progress-bar/schema'
 import { TimelineSchema } from '../../src/ui/components/workflow/timeline/schema'
 
 describe('component schemas inherit the shared base contract', () => {
@@ -91,6 +101,87 @@ describe('component schemas inherit the shared base contract', () => {
     ).toBeDefined()
 
     expect(
+      HeadingSchema.parse({
+        text: { from: 'screen.title' },
+        textAlign: 'center',
+        color: 'primary',
+        letterSpacing: 'wide',
+      }),
+    ).toBeDefined()
+
+    expect(
+      BodySchema.parse({
+        text: { from: 'screen.subtitle' },
+        fontSize: 'base',
+        fontWeight: 'medium',
+        textAlign: 'justify',
+        lineHeight: 'relaxed',
+      }),
+    ).toBeDefined()
+
+    expect(
+      ImageSchema.parse({
+        src: { from: 'hero.image' },
+        alt: 'Hero',
+        width: '50%',
+        borderRadius: 'xl',
+      }),
+    ).toBeDefined()
+
+    expect(
+      ImageViewerSchema.parse({
+        source: { from: 'hero.image' },
+        alt: 'Hero viewer',
+        width: '75%',
+        borderRadius: 'lg',
+      }),
+    ).toBeDefined()
+
+    expect(
+      MarkdownSchema.parse({
+        content: { from: 'screen.markdown' },
+        fontSize: 'lg',
+        textAlign: 'center',
+        color: 'muted',
+      }),
+    ).toBeDefined()
+
+    expect(
+      RichTextEditorSchema.parse({
+        id: 'notes',
+        placeholder: 'Start writing',
+        minHeight: 160,
+        maxHeight: 480,
+        borderRadius: 'xl',
+        bg: 'card',
+      }),
+    ).toBeDefined()
+
+    expect(
+      ChartSchema.parse({
+        data: [{ label: 'Q1', value: 10 }],
+        height: 240,
+        shadow: 'sm',
+      }),
+    ).toBeDefined()
+
+    expect(
+      LoadingStateSchema.parse({
+        height: '50%',
+        borderRadius: 'lg',
+      }),
+    ).toBeDefined()
+
+    expect(
+      SkeletonSchema.parse({
+        variant: 'custom',
+        width: '60%',
+        height: 32,
+        borderRadius: 'full',
+      }),
+    ).toBeDefined()
+
+    expect(
       ChatBubbleSchema.parse({
         message: { from: 'thread.latest.message' },
         timestamp: { from: 'thread.latest.timestamp' },
@@ -144,6 +235,14 @@ describe('component schemas inherit the shared base contract', () => {
         animation: {
           enter: 'fade-up',
         },
+      }),
+    ).toBeDefined()
+
+    expect(
+      ProgressBarSchema.parse({
+        value: { from: 'upload.progress' },
+        height: 12,
+        borderRadius: 'lg',
       }),
     ).toBeDefined()
   })

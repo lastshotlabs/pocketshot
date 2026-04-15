@@ -56,10 +56,12 @@ describe('ConfigImage', () => {
     }
   })
 
-  it('renders all radius variants without crashing', () => {
-    for (const radius of ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const) {
+  it('renders all borderRadius variants without crashing', () => {
+    for (const borderRadius of ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const) {
       const { toJSON } = renderWithProviders(
-        <ConfigImage config={{ src: 'https://example.com/photo.jpg', alt: 'rounded', radius }} />,
+        <ConfigImage
+          config={{ src: 'https://example.com/photo.jpg', alt: 'rounded', borderRadius }}
+        />,
       )
       expect(toJSON()).toBeTruthy()
     }

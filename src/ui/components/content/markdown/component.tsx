@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { View, Text, ScrollView, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -162,18 +163,19 @@ function renderInlineNodes(
   nodes: MarkdownNode[],
   tokens: DesignTokens,
   baseFontSize: number,
+  baseTextColor: string,
 ): React.ReactNode[] {
   return nodes.map((node, idx) => {
     switch (node.type) {
       case 'bold':
         return (
-          <Text key={idx} style={{ fontWeight: tokens.typography.fontWeightBold }}>
+          <Text key={idx} style={{ fontWeight: tokens.typography.fontWeightBold, color: baseTextColor }}>
             {node.content}
           </Text>
         )
       case 'italic':
         return (
-          <Text key={idx} style={{ fontStyle: 'italic' }}>
+          <Text key={idx} style={{ fontStyle: 'italic', color: baseTextColor }}>
             {node.content}
           </Text>
         )
@@ -195,7 +197,7 @@ function renderInlineNodes(
           </Text>
         )
       default:
-        return <Text key={idx}>{node.content}</Text>
+        return <Text key={idx} style={{ color: baseTextColor }}>{node.content}</Text>
     }
   })
 }
@@ -206,11 +208,23 @@ interface BlockProps {
   node: MarkdownNode
   tokens: DesignTokens
   baseFontSize: number
+  baseTextAlign: 'left' | 'center' | 'right' | 'justify'
+  baseTextColor: string
+  baseLineHeight: number
   index: number
   orderedCounter?: number
 }
 
-function MarkdownBlock({ node, tokens, baseFontSize, index, orderedCounter }: BlockProps) {
+function MarkdownBlock({
+  node,
+  tokens,
+  baseFontSize,
+  baseTextAlign,
+  baseTextColor,
+  baseLineHeight,
+  index,
+  orderedCounter,
+}: BlockProps) {
   const styles = useMemo(() => makeBlockStyles(tokens), [tokens])
 
   switch (node.type) {
@@ -224,16 +238,35 @@ function MarkdownBlock({ node, tokens, baseFontSize, index, orderedCounter }: Bl
         level >= 4 && styles.h4,
       ]
       return (
-        <Text key={index} style={headingStyle} accessibilityRole="header">
-          {node.children ? renderInlineNodes(node.children, tokens, baseFontSize) : node.content}
+        <Text
+          key={index}
+          style={[headingStyle, { color: baseTextColor, textAlign: baseTextAlign }]}
+          accessibilityRole="header"
+        >
+          {node.children
+            ? renderInlineNodes(node.children, tokens, baseFontSize, baseTextColor)
+            : node.content}
         </Text>
       )
     }
 
     case 'paragraph':
       return (
-        <Text key={index} style={[styles.paragraph, { fontSize: baseFontSize }]}>
-          {node.children ? renderInlineNodes(node.children, tokens, baseFontSize) : node.content}
+        <Text
+          key={index}
+          style={[
+            styles.paragraph,
+            {
+              fontSize: baseFontSize,
+              color: baseTextColor,
+              textAlign: baseTextAlign,
+              lineHeight: baseLineHeight,
+            },
+          ]}
+        >
+          {node.children
+            ? renderInlineNodes(node.children, tokens, baseFontSize, baseTextColor)
+            : node.content}
         </Text>
       )
 
@@ -251,8 +284,10 @@ function MarkdownBlock({ node, tokens, baseFontSize, index, orderedCounter }: Bl
     case 'blockquote':
       return (
         <View key={index} style={styles.blockquote}>
-          <Text style={styles.blockquoteText}>
-            {node.children ? renderInlineNodes(node.children, tokens, baseFontSize) : node.content}
+          <Text style={[styles.blockquoteText, { textAlign: baseTextAlign }]}>
+            {node.children
+              ? renderInlineNodes(node.children, tokens, baseFontSize, baseTextColor)
+              : node.content}
           </Text>
         </View>
       )
@@ -262,8 +297,20 @@ function MarkdownBlock({ node, tokens, baseFontSize, index, orderedCounter }: Bl
       return (
         <View key={index} style={styles.listItem}>
           <Text style={[styles.listBullet, { fontSize: baseFontSize }]}>{bullet}</Text>
-          <Text style={[styles.listContent, { fontSize: baseFontSize }]}>
-            {node.children ? renderInlineNodes(node.children, tokens, baseFontSize) : node.content}
+          <Text
+            style={[
+              styles.listContent,
+              {
+                fontSize: baseFontSize,
+                color: baseTextColor,
+                textAlign: baseTextAlign,
+                lineHeight: baseLineHeight,
+              },
+            ]}
+          >
+            {node.children
+              ? renderInlineNodes(node.children, tokens, baseFontSize, baseTextColor)
+              : node.content}
           </Text>
         </View>
       )
@@ -279,18 +326,26 @@ function MarkdownBlock({ node, tokens, baseFontSize, index, orderedCounter }: Bl
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-const FONT_SIZE_MAP = {
-  sm: 'fontSizeSm',
-  md: 'fontSizeMd',
-  lg: 'fontSizeLg',
-} as const
-
 export function Markdown({ config }: { config: MarkdownConfig }) {
   const tokens = useTokens()
   const { values } = useScreenContext()
 
   const content = resolveFromRef(config.content, values) as string
-  const baseFontSize = tokens.typography[FONT_SIZE_MAP[config.fontSize ?? 'md']]
+  const baseTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const baseFontSize =
+    typeof baseTextStyle.fontSize === 'number' ? baseTextStyle.fontSize : tokens.typography.fontSizeMd
+  const baseTextColor =
+    typeof baseTextStyle.color === 'string' ? baseTextStyle.color : tokens.colors.text
+  const baseTextAlign =
+    baseTextStyle.textAlign === 'center' ||
+    baseTextStyle.textAlign === 'right' ||
+    baseTextStyle.textAlign === 'justify'
+      ? baseTextStyle.textAlign
+      : 'left'
+  const baseLineHeight =
+    typeof baseTextStyle.lineHeight === 'number'
+      ? baseTextStyle.lineHeight
+      : baseFontSize * tokens.typography.lineHeightNormal
 
   // If react-native-markdown-display is available, delegate to it
   if (RNMarkdownDisplay != null) {
@@ -298,14 +353,23 @@ export function Markdown({ config }: { config: MarkdownConfig }) {
       <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <RNMarkdownDisplay
           style={{
-            body: { fontSize: baseFontSize, color: tokens.colors.text },
+            body: {
+              fontSize: baseFontSize,
+              color: baseTextColor,
+              textAlign: baseTextAlign,
+              lineHeight: baseLineHeight,
+            },
             heading1: {
               fontSize: tokens.typography.fontSizeXl,
               fontWeight: tokens.typography.fontWeightBold,
+              color: baseTextColor,
+              textAlign: baseTextAlign,
             },
             heading2: {
               fontSize: tokens.typography.fontSizeLg,
               fontWeight: tokens.typography.fontWeightBold,
+              color: baseTextColor,
+              textAlign: baseTextAlign,
             },
             code_inline: {
               fontFamily: 'monospace',
@@ -345,6 +409,9 @@ export function Markdown({ config }: { config: MarkdownConfig }) {
               node={node}
               tokens={tokens}
               baseFontSize={baseFontSize}
+              baseTextAlign={baseTextAlign}
+              baseTextColor={baseTextColor}
+              baseLineHeight={baseLineHeight}
               index={idx}
               orderedCounter={orderedCounter}
             />

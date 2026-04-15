@@ -18,29 +18,31 @@ describe('BodySchema', () => {
 
   it('applies defaults', () => {
     const result = BodySchema.parse({ text: 'X' })
-    expect(result.size).toBe('md')
-    expect(result.weight).toBe('regular')
-    expect(result.align).toBe('left')
+    expect(result.fontSize).toBe('base')
+    expect(result.fontWeight).toBe('normal')
+    expect(result.textAlign).toBe('left')
   })
 
-  it('accepts all valid sizes', () => {
-    for (const size of ['sm', 'md', 'lg'] as const) {
-      expect(BodySchema.safeParse({ text: 'X', size }).success).toBe(true)
+  it('accepts shared fontSize values', () => {
+    for (const fontSize of ['sm', 'base', 'lg', 'xl'] as const) {
+      expect(BodySchema.safeParse({ text: 'X', fontSize }).success).toBe(true)
     }
   })
 
-  it('rejects invalid size', () => {
-    expect(BodySchema.safeParse({ text: 'X', size: 'xl' }).success).toBe(false)
-  })
-
-  it('accepts all valid weights', () => {
-    for (const weight of ['regular', 'medium', 'semibold', 'bold'] as const) {
-      expect(BodySchema.safeParse({ text: 'X', weight }).success).toBe(true)
+  it('accepts shared fontWeight values', () => {
+    for (const fontWeight of ['normal', 'medium', 'semibold', 'bold', 700] as const) {
+      expect(BodySchema.safeParse({ text: 'X', fontWeight }).success).toBe(true)
     }
   })
 
-  it('rejects invalid weight', () => {
-    expect(BodySchema.safeParse({ text: 'X', weight: 'thin' }).success).toBe(false)
+  it('accepts shared textAlign values', () => {
+    for (const textAlign of ['left', 'center', 'right', 'justify'] as const) {
+      expect(BodySchema.safeParse({ text: 'X', textAlign }).success).toBe(true)
+    }
+  })
+
+  it('rejects invalid textAlign', () => {
+    expect(BodySchema.safeParse({ text: 'X', textAlign: 'top' }).success).toBe(false)
   })
 
   it('accepts numberOfLines', () => {
