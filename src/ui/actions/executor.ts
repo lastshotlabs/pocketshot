@@ -22,8 +22,8 @@ const sharedActionTypeSet = new Set<string>(SHARED_ACTION_TYPES)
 
 export interface ActionExecutorDeps {
   screenContext: ScreenContextValue
-  api: ApiClient
-  queryClient: QueryClient
+  api: Pick<ApiClient, 'get' | 'post' | 'put' | 'patch' | 'delete'>
+  queryClient: Pick<QueryClient, 'invalidateQueries'>
   resources?: ResourceMap
   workflows?: WorkflowMap
   setTheme?: (next: Partial<Pick<ThemeConfig, 'mode' | 'flavor'>>) => void
@@ -85,18 +85,10 @@ async function executeBuiltinAction(
   switch (action.type) {
     case 'navigate': {
       const to = resolveText(action.to, deps, context)
-      const params = action.params
-        ? normalizeRouteParams(
-            resolveRuntimeValue(action.params, {
-              values: screenContext.values,
-              context,
-            }) as Record<string, unknown>,
-          )
-        : undefined
       if (action.replace) {
         router.replace(to)
       } else {
-        router.push(to, params)
+        router.push(to)
       }
       return to
     }
@@ -506,15 +498,6 @@ function splitTargets(targets: string): string[] {
     .split(',')
     .map((part) => part.trim())
     .filter(Boolean)
-}
-
-function normalizeRouteParams(params: Record<string, unknown>): Record<string, string> | undefined {
-  const entries = Object.entries(params)
-  if (entries.length === 0) {
-    return undefined
-  }
-
-  return Object.fromEntries(entries.map(([key, value]) => [key, String(value)]))
 }
 
 function resolveShareAction(

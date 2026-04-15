@@ -71,7 +71,7 @@ describe('ConfigImage', () => {
         config={{
           src: 'https://example.com/photo.jpg',
           alt: 'Tappable image',
-          onPress: { type: 'navigate', path: '/Detail' },
+          onPress: { type: 'navigate', to: '/Detail' },
         }}
       />,
     )

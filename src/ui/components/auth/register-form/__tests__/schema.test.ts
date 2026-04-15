@@ -40,7 +40,7 @@ describe('RegisterFormSchema', () => {
   it('accepts loginAction', () => {
     const result = RegisterFormSchema.parse({
       onSubmit: action,
-      loginAction: { type: 'navigate', path: '/login' },
+      loginAction: { type: 'navigate', to: '/login' },
     })
     expect(result.loginAction).toBeDefined()
   })

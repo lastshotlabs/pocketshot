@@ -26,7 +26,7 @@ describe('Link', () => {
 
   it('has link accessibilityRole', () => {
     const { getByRole } = renderWithProviders(
-      <Link config={{ text: 'Go somewhere', action: { type: 'navigate', path: '/Details' } }} />,
+      <Link config={{ text: 'Go somewhere', action: { type: 'navigate', to: '/Details' } }} />,
     )
     expect(getByRole('link')).toBeTruthy()
   })
@@ -84,7 +84,7 @@ describe('Link', () => {
   it('resolves text from screen context via from-ref', () => {
     const { getByText } = renderWithProviders(
       <Link
-        config={{ text: { from: 'ctaLabel' }, action: { type: 'navigate', path: '/Profile' } }}
+        config={{ text: { from: 'ctaLabel' }, action: { type: 'navigate', to: '/Profile' } }}
       />,
       { initialValues: { ctaLabel: 'View profile' } },
     )

@@ -47,7 +47,7 @@ describe('EmptyState', () => {
       <EmptyState
         config={{
           title: 'No items',
-          action: { label: 'Add Item', onPress: { type: 'navigate', path: '/Create' } },
+          action: { label: 'Add Item', onPress: { type: 'navigate', to: '/Create' } },
         }}
       />,
     )
@@ -59,7 +59,7 @@ describe('EmptyState', () => {
       <EmptyState
         config={{
           title: 'No items',
-          action: { label: 'Get Started', onPress: { type: 'navigate', path: '/Onboarding' } },
+          action: { label: 'Get Started', onPress: { type: 'navigate', to: '/Onboarding' } },
         }}
       />,
     )
@@ -86,7 +86,7 @@ describe('EmptyState', () => {
           title: 'Empty inbox',
           description: 'No messages yet.',
           icon: '✉️',
-          action: { label: 'Compose', onPress: { type: 'navigate', path: '/Compose' } },
+          action: { label: 'Compose', onPress: { type: 'navigate', to: '/Compose' } },
         }}
       />,
     )

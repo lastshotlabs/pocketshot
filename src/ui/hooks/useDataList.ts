@@ -41,11 +41,11 @@ export function useDataList<T = unknown>(config: DataListConfig): UseDataListRet
     if (!config.refreshable) return
     setRefreshing(true)
     try {
-      await dispatch({ type: 'refresh' })
+      await dispatch({ type: 'refresh', target: config.id ?? 'screen' })
     } finally {
       setRefreshing(false)
     }
-  }, [config.refreshable, dispatch])
+  }, [config.id, config.refreshable, dispatch])
 
   const handleItemPress = useCallback(
     async (item: T) => {

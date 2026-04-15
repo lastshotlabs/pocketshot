@@ -37,7 +37,7 @@ describe('NotificationItemSchema', () => {
   })
 
   it('accepts onPress and onDismiss actions', () => {
-    const action = { type: 'navigate' as const, path: '/notifications' }
+    const action = { type: 'navigate' as const, to: '/notifications' }
     const result = NotificationItemSchema.parse({ title: 'X', onPress: action, onDismiss: action })
     expect(result.onPress).toBeDefined()
     expect(result.onDismiss).toBeDefined()

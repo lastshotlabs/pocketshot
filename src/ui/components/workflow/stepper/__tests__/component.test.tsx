@@ -93,7 +93,7 @@ describe('Stepper', () => {
           id: 'checkout',
           variant: 'horizontal',
           steps: BASIC_STEPS,
-          onStepPress: { type: 'navigate', path: '/step' },
+          onStepPress: { type: 'navigate', to: '/step' },
         }}
       />,
     )

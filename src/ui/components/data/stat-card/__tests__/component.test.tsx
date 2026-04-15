@@ -109,7 +109,7 @@ describe('StatCard', () => {
         config={{
           label: 'Revenue',
           value: '1,200',
-          onPress: { type: 'navigate', path: '/RevenueDetail' },
+          onPress: { type: 'navigate', to: '/RevenueDetail' },
         }}
       />,
     )
@@ -140,7 +140,7 @@ describe('StatCard', () => {
           value: '$10,000',
           icon: '💰',
           trend: { direction: 'up', value: '+5%' },
-          onPress: { type: 'navigate', path: '/RevenueDetail' },
+          onPress: { type: 'navigate', to: '/RevenueDetail' },
         }}
       />,
     )

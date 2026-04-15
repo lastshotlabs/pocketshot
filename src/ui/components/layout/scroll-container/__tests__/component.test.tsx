@@ -61,7 +61,10 @@ describe('ScrollContainer', () => {
   })
 
   it('renders with refreshable and onRefresh action without crashing', () => {
-    const action = { type: 'refresh' } as unknown as import('../../../../actions/types').Action
+    const action = {
+      type: 'refresh',
+      target: 'screen',
+    } as unknown as import('../../../../actions/types').Action
     const { toJSON } = renderWithProviders(
       <ScrollContainer config={{ refreshable: true, onRefresh: action }} />,
     )

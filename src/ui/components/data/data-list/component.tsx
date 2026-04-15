@@ -126,9 +126,9 @@ export function DataList({ config }: { config: DataListConfig }) {
   const handleRefresh = useCallback(async () => {
     if (!config.refreshable) return
     setRefreshing(true)
-    await dispatch({ type: 'refresh' })
+    await dispatch({ type: 'refresh', target: config.id ?? 'screen' })
     setRefreshing(false)
-  }, [config.refreshable, dispatch])
+  }, [config.id, config.refreshable, dispatch])
 
   const handleItemPress = useCallback(
     async (item: unknown) => {
@@ -269,4 +269,3 @@ function makeItemStyles(tokens: DesignTokens) {
     },
   })
 }
-

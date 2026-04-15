@@ -22,7 +22,7 @@ describe('ForgotPasswordFormSchema', () => {
   it('accepts backAction', () => {
     const result = ForgotPasswordFormSchema.parse({
       onSubmit: action,
-      backAction: { type: 'navigate', path: '/login' },
+      backAction: { type: 'navigate', to: '/login' },
     })
     expect(result.backAction).toBeDefined()
   })

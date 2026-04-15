@@ -6,7 +6,7 @@ import { RegisterFormSchema } from '../schema'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 
 const submitAction = { type: 'api' as const, endpoint: '/auth/register', method: 'POST' as const }
-const loginNavigateAction = { type: 'navigate' as const, path: '/login' }
+const loginNavigateAction = { type: 'navigate' as const, to: '/login' }
 
 /** Parse through the Zod schema so defaults (submitLabel, fields, etc.) are applied. */
 function cfg(overrides: Record<string, unknown> = {}) {

@@ -22,7 +22,7 @@ describe('EmptyStateSchema', () => {
       title: 'No posts',
       description: 'Create your first post',
       icon: 'document',
-      action: { label: 'Create Post', onPress: { type: 'navigate', path: '/new' } },
+      action: { label: 'Create Post', onPress: { type: 'navigate', to: '/new' } },
       testID: 'empty-state',
     })
     expect(result.action?.label).toBe('Create Post')
@@ -31,7 +31,7 @@ describe('EmptyStateSchema', () => {
   it('requires action.label when action provided', () => {
     // action.onPress is z.custom() — runtime-transparent, so only label is enforced
     expect(
-      EmptyStateSchema.safeParse({ action: { onPress: { type: 'navigate', path: '/' } } }).success,
+      EmptyStateSchema.safeParse({ action: { onPress: { type: 'navigate', to: '/' } } }).success,
     ).toBe(false)
   })
 })

@@ -65,7 +65,7 @@ describe('AvatarGroup', () => {
         config={{
           avatars: TWO_AVATARS,
           size: 'sm',
-          onPress: { type: 'navigate', path: '/Members' },
+          onPress: { type: 'navigate', to: '/Members' },
         }}
       />,
     )

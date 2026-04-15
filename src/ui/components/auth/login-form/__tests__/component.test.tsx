@@ -5,8 +5,8 @@ import { LoginFormSchema } from '../schema'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 
 const submitAction = { type: 'api' as const, endpoint: '/auth/login', method: 'POST' as const }
-const navigateAction = { type: 'navigate' as const, path: '/forgot-password' }
-const registerNavigateAction = { type: 'navigate' as const, path: '/register' }
+const navigateAction = { type: 'navigate' as const, to: '/forgot-password' }
+const registerNavigateAction = { type: 'navigate' as const, to: '/register' }
 
 /** Parse through the Zod schema so defaults (submitLabel, socialProviders, etc.) are applied. */
 function cfg(overrides: Record<string, unknown> = {}) {

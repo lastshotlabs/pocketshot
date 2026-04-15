@@ -24,7 +24,7 @@ describe('LoginFormSchema', () => {
   it('accepts forgotPasswordAction', () => {
     const result = LoginFormSchema.parse({
       onSubmit: action,
-      forgotPasswordAction: { type: 'navigate', path: '/forgot' },
+      forgotPasswordAction: { type: 'navigate', to: '/forgot' },
     })
     expect(result.forgotPasswordAction).toBeDefined()
   })
@@ -32,7 +32,7 @@ describe('LoginFormSchema', () => {
   it('accepts registerAction', () => {
     const result = LoginFormSchema.parse({
       onSubmit: action,
-      registerAction: { type: 'navigate', path: '/register' },
+      registerAction: { type: 'navigate', to: '/register' },
     })
     expect(result.registerAction).toBeDefined()
   })

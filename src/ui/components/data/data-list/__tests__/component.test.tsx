@@ -107,7 +107,7 @@ describe('DataList', () => {
         config={{
           itemType: 'user',
           data: '/api/users',
-          onItemPress: { type: 'navigate', path: '/UserDetail' },
+          onItemPress: { type: 'navigate', to: '/UserDetail' },
         }}
       />,
     )

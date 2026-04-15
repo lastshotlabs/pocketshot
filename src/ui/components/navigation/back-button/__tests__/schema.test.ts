@@ -17,7 +17,7 @@ describe('BackButtonSchema', () => {
   })
 
   it('accepts an action', () => {
-    const result = BackButtonSchema.parse({ action: { type: 'navigate', path: '/' } })
+    const result = BackButtonSchema.parse({ action: { type: 'navigate', to: '/' } })
     expect(result.action).toBeDefined()
   })
 

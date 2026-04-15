@@ -7,7 +7,7 @@ vi.mock('react-native', () => ({
   },
 }))
 
-import { executeAction } from '../../src/ui/actions/executor'
+import { executeAction, type ActionExecutorDeps } from '../../src/ui/actions/executor'
 
 function readSharedFixture<T>(relativePath: string): T {
   return JSON.parse(
@@ -23,33 +23,35 @@ function createDeps() {
     filters: { orgId: 7 },
   }
 
+  const deps: ActionExecutorDeps = {
+    api: {
+      get: vi.fn(async () => ({ ok: true })),
+      post: vi.fn(async () => ({ ok: true })),
+      put: vi.fn(async () => ({ ok: true })),
+      patch: vi.fn(async () => ({ ok: true })),
+      delete: vi.fn(async () => ({ ok: true })),
+    },
+    queryClient: {
+      invalidateQueries: vi.fn(async () => undefined),
+    },
+    setTheme: vi.fn(),
+    router: {
+      push: vi.fn(),
+      replace: vi.fn(),
+    },
+    screenContext: {
+      values,
+      getValue: (key: string) => values[key],
+      setValue: (key: string, value: unknown) => {
+        values[key] = value
+      },
+      dispatch: vi.fn(async () => undefined),
+    },
+  }
+
   return {
     values,
-    deps: {
-      api: {
-        get: vi.fn(async () => ({ ok: true })),
-        post: vi.fn(async () => ({ ok: true })),
-        put: vi.fn(async () => ({ ok: true })),
-        patch: vi.fn(async () => ({ ok: true })),
-        delete: vi.fn(async () => ({ ok: true })),
-      },
-      queryClient: {
-        invalidateQueries: vi.fn(async () => undefined),
-      },
-      setTheme: vi.fn(),
-      router: {
-        push: vi.fn(),
-        replace: vi.fn(),
-      },
-      screenContext: {
-        values,
-        getValue: (key: string) => values[key],
-        setValue: (key: string, value: unknown) => {
-          values[key] = value
-        },
-        dispatch: vi.fn(async () => undefined),
-      },
-    },
+    deps,
   }
 }
 

@@ -71,7 +71,11 @@ function SkeletonCard({ tokens }: { tokens: DesignTokens }) {
       <View
         style={[
           styles.skeletonLine,
-          { width: '100%', marginTop: tokens.spacing[1], backgroundColor: tokens.colors.surfaceAlt },
+          {
+            width: '100%',
+            marginTop: tokens.spacing[1],
+            backgroundColor: tokens.colors.surfaceAlt,
+          },
         ]}
       />
       <View
@@ -196,9 +200,7 @@ function FeedItemCard({
       <View style={styles.card}>
         {/* Header */}
         <View style={styles.itemHeader}>
-          {showAvatars ? (
-            <Avatar name={item.author?.name} tokens={tokens} styles={styles} />
-          ) : null}
+          {showAvatars ? <Avatar name={item.author?.name} tokens={tokens} styles={styles} /> : null}
           <View style={{ flex: 1 }}>
             <Text
               style={styles.authorName}
@@ -251,7 +253,7 @@ function FeedItemCard({
         ) : null}
 
         {/* Footer */}
-        {(item.likes !== undefined || item.comments !== undefined) ? (
+        {item.likes !== undefined || item.comments !== undefined ? (
           <View style={styles.footer}>
             {item.likes !== undefined ? (
               <Text style={styles.footerStat}>♡ {item.likes}</Text>
@@ -323,11 +325,11 @@ export function Feed({ config }: { config: FeedConfig }) {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     try {
-      await dispatch({ type: 'refresh' })
+      await dispatch({ type: 'refresh', target: config.id ?? 'screen' })
     } finally {
       setRefreshing(false)
     }
-  }, [dispatch])
+  }, [config.id, dispatch])
 
   const handleEndReached = useCallback(async () => {
     if (!config.onEndReached) return
@@ -491,4 +493,3 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
-

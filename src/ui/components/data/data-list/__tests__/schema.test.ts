@@ -45,7 +45,7 @@ describe('DataListSchema', () => {
   it('accepts onItemPress action', () => {
     const result = DataListSchema.parse({
       itemType: 'Card',
-      onItemPress: { type: 'navigate', path: '/detail' },
+      onItemPress: { type: 'navigate', to: '/detail' },
     })
     expect(result.onItemPress).toBeDefined()
   })

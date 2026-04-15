@@ -1,6 +1,7 @@
 import type { DesignTokens } from '../../tokens/types'
 
 type NativeStyleConfig = Record<string, unknown>
+type NativeResolvedStyle = Record<string, unknown>
 
 const spacingTokenMap = {
   none: 0,
@@ -97,8 +98,8 @@ const colorTokenMap = {
 export function resolveNativeStyleProps(
   config: NativeStyleConfig,
   tokens: DesignTokens,
-): Record<string, string | number> {
-  const style: Record<string, string | number> = {}
+): NativeResolvedStyle {
+  const style: NativeResolvedStyle = {}
 
   const background = baseValue(config.background)
   if (background != null && typeof background === 'string') {
@@ -259,9 +260,10 @@ function resolveRadius(value: unknown, tokens: DesignTokens): number | undefined
   return Number.isNaN(numeric) ? undefined : numeric
 }
 
-function resolveShadow(value: unknown, tokens: DesignTokens): Record<string, string | number> {
+function resolveShadow(value: unknown, tokens: DesignTokens): NativeResolvedStyle {
   if (value == null) return {}
-  const token = typeof value === 'string' ? shadowTokenMap[value as keyof typeof shadowTokenMap] : undefined
+  const token =
+    typeof value === 'string' ? shadowTokenMap[value as keyof typeof shadowTokenMap] : undefined
   return token ? { ...tokens.shadows[token] } : {}
 }
 
@@ -341,7 +343,7 @@ function resolveJustifyContent(value: string): string {
 }
 
 function applyBoxSpacing(
-  style: Record<string, string | number>,
+  style: NativeResolvedStyle,
   property: string,
   value: unknown,
   tokens: DesignTokens,
@@ -351,7 +353,7 @@ function applyBoxSpacing(
 }
 
 function applyAxisSpacing(
-  style: Record<string, string | number>,
+  style: NativeResolvedStyle,
   properties: [string, string],
   value: unknown,
   tokens: DesignTokens,
@@ -363,11 +365,7 @@ function applyAxisSpacing(
   }
 }
 
-function applyDimension(
-  style: Record<string, string | number>,
-  property: string,
-  value: unknown,
-): void {
+function applyDimension(style: NativeResolvedStyle, property: string, value: unknown): void {
   if (value == null) return
   if (typeof value === 'number' || typeof value === 'string') {
     style[property] = value

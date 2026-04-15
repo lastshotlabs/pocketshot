@@ -22,7 +22,7 @@ function resolveActiveIndex(
 
   const resolved = isFromRef(currentStep)
     ? String(resolveFromRef(currentStep, values) ?? '')
-    : currentStep
+    : String(currentStep)
 
   // Try to match by step id
   const byId = steps.findIndex((s) => s.id === resolved)
@@ -360,4 +360,3 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
-

@@ -35,7 +35,7 @@ describe('CardSchema', () => {
   })
 
   it('accepts action for onPress', () => {
-    const result = CardSchema.parse({ onPress: { type: 'navigate', path: '/detail' } })
+    const result = CardSchema.parse({ onPress: { type: 'navigate', to: '/detail' } })
     expect(result.onPress).toBeDefined()
   })
 })

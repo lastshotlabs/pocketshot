@@ -95,7 +95,7 @@ describe('ProductCard', () => {
       <ProductCard
         config={{
           title: 'Keyboard',
-          onPress: { type: 'navigate', path: '/ProductDetail' },
+          onPress: { type: 'navigate', to: '/ProductDetail' },
         }}
       />,
     )

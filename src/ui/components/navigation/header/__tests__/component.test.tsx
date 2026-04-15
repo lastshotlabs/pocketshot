@@ -3,7 +3,7 @@ import React from 'react'
 import { Header } from '../component'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 
-const navigateAction = { type: 'navigate' as const, path: '/home' }
+const navigateAction = { type: 'navigate' as const, to: '/home' }
 
 describe('Header', () => {
   beforeEach(() => vi.clearAllMocks())

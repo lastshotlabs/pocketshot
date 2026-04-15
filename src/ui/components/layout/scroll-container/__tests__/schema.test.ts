@@ -28,7 +28,7 @@ describe('ScrollContainerSchema', () => {
   })
 
   it('accepts onRefresh action', () => {
-    const result = ScrollContainerSchema.parse({ onRefresh: { type: 'refresh' } })
+    const result = ScrollContainerSchema.parse({ onRefresh: { type: 'refresh', target: 'screen' } })
     expect(result.onRefresh).toBeDefined()
   })
 

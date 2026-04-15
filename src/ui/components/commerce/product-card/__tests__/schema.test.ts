@@ -51,7 +51,7 @@ describe('ProductCardSchema', () => {
   })
 
   it('accepts onPress and onAddToCart actions', () => {
-    const action = { type: 'navigate' as const, path: '/product' }
+    const action = { type: 'navigate' as const, to: '/product' }
     const result = ProductCardSchema.parse({ title: 'X', onPress: action, onAddToCart: action })
     expect(result.onPress).toBeDefined()
     expect(result.onAddToCart).toBeDefined()

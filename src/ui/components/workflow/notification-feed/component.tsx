@@ -122,20 +122,13 @@ function NotifRow({
       testID={testIDPrefix ? `${testIDPrefix}-notif-${notification.id}` : undefined}
     >
       {!isRead ? (
-        <View
-          style={styles.unreadDot}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-        />
+        <View style={styles.unreadDot} accessibilityElementsHidden importantForAccessibility="no" />
       ) : null}
       <View style={styles.iconContainer} accessibilityElementsHidden importantForAccessibility="no">
         <Text style={styles.typeIcon}>{icon}</Text>
       </View>
       <View style={styles.notifContent}>
-        <Text
-          style={[styles.notifTitle, !isRead && styles.notifTitleUnread]}
-          numberOfLines={1}
-        >
+        <Text style={[styles.notifTitle, !isRead && styles.notifTitleUnread]} numberOfLines={1}>
           {notification.title}
         </Text>
         {notification.body ? (
@@ -180,9 +173,8 @@ export function NotificationFeed({ config }: { config: NotificationFeedConfig })
 
   const unreadCount = useMemo(
     () =>
-      notifications.filter(
-        (n) => !n.isRead && !localReadIds.has(n.id) && !dismissed.has(n.id),
-      ).length,
+      notifications.filter((n) => !n.isRead && !localReadIds.has(n.id) && !dismissed.has(n.id))
+        .length,
     [notifications, localReadIds, dismissed],
   )
 
@@ -214,9 +206,9 @@ export function NotificationFeed({ config }: { config: NotificationFeedConfig })
   const handleRefresh = useCallback(async () => {
     if (!config.refreshable) return
     setRefreshing(true)
-    await dispatch({ type: 'refresh' } as never)
+    await dispatch({ type: 'refresh', target: config.id ?? 'screen' })
     setRefreshing(false)
-  }, [config.refreshable, dispatch])
+  }, [config.id, config.refreshable, dispatch])
 
   const keyExtractor = useCallback((item: NotifListItem) => item.key, [])
 
@@ -246,15 +238,7 @@ export function NotificationFeed({ config }: { config: NotificationFeedConfig })
         />
       )
     },
-    [
-      styles,
-      tokens,
-      localReadIds,
-      longPressedId,
-      handleItemPress,
-      handleDismiss,
-      config.testID,
-    ],
+    [styles, tokens, localReadIds, longPressedId, handleItemPress, handleDismiss, config.testID],
   )
 
   const ListHeader = useMemo(
@@ -478,4 +462,3 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
-

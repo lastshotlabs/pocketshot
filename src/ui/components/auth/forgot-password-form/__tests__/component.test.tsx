@@ -10,7 +10,7 @@ const submitAction = {
   endpoint: '/auth/forgot-password',
   method: 'POST' as const,
 }
-const backNavigateAction = { type: 'navigate' as const, path: '/login' }
+const backNavigateAction = { type: 'navigate' as const, to: '/login' }
 
 /** Parse through the Zod schema so defaults (submitLabel, etc.) are applied. */
 function cfg(overrides: Record<string, unknown> = {}) {

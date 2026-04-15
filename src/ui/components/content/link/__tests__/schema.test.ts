@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { LinkSchema } from '../schema'
 
-const action = { type: 'navigate' as const, path: '/about' }
+const action = { type: 'navigate' as const, to: '/about' }
 
 describe('LinkSchema', () => {
   it('parses with string text', () => {

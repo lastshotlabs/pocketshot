@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { HeaderSchema } from '../schema'
 
-const action = { type: 'navigate' as const, path: '/search' }
+const action = { type: 'navigate' as const, to: '/search' }
 const headerAction = { icon: 'search', label: 'Search', action }
 
 describe('HeaderSchema', () => {

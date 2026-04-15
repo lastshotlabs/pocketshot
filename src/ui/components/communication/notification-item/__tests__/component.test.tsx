@@ -62,7 +62,7 @@ describe('NotificationItem', () => {
   it('renders as a button when onPress action is provided', () => {
     const onPress = {
       type: 'navigate',
-      path: '/Profile',
+      to: '/Profile',
     } as unknown as import('../../../../actions/types').Action
     const { getByRole } = renderWithProviders(
       <NotificationItem config={{ title: 'Tap me', read: false, onPress }} />,

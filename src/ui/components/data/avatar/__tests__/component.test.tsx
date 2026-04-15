@@ -62,7 +62,7 @@ describe('Avatar', () => {
           name: 'Jane',
           size: 'md',
           shape: 'circle',
-          onPress: { type: 'navigate', path: '/Profile' },
+          onPress: { type: 'navigate', to: '/Profile' },
         }}
       />,
     )
