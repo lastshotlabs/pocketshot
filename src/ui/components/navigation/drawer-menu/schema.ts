@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -32,4 +32,5 @@ export const DrawerMenuSchema = extendComponentSchema({
   widthPercent: z.number().optional().default(80),
   testID: z.string().optional(),
 })
+
 

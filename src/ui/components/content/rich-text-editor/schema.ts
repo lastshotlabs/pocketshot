@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -30,4 +30,5 @@ export const RichTextEditorSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+
 

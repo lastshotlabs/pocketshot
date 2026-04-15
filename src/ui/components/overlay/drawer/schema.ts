@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -15,4 +15,5 @@ export const DrawerSchema = extendComponentSchema({
   closeOnBackdrop: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+
 

@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 export const RowSchema = extendComponentSchema({
@@ -17,4 +17,5 @@ export const RowSchema = extendComponentSchema({
   backgroundColor: z.string().optional(),
   testID: z.string().optional(),
 })
+
 

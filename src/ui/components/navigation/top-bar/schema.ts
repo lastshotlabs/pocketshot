@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
@@ -27,4 +27,5 @@ export const TopBarSchema = extendComponentSchema({
   elevated: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+
 

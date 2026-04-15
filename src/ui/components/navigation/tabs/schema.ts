@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
@@ -19,4 +19,5 @@ export const TabsSchema = extendComponentSchema({
   onTabChange: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+
 

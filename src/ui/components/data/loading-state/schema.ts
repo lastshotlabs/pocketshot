@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 export const LoadingStateSchema = extendComponentSchema({
@@ -8,4 +8,5 @@ export const LoadingStateSchema = extendComponentSchema({
   height: z.number().positive().optional().default(48),
   testID: z.string().optional(),
 })
+
 

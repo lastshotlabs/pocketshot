@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 export const KeyboardAvoidingScreenSchema = extendComponentSchema({
@@ -9,4 +9,5 @@ export const KeyboardAvoidingScreenSchema = extendComponentSchema({
   behavior: z.enum(['padding', 'height', 'position']).optional(),
   testID: z.string().optional(),
 })
+
 

@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -23,4 +23,5 @@ export const AlertSchema = extendComponentSchema({
     .optional(),
   testID: z.string().optional(),
 })
+
 

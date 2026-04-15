@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
@@ -12,4 +12,5 @@ export const TooltipSchema = extendComponentSchema({
   position: z.enum(['top', 'bottom', 'left', 'right']).optional().default('top'),
   testID: z.string().optional(),
 })
+
 

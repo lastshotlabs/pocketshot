@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -11,4 +11,5 @@ export const QuickAddSchema = extendComponentSchema({
   onSubmit: ActionSchema,
   testID: z.string().optional(),
 })
+
 

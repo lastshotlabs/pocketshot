@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -21,4 +21,5 @@ export const CommandPaletteSchema = extendComponentSchema({
   maxResults: z.number().optional().default(20),
   testID: z.string().optional(),
 })
+
 

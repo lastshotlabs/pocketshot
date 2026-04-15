@@ -1,11 +1,12 @@
 
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 
 const StatusColorSchema = z.enum(['primary', 'success', 'warning', 'error', 'info', 'default'])
 
 export const StatusBadgeSchema = extendComponentSchema({
   id: z.string().optional(),
-  status: z.union([z.string(), z.object({ from: z.string() })]),
+  status: z.union([z.string(), FromRefSchema]),
   statusMap: z
     .record(
       z.string(),
@@ -19,4 +20,6 @@ export const StatusBadgeSchema = extendComponentSchema({
   showDot: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+
+
 

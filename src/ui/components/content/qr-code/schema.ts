@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
@@ -13,4 +13,5 @@ export const QrCodeSchema = extendComponentSchema({
   errorCorrectionLevel: z.enum(['L', 'M', 'Q', 'H']).optional().default('M'),
   testID: z.string().optional(),
 })
+
 

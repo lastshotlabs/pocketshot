@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
@@ -15,4 +15,5 @@ export const AuditLogSchema = extendComponentSchema({
   emptyMessage: z.string().default('No activity yet'),
   testID: z.string().optional(),
 })
+
 

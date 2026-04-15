@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
@@ -16,4 +16,5 @@ export const SaveIndicatorSchema = extendComponentSchema({
   errorLabel: z.string().optional().default('Error saving'),
   testID: z.string().optional(),
 })
+
 

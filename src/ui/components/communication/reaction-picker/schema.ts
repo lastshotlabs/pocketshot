@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -11,4 +11,5 @@ export const ReactionPickerSchema = extendComponentSchema({
   triggerLabel: z.string().optional(),
   testID: z.string().optional(),
 })
+
 

@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 /**
@@ -17,4 +17,5 @@ export const CardSchema = extendComponentSchema({
   onPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+
 

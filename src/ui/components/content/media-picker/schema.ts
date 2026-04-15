@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -12,4 +12,5 @@ export const MediaPickerSchema = extendComponentSchema({
   onSelect: ActionSchema,
   testID: z.string().optional(),
 })
+
 

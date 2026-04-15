@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -17,4 +17,5 @@ export const LoginFormSchema = extendComponentSchema({
     .default([]),
   testID: z.string().optional(),
 })
+
 

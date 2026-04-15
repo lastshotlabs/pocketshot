@@ -1,4 +1,5 @@
 
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 
 const TimelineItemSchema = z.object({
@@ -12,8 +13,10 @@ const TimelineItemSchema = z.object({
 
 export const TimelineSchema = extendComponentSchema({
   id: z.string().optional(),
-  data: z.union([z.string(), z.object({ from: z.string() })]).optional(),
+  data: z.union([z.string(), FromRefSchema]).optional(),
   items: z.array(TimelineItemSchema).optional(),
   testID: z.string().optional(),
 })
+
+
 

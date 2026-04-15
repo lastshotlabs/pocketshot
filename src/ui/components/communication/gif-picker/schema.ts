@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -22,4 +22,5 @@ export const GifPickerSchema = extendComponentSchema({
   sampleGifs: z.array(GifResultSchema).optional(),
   testID: z.string().optional(),
 })
+
 

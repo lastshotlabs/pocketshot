@@ -1,4 +1,5 @@
 
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -13,9 +14,11 @@ export const StepperSchema = extendComponentSchema({
       description: z.string().optional(),
     }),
   ),
-  currentStep: z.union([z.string(), z.object({ from: z.string() })]).optional(),
+  currentStep: z.union([z.string(), FromRefSchema]).optional(),
   variant: z.enum(['horizontal', 'vertical']).optional().default('horizontal'),
   onStepPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+
+
 

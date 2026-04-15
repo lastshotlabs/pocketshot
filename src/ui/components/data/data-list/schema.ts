@@ -1,4 +1,5 @@
 
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -6,7 +7,7 @@ import type { Action } from '../../../actions/types'
 // so we accept z.unknown() and cast at runtime (opaque boundary).
 const ActionSchema = z.custom<Action>()
 
-const DataSpecSchema = z.union([z.string(), z.object({ from: z.string() })])
+const DataSpecSchema = z.union([z.string(), FromRefSchema])
 
 export const DataListSchema = extendComponentSchema({
   id: z.string().optional(),
@@ -21,4 +22,6 @@ export const DataListSchema = extendComponentSchema({
   estimatedItemSize: z.number().positive().optional().default(80),
   testID: z.string().optional(),
 })
+
+
 

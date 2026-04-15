@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
@@ -12,4 +12,5 @@ export const QrScannerSchema = extendComponentSchema({
   overlayText: z.string().optional(),
   testID: z.string().optional(),
 })
+
 

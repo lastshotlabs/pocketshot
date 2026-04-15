@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 export const SkeletonSchema = extendComponentSchema({
@@ -11,4 +11,5 @@ export const SkeletonSchema = extendComponentSchema({
   count: z.number().int().positive().optional().default(1),
   testID: z.string().optional(),
 })
+
 

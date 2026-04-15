@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -13,4 +13,5 @@ export const SearchBarSchema = extendComponentSchema({
   onSubmitAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+
 

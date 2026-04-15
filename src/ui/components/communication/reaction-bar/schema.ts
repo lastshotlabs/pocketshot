@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
@@ -19,4 +19,5 @@ export const ReactionBarSchema = extendComponentSchema({
   maxDisplay: z.number().int().min(1).default(8),
   testID: z.string().optional(),
 })
+
 

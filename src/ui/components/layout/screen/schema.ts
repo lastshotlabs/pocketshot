@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 export const ScreenSchema = extendComponentSchema({
@@ -12,4 +12,5 @@ export const ScreenSchema = extendComponentSchema({
     .default(['top', 'bottom', 'left', 'right']),
   testID: z.string().optional(),
 })
+
 

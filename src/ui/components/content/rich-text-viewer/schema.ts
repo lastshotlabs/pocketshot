@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
@@ -10,4 +10,5 @@ export const RichTextViewerSchema = extendComponentSchema({
   showExpandButton: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+
 

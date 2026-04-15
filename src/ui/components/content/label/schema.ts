@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
@@ -11,4 +11,5 @@ export const LabelSchema = extendComponentSchema({
   uppercase: z.boolean().optional().default(false),
   testID: z.string().optional(),
 })
+
 

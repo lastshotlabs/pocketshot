@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -19,4 +19,5 @@ export const HeaderSchema = extendComponentSchema({
   showBack: z.boolean().optional().default(false),
   testID: z.string().optional(),
 })
+
 

@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 export const SectionSchema = extendComponentSchema({
@@ -10,4 +10,5 @@ export const SectionSchema = extendComponentSchema({
   children: z.array(z.unknown()).optional(),
   testID: z.string().optional(),
 })
+
 

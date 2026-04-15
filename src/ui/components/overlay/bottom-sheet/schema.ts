@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 
 export const BottomSheetSchema = extendComponentSchema({
@@ -9,4 +9,5 @@ export const BottomSheetSchema = extendComponentSchema({
   closeOnBackdrop: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+
 

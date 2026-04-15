@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
@@ -14,4 +14,5 @@ export const VideoPlayerSchema = extendComponentSchema({
   aspectRatio: z.number().optional().default(16 / 9),
   testID: z.string().optional(),
 })
+
 
