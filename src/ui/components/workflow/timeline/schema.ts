@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import { extendComponentSchema } from '../../_base'
+import { extendComponentSchema } from '../../_base/schema'
 
 const TimelineItemSchema = z.object({
   id: z.string(),

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base'
+import { extendComponentSchema } from '../../_base/schema'
 
 /**
  * Action is typed via z.custom at the boundaries since Action is defined as a

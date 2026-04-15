@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base'
+import { extendComponentSchema } from '../../_base/schema'
 
 /**
  * Action is typed as unknown in the schema because the Action discriminated

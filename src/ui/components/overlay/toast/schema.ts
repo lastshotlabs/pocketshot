@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base'
+import { extendComponentSchema } from '../../_base/schema'
 
 export const ToastSchema = extendComponentSchema({
   id: z.string().optional(),

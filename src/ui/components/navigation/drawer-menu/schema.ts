@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base'
+import { extendComponentSchema } from '../../_base/schema'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 

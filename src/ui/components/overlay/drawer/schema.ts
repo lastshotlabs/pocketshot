@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base'
+import { extendComponentSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 // Action and FromRef are available for future extension

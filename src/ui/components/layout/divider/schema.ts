@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base'
+import { extendComponentSchema } from '../../_base/schema'
 
 export const DividerSchema = extendComponentSchema({
   thickness: z.number().optional().default(1),

@@ -7,7 +7,6 @@ import type { ThemeConfig } from '@lastshotlabs/frontend-contract/tokens'
 import type { WorkflowMap } from '@lastshotlabs/frontend-contract/workflows'
 import { Linking } from 'react-native'
 import type { QueryClient } from '@tanstack/react-query'
-import type { ApiClient } from '../../api/client'
 import {
   invalidateManifestRefreshTarget,
   invalidateManifestResource,
@@ -20,9 +19,17 @@ import type { Action, ActionSequence, ShareAction } from './types'
 
 const sharedActionTypeSet = new Set<string>(SHARED_ACTION_TYPES)
 
+interface ActionExecutorApi {
+  get(path: string): Promise<unknown>
+  post(path: string, body?: unknown): Promise<unknown>
+  put(path: string, body?: unknown): Promise<unknown>
+  patch(path: string, body?: unknown): Promise<unknown>
+  delete(path: string, body?: unknown): Promise<unknown>
+}
+
 export interface ActionExecutorDeps {
   screenContext: ScreenContextValue
-  api: Pick<ApiClient, 'get' | 'post' | 'put' | 'patch' | 'delete'>
+  api: ActionExecutorApi
   queryClient: Pick<QueryClient, 'invalidateQueries'>
   resources?: ResourceMap
   workflows?: WorkflowMap
