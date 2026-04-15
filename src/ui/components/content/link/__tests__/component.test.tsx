@@ -90,4 +90,19 @@ describe('Link', () => {
     )
     expect(getByText('View profile')).toBeTruthy()
   })
+
+  it('accepts shared text styling props without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Link
+        config={{
+          text: 'Styled link',
+          action: { type: 'open-url', url: 'https://example.com' },
+          color: 'success',
+          fontSize: 'lg',
+          textAlign: 'center',
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

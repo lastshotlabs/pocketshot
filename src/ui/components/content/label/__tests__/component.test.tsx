@@ -71,4 +71,11 @@ describe('Label', () => {
     )
     expect(getByText('ADMIN')).toBeTruthy()
   })
+
+  it('accepts shared text styling props without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Label config={{ text: 'Styled', color: 'muted', fontSize: 'lg', textAlign: 'center' }} />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -37,12 +38,32 @@ export function Link({ config }: { config: LinkConfig }) {
 
 function makeStyles(tokens: DesignTokens, config: LinkConfig) {
   const fontSizeKey = FONT_SIZE_MAP[config.size ?? 'md']
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   return StyleSheet.create({
     link: {
-      fontSize: tokens.typography[fontSizeKey],
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.primary,
+      fontSize:
+        typeof sharedTextStyle.fontSize === 'number'
+          ? sharedTextStyle.fontSize
+          : tokens.typography[fontSizeKey],
+      fontWeight:
+        typeof sharedTextStyle.fontWeight === 'string'
+          ? sharedTextStyle.fontWeight
+          : tokens.typography.fontWeightMedium,
+      color:
+        typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.primary,
+      textAlign:
+        sharedTextStyle.textAlign === 'center' ||
+        sharedTextStyle.textAlign === 'right' ||
+        sharedTextStyle.textAlign === 'justify'
+          ? sharedTextStyle.textAlign
+          : 'left',
+      lineHeight:
+        typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+      letterSpacing:
+        typeof sharedTextStyle.letterSpacing === 'number'
+          ? sharedTextStyle.letterSpacing
+          : undefined,
       textDecorationLine: config.underline ? 'underline' : 'none',
     },
   })

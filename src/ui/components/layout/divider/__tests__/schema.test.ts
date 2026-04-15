@@ -9,7 +9,6 @@ describe('DividerSchema', () => {
   it('applies defaults', () => {
     const result = DividerSchema.parse({})
     expect(result.thickness).toBe(1)
-    expect(result.marginVertical).toBe(2)
     expect(result.orientation).toBe('horizontal')
   })
 
@@ -17,11 +16,12 @@ describe('DividerSchema', () => {
     const result = DividerSchema.parse({
       thickness: 2,
       color: '#e0e0e0',
-      marginVertical: 8,
+      marginY: 'md',
       orientation: 'vertical',
     })
     expect(result.orientation).toBe('vertical')
     expect(result.thickness).toBe(2)
+    expect(result.marginY).toBe('md')
   })
 
   it('rejects invalid orientation', () => {

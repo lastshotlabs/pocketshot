@@ -42,4 +42,19 @@ describe('LabelSchema', () => {
   it('rejects invalid size', () => {
     expect(LabelSchema.safeParse({ text: 'X', size: 'lg' }).success).toBe(false)
   })
+
+  it('accepts shared text styling props', () => {
+    const result = LabelSchema.parse({
+      text: 'X',
+      color: 'muted',
+      fontSize: 'lg',
+      textAlign: 'center',
+      lineHeight: 'relaxed',
+    })
+
+    expect(result.color).toBe('muted')
+    expect(result.fontSize).toBe('lg')
+    expect(result.textAlign).toBe('center')
+    expect(result.lineHeight).toBe('relaxed')
+  })
 })

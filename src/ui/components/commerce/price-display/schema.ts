@@ -10,6 +10,5 @@ export const PriceDisplaySchema = extendComponentSchema({
   size: z.enum(['sm', 'md', 'lg', 'xl']).optional().default('md'),
   originalAmount: z.union([z.number(), FromRefSchema]).optional(),
   badge: z.string().optional(),
-  color: z.string().optional(),
   testID: z.string().optional(),
 })

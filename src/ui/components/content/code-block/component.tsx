@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeStyleProps, resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -78,7 +79,7 @@ export function CodeBlock({ config }: { config: CodeBlockConfig }) {
     return () => clearTimeout(timer)
   }, [code, config.onCopy, copyAnim, dispatch])
 
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const styles = useMemo(() => makeStyles(tokens, config), [tokens, config])
   const showHeader = config.language != null || config.showCopyButton
 
   return (
@@ -147,15 +148,46 @@ export function CodeBlock({ config }: { config: CodeBlockConfig }) {
   )
 }
 
-function makeStyles(tokens: DesignTokens) {
+function makeStyles(tokens: DesignTokens, config: CodeBlockConfig) {
+  const resolvedSurfaceStyle = resolveNativeStyleProps(
+    {
+      bg: config.bg,
+      borderRadius: config.borderRadius,
+    },
+    tokens,
+  )
+  const resolvedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const containerBg =
+    typeof resolvedSurfaceStyle.backgroundColor === 'string'
+      ? resolvedSurfaceStyle.backgroundColor
+      : CODE_BG
+  const containerRadius =
+    typeof resolvedSurfaceStyle.borderRadius === 'number'
+      ? resolvedSurfaceStyle.borderRadius
+      : tokens.radius.lg
+  const textColor =
+    typeof resolvedTextStyle.color === 'string' ? resolvedTextStyle.color : CODE_TEXT
+  const labelColor =
+    typeof resolvedTextStyle.color === 'string' ? resolvedTextStyle.color : LANG_LABEL_COLOR
+  const fontSize =
+    typeof resolvedTextStyle.fontSize === 'number'
+      ? resolvedTextStyle.fontSize
+      : tokens.typography.fontSizeSm
+  const lineHeight =
+    typeof resolvedTextStyle.lineHeight === 'number' ? resolvedTextStyle.lineHeight : LINE_HEIGHT
+  const letterSpacing =
+    typeof resolvedTextStyle.letterSpacing === 'number'
+      ? resolvedTextStyle.letterSpacing
+      : undefined
+
   return StyleSheet.create({
     container: {
-      backgroundColor: CODE_BG,
-      borderRadius: tokens.radius.lg,
+      backgroundColor: containerBg,
+      borderRadius: containerRadius,
       overflow: 'hidden',
     },
     header: {
-      backgroundColor: HEADER_BG,
+      backgroundColor: containerBg === CODE_BG ? HEADER_BG : containerBg,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -163,8 +195,8 @@ function makeStyles(tokens: DesignTokens) {
       paddingVertical: tokens.spacing[2],
     },
     langLabel: {
-      color: LANG_LABEL_COLOR,
-      fontSize: tokens.typography.fontSizeXs,
+      color: labelColor,
+      fontSize: Math.min(fontSize, tokens.typography.fontSizeSm),
       fontWeight: tokens.typography.fontWeightMedium,
     },
     copyButton: {
@@ -172,8 +204,8 @@ function makeStyles(tokens: DesignTokens) {
       paddingVertical: tokens.spacing[1],
     },
     copyText: {
-      color: LANG_LABEL_COLOR,
-      fontSize: tokens.typography.fontSizeXs,
+      color: labelColor,
+      fontSize: Math.min(fontSize, tokens.typography.fontSizeSm),
       fontWeight: tokens.typography.fontWeightMedium,
     },
     scrollArea: {
@@ -190,26 +222,27 @@ function makeStyles(tokens: DesignTokens) {
     lineNumber: {
       color: LINE_NUMBER_COLOR,
       fontFamily: 'monospace',
-      fontSize: tokens.typography.fontSizeSm,
-      lineHeight: LINE_HEIGHT,
+      fontSize,
+      lineHeight,
       width: 32,
       textAlign: 'right',
       marginRight: tokens.spacing[3],
     },
     codeLine: {
-      color: CODE_TEXT,
+      color: textColor,
       fontFamily: 'monospace',
-      fontSize: tokens.typography.fontSizeSm,
-      lineHeight: LINE_HEIGHT,
+      fontSize,
+      lineHeight,
+      letterSpacing,
     },
     showMoreButton: {
-      backgroundColor: HEADER_BG,
+      backgroundColor: containerBg === CODE_BG ? HEADER_BG : containerBg,
       paddingVertical: tokens.spacing[2],
       alignItems: 'center',
     },
     showMoreText: {
-      color: LANG_LABEL_COLOR,
-      fontSize: tokens.typography.fontSizeSm,
+      color: labelColor,
+      fontSize,
       fontWeight: tokens.typography.fontWeightMedium,
     },
   })

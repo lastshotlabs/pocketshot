@@ -9,6 +9,5 @@ export const PullToRefreshSchema = extendComponentSchema({
   id: z.string().optional(),
   refreshing: z.union([z.boolean(), FromRefSchema]).optional().default(false),
   onRefresh: ActionSchema,
-  color: z.string().optional(),
   testID: z.string().optional(),
 })

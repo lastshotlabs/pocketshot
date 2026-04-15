@@ -31,9 +31,14 @@ describe('Divider', () => {
     expect(toJSON()).toBeTruthy()
   })
 
-  it('renders with custom marginVertical without crashing', () => {
-    const { toJSON } = renderWithProviders(<Divider config={{ marginVertical: 8 }} />)
+  it('renders with shared marginY without crashing', () => {
+    const { toJSON } = renderWithProviders(<Divider config={{ marginY: 'md' }} />)
     expect(toJSON()).toBeTruthy()
+  })
+
+  it('applies testID via the shared base wrapper', () => {
+    const { getByTestId } = renderWithProviders(<Divider config={{ testID: 'divider-main' }} />)
+    expect(getByTestId('divider-main')).toBeTruthy()
   })
 
   it('has accessibilityRole of none', () => {

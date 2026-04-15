@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { View, Text, TouchableOpacity, Linking, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -128,38 +129,47 @@ function parseRichText(html: string): RichTextNode[] {
 function renderNodes(
   nodes: RichTextNode[],
   tokens: DesignTokens,
+  baseTextStyle: ResolvedRichTextStyle,
   key: string,
 ): React.ReactNode[] {
-  return nodes.map((node, idx) => renderNode(node, tokens, `${key}-${idx}`))
+  return nodes.map((node, idx) => renderNode(node, tokens, baseTextStyle, `${key}-${idx}`))
 }
 
 function renderNode(
   node: RichTextNode,
   tokens: DesignTokens,
+  baseTextStyle: ResolvedRichTextStyle,
   key: string,
 ): React.ReactNode {
   switch (node.type) {
     case 'text':
-      return <Text key={key}>{node.content}</Text>
+      return (
+        <Text key={key} style={{ color: baseTextStyle.color }}>
+          {node.content}
+        </Text>
+      )
 
     case 'bold':
       return (
-        <Text key={key} style={{ fontWeight: tokens.typography.fontWeightBold }}>
-          {node.children ? renderNodes(node.children, tokens, key) : node.content}
+        <Text
+          key={key}
+          style={{ fontWeight: tokens.typography.fontWeightBold, color: baseTextStyle.color }}
+        >
+          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
         </Text>
       )
 
     case 'italic':
       return (
-        <Text key={key} style={{ fontStyle: 'italic' }}>
-          {node.children ? renderNodes(node.children, tokens, key) : node.content}
+        <Text key={key} style={{ fontStyle: 'italic', color: baseTextStyle.color }}>
+          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
         </Text>
       )
 
     case 'underline':
       return (
-        <Text key={key} style={{ textDecorationLine: 'underline' }}>
-          {node.children ? renderNodes(node.children, tokens, key) : node.content}
+        <Text key={key} style={{ textDecorationLine: 'underline', color: baseTextStyle.color }}>
+          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
         </Text>
       )
 
@@ -167,14 +177,17 @@ function renderNode(
       return (
         <Text
           key={key}
-          style={{ color: tokens.colors.primary, textDecorationLine: 'underline' }}
+          style={{
+            color: typeof baseTextStyle.color === 'string' ? baseTextStyle.color : tokens.colors.primary,
+            textDecorationLine: 'underline',
+          }}
           accessibilityRole="link"
           accessibilityHint={node.href ? `Opens ${node.href}` : undefined}
           onPress={() => {
             if (node.href) void Linking.openURL(node.href)
           }}
         >
-          {node.children ? renderNodes(node.children, tokens, key) : node.content}
+          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
         </Text>
       )
 
@@ -189,10 +202,10 @@ function renderNode(
             paddingHorizontal: 4,
             paddingVertical: 1,
             borderRadius: tokens.radius.sm,
-            fontSize: tokens.typography.fontSizeSm,
+            fontSize: Math.max(baseTextStyle.fontSize - 1, tokens.typography.fontSizeXs),
           }}
         >
-          {node.children ? renderNodes(node.children, tokens, key) : node.content}
+          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
         </Text>
       )
 
@@ -214,15 +227,16 @@ function renderNode(
         <Text
           key={key}
           style={{
-            fontSize,
+            fontSize: Math.max(fontSize, baseTextStyle.fontSize),
             fontWeight,
-            color: tokens.colors.text,
+            color: baseTextStyle.color,
+            textAlign: baseTextStyle.textAlign,
             marginBottom: tokens.spacing[2],
             marginTop: tokens.spacing[2],
           }}
           accessibilityRole="header"
         >
-          {node.children ? renderNodes(node.children, tokens, key) : node.content}
+          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
         </Text>
       )
     }
@@ -232,13 +246,15 @@ function renderNode(
         <Text
           key={key}
           style={{
-            fontSize: tokens.typography.fontSizeMd,
-            color: tokens.colors.text,
-            lineHeight: tokens.typography.fontSizeMd * tokens.typography.lineHeightNormal,
+            fontSize: baseTextStyle.fontSize,
+            color: baseTextStyle.color,
+            textAlign: baseTextStyle.textAlign,
+            lineHeight: baseTextStyle.lineHeight,
+            letterSpacing: baseTextStyle.letterSpacing,
             marginBottom: tokens.spacing[2],
           }}
         >
-          {node.children ? renderNodes(node.children, tokens, key) : node.content}
+          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
         </Text>
       )
 
@@ -269,16 +285,17 @@ function renderNode(
                 {child.type === 'list-item' && child.children ? (
                   <Text
                     style={{
-                      fontSize: tokens.typography.fontSizeMd,
-                      color: tokens.colors.text,
-                      lineHeight:
-                        tokens.typography.fontSizeMd * tokens.typography.lineHeightNormal,
+                      fontSize: baseTextStyle.fontSize,
+                      color: baseTextStyle.color,
+                      textAlign: baseTextStyle.textAlign,
+                      lineHeight: baseTextStyle.lineHeight,
+                      letterSpacing: baseTextStyle.letterSpacing,
                     }}
                   >
-                    {renderNodes(child.children, tokens, `${key}-li-${idx}`)}
+                    {renderNodes(child.children, tokens, baseTextStyle, `${key}-li-${idx}`)}
                   </Text>
                 ) : (
-                  renderNode(child, tokens, `${key}-li-${idx}`)
+                  renderNode(child, tokens, baseTextStyle, `${key}-li-${idx}`)
                 )}
               </View>
             </View>
@@ -292,11 +309,14 @@ function renderNode(
         <Text
           key={key}
           style={{
-            fontSize: tokens.typography.fontSizeMd,
-            color: tokens.colors.text,
+            fontSize: baseTextStyle.fontSize,
+            color: baseTextStyle.color,
+            textAlign: baseTextStyle.textAlign,
+            lineHeight: baseTextStyle.lineHeight,
+            letterSpacing: baseTextStyle.letterSpacing,
           }}
         >
-          {node.children ? renderNodes(node.children, tokens, key) : node.content}
+          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
         </Text>
       )
 
@@ -313,12 +333,15 @@ function renderNode(
         >
           <Text
             style={{
-              color: tokens.colors.textMuted,
+              color: baseTextStyle.color,
               fontStyle: 'italic',
-              fontSize: tokens.typography.fontSizeMd,
+              fontSize: baseTextStyle.fontSize,
+              textAlign: baseTextStyle.textAlign,
+              lineHeight: baseTextStyle.lineHeight,
+              letterSpacing: baseTextStyle.letterSpacing,
             }}
           >
-            {node.children ? renderNodes(node.children, tokens, key) : node.content}
+            {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
           </Text>
         </View>
       )
@@ -326,6 +349,14 @@ function renderNode(
     default:
       return null
   }
+}
+
+interface ResolvedRichTextStyle {
+  color: string
+  fontSize: number
+  lineHeight: number
+  letterSpacing?: number
+  textAlign: 'left' | 'center' | 'right' | 'justify'
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -339,6 +370,7 @@ export function RichTextViewer({ config }: { config: RichTextViewerConfig }) {
 
   const nodes = useMemo(() => parseRichText(content ?? ''), [content])
   const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const baseTextStyle = useMemo(() => resolveViewerTextStyle(tokens, config), [config, tokens])
 
   const showExpandButton = config.showExpandButton ?? true
   const isTruncated = config.maxLines != null && !expanded
@@ -359,7 +391,7 @@ export function RichTextViewer({ config }: { config: RichTextViewerConfig }) {
         <View
           style={isTruncated ? { maxHeight: (config.maxLines ?? 5) * 22, overflow: 'hidden' } : undefined}
         >
-          {renderNodes(nodes, tokens, 'rtv')}
+          {renderNodes(nodes, tokens, baseTextStyle, 'rtv')}
         </View>
 
         {config.maxLines != null && showExpandButton && !expanded && (
@@ -404,5 +436,35 @@ function makeStyles(tokens: DesignTokens) {
       color: tokens.colors.primary,
     },
   })
+}
+
+function resolveViewerTextStyle(
+  tokens: DesignTokens,
+  config: RichTextViewerConfig,
+): ResolvedRichTextStyle {
+  const resolvedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+
+  return {
+    color:
+      typeof resolvedTextStyle.color === 'string' ? resolvedTextStyle.color : tokens.colors.text,
+    fontSize:
+      typeof resolvedTextStyle.fontSize === 'number'
+        ? resolvedTextStyle.fontSize
+        : tokens.typography.fontSizeMd,
+    lineHeight:
+      typeof resolvedTextStyle.lineHeight === 'number'
+        ? resolvedTextStyle.lineHeight
+        : tokens.typography.fontSizeMd * tokens.typography.lineHeightNormal,
+    letterSpacing:
+      typeof resolvedTextStyle.letterSpacing === 'number'
+        ? resolvedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      resolvedTextStyle.textAlign === 'center' ||
+      resolvedTextStyle.textAlign === 'right' ||
+      resolvedTextStyle.textAlign === 'justify'
+        ? resolvedTextStyle.textAlign
+        : 'left',
+  }
 }
 

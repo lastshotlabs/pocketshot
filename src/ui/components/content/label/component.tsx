@@ -1,6 +1,7 @@
 import React from 'react'
 import { Text, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -44,13 +45,36 @@ function resolveColor(tokens: DesignTokens, variant: LabelConfig['variant']): st
 
 function makeStyles(tokens: DesignTokens, config: LabelConfig) {
   const fontSizeKey = FONT_SIZE_MAP[config.size ?? 'sm']
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   return StyleSheet.create({
     label: {
-      fontSize: tokens.typography[fontSizeKey],
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: resolveColor(tokens, config.variant),
-      letterSpacing: config.uppercase ? 0.5 : 0,
+      fontSize:
+        typeof sharedTextStyle.fontSize === 'number'
+          ? sharedTextStyle.fontSize
+          : tokens.typography[fontSizeKey],
+      fontWeight:
+        typeof sharedTextStyle.fontWeight === 'string'
+          ? sharedTextStyle.fontWeight
+          : tokens.typography.fontWeightMedium,
+      color:
+        typeof sharedTextStyle.color === 'string'
+          ? sharedTextStyle.color
+          : resolveColor(tokens, config.variant),
+      textAlign:
+        sharedTextStyle.textAlign === 'center' ||
+        sharedTextStyle.textAlign === 'right' ||
+        sharedTextStyle.textAlign === 'justify'
+          ? sharedTextStyle.textAlign
+          : 'left',
+      lineHeight:
+        typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+      letterSpacing:
+        typeof sharedTextStyle.letterSpacing === 'number'
+          ? sharedTextStyle.letterSpacing
+          : config.uppercase
+            ? 0.5
+            : 0,
     },
   })
 }

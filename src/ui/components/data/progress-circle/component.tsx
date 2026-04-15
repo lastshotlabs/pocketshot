@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 import { View, Text, Animated, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
@@ -83,7 +84,8 @@ export function ProgressCircle({ config }: { config: ProgressCircleConfig }) {
   const size = config.size ?? 'md'
   const diameter = SIZE_MAP[size]
   const strokeWidth = config.strokeWidth ?? defaultStrokeWidth(size)
-  const fillColor = config.color ?? tokens.colors.primary
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const fillColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.primary
   const trackColor = config.trackColor ?? tokens.colors.border
 
   const animatedValue = useRef(new Animated.Value(resolvedValue)).current

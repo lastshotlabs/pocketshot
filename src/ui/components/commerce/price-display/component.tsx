@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
@@ -59,7 +60,8 @@ export function PriceDisplay({ config }: { config: PriceDisplayConfig }) {
   const formattedOriginal =
     resolvedOriginal != null ? formatPrice(resolvedOriginal, currency, locale) : null
 
-  const textColor = config.color ?? tokens.colors.text
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const textColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text
   const styles = makeStyles(tokens, size, textColor)
 
   return (

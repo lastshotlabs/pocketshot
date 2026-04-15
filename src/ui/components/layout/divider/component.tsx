@@ -1,5 +1,7 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
+import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 import type { DividerConfig } from './types'
@@ -8,14 +10,16 @@ export function Divider({ config }: { config: DividerConfig }) {
   const tokens = useTokens()
   const styles = makeStyles(tokens, config)
 
-  return <View style={styles.divider} accessibilityRole="none" />
+  return (
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+      <View style={styles.divider} accessibilityRole="none" />
+    </ComponentWrapper>
+  )
 }
 
 function makeStyles(tokens: DesignTokens, config: DividerConfig) {
-  const spacing = tokens.spacing
-  const color = config.color ?? tokens.colors.divider
-  const marginV =
-    spacing[config.marginVertical as keyof typeof spacing] ?? config.marginVertical ?? 0
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const color = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.divider
   const isVertical = config.orientation === 'vertical'
 
   return StyleSheet.create({
@@ -25,12 +29,10 @@ function makeStyles(tokens: DesignTokens, config: DividerConfig) {
         ? {
             width: config.thickness,
             alignSelf: 'stretch',
-            marginHorizontal: marginV,
           }
         : {
             height: config.thickness,
             alignSelf: 'stretch',
-            marginVertical: marginV,
           }),
     },
   })

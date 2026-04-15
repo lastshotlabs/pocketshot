@@ -43,4 +43,18 @@ describe('LinkSchema', () => {
     const result = LinkSchema.parse({ text: 'X', action, underline: false })
     expect(result.underline).toBe(false)
   })
+
+  it('accepts shared text styling props', () => {
+    const result = LinkSchema.parse({
+      text: 'X',
+      action,
+      color: 'success',
+      fontSize: 'lg',
+      textAlign: 'center',
+    })
+
+    expect(result.color).toBe('success')
+    expect(result.fontSize).toBe('lg')
+    expect(result.textAlign).toBe('center')
+  })
 })

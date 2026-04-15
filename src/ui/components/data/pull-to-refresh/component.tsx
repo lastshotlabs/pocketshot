@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, type ReactNode } from 'react'
 import { ScrollView, RefreshControl } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -28,7 +29,8 @@ export function PullToRefresh({ config, children }: PullToRefreshProps) {
     values,
   ) ?? false
 
-  const tintColor = config.color ?? tokens.colors.primary
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const tintColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.primary
 
   const handleRefresh = useCallback(async () => {
     await dispatch(config.onRefresh)

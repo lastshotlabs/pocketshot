@@ -1,17 +1,24 @@
 import { describe, expect, it } from 'vitest'
 
 import { ProductCardSchema } from '../../src/ui/components/commerce/product-card/schema'
+import { PriceDisplaySchema } from '../../src/ui/components/commerce/price-display/schema'
 import { ChatBubbleSchema } from '../../src/ui/components/communication/chat-bubble/schema'
 import { BodySchema } from '../../src/ui/components/content/body/schema'
+import { CodeBlockSchema } from '../../src/ui/components/content/code-block/schema'
 import { HeadingSchema } from '../../src/ui/components/content/heading/schema'
 import { ImageSchema } from '../../src/ui/components/content/image/schema'
 import { ImageViewerSchema } from '../../src/ui/components/content/image-viewer/schema'
 import { MarkdownSchema } from '../../src/ui/components/content/markdown/schema'
+import { QrCodeSchema } from '../../src/ui/components/content/qr-code/schema'
 import { RichTextEditorSchema } from '../../src/ui/components/content/rich-text-editor/schema'
+import { RichTextViewerSchema } from '../../src/ui/components/content/rich-text-viewer/schema'
 import { ChartSchema } from '../../src/ui/components/data/chart/schema'
 import { LoadingStateSchema } from '../../src/ui/components/data/loading-state/schema'
+import { ProgressCircleSchema } from '../../src/ui/components/data/progress-circle/schema'
+import { PullToRefreshSchema } from '../../src/ui/components/data/pull-to-refresh/schema'
 import { SkeletonSchema } from '../../src/ui/components/data/skeleton/schema'
 import { TextInputSchema } from '../../src/ui/components/forms/text-input/schema'
+import { DividerSchema } from '../../src/ui/components/layout/divider/schema'
 import { RowSchema } from '../../src/ui/components/layout/row/schema'
 import { CardSchema } from '../../src/ui/components/layout/card/schema'
 import { AccordionSchema } from '../../src/ui/components/navigation/accordion/schema'
@@ -101,6 +108,13 @@ describe('component schemas inherit the shared base contract', () => {
     ).toBeDefined()
 
     expect(
+      PriceDisplaySchema.parse({
+        amount: { from: 'product.price' },
+        color: 'primary',
+      }),
+    ).toBeDefined()
+
+    expect(
       HeadingSchema.parse({
         text: { from: 'screen.title' },
         textAlign: 'center',
@@ -147,6 +161,31 @@ describe('component schemas inherit the shared base contract', () => {
     ).toBeDefined()
 
     expect(
+      QrCodeSchema.parse({
+        value: { from: 'screen.shareUrl' },
+        color: 'primary',
+        bg: 'card',
+      }),
+    ).toBeDefined()
+
+    expect(
+      RichTextViewerSchema.parse({
+        content: { from: 'screen.richText' },
+        color: 'muted',
+        textAlign: 'center',
+      }),
+    ).toBeDefined()
+
+    expect(
+      CodeBlockSchema.parse({
+        code: { from: 'screen.snippet' },
+        bg: 'card',
+        borderRadius: 'lg',
+        color: 'muted',
+      }),
+    ).toBeDefined()
+
+    expect(
       RichTextEditorSchema.parse({
         id: 'notes',
         placeholder: 'Start writing',
@@ -178,6 +217,20 @@ describe('component schemas inherit the shared base contract', () => {
         width: '60%',
         height: 32,
         borderRadius: 'full',
+      }),
+    ).toBeDefined()
+
+    expect(
+      PullToRefreshSchema.parse({
+        onRefresh: { type: 'custom' },
+        color: 'primary',
+      }),
+    ).toBeDefined()
+
+    expect(
+      ProgressCircleSchema.parse({
+        value: 64,
+        color: 'success',
       }),
     ).toBeDefined()
 
@@ -243,6 +296,13 @@ describe('component schemas inherit the shared base contract', () => {
         value: { from: 'upload.progress' },
         height: 12,
         borderRadius: 'lg',
+      }),
+    ).toBeDefined()
+
+    expect(
+      DividerSchema.parse({
+        color: 'border',
+        marginY: 'md',
       }),
     ).toBeDefined()
   })
