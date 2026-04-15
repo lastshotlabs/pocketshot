@@ -194,7 +194,7 @@ export function MediaPicker({ config }: { config: MediaPickerConfig }) {
   const testId = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={testId}>
         {/* Pick button */}
         <TouchableOpacity
@@ -349,3 +349,4 @@ function makeStyles(tokens: DesignTokens, isDisabled: boolean) {
     },
   })
 }
+

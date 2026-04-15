@@ -117,7 +117,7 @@ export function ProgressCircle({ config }: { config: ProgressCircleConfig }) {
   const styles = useMemo(() => makeStyles(tokens, diameter, strokeWidth), [tokens, diameter, strokeWidth])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.wrapper}
         accessibilityRole="progressbar"
@@ -217,3 +217,4 @@ function makeStyles(tokens: DesignTokens, diameter: number, strokeWidth: number)
     },
   })
 }
+

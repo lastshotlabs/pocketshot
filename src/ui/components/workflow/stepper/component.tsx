@@ -62,7 +62,7 @@ export function Stepper({ config }: { config: StepperConfig }) {
 
   if (config.variant === 'vertical') {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View
           style={styles.verticalContainer}
           accessibilityRole="progressbar"
@@ -91,7 +91,7 @@ export function Stepper({ config }: { config: StepperConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.horizontalContainer}
         accessibilityRole="progressbar"
@@ -360,3 +360,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

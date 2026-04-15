@@ -73,7 +73,7 @@ export function Toggle({ config }: { config: ToggleConfig }) {
     resolvedLabel ?? config.icon ?? (active ? 'Active toggle' : 'Inactive toggle')
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Animated.View style={{ transform: [{ scale: scaleAnim }], alignSelf: 'flex-start' }}>
         <TouchableOpacity
           style={styles.button}
@@ -179,3 +179,4 @@ function makeStyles(
     },
   })
 }
+

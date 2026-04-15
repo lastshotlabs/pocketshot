@@ -55,7 +55,7 @@ export function ScrollContainer({
   const styles = makeStyles(tokens, config, safeBottom)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -105,3 +105,4 @@ function makeStyles(tokens: DesignTokens, config: ScrollContainerConfig, safeBot
     },
   })
 }
+

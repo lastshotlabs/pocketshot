@@ -256,7 +256,7 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
   const keyExtractor = useCallback((item: DropdownMenuConfig['items'][number]) => item.id, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {/* Trigger */}
       <View ref={triggerRef} collapsable={false}>
         <TouchableOpacity
@@ -319,3 +319,4 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
     </ComponentWrapper>
   )
 }
+

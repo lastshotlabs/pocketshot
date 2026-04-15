@@ -136,14 +136,14 @@ export function Header({ config }: { config: HeaderConfig }) {
   const rightActionList = config.rightActions ?? (config.rightAction ? [config.rightAction] : [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.wrapper} accessibilityRole="header">
         <View style={styles.row}>
           {/* Left */}
           <View style={styles.left}>
             {config.showBack && (
               <TouchableOpacity
-                onPress={() => void dispatch({ type: 'navigate', path: '..' })}
+                onPress={() => void dispatch({ type: 'navigate', to: '..' })}
                 style={styles.backButton}
                 accessibilityLabel="Back"
                 accessibilityRole="button"
@@ -205,3 +205,4 @@ export function Header({ config }: { config: HeaderConfig }) {
     </ComponentWrapper>
   )
 }
+

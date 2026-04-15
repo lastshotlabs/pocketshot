@@ -138,7 +138,12 @@ export function Modal({ config, children }: ModalProps) {
   const styles = useMemo(() => makeStyles(tokens, size), [tokens, size])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={isOpen ? ['open'] : undefined}
+    >
       <RNModal
         visible={isOpen}
         transparent

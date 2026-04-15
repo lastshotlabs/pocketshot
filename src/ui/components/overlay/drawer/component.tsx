@@ -137,7 +137,7 @@ export function Drawer({ config }: { config: DrawerConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Modal
         transparent
         animationType="none"
@@ -196,3 +196,4 @@ export function Drawer({ config }: { config: DrawerConfig }) {
     </ComponentWrapper>
   )
 }
+

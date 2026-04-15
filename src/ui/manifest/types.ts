@@ -1,5 +1,6 @@
 import type { Action } from '../actions/types'
-import type { TokenConfig } from '../tokens/types'
+import type { SharedManifestSections } from '@lastshotlabs/frontend-contract/manifest'
+import type { ThemeConfig } from '@lastshotlabs/frontend-contract/tokens'
 
 /** Config for a single component instance on a screen. */
 export interface ComponentConfig {
@@ -24,11 +25,11 @@ export interface ScreenConfig {
 }
 
 /** The full manifest for an app. */
-export interface ManifestConfig {
+export interface ManifestConfig extends SharedManifestSections {
   /** App name. */
   name: string
   /** Token/theme config. */
-  theme?: TokenConfig
+  theme?: ThemeConfig
   /** All screens, keyed by route path. */
   screens: Record<string, ScreenConfig>
 }

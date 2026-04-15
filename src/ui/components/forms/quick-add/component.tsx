@@ -62,7 +62,7 @@ export function QuickAdd({ config }: { config: QuickAddConfig }) {
   const hasValue = localValue.trim().length > 0
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.icon != null && (
           <Text style={styles.icon} accessibilityElementsHidden>
@@ -145,3 +145,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

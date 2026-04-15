@@ -313,7 +313,7 @@ export function CompareView({ config }: { config: CompareViewConfig }) {
   const styles = useMemo(() => makeContainerStyles(tokens), [tokens])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.container}
         testID={testId}
@@ -459,3 +459,4 @@ function makeSideBySideStyles(tokens: DesignTokens) {
     },
   })
 }
+

@@ -33,7 +33,7 @@ export function Heading({ config }: { config: HeadingConfig }) {
   const styles = makeStyles(tokens, config)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Text style={styles.heading} accessibilityRole="header" testID={config.testID ?? config.id}>
         {text}
       </Text>
@@ -56,3 +56,4 @@ function makeStyles(tokens: DesignTokens, config: HeadingConfig) {
     },
   })
 }
+

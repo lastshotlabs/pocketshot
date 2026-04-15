@@ -119,7 +119,7 @@ export function QrCode({ config }: { config: QrCodeConfig }) {
   const testId = config.testID ?? config.id ?? 'qr-code'
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.container}
         testID={testId}
@@ -167,3 +167,4 @@ function makeStyles(tokens: DesignTokens, bgColor: string) {
     },
   })
 }
+

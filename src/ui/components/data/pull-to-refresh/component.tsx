@@ -50,7 +50,7 @@ export function PullToRefresh({ config, children }: PullToRefreshProps) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <ScrollView
         refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
@@ -62,3 +62,4 @@ export function PullToRefresh({ config, children }: PullToRefreshProps) {
     </ComponentWrapper>
   )
 }
+

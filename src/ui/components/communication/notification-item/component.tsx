@@ -121,7 +121,7 @@ export function NotificationItem({ config }: { config: NotificationItemConfig })
 
   if (config.onPress) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <TouchableOpacity
           onPress={() => void dispatch(config.onPress!)}
           accessibilityRole="button"
@@ -136,7 +136,7 @@ export function NotificationItem({ config }: { config: NotificationItemConfig })
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={config.testID ?? config.id}>{content}</View>
     </ComponentWrapper>
   )
@@ -200,3 +200,4 @@ function makeStyles(tokens: DesignTokens, read: boolean) {
     },
   })
 }
+

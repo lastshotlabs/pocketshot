@@ -98,7 +98,7 @@ export function Tabs({ config }: { config: TabsConfig }) {
   const styles = useMemo(() => makeStyles(tokens, config.variant), [tokens, config.variant])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.tabs.map((tab) => {
           const isActive = tab.id === activeTab
@@ -137,3 +137,4 @@ export function Tabs({ config }: { config: TabsConfig }) {
     </ComponentWrapper>
   )
 }
+

@@ -57,7 +57,7 @@ export function Timeline({ config }: { config: TimelineConfig }) {
 
   if (isLoading && allItems.length === 0) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={tokens.colors.primary} />
         </View>
@@ -66,7 +66,7 @@ export function Timeline({ config }: { config: TimelineConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <FlatList
         data={allItems}
         renderItem={renderItem}
@@ -137,3 +137,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

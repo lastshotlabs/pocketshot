@@ -290,7 +290,7 @@ export function TreeView({ config }: { config: TreeViewConfig }) {
   const keyExtractor = useCallback((item: FlatTreeItem) => item.node.id, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <FlatList
         data={flatData}
         renderItem={renderItem}
@@ -303,3 +303,4 @@ export function TreeView({ config }: { config: TreeViewConfig }) {
     </ComponentWrapper>
   )
 }
+

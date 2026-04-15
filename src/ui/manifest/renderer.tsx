@@ -1,8 +1,9 @@
 import React from 'react'
-import { ScrollView, View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { ScreenContextProvider } from '../context/ScreenContext'
 import type { ApiClient } from '../../api/client'
 import type { ScreenConfig, ComponentConfig } from './types'
+import { ManifestStructural } from './structural'
 
 interface ScreenRendererProps {
   screen: ScreenConfig
@@ -21,7 +22,7 @@ interface ScreenRendererProps {
 export function ScreenRenderer({ screen, api, componentRegistry }: ScreenRendererProps) {
   return (
     <ScreenContextProvider api={api} initialValues={screen.initialValues}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ManifestStructural>
         {screen.components.map((componentConfig, index) => {
           const ComponentType = componentRegistry[componentConfig.type]
           if (!ComponentType) {
@@ -41,14 +42,12 @@ export function ScreenRenderer({ screen, api, componentRegistry }: ScreenRendere
             />
           )
         })}
-      </ScrollView>
+      </ManifestStructural>
     </ScreenContextProvider>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { flexGrow: 1 },
   unknownComponent: {
     padding: 8,
     backgroundColor: '#fff3cd',

@@ -1,11 +1,11 @@
 import { z } from 'zod'
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
+import { extendComponentSchema } from '../../_base/schema'
 
 const ActionSchema = z.custom<Action>()
-const FromRefSchema = z.object({ from: z.string() })
 
-export const ButtonSchema = z.object({
-  id: z.string().optional(),
+export const ButtonSchema = extendComponentSchema({
   label: z.union([z.string(), FromRefSchema]),
   variant: z
     .enum(['primary', 'secondary', 'ghost', 'outline', 'destructive'])
@@ -18,5 +18,4 @@ export const ButtonSchema = z.object({
   iconLeft: z.string().optional(),
   iconRight: z.string().optional(),
   onPress: ActionSchema,
-  testID: z.string().optional(),
 })

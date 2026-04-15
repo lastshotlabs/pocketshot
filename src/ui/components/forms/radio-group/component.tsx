@@ -47,7 +47,7 @@ export function RadioGroup({ config }: { config: RadioGroupConfig }) {
   const testIDBase = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -138,3 +138,4 @@ function makeItemStyles(tokens: DesignTokens, isSelected: boolean, disabled: boo
     },
   })
 }
+

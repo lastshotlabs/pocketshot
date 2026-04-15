@@ -190,7 +190,7 @@ export function ProductCard({ config }: { config: ProductCardConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.onPress != null ? (
         <TouchableOpacity
           onPress={handlePress}
@@ -287,3 +287,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

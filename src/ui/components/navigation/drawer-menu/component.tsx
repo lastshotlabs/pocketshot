@@ -302,7 +302,7 @@ export function DrawerMenu({ config }: { config: DrawerMenuConfig }) {
   }, [sectionGroups])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Modal
         transparent
         animationType="none"
@@ -435,3 +435,4 @@ export function DrawerMenu({ config }: { config: DrawerMenuConfig }) {
     </ComponentWrapper>
   )
 }
+

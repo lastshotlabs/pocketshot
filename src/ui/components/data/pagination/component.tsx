@@ -131,13 +131,13 @@ export function Pagination({ config }: { config: PaginationConfig }) {
 
   // Infinite mode renders nothing visible
   if (config.mode === 'infinite') {
-    return <ComponentWrapper id={config.id} testID={config.testID}><View /></ComponentWrapper>
+    return <ComponentWrapper id={config.id} testID={config.testID} config={config}><View /></ComponentWrapper>
   }
 
   // Load-more mode
   if (config.mode === 'load-more') {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.container}>
           <TouchableOpacity
             onPress={handleLoadMore}
@@ -159,7 +159,7 @@ export function Pagination({ config }: { config: PaginationConfig }) {
   const isLastPage = currentPage >= totalPages
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container} accessibilityRole="toolbar" accessibilityLabel="Pagination">
         <TouchableOpacity
           onPress={handlePrevious}
@@ -198,3 +198,4 @@ export function Pagination({ config }: { config: PaginationConfig }) {
     </ComponentWrapper>
   )
 }
+

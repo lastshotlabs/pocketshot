@@ -441,7 +441,7 @@ export function Wizard({ config }: { config: WizardConfig }) {
   }, [config.onCancel, dispatch])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={80}
@@ -861,3 +861,4 @@ function makeSelectModalStyles(tokens: DesignTokens) {
     },
   })
 }
+

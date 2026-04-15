@@ -488,7 +488,7 @@ export function CommentSection({ config }: { config: CommentSectionConfig }) {
 
   if (isLoading) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator color={tokens.colors.primary} />
         </View>
@@ -497,7 +497,7 @@ export function CommentSection({ config }: { config: CommentSectionConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} style={{ flex: 1 }}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} style={{ flex: 1 }}>
       <View style={styles.container}>
         <FlatList
           data={flatItems}
@@ -666,3 +666,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

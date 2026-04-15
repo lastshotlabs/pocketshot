@@ -72,7 +72,7 @@ export function RegisterForm({ config }: { config: RegisterFormConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -231,3 +231,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

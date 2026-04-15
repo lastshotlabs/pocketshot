@@ -55,7 +55,7 @@ export function StatCard({ config }: { config: StatCardConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.onPress ? (
         <TouchableOpacity
           onPress={handlePress}

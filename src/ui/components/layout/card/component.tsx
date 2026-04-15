@@ -22,7 +22,7 @@ export function Card({ config, children }: { config: CardConfig; children?: Reac
 
   if (config.onPress) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <TouchableOpacity
           style={containerStyle}
           onPress={() => void dispatch(config.onPress!)}
@@ -37,7 +37,7 @@ export function Card({ config, children }: { config: CardConfig; children?: Reac
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={containerStyle}>{children}</View>
     </ComponentWrapper>
   )
@@ -63,3 +63,4 @@ function makeStyles(
     },
   })
 }
+

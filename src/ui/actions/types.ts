@@ -1,172 +1,131 @@
-/** Impact style for haptic feedback — maps to expo-haptics ImpactFeedbackStyle. */
-export type ImpactStyle = 'light' | 'medium' | 'heavy' | 'soft' | 'rigid'
+import type {
+  ActionBase,
+  ActionConfig as SharedAction,
+  ApiAction,
+  BranchAction,
+  CloseModalAction,
+  ConfirmAction,
+  CopyAction,
+  CopyToClipboardAction,
+  DownloadAction,
+  EmitAction,
+  ForEachAction,
+  LogAction,
+  NavigateAction,
+  NavigateExternalAction,
+  OpenModalAction,
+  RefreshAction,
+  RunWorkflowAction,
+  ScrollToAction,
+  SetThemeAction,
+  SetValueAction,
+  SubmitFormAction,
+  ToastAction,
+  TrackAction,
+  WsSendAction,
+} from '@lastshotlabs/frontend-contract/actions'
 
-/** Notification type for haptic feedback — maps to expo-haptics NotificationFeedbackType. */
+export type ImpactStyle = 'light' | 'medium' | 'heavy' | 'soft' | 'rigid'
 export type NotificationType = 'success' | 'warning' | 'error'
 
-/** All supported action types in the config-driven action vocabulary. */
-export type ActionType =
-  | 'navigate'
-  | 'api'
-  | 'open-bottom-sheet'
-  | 'close-bottom-sheet'
-  | 'open-modal'
-  | 'close-modal'
-  | 'action-sheet'
-  | 'refresh'
-  | 'set-value'
-  | 'toast'
-  | 'haptic'
-  | 'share'
-  | 'clipboard'
-  | 'confirm'
-  | 'open-url'
-  | 'run-workflow'
-  | 'camera'
-  | 'media-picker'
-  | 'scan-qr'
-
-export interface NavigateAction {
-  type: 'navigate'
-  path: string
-  params?: Record<string, string>
-  replace?: boolean
-}
-
-export interface ApiAction {
-  type: 'api'
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-  path: string
-  body?: Record<string, unknown>
-  /** If set, store the response under this key in ScreenContext. */
-  resultKey?: string
-  /** Action to dispatch on success. */
-  onSuccess?: Action
-  /** Action to dispatch on error. Error message stored as `__apiError` in ScreenContext. */
-  onError?: Action
-}
-
-export interface OpenBottomSheetAction {
+export interface OpenBottomSheetAction extends ActionBase {
   type: 'open-bottom-sheet'
-  sheetId: string
+  sheet: string
+  payload?: unknown
 }
 
-export interface CloseBottomSheetAction {
+export interface CloseBottomSheetAction extends ActionBase {
   type: 'close-bottom-sheet'
-  sheetId: string
+  sheet?: string
+  result?: unknown
 }
 
-export interface OpenModalAction {
-  type: 'open-modal'
-  modalId: string
-}
-
-export interface CloseModalAction {
-  type: 'close-modal'
-  modalId: string
-}
-
-export interface ActionSheetAction {
+export interface ActionSheetAction extends ActionBase {
   type: 'action-sheet'
   title?: string
   options: Array<{ label: string; action: Action; destructive?: boolean }>
 }
 
-export interface RefreshAction {
-  type: 'refresh'
-  /** Query key to invalidate. Invalidates all if omitted. */
-  queryKey?: string[]
-}
-
-export interface SetValueAction {
-  type: 'set-value'
-  key: string
-  value: unknown
-}
-
-export interface ToastAction {
-  type: 'toast'
-  message: string
-  variant?: 'success' | 'error' | 'warning' | 'info'
-  duration?: number
-}
-
-export interface HapticAction {
+export interface HapticAction extends ActionBase {
   type: 'haptic'
   style?: ImpactStyle
   notification?: NotificationType
   selection?: boolean
 }
 
-export interface ShareAction {
+export interface ShareAction extends ActionBase {
   type: 'share'
   message?: string
   url?: string
   title?: string
 }
 
-export interface ClipboardAction {
+export interface ClipboardAction extends ActionBase {
   type: 'clipboard'
   text: string
 }
 
-export interface ConfirmAction {
-  type: 'confirm'
-  title: string
-  message?: string
-  confirmLabel?: string
-  cancelLabel?: string
-  onConfirm: Action
-  onCancel?: Action
-}
-
-export interface OpenUrlAction {
+export interface OpenUrlAction extends ActionBase {
   type: 'open-url'
   url: string
 }
 
-export interface RunWorkflowAction {
-  type: 'run-workflow'
-  workflowId: string
-  params?: Record<string, unknown>
-}
-
-export interface CameraAction {
+export interface CameraAction extends ActionBase {
   type: 'camera'
-  /** Key to store the captured image URI under in ScreenContext. */
-  resultKey?: string
+  resultTarget?: string
 }
 
-export interface MediaPickerAction {
+export interface MediaPickerAction extends ActionBase {
   type: 'media-picker'
   mediaType?: 'images' | 'videos' | 'all'
   multiple?: boolean
-  resultKey?: string
+  resultTarget?: string
 }
 
-export interface ScanQrAction {
+export interface ScanQrAction extends ActionBase {
   type: 'scan-qr'
-  resultKey?: string
+  resultTarget?: string
 }
 
-/** Discriminated union of all possible actions. */
-export type Action =
-  | NavigateAction
-  | ApiAction
+export type NativeAction =
   | OpenBottomSheetAction
   | CloseBottomSheetAction
-  | OpenModalAction
-  | CloseModalAction
   | ActionSheetAction
-  | RefreshAction
-  | SetValueAction
-  | ToastAction
   | HapticAction
   | ShareAction
   | ClipboardAction
-  | ConfirmAction
   | OpenUrlAction
-  | RunWorkflowAction
   | CameraAction
   | MediaPickerAction
   | ScanQrAction
+
+export type Action = SharedAction | NativeAction
+export type ActionType = Action['type']
+export type ActionSequence = Action | Action[]
+
+export type {
+  ActionBase,
+  ApiAction,
+  BranchAction,
+  CloseModalAction,
+  ConfirmAction,
+  CopyAction,
+  CopyToClipboardAction,
+  DownloadAction,
+  EmitAction,
+  ForEachAction,
+  LogAction,
+  NavigateAction,
+  NavigateExternalAction,
+  OpenModalAction,
+  RefreshAction,
+  RunWorkflowAction,
+  ScrollToAction,
+  SetThemeAction,
+  SetValueAction,
+  SharedAction,
+  SubmitFormAction,
+  ToastAction,
+  TrackAction,
+  WsSendAction,
+}

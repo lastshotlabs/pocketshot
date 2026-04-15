@@ -90,7 +90,7 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={isOwn ? styles.rowOwn : styles.rowOther}>
         {!isOwn && <AvatarView avatar={config.avatar} tokens={tokens} styles={styles} />}
         {bubbleContent}
@@ -172,3 +172,4 @@ function makeStyles(tokens: DesignTokens, isOwn: boolean) {
     },
   })
 }
+

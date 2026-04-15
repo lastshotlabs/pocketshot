@@ -218,7 +218,7 @@ export function DetailCard({ config }: { config: DetailCardConfig }) {
   const skeletonCount = config.sections.reduce((acc, s) => acc + s.fields.length, 0)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.card}>
         {/* Header */}
         {(config.title || config.subtitle) && (
@@ -385,3 +385,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

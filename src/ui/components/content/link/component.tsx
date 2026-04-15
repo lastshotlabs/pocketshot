@@ -21,7 +21,7 @@ export function Link({ config }: { config: LinkConfig }) {
   const styles = makeStyles(tokens, config)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={() => void dispatch(config.action)}
         accessibilityRole="link"
@@ -47,3 +47,4 @@ function makeStyles(tokens: DesignTokens, config: LinkConfig) {
     },
   })
 }
+

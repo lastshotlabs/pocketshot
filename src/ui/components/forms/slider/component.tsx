@@ -205,7 +205,7 @@ export function Slider({ config }: { config: SliderConfig }) {
   const displayValue = Math.round(localValue * 100) / 100
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         <View style={styles.header}>
           {config.label != null && <Text style={styles.label}>{config.label}</Text>}
@@ -270,3 +270,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

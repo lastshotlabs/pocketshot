@@ -91,7 +91,7 @@ export function HighlightedText({ config }: { config: HighlightedTextConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Text
         style={{ fontSize: fontSizeValue, color: tokens.colors.text }}
         accessibilityRole="text"
@@ -122,3 +122,4 @@ export function HighlightedText({ config }: { config: HighlightedTextConfig }) {
     </ComponentWrapper>
   )
 }
+

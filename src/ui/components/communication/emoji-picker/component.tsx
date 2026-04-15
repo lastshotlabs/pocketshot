@@ -196,7 +196,7 @@ export function EmojiPicker({ config }: { config: EmojiPickerConfig }) {
   const hasRecent = config.recentEmojis && config.recentEmojis.length > 0
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {/* Trigger */}
       <TouchableOpacity
         onPress={openPicker}
@@ -411,3 +411,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

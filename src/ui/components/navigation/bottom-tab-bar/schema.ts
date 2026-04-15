@@ -1,7 +1,7 @@
 import { z } from 'zod'
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
-const FromRefSchema = z.object({ from: z.string() })
 
 const TabItemSchema = z.object({
   id: z.string(),

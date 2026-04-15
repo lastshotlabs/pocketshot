@@ -312,7 +312,7 @@ export function DataTable({ config }: { config: DataTableConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -394,3 +394,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

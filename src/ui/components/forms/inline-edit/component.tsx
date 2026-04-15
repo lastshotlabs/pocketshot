@@ -95,7 +95,7 @@ export function InlineEdit({ config }: { config: InlineEditConfig }) {
 
   if (isEditing) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.editContainer}>
           <View style={styles.editRow}>
             {config.prefix != null && (
@@ -151,7 +151,7 @@ export function InlineEdit({ config }: { config: InlineEditConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handleStartEdit}
         onPressIn={() => setIsPressedIn(true)}
@@ -261,3 +261,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

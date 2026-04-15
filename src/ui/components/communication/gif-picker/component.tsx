@@ -153,7 +153,7 @@ export function GifPicker({ config }: { config: GifPickerConfig }) {
   const keyExtractor = useCallback((item: GifResult) => item.id, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {/* Trigger */}
       <TouchableOpacity
         onPress={openPicker}
@@ -368,3 +368,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

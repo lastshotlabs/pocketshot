@@ -187,7 +187,7 @@ export function SortPicker({ config }: { config: SortPickerConfig }) {
   const keyExtractor = useCallback((item: SortOption) => item.value, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <RNModal
         visible={isOpen}
         transparent
@@ -232,3 +232,4 @@ export function SortPicker({ config }: { config: SortPickerConfig }) {
     </ComponentWrapper>
   )
 }
+

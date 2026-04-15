@@ -132,7 +132,7 @@ export function PinInput({ config }: { config: PinInputConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -219,3 +219,4 @@ function makeStyles(tokens: DesignTokens, length: number) {
     },
   })
 }
+

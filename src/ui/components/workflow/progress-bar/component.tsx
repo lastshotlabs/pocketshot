@@ -72,7 +72,7 @@ export function ProgressBar({ config }: { config: ProgressBarConfig }) {
   })
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.wrapper}>
         {config.label != null || config.showValue ? (
           <View style={styles.labelRow}>
@@ -131,3 +131,4 @@ function makeStyles(tokens: DesignTokens, height: number, borderRadius: number, 
     },
   })
 }
+

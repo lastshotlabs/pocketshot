@@ -90,7 +90,7 @@ export function KeyboardAvoidingScreen({
   const idPrefix = config.testID ?? config.id ?? 'kb-screen'
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.safeContainer}
         testID={`${idPrefix}-safe-area`}
@@ -117,3 +117,4 @@ export function KeyboardAvoidingScreen({
     </ComponentWrapper>
   )
 }
+

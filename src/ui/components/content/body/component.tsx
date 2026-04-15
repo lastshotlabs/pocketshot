@@ -28,7 +28,7 @@ export function Body({ config }: { config: BodyConfig }) {
   const styles = makeStyles(tokens, config)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Text
         style={styles.body}
         numberOfLines={config.numberOfLines}
@@ -55,3 +55,4 @@ function makeStyles(tokens: DesignTokens, config: BodyConfig) {
     },
   })
 }
+

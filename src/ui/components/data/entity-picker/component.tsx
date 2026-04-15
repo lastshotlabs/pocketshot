@@ -388,7 +388,7 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
   const fieldLabel = config.label
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {fieldLabel != null && <Text style={styles.label}>{fieldLabel}</Text>}
 
       {/* Trigger field */}
@@ -500,3 +500,4 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
     </ComponentWrapper>
   )
 }
+

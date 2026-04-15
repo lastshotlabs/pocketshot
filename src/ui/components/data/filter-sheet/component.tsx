@@ -425,7 +425,7 @@ export function FilterSheet({ config }: { config: FilterSheetConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <RNModal
         visible={isOpen}
         transparent
@@ -496,3 +496,4 @@ export function FilterSheet({ config }: { config: FilterSheetConfig }) {
     </ComponentWrapper>
   )
 }
+

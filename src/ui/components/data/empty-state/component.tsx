@@ -17,7 +17,7 @@ export function EmptyState({ config }: { config: EmptyStateConfig }) {
   }, [config.action, dispatch])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container} accessibilityRole="none">
         {config.icon ? (
           <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
@@ -86,3 +86,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

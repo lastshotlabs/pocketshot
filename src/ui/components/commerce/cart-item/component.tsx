@@ -76,7 +76,7 @@ export function CartItem({ config }: { config: CartItemConfig }) {
   const styles = makeStyles(tokens)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.row}>
         {/* Thumbnail */}
         {resolvedImage != null ? (
@@ -259,3 +259,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

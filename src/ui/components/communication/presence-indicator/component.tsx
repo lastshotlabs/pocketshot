@@ -105,7 +105,7 @@ export function PresenceIndicator({ config }: { config: PresenceIndicatorConfig 
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.showLabel ? (
         <View
           style={styles.row}
@@ -153,3 +153,4 @@ function makeStyles(tokens: DesignTokens, diameter: number, bordered: boolean) {
     },
   })
 }
+

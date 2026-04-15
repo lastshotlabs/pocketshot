@@ -82,7 +82,7 @@ export function CodeBlock({ config }: { config: CodeBlockConfig }) {
   const showHeader = config.language != null || config.showCopyButton
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container} testID={config.testID ?? config.id}>
         {showHeader && (
           <View style={styles.header}>
@@ -214,3 +214,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

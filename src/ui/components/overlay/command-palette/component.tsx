@@ -285,7 +285,7 @@ export function CommandPalette({ config }: { config: CommandPaletteConfig }) {
   const baseTestID = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <RNModal
         visible={isOpen}
         transparent
@@ -355,3 +355,4 @@ export function CommandPalette({ config }: { config: CommandPaletteConfig }) {
     </ComponentWrapper>
   )
 }
+

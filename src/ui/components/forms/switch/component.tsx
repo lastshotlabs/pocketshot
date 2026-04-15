@@ -34,7 +34,7 @@ export function Switch({ config }: { config: SwitchConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.row}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -77,3 +77,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

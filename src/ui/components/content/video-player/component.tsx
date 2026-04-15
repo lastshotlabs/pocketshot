@@ -165,7 +165,7 @@ export function VideoPlayer({ config }: { config: VideoPlayerConfig }) {
   // Fallback when expo-av is not installed
   if (ExpoVideo == null) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View testID={testId} style={styles.fallbackContainer}>
           <View style={styles.fallback}>
             <Text style={styles.fallbackIcon} accessibilityElementsHidden>
@@ -183,7 +183,7 @@ export function VideoPlayer({ config }: { config: VideoPlayerConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={testId} style={styles.container}>
         <TouchableOpacity
           activeOpacity={1}
@@ -410,3 +410,4 @@ function makeStyles(tokens: DesignTokens, aspectRatio: number) {
     },
   })
 }
+

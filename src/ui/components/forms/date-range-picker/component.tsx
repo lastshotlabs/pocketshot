@@ -314,7 +314,7 @@ export function DateRangePicker({ config }: { config: DateRangePickerConfig }) {
   const endDisplay = rangeEnd ? formatDate(rangeEnd, format) : config.endPlaceholder
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -593,3 +593,4 @@ function makeGridStyles(tokens: DesignTokens) {
     },
   })
 }
+

@@ -153,7 +153,7 @@ export function Alert({ config }: { config: AlertConfig }) {
   if (dismissed) return null
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.container}
         accessibilityRole="alert"
@@ -197,3 +197,4 @@ export function Alert({ config }: { config: AlertConfig }) {
     </ComponentWrapper>
   )
 }
+

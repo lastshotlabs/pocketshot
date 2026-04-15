@@ -1,5 +1,10 @@
 import React, { type ReactNode, Component } from 'react'
 import { View, Text, type ViewStyle } from 'react-native'
+import { useTokens } from '../../context/AppContext'
+import { useScreenContext } from '../../context/ScreenContext'
+import { isFromRef, resolveFromRef } from './fromRef'
+import { resolveSurfacePresentation } from './style-surfaces'
+import type { RuntimeSurfaceState } from './surface-state'
 
 // ── Error Boundary ─────────────────────────────────────────────────────────────
 
@@ -63,6 +68,10 @@ export interface ComponentWrapperProps {
   id?: string
   /** Override testID. Defaults to id if provided. */
   testID?: string
+  /** Optional config surface contract applied to the wrapper root slot. */
+  config?: Record<string, unknown>
+  /** Canonical active surface states for the wrapper root slot. */
+  activeStates?: RuntimeSurfaceState[]
   /** Pass `{ flex: 1 }` for components that fill their parent (chat, lists, etc.). */
   style?: ViewStyle
   children: ReactNode
@@ -75,10 +84,44 @@ export interface ComponentWrapperProps {
  *
  * Place this as the outermost element of every config-addressable component.
  */
-export function ComponentWrapper({ id, testID, style, children }: ComponentWrapperProps) {
+export function ComponentWrapper({
+  id,
+  testID,
+  config,
+  activeStates,
+  style,
+  children,
+}: ComponentWrapperProps) {
+  const tokens = useTokens()
+  const { values } = useScreenContext()
+
+  const visible =
+    typeof config?.visible === 'boolean'
+      ? config.visible
+      : isFromRef(config?.visible)
+        ? Boolean(resolveFromRef(config.visible, values))
+        : true
+
+  if (!visible) {
+    return null
+  }
+
+  const surface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config,
+    itemSurface:
+      config?.slots && typeof config.slots === 'object' && !Array.isArray(config.slots)
+        ? ((config.slots as Record<string, unknown>).root as Record<string, unknown> | undefined)
+        : undefined,
+    activeStates,
+  })
+
   return (
     <ComponentErrorBoundary id={id} testID={testID ?? id}>
-      <View testID={testID ?? id} style={style}>
+      <View
+        testID={testID ?? id}
+        style={[surface.style as ViewStyle | undefined, style].filter(Boolean)}
+      >
         {children}
       </View>
     </ComponentErrorBoundary>

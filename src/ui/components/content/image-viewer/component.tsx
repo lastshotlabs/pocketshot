@@ -145,7 +145,7 @@ export function ImageViewer({ config }: { config: ImageViewerConfig }) {
   const testId = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={testId}>
         {/* Inline thumbnail */}
         <TouchableOpacity
@@ -293,3 +293,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

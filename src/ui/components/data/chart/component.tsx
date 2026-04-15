@@ -513,7 +513,7 @@ export function Chart({ config }: { config: ChartConfig }) {
   }, [chartType, config, height, isEmpty, resolvedData, styles, tokens])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.wrapper} testID={config.testID}>
         {config.title ? <Text style={styles.title}>{config.title}</Text> : null}
         {renderChart()}
@@ -651,3 +651,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

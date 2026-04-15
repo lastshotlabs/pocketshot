@@ -406,7 +406,7 @@ export function AutoForm({ config }: { config: AutoFormConfig }) {
   const styles = useMemo(() => makeStyles(tokens), [tokens])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.fields.map((field) =>
           renderField(
@@ -454,3 +454,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

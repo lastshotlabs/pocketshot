@@ -368,7 +368,7 @@ export function Feed({ config }: { config: FeedConfig }) {
 
   if (isLoading) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View>
           {Array.from({ length: config.loadingCount ?? 4 }).map((_, i) => (
             <SkeletonCard key={i} tokens={tokens} />
@@ -379,7 +379,7 @@ export function Feed({ config }: { config: FeedConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} style={{ flex: 1 }}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} style={{ flex: 1 }}>
       <FlatList
         data={resolvedData}
         keyExtractor={keyExtractor}
@@ -491,3 +491,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

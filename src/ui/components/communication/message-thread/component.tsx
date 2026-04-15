@@ -429,7 +429,7 @@ export function MessageThread({ config }: { config: MessageThreadConfig }) {
 
   if (isLoading) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <MessageSkeleton tokens={tokens} />
       </ComponentWrapper>
     )
@@ -437,7 +437,7 @@ export function MessageThread({ config }: { config: MessageThreadConfig }) {
 
   if (error) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load messages</Text>
         </View>
@@ -446,7 +446,7 @@ export function MessageThread({ config }: { config: MessageThreadConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} style={{ flex: 1 }}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} style={{ flex: 1 }}>
       <FlatList
         data={listItems}
         renderItem={renderItem}
@@ -604,3 +604,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

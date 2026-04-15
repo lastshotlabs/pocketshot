@@ -56,7 +56,7 @@ export function LoadingState({ config }: { config: LoadingStateConfig }) {
   const styles = makeContainerStyles(tokens)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.variant === 'spinner' ? (
         <View
           style={styles.spinnerContainer}
@@ -105,3 +105,4 @@ function makeSkeletonStyles(tokens: DesignTokens, height: number) {
     },
   })
 }
+

@@ -137,7 +137,7 @@ export function Calendar({ config }: { config: CalendarConfig }) {
   const monthLabel = `${MONTH_NAMES[displayMonth.month]} ${displayMonth.year}`
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.showNavigation ? (
           <View style={styles.navRow}>
@@ -356,3 +356,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

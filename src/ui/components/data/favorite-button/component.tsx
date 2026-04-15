@@ -102,7 +102,7 @@ export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
   const fontSize = FONT_SIZE[config.size ?? 'md']
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={1}
@@ -129,3 +129,4 @@ export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
     </ComponentWrapper>
   )
 }
+

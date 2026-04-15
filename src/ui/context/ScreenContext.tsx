@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import type { Action } from '../actions/types'
 import { executeAction } from '../actions/executor'
 import type { ApiClient } from '../../api/client'
+import { useAppContext } from './AppContext'
 
 export interface ScreenContextValue {
   /** Get a value stored in screen state by key. */
@@ -36,6 +37,7 @@ export function ScreenContextProvider({
   const [values, setValues] = useState<Record<string, unknown>>(initialValues)
   const queryClient = useQueryClient()
   const router = useRouter()
+  const { manifest, setTheme } = useAppContext()
 
   const setValue = useCallback((key: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [key]: value }))
@@ -62,6 +64,9 @@ export function ScreenContextProvider({
           screenContext: ctx,
           api,
           queryClient,
+          resources: manifest.resources,
+          workflows: manifest.workflows,
+          setTheme,
           router: {
             push: (path, params) => router.push({ pathname: path as never, params }),
             replace: (path) => router.replace(path as never),
@@ -70,7 +75,7 @@ export function ScreenContextProvider({
       },
     }
     return ctx
-  }, [values, setValue, api, queryClient, router]) // getValue removed - it's stable
+  }, [values, setValue, api, manifest.resources, manifest.workflows, queryClient, router, setTheme]) // getValue removed - it's stable
 
   return <ScreenContext.Provider value={contextValue}>{children}</ScreenContext.Provider>
 }

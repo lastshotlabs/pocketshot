@@ -71,7 +71,7 @@ export function Badge({ config }: { config: BadgeConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.onPress ? (
         <TouchableOpacity
           onPress={handlePress}
@@ -110,3 +110,4 @@ function makeStyles(
     },
   })
 }
+

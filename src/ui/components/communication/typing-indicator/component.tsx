@@ -87,7 +87,7 @@ export function TypingIndicator({ config }: { config: TypingIndicatorConfig }) {
 
   // Always render so the animation can fade out gracefully; wrapper handles error boundary
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Animated.View
         style={[styles.wrapper, { opacity: containerOpacity }]}
         pointerEvents={isTyping ? 'auto' : 'none'}
@@ -135,3 +135,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

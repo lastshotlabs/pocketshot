@@ -47,7 +47,7 @@ export function TagSelector({ config }: { config: TagSelectorConfig }) {
   const styles = useMemo(() => makeStyles(tokens), [tokens])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -147,3 +147,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

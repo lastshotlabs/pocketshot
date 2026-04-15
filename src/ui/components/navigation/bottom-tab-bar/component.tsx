@@ -189,7 +189,7 @@ export function BottomTabBar({ config }: { config: BottomTabBarConfig }) {
   const idPrefix = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container} accessibilityRole="tablist">
         {config.tabs.map((tab, index) => {
           const isActive = tab.id === activeTab
@@ -267,3 +267,4 @@ export function BottomTabBar({ config }: { config: BottomTabBarConfig }) {
     </ComponentWrapper>
   )
 }
+

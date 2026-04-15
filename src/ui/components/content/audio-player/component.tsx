@@ -198,7 +198,7 @@ export function AudioPlayer({ config }: { config: AudioPlayerConfig }) {
   // Fallback when expo-av is not installed
   if (ExpoAudio == null) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View testID={testId} style={styles.fallback}>
           <Text style={styles.fallbackIcon} accessibilityElementsHidden>
             {'\u{1F3B5}'}
@@ -216,7 +216,7 @@ export function AudioPlayer({ config }: { config: AudioPlayerConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={testId} style={styles.container}>
         {/* Play/pause button */}
         <Animated.View style={{ transform: [{ scale: playPulse }] }}>
@@ -417,3 +417,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

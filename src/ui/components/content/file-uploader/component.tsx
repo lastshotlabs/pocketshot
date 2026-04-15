@@ -209,7 +209,7 @@ export function FileUploader({ config }: { config: FileUploaderConfig }) {
   const styles = useMemo(() => makeStyles(tokens, isDisabled), [tokens, isDisabled])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={config.testID ?? config.id}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -382,3 +382,4 @@ function makeStyles(tokens: DesignTokens, isDisabled: boolean) {
     },
   })
 }
+

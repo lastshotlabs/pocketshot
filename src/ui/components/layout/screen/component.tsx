@@ -92,7 +92,7 @@ export function Screen({
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.container}
         testID={config.testID ? `${config.testID}-safe-area` : `${config.id ?? 'screen'}-safe-area`}
@@ -117,3 +117,4 @@ export function Screen({
     </ComponentWrapper>
   )
 }
+

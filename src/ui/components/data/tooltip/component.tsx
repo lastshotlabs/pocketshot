@@ -168,7 +168,7 @@ export function Tooltip({ config }: { config: TooltipConfig }) {
   const arrowStyle = useMemo(() => getArrowStyle(position, tokens), [position, tokens])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handleTriggerPress}
         style={styles.trigger}
@@ -211,3 +211,4 @@ export function Tooltip({ config }: { config: TooltipConfig }) {
     </ComponentWrapper>
   )
 }
+

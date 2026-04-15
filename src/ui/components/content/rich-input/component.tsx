@@ -189,7 +189,7 @@ export function RichInput({ config }: { config: RichInputConfig }) {
   const styles = useMemo(() => makeStyles(tokens, focused), [tokens, focused])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={config.testID ?? config.id}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -335,3 +335,4 @@ function makeStyles(tokens: DesignTokens, focused: boolean) {
     },
   })
 }
+

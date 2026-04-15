@@ -206,7 +206,9 @@ function KanbanCard({
               marginTop: tokens.spacing[2],
             }}
           >
-            {item.tags?.map((tag) => <TagBadge key={tag} label={tag} tokens={tokens} />)}
+            {item.tags?.map((tag) => (
+              <TagBadge key={tag} label={tag} tokens={tokens} />
+            ))}
             {item.assignee != null ? (
               <View style={{ marginLeft: 'auto' }}>
                 <AssigneeAvatar assignee={item.assignee} tokens={tokens} />
@@ -322,7 +324,7 @@ export function KanbanBoard({ config }: { config: KanbanBoardConfig }) {
           label: col.title,
           action: {
             type: 'set-value',
-            key: '__kanban_move',
+            target: '__kanban_move',
             value: {
               itemId: item.id,
               fromColumn: fromColumnId,
@@ -355,13 +357,21 @@ export function KanbanBoard({ config }: { config: KanbanBoardConfig }) {
           testIDPrefix={config.testID}
         />
       ),
-    [columns, tokens, config.onItemPress, config.onItemMove, config.testID, handleItemPress, handleMoveRequest],
+    [
+      columns,
+      tokens,
+      config.onItemPress,
+      config.onItemMove,
+      config.testID,
+      handleItemPress,
+      handleMoveRequest,
+    ],
   )
 
   const keyExtractor = useCallback((item: KanbanItem) => item.id, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -409,3 +419,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

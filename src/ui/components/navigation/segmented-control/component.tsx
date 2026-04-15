@@ -102,7 +102,7 @@ export function SegmentedControl({ config }: { config: SegmentedControlConfig })
   const styles = makeStyles(tokens)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.track}
         onLayout={(e) => {
@@ -152,3 +152,4 @@ export function SegmentedControl({ config }: { config: SegmentedControlConfig })
     </ComponentWrapper>
   )
 }
+

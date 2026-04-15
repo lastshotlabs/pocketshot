@@ -31,7 +31,7 @@ function makeStyles(tokens: DesignTokens) {
 
 /**
  * Config-driven back button. Dispatches `config.action` if provided,
- * otherwise navigates back via `{ type: 'navigate', path: '..' }`.
+ * otherwise navigates back via `{ type: 'navigate', to: '..' }`.
  */
 export function BackButton({ config }: { config: BackButtonConfig }) {
   const tokens = useTokens()
@@ -40,12 +40,12 @@ export function BackButton({ config }: { config: BackButtonConfig }) {
   const styles = makeStyles(tokens)
 
   function handlePress() {
-    const action = config.action ?? { type: 'navigate' as const, path: '..' }
+    const action = config.action ?? { type: 'navigate' as const, to: '..' }
     void dispatch(action)
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handlePress}
         style={styles.button}

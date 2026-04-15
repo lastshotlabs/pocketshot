@@ -204,7 +204,7 @@ export function FilterBar({ config }: { config: FilterBarConfig }) {
   const allSelected = selectedIds.length === 0
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -281,3 +281,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 })
+

@@ -1,6 +1,8 @@
 // ── Tokens ────────────────────────────────────────────────────────────────────
 export {
   resolveTokens,
+  resolveContractTokens,
+  contractThemeToTokenConfig,
   flavors,
   flavorNames,
   lighten,
@@ -47,28 +49,45 @@ export { executeAction } from './ui/actions/executor'
 export type { ActionExecutorDeps } from './ui/actions/executor'
 export type {
   Action,
+  ActionBase,
+  ActionSequence,
   ActionType,
-  ImpactStyle,
-  NotificationType,
-  NavigateAction,
   ApiAction,
-  OpenBottomSheetAction,
+  BranchAction,
+  CameraAction,
+  ClipboardAction,
   CloseBottomSheetAction,
-  OpenModalAction,
   CloseModalAction,
+  ConfirmAction,
+  CopyAction,
+  CopyToClipboardAction,
+  DownloadAction,
+  EmitAction,
+  ForEachAction,
+  HapticAction,
+  ImpactStyle,
+  LogAction,
+  MediaPickerAction,
+  NativeAction,
+  NavigateAction,
+  NavigateExternalAction,
+  NotificationType,
+  OpenModalAction,
+  OpenBottomSheetAction,
+  OpenUrlAction,
   ActionSheetAction,
   RefreshAction,
-  SetValueAction,
-  ToastAction,
-  HapticAction,
-  ShareAction,
-  ClipboardAction,
-  ConfirmAction,
-  OpenUrlAction,
   RunWorkflowAction,
-  CameraAction,
-  MediaPickerAction,
   ScanQrAction,
+  ScrollToAction,
+  SetThemeAction,
+  SetValueAction,
+  ShareAction,
+  SharedAction,
+  SubmitFormAction,
+  ToastAction,
+  TrackAction,
+  WsSendAction,
 } from './ui/actions/types'
 
 // ── Component base ────────────────────────────────────────────────────────────
@@ -79,10 +98,55 @@ export {
   isFromRef,
 } from './ui/components/_base/index'
 export type { ComponentWrapperProps } from './ui/components/_base/index'
+export type { ExprRef, FromRef } from '@lastshotlabs/frontend-contract/refs'
 
 // ── Manifest ──────────────────────────────────────────────────────────────────
-export { ScreenRenderer, ManifestApp } from './ui/manifest/index'
+export {
+  ScreenRenderer,
+  ManifestApp,
+  ManifestRuntimeProvider,
+  compileManifest,
+  resolveManifestScreen,
+  manifestComponentRegistry,
+  createManifestResourceQueryKey,
+  resolveManifestResourceTarget,
+  invalidateManifestRefreshTarget,
+  invalidateManifestResource,
+} from './ui/manifest/index'
 export type { ScreenConfig, ComponentConfig, ManifestConfig } from './ui/manifest/index'
+export type {
+  ComponentTokens,
+  EndpointTarget,
+  Flavor,
+  FontConfig,
+  GlobalTokens,
+  I18nConfig,
+  PolicyExpr,
+  PolicyMap,
+  PolicyRef,
+  RadiusScale,
+  ResourceConfig,
+  ResourceMap,
+  ResourceRef,
+  Responsive,
+  ShadowScale,
+  SharedManifestSections,
+  SpacingScale,
+  StateConfigMap,
+  StatePersistConfig,
+  StateScope,
+  StateValueConfig,
+  TRef,
+  ThemeColors,
+  ThemeConfig,
+  WorkflowCondition,
+  WorkflowDefinition,
+  WorkflowMap,
+  WorkflowNode,
+} from './ui/manifest/index'
+
+// ── Workflow runtime ────────────────────────────────────────────────────────────
+export { runWorkflow } from './ui/workflows/index'
 
 // ── Component registry ────────────────────────────────────────────────────────
 export { defaultComponentRegistry } from './ui/components/registry'

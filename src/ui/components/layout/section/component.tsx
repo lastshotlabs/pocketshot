@@ -16,7 +16,7 @@ export function Section({
   const styles = makeStyles(tokens, config)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.title !== undefined && (
           <Text style={styles.title} accessibilityRole="header">
@@ -68,3 +68,4 @@ function makeStyles(tokens: DesignTokens, config: SectionConfig) {
     },
   })
 }
+

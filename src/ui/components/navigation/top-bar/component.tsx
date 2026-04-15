@@ -44,7 +44,13 @@ function makeStyles(
       borderBottomWidth: transparent ? 0 : StyleSheet.hairlineWidth,
       borderBottomColor: tokens.colors.border,
       paddingTop: topInset,
-      ...(transparent && { position: 'absolute', top: 0, left: 0, right: 0, zIndex: tokens.zIndex.sticky }),
+      ...(transparent && {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: tokens.zIndex.sticky,
+      }),
       ...(elevated && !transparent && tokens.shadows.md),
     },
     row: {
@@ -184,11 +190,11 @@ export function TopBar({ config }: { config: TopBarConfig }) {
 
       const handlePress = () => {
         if (config.leftAction === 'back') {
-          void dispatch({ type: 'navigate', path: '..' })
+          void dispatch({ type: 'navigate', to: '..' })
         } else if (config.leftAction === 'menu') {
-          void dispatch({ type: 'set-value', key: '__drawerMenu', value: true })
+          void dispatch({ type: 'set-value', target: '__drawerMenu', value: true })
         } else if (config.leftAction === 'close') {
-          void dispatch({ type: 'navigate', path: '..' })
+          void dispatch({ type: 'navigate', to: '..' })
         }
       }
 
@@ -217,7 +223,7 @@ export function TopBar({ config }: { config: TopBarConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.wrapper} accessibilityRole="header">
         <View style={styles.row}>
           {/* Left */}
@@ -254,3 +260,4 @@ export function TopBar({ config }: { config: TopBarConfig }) {
     </ComponentWrapper>
   )
 }
+

@@ -1,6 +1,6 @@
 import { z } from 'zod'
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
-const FromRefSchema = z.object({ from: z.string() })
 
 const SideSchema = z.object({
   label: z.string(),

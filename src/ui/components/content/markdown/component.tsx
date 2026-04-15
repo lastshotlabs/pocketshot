@@ -295,7 +295,7 @@ export function Markdown({ config }: { config: MarkdownConfig }) {
   // If react-native-markdown-display is available, delegate to it
   if (RNMarkdownDisplay != null) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <RNMarkdownDisplay
           style={{
             body: { fontSize: baseFontSize, color: tokens.colors.text },
@@ -331,7 +331,7 @@ export function Markdown({ config }: { config: MarkdownConfig }) {
   let orderedCounter = 0
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={config.testID ?? config.id}>
         {nodes.map((node, idx) => {
           if (node.type === 'list_item' && node.ordered) {
@@ -426,3 +426,4 @@ function makeBlockStyles(tokens: DesignTokens) {
     },
   })
 }
+

@@ -88,7 +88,7 @@ export function ActivityFeed({ config }: { config: ActivityFeedConfig }) {
 
   if (isLoading) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={containerStyles.loadingContainer}>
           <ActivityIndicator color={tokens.colors.primary} />
         </View>
@@ -98,7 +98,7 @@ export function ActivityFeed({ config }: { config: ActivityFeedConfig }) {
 
   if (error != null) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={containerStyles.emptyContainer}>
           <Text style={containerStyles.emptyText}>Failed to load activity</Text>
         </View>
@@ -108,7 +108,7 @@ export function ActivityFeed({ config }: { config: ActivityFeedConfig }) {
 
   if (!data || data.length === 0) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={containerStyles.emptyContainer}>
           <Text style={containerStyles.emptyText}>{config.emptyMessage}</Text>
         </View>
@@ -117,7 +117,7 @@ export function ActivityFeed({ config }: { config: ActivityFeedConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <FlatList<ActivityFeedItem>
         data={data}
         renderItem={renderItem}
@@ -228,3 +228,4 @@ function makeItemStyles(tokens: DesignTokens, isLast: boolean, itemHeight: numbe
     },
   })
 }
+

@@ -7,7 +7,12 @@
     "strict": true,
     "jsx": "react-native",
     "skipLibCheck": true,
-    "paths": { "@/*": ["./src/*"], "@ui-test/*": ["./tests/ui/*"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "@ui-test/*": ["./tests/ui/*"],
+      "@lastshotlabs/frontend-contract": ["../frontend-contract/src/index.ts"],
+      "@lastshotlabs/frontend-contract/*": ["../frontend-contract/src/*"]
+    }
   },
   "include": ["src", "tests"]
 }

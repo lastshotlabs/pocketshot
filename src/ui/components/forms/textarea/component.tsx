@@ -78,7 +78,7 @@ export function Textarea({ config }: { config: TextareaConfig }) {
   const showCount = config.showCharCount && config.maxLength != null
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -194,3 +194,4 @@ function makeStyles(tokens: DesignTokens, _hasError: boolean) {
     },
   })
 }
+

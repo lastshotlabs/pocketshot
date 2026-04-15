@@ -68,7 +68,7 @@ export function AvatarGroup({ config }: { config: AvatarGroupConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.onPress ? (
         <TouchableOpacity
           onPress={handlePress}
@@ -118,3 +118,4 @@ function makeStyles(tokens: DesignTokens, pixelSize: number, overlap: number) {
     },
   })
 }
+

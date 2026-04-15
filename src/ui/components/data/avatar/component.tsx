@@ -176,7 +176,7 @@ export function Avatar({ config }: { config: AvatarConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.onPress ? (
         <TouchableOpacity
           onPress={handlePress}
@@ -218,3 +218,4 @@ function makeStyles(
     },
   })
 }
+

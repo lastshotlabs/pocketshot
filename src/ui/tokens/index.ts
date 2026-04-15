@@ -31,5 +31,6 @@ export { flavors, flavorNames } from './flavors'
 export type { FlavorName } from './flavors'
 
 export { resolveTokens } from './resolve'
+export { contractThemeToTokenConfig, resolveContractTokens } from './contract'
 
 export { useTokenEditor, useTokenOverrides } from './editor'

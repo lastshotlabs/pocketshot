@@ -513,7 +513,7 @@ export function LinkEmbed({ config }: { config: LinkEmbedConfig }) {
   }, [config.onPress, url, dispatch])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {provider === 'youtube' ? (
         <YouTubeEmbed config={config} url={url} title={title} tokens={tokens} onPress={handlePress} />
       ) : provider === 'twitter' ? (
@@ -698,3 +698,4 @@ function makeProviderStyles(tokens: DesignTokens) {
     },
   })
 }
+

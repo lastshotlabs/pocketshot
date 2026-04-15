@@ -237,7 +237,7 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
   const keyExtractor = useCallback((item: ContextMenuConfig['items'][number]) => item.id, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View ref={triggerRef} collapsable={false}>
         <Pressable
           onLongPress={handleLongPress}
@@ -284,3 +284,4 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
     </ComponentWrapper>
   )
 }
+

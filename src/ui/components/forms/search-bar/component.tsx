@@ -98,7 +98,7 @@ export function SearchBar({ config }: { config: SearchBarConfig }) {
   const testIDBase = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.row}>
         <View style={styles.inputContainer}>
           <Text style={styles.searchIcon} accessibilityElementsHidden>
@@ -215,3 +215,4 @@ function makeStyles(tokens: DesignTokens, focused: boolean) {
     },
   })
 }
+

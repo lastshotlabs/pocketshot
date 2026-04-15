@@ -1,7 +1,7 @@
 import { z } from 'zod'
+import { extendComponentSchema } from '../../_base/schema'
 
-export const StackSchema = z.object({
-  id: z.string().optional(),
+export const StackSchema = extendComponentSchema({
   gap: z.number().optional().default(0),
   padding: z.number().optional(),
   paddingHorizontal: z.number().optional(),
@@ -13,5 +13,4 @@ export const StackSchema = z.object({
     .default('flex-start'),
   children: z.array(z.unknown()).optional(),
   backgroundColor: z.string().optional(),
-  testID: z.string().optional(),
 })

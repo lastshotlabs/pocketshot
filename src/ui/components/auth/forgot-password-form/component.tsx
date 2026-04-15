@@ -36,7 +36,7 @@ export function ForgotPasswordForm({ config }: { config: ForgotPasswordFormConfi
 
   if (submitted) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.successContainer}>
           <Text style={styles.successIcon}>✉️</Text>
           <Text style={styles.successTitle}>Check your email</Text>
@@ -62,7 +62,7 @@ export function ForgotPasswordForm({ config }: { config: ForgotPasswordFormConfi
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -214,3 +214,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

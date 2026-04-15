@@ -231,7 +231,7 @@ export function Accordion({ config }: { config: AccordionConfig }) {
   }, [variant, styles, tokens])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={containerStyle}>
         {config.sections.map((section, index) => {
           const isLast = index === config.sections.length - 1
@@ -264,3 +264,4 @@ export function Accordion({ config }: { config: AccordionConfig }) {
     </ComponentWrapper>
   )
 }
+

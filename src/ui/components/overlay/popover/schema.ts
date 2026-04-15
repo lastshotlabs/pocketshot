@@ -1,7 +1,7 @@
 import { z } from 'zod'
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 const ActionSchema = z.custom<Action>()
-const FromRefSchema = z.object({ from: z.string() })
 
 void ActionSchema
 void FromRefSchema

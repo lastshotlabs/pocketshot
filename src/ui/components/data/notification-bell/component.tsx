@@ -66,7 +66,7 @@ export function NotificationBell({ config }: { config: NotificationBellConfig })
   const accessibilityLabel = `Notifications${resolvedCount > 0 ? `, ${resolvedCount} unread` : ''}`
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.7}
@@ -142,3 +142,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

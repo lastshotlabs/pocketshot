@@ -21,7 +21,7 @@ export function Label({ config }: { config: LabelConfig }) {
   const styles = makeStyles(tokens, config)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Text style={styles.label} accessibilityRole="text" testID={config.testID ?? config.id}>
         {config.uppercase ? text.toUpperCase() : text}
       </Text>
@@ -54,3 +54,4 @@ function makeStyles(tokens: DesignTokens, config: LabelConfig) {
     },
   })
 }
+

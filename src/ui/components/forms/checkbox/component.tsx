@@ -37,7 +37,7 @@ export function Checkbox({ config }: { config: CheckboxConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         style={styles.row}
         onPress={handlePress}
@@ -85,3 +85,4 @@ function makeStyles(tokens: DesignTokens, checked: boolean, disabled: boolean | 
     },
   })
 }
+

@@ -354,7 +354,7 @@ export function RichTextViewer({ config }: { config: RichTextViewerConfig }) {
   const testId = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View testID={testId}>
         <View
           style={isTruncated ? { maxHeight: (config.maxLines ?? 5) * 22, overflow: 'hidden' } : undefined}
@@ -405,3 +405,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

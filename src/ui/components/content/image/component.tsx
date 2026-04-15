@@ -44,7 +44,7 @@ export function ConfigImage({ config }: { config: ImageConfig }) {
 
     if (config.onPress) {
       return (
-        <ComponentWrapper id={config.id} testID={config.testID}>
+        <ComponentWrapper id={config.id} testID={config.testID} config={config}>
           <TouchableOpacity
             onPress={() => void dispatch(config.onPress!)}
             accessibilityRole="imagebutton"
@@ -58,7 +58,7 @@ export function ConfigImage({ config }: { config: ImageConfig }) {
     }
 
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         {content}
       </ComponentWrapper>
     )
@@ -68,7 +68,7 @@ export function ConfigImage({ config }: { config: ImageConfig }) {
 
   if (config.onPress) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <TouchableOpacity
           onPress={() => void dispatch(config.onPress!)}
           accessibilityRole="imagebutton"
@@ -82,7 +82,7 @@ export function ConfigImage({ config }: { config: ImageConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {content}
     </ComponentWrapper>
   )
@@ -121,3 +121,4 @@ function makeStyles(tokens: DesignTokens, config: ImageConfig) {
     },
   })
 }
+

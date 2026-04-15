@@ -99,7 +99,7 @@ export function StatusBadge({ config }: { config: StatusBadgeConfig }) {
   const styles = makeStyles(tokens, config.size ?? 'md', colorPair)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container} accessibilityLabel={`Status: ${resolved.label}`}>
         {config.showDot ? <Animated.View style={[styles.dot, { opacity: pulseAnim }]} /> : null}
         <Text style={styles.label} numberOfLines={1}>
@@ -145,3 +145,4 @@ function makeStyles(
     },
   })
 }
+

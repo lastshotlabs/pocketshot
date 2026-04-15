@@ -1,12 +1,13 @@
 import { z } from 'zod'
 import type { Action } from '../../../actions/types'
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
+import { extendComponentSchema } from '../../_base/schema'
 
 const ActionSchema = z.custom<Action>()
 
-export const StatCardSchema = z.object({
-  id: z.string().optional(),
+export const StatCardSchema = extendComponentSchema({
   label: z.string(),
-  value: z.union([z.string(), z.number(), z.object({ from: z.string() })]),
+  value: z.union([z.string(), z.number(), FromRefSchema]),
   trend: z
     .object({
       direction: z.enum(['up', 'down', 'neutral']),
@@ -15,5 +16,4 @@ export const StatCardSchema = z.object({
     .optional(),
   icon: z.string().optional(),
   onPress: ActionSchema.optional(),
-  testID: z.string().optional(),
 })

@@ -132,7 +132,7 @@ export function ReactionPicker({ config }: { config: ReactionPickerConfig }) {
   const triggerTestID = config.testID ? `${config.testID}-trigger` : `${config.id}-trigger`
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {/* Trigger */}
       <TouchableOpacity
         onPress={openPicker}
@@ -246,3 +246,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

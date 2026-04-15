@@ -451,7 +451,7 @@ export function ChatWindow({ config }: { config: ChatWindowConfig }) {
   }, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} style={{ flex: 1 }}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} style={{ flex: 1 }}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -667,3 +667,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

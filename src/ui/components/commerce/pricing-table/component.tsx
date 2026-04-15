@@ -92,7 +92,7 @@ export function PricingTable({ config }: { config: PricingTableConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.title ? (
           <Text style={styles.title}>{config.title}</Text>
@@ -260,3 +260,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

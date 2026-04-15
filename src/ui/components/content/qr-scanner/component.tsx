@@ -44,13 +44,7 @@ try {
 
 const SCAN_AREA_SIZE = 250
 
-function ScanOverlay({
-  tokens,
-  overlayText,
-}: {
-  tokens: DesignTokens
-  overlayText?: string
-}) {
+function ScanOverlay({ tokens, overlayText }: { tokens: DesignTokens; overlayText?: string }) {
   const scanLineY = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
@@ -87,16 +81,12 @@ function ScanOverlay({
           <View style={[styles.corner, styles.bottomLeft]} />
           <View style={[styles.corner, styles.bottomRight]} />
           {/* Animated scan line */}
-          <Animated.View
-            style={[styles.scanLine, { transform: [{ translateY: scanLineY }] }]}
-          />
+          <Animated.View style={[styles.scanLine, { transform: [{ translateY: scanLineY }] }]} />
         </View>
         <View style={styles.sideOverlay} />
       </View>
       <View style={styles.bottomOverlay}>
-        {overlayText != null && (
-          <Text style={styles.overlayText}>{overlayText}</Text>
-        )}
+        {overlayText != null && <Text style={styles.overlayText}>{overlayText}</Text>}
       </View>
     </View>
   )
@@ -130,9 +120,7 @@ function FallbackScanner({
         {'\uD83D\uDCF7'}
       </Text>
       <Text style={styles.title}>Camera Not Available</Text>
-      <Text style={styles.message}>
-        Install expo-camera for QR scanning
-      </Text>
+      <Text style={styles.message}>Install expo-camera for QR scanning</Text>
       <Text style={styles.installCmd} selectable>
         npx expo install expo-camera
       </Text>
@@ -188,7 +176,7 @@ export function QrScanner({ config }: { config: QrScannerConfig }) {
       setHasScanned(true)
       // Store the scanned data in ScreenContext under the component id
       if (config.id != null) {
-        void dispatch({ type: 'set-value', key: config.id, value: data })
+        void dispatch({ type: 'set-value', target: config.id, value: data })
       }
       void dispatch(config.onScan)
       // Reset after a brief delay to allow re-scanning
@@ -219,7 +207,7 @@ export function QrScanner({ config }: { config: QrScannerConfig }) {
 
   // Fallback
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <FallbackScanner config={config} tokens={tokens} onManualEntry={handleScan} />
     </ComponentWrapper>
   )
@@ -243,7 +231,7 @@ function CameraScannerView({
 
   if (permission == null) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionText}>Initializing camera...</Text>
         </View>
@@ -253,7 +241,7 @@ function CameraScannerView({
 
   if (!permission.granted) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionText}>Camera permission is required to scan QR codes</Text>
           <TouchableOpacity
@@ -272,7 +260,7 @@ function CameraScannerView({
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.cameraContainer} testID={testId}>
         {React.createElement(
           CameraView!,
@@ -469,3 +457,4 @@ function makeFallbackStyles(tokens: DesignTokens) {
     },
   })
 }
+

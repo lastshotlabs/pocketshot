@@ -10,7 +10,7 @@ export function Stack({ config, children }: { config: StackConfig; children?: Re
   const styles = makeStyles(tokens, config)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>{children}</View>
     </ComponentWrapper>
   )
@@ -42,3 +42,4 @@ function makeStyles(tokens: DesignTokens, config: StackConfig) {
     },
   })
 }
+

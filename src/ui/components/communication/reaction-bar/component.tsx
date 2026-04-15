@@ -112,7 +112,7 @@ export function ReactionBar({ config }: { config: ReactionBarConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -194,3 +194,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

@@ -210,7 +210,7 @@ export function TimePicker({ config }: { config: TimePickerConfig }) {
     : config.placeholder
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -500,3 +500,4 @@ function makeColumnStyles(tokens: DesignTokens) {
     },
   })
 }
+

@@ -76,7 +76,7 @@ export function PasswordInput({ config }: { config: PasswordInputConfig }) {
   const testIDBase = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
@@ -183,3 +183,4 @@ function makeStyles(tokens: DesignTokens, focused: boolean, hasError: boolean) {
     },
   })
 }
+

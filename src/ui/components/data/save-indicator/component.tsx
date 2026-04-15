@@ -123,7 +123,7 @@ export function SaveIndicator({ config }: { config: SaveIndicatorConfig }) {
   }, [])
 
   if (displayStatus === 'idle') {
-    return <ComponentWrapper id={config.id} testID={config.testID}><View /></ComponentWrapper>
+    return <ComponentWrapper id={config.id} testID={config.testID} config={config}><View /></ComponentWrapper>
   }
 
   const savingLabel = config.savingLabel ?? 'Saving…'
@@ -131,7 +131,7 @@ export function SaveIndicator({ config }: { config: SaveIndicatorConfig }) {
   const errorLabel = config.errorLabel ?? 'Error saving'
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Animated.View
         style={[styles.row, { opacity: fadeAnim }]}
         accessibilityRole="text"
@@ -163,3 +163,4 @@ export function SaveIndicator({ config }: { config: SaveIndicatorConfig }) {
     </ComponentWrapper>
   )
 }
+

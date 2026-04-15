@@ -257,7 +257,7 @@ export function Skeleton({ config }: { config: SkeletonConfig }) {
   const styles = useMemo(() => makeStyles(tokens), [tokens])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
         style={styles.container}
         accessibilityLabel="Loading"
@@ -284,3 +284,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

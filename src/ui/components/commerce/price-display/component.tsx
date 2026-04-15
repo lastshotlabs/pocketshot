@@ -63,7 +63,7 @@ export function PriceDisplay({ config }: { config: PriceDisplayConfig }) {
   const styles = makeStyles(tokens, size, textColor)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         <View style={styles.priceRow}>
           {formattedOriginal != null ? (
@@ -135,3 +135,4 @@ function makeStyles(tokens: DesignTokens, size: Size, textColor: string) {
     },
   })
 }
+

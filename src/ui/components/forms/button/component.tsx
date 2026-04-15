@@ -215,7 +215,12 @@ export function Button({ config }: { config: ButtonConfig }) {
   const isInteractable = !resolvedDisabled && !resolvedLoading
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={resolvedDisabled || resolvedLoading ? ['disabled'] : undefined}
+    >
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.75}

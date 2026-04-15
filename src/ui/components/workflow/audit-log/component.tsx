@@ -157,7 +157,7 @@ export function AuditLog({ config }: { config: AuditLogConfig }) {
 
   if (isLoading) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.container}>
           {Array.from({ length: 4 }).map((_, i) => (
             <SkeletonRow key={i} tokens={tokens} styles={styles} />
@@ -169,7 +169,7 @@ export function AuditLog({ config }: { config: AuditLogConfig }) {
 
   if (error) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Failed to load audit log</Text>
         </View>
@@ -179,7 +179,7 @@ export function AuditLog({ config }: { config: AuditLogConfig }) {
 
   if (listItems.length === 0) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>{config.emptyMessage}</Text>
         </View>
@@ -188,7 +188,7 @@ export function AuditLog({ config }: { config: AuditLogConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         <FlatList
           data={listItems}
@@ -299,3 +299,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+

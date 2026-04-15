@@ -168,7 +168,7 @@ export function DataList({ config }: { config: DataListConfig }) {
 
   if (isLoading && !data) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <LoadingSkeleton count={config.loadingCount ?? 3} tokens={tokens} />
       </ComponentWrapper>
     )
@@ -176,7 +176,7 @@ export function DataList({ config }: { config: DataListConfig }) {
 
   if (error) {
     return (
-      <ComponentWrapper id={config.id} testID={config.testID}>
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
         <InlineEmptyState message="Failed to load data." tokens={tokens} />
       </ComponentWrapper>
     )
@@ -185,7 +185,7 @@ export function DataList({ config }: { config: DataListConfig }) {
   const items = Array.isArray(data) ? data : []
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <FlatList
         data={items}
         keyExtractor={keyExtractor}
@@ -269,3 +269,4 @@ function makeItemStyles(tokens: DesignTokens) {
     },
   })
 }
+

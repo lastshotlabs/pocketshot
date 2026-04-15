@@ -302,7 +302,7 @@ export function NotificationFeed({ config }: { config: NotificationFeedConfig })
   }, [isLoading, styles, tokens, config.emptyMessage])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         <FlatList
           data={listItems}
@@ -478,3 +478,4 @@ function makeStyles(tokens: DesignTokens) {
     },
   })
 }
+
