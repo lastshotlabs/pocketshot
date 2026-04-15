@@ -16,18 +16,21 @@ export function Section({
   const styles = makeStyles(tokens, config)
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        {config.title !== undefined && (
-          <Text style={styles.title} accessibilityRole="header">
-            {config.title}
-          </Text>
-        )}
-        {config.description !== undefined && (
-          <Text style={styles.description}>{config.description}</Text>
-        )}
-        {children !== undefined && <View style={styles.content}>{children}</View>}
-      </View>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      style={styles.container}
+    >
+      {config.title !== undefined && (
+        <Text style={styles.title} accessibilityRole="header">
+          {config.title}
+        </Text>
+      )}
+      {config.description !== undefined && (
+        <Text style={styles.description}>{config.description}</Text>
+      )}
+      {children !== undefined && <View style={styles.content}>{children}</View>}
     </ComponentWrapper>
   )
 }
@@ -45,23 +48,18 @@ function titleFontSize(size: SectionConfig['titleSize'], tokens: DesignTokens): 
 }
 
 function makeStyles(tokens: DesignTokens, config: SectionConfig) {
-  const spacing = tokens.spacing
-  const paddingValue = spacing[config.padding as keyof typeof spacing] ?? (config.padding as number)
-
   return StyleSheet.create({
-    container: {
-      padding: paddingValue,
-    },
+    container: {},
     title: {
       fontSize: titleFontSize(config.titleSize, tokens),
       fontWeight: tokens.typography.fontWeightSemibold,
       color: tokens.colors.text,
-      marginBottom: spacing[1],
+      marginBottom: tokens.spacing[1],
     },
     description: {
       fontSize: tokens.typography.fontSizeSm,
       color: tokens.colors.textMuted,
-      marginBottom: spacing[2],
+      marginBottom: tokens.spacing[2],
     },
     content: {
       flex: 1,

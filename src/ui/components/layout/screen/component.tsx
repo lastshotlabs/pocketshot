@@ -41,17 +41,12 @@ function useSafeAreaEdges(edges: Edge[]): {
 
 function makeStyles(
   tokens: DesignTokens,
-  config: ScreenConfig,
   insets: { top: number; bottom: number; left: number; right: number },
 ) {
-  const backgroundColor =
-    config.background ?? tokens.colors.background
-  const padding = config.padding ?? tokens.spacing[4]
-
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor,
+      backgroundColor: tokens.colors.background,
       paddingTop: insets.top,
       paddingBottom: insets.bottom,
       paddingLeft: insets.left,
@@ -59,11 +54,9 @@ function makeStyles(
     },
     content: {
       flex: 1,
-      padding,
     },
     scrollContent: {
       flexGrow: 1,
-      padding,
     },
   })
 }
@@ -86,34 +79,26 @@ export function Screen({
   const scrollable = config.scrollable ?? true
   const insets = useSafeAreaEdges(edges)
 
-  const styles = useMemo(
-    () => makeStyles(tokens, config, insets),
-    [tokens, config, insets],
-  )
+  const styles = useMemo(() => makeStyles(tokens, insets), [tokens, insets])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View
-        style={styles.container}
-        testID={config.testID ? `${config.testID}-safe-area` : `${config.id ?? 'screen'}-safe-area`}
-        accessibilityRole="none"
-      >
-        {scrollable ? (
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            testID={
-              config.testID
-                ? `${config.testID}-scroll`
-                : `${config.id ?? 'screen'}-scroll`
-            }
-          >
-            {children}
-          </ScrollView>
-        ) : (
-          <View style={styles.content}>{children}</View>
-        )}
-      </View>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      style={styles.container}
+    >
+      {scrollable ? (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          testID={config.testID ? `${config.testID}-scroll` : `${config.id ?? 'screen'}-scroll`}
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={styles.content}>{children}</View>
+      )}
     </ComponentWrapper>
   )
 }

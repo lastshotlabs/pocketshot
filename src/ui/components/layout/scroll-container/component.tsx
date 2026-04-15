@@ -83,11 +83,6 @@ export function ScrollContainer({
 function makeStyles(tokens: DesignTokens, config: ScrollContainerConfig, safeBottom: number) {
   const spacing = tokens.spacing
 
-  const paddingValue =
-    config.padding !== undefined
-      ? (spacing[config.padding as keyof typeof spacing] ?? config.padding)
-      : undefined
-
   const contentPaddingValue =
     config.contentPadding !== undefined
       ? (spacing[config.contentPadding as keyof typeof spacing] ?? config.contentPadding)
@@ -96,7 +91,6 @@ function makeStyles(tokens: DesignTokens, config: ScrollContainerConfig, safeBot
   return StyleSheet.create({
     scroll: {
       flex: 1,
-      ...(paddingValue !== undefined && { padding: paddingValue }),
     },
     content: {
       flexGrow: 1,

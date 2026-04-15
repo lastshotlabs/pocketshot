@@ -34,16 +34,12 @@ function useSafeAreaInsets(): { top: number; bottom: number } {
 
 function makeStyles(
   tokens: DesignTokens,
-  config: KeyboardAvoidingScreenConfig,
   insets: { top: number; bottom: number },
 ) {
-  const backgroundColor = config.background ?? tokens.colors.background
-  const padding = config.padding ?? tokens.spacing[4]
-
   return StyleSheet.create({
     safeContainer: {
       flex: 1,
-      backgroundColor,
+      backgroundColor: tokens.colors.background,
       paddingTop: insets.top,
       paddingBottom: insets.bottom,
     },
@@ -52,11 +48,9 @@ function makeStyles(
     },
     content: {
       flex: 1,
-      padding,
     },
     scrollContent: {
       flexGrow: 1,
-      padding,
     },
   })
 }
@@ -82,38 +76,34 @@ export function KeyboardAvoidingScreen({
   const behavior = config.behavior ?? DEFAULT_BEHAVIOR
   const insets = useSafeAreaInsets()
 
-  const styles = useMemo(
-    () => makeStyles(tokens, config, insets),
-    [tokens, config, insets],
-  )
+  const styles = useMemo(() => makeStyles(tokens, insets), [tokens, insets])
 
   const idPrefix = config.testID ?? config.id ?? 'kb-screen'
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View
-        style={styles.safeContainer}
-        testID={`${idPrefix}-safe-area`}
-        accessibilityRole="none"
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      style={styles.safeContainer}
+    >
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoiding}
+        behavior={behavior}
+        testID={`${idPrefix}-keyboard-avoiding`}
       >
-        <KeyboardAvoidingView
-          style={styles.keyboardAvoiding}
-          behavior={behavior}
-          testID={`${idPrefix}-keyboard-avoiding`}
-        >
-          {scrollable ? (
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              testID={`${idPrefix}-scroll`}
-            >
-              {children}
-            </ScrollView>
-          ) : (
-            <View style={styles.content}>{children}</View>
-          )}
-        </KeyboardAvoidingView>
-      </View>
+        {scrollable ? (
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            testID={`${idPrefix}-scroll`}
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={styles.content}>{children}</View>
+        )}
+      </KeyboardAvoidingView>
     </ComponentWrapper>
   )
 }

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, spacingValueSchema } from '../../_base/schema'
 
 /**
  * Action is typed via z.custom at the boundaries since Action is defined as a
@@ -9,12 +9,9 @@ import { extendComponentSchema } from '../../_base/schema'
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
 export const ScrollContainerSchema = extendComponentSchema({
-  id: z.string().optional(),
   horizontal: z.boolean().optional().default(false),
   showsScrollIndicator: z.boolean().optional().default(false),
-  padding: z.number().optional(),
-  contentPadding: z.number().optional(),
+  contentPadding: spacingValueSchema.optional(),
   refreshable: z.boolean().optional().default(false),
   onRefresh: ActionSchema.optional(),
-  testID: z.string().optional(),
 })

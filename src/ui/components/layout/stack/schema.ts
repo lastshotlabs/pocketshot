@@ -1,16 +1,14 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import {
+  componentAlignItemsSchema,
+  componentJustifyContentSchema,
+  extendComponentSchema,
+  spacingValueSchema,
+} from '../../_base/schema'
 
 export const StackSchema = extendComponentSchema({
-  gap: z.number().optional().default(0),
-  padding: z.number().optional(),
-  paddingHorizontal: z.number().optional(),
-  paddingVertical: z.number().optional(),
-  align: z.enum(['flex-start', 'center', 'flex-end', 'stretch']).optional().default('stretch'),
-  justify: z
-    .enum(['flex-start', 'center', 'flex-end', 'space-between', 'space-around'])
-    .optional()
-    .default('flex-start'),
+  gap: spacingValueSchema.optional().default(0),
+  alignItems: componentAlignItemsSchema.optional().default('stretch'),
+  justifyContent: componentJustifyContentSchema.optional().default('start'),
   children: z.array(z.unknown()).optional(),
-  backgroundColor: z.string().optional(),
 })

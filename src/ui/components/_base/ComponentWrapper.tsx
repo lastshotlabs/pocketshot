@@ -128,7 +128,7 @@ export function ComponentWrapper({
     <ComponentErrorBoundary id={id} testID={testID ?? id}>
       <View
         testID={testID ?? id}
-        style={[surface.style as ViewStyle | undefined, style].filter(Boolean)}
+        style={[style, surface.style as ViewStyle | undefined].filter(Boolean)}
       >
         {children}
       </View>
