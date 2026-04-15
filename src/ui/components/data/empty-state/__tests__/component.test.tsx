@@ -31,15 +31,15 @@ describe('EmptyState', () => {
 
   it('renders icon text when provided', () => {
     const { getByText } = renderWithProviders(
-      <EmptyState config={{ title: 'No items', icon: '📭' }} />,
+      <EmptyState config={{ title: 'No items', icon: 'ðŸ“­' }} />,
     )
-    expect(getByText('📭')).toBeTruthy()
+    expect(getByText('ðŸ“­')).toBeTruthy()
   })
 
   it('does not render icon when omitted', () => {
     const { toJSON } = renderWithProviders(<EmptyState config={{ title: 'No items' }} />)
     const json = JSON.stringify(toJSON())
-    expect(json).not.toContain('📭')
+    expect(json).not.toContain('ðŸ“­')
   })
 
   it('renders action button when action is provided', () => {
@@ -85,15 +85,33 @@ describe('EmptyState', () => {
         config={{
           title: 'Empty inbox',
           description: 'No messages yet.',
-          icon: '✉️',
+          icon: 'âœ‰ï¸',
           action: { label: 'Compose', onPress: { type: 'navigate', to: '/Compose' } },
         }}
       />,
     )
-    expect(getByText('✉️')).toBeTruthy()
+    expect(getByText('âœ‰ï¸')).toBeTruthy()
     expect(getByText('Empty inbox')).toBeTruthy()
     expect(getByText('No messages yet.')).toBeTruthy()
     expect(getByText('Compose')).toBeTruthy()
     expect(getByRole('button')).toBeTruthy()
+  })
+
+  it('accepts shared text styling props and slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <EmptyState
+        config={{
+          title: 'Styled empty',
+          description: 'Nothing to display',
+          color: 'muted',
+          fontSize: 'lg',
+          slots: {
+            root: { paddingY: 'xl' },
+            title: { textAlign: 'center' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
   })
 })

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -16,6 +16,7 @@ export const AvatarGroupSchema = extendComponentSchema({
   maxVisible: z.number().int().positive().optional().default(4),
   size: z.enum(['xs', 'sm', 'md', 'lg']).optional().default('sm'),
   overlap: z.number().optional().default(8),
+  slots: slotsSchema(['root', 'item', 'image', 'initials', 'overflow']).optional(),
   onPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })

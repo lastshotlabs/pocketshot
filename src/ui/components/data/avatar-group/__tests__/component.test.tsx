@@ -110,4 +110,22 @@ describe('AvatarGroup', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('accepts named slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <AvatarGroup
+        config={{
+          avatars: SIX_AVATARS,
+          maxVisible: 4,
+          size: 'sm',
+          slots: {
+            item: { opacity: 0.9 },
+            initials: { letterSpacing: 'wide' },
+            overflow: { bg: 'muted' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

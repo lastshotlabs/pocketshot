@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -12,6 +12,7 @@ export const FavoriteButtonSchema = extendComponentSchema({
   variant: z.enum(['heart', 'star']).default('heart'),
   size: z.enum(['sm', 'md', 'lg']).default('md'),
   activeColor: z.string().optional(),
+  slots: slotsSchema(['root', 'icon']).optional(),
   onToggleAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })

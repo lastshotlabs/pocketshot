@@ -109,4 +109,26 @@ describe('StatusBadge', () => {
     )
     expect(getByText('Shipped')).toBeTruthy()
   })
+
+  it('accepts shared text styling props without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <StatusBadge config={{ status: 'active', color: 'primary', fontSize: 'lg' }} />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
+
+  it('accepts slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <StatusBadge
+        config={{
+          status: 'active',
+          slots: {
+            label: { letterSpacing: 'wide' },
+            dot: { opacity: 0.8 },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

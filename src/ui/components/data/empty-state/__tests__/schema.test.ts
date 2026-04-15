@@ -29,9 +29,23 @@ describe('EmptyStateSchema', () => {
   })
 
   it('requires action.label when action provided', () => {
-    // action.onPress is z.custom() — runtime-transparent, so only label is enforced
     expect(
       EmptyStateSchema.safeParse({ action: { onPress: { type: 'navigate', to: '/' } } }).success,
     ).toBe(false)
+  })
+
+  it('accepts shared styling fields and slot surfaces', () => {
+    expect(
+      EmptyStateSchema.safeParse({
+        title: 'Styled empty',
+        color: 'muted',
+        fontSize: 'lg',
+        slots: {
+          title: {
+            textAlign: 'center',
+          },
+        },
+      }).success,
+    ).toBe(true)
   })
 })

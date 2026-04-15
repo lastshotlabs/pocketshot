@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, Animated, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
@@ -71,6 +72,19 @@ export function StatusBadge({ config }: { config: StatusBadgeConfig }) {
 
   const resolved = resolveStatus(rawStatus, config.statusMap)
   const colorPair = resolveColorPair(resolved.color, tokens.colors)
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const dotSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.dot as Record<string, unknown> | undefined,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+  })
 
   // Pulsing dot animation
   const pulseAnim = useRef(new Animated.Value(1)).current
@@ -96,13 +110,18 @@ export function StatusBadge({ config }: { config: StatusBadgeConfig }) {
     return () => loop.stop()
   }, [config.showDot, pulseAnim])
 
-  const styles = makeStyles(tokens, config.size ?? 'md', colorPair)
+  const styles = makeStyles(tokens, config.size ?? 'md', colorPair, sharedTextStyle)
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container} accessibilityLabel={`Status: ${resolved.label}`}>
-        {config.showDot ? <Animated.View style={[styles.dot, { opacity: pulseAnim }]} /> : null}
-        <Text style={styles.label} numberOfLines={1}>
+      <View
+        style={[styles.container, rootSurface.style]}
+        accessibilityLabel={`Status: ${resolved.label}`}
+      >
+        {config.showDot ? (
+          <Animated.View style={[styles.dot, { opacity: pulseAnim }, dotSurface.style]} />
+        ) : null}
+        <Text style={[styles.label, labelSurface.style]} numberOfLines={1}>
           {resolved.label}
         </Text>
       </View>
@@ -114,12 +133,20 @@ function makeStyles(
   tokens: DesignTokens,
   size: NonNullable<StatusBadgeConfig['size']>,
   colorPair: { background: string; foreground: string },
+  sharedTextStyle: ReturnType<typeof resolveNativeTextStyle>,
 ) {
   const isSm = size === 'sm'
   const paddingH = isSm ? 6 : 10
   const paddingV = isSm ? 2 : 4
-  const fontSize = isSm ? tokens.typography.fontSizeXs : tokens.typography.fontSizeSm
+  const fontSize =
+    typeof sharedTextStyle.fontSize === 'number'
+      ? sharedTextStyle.fontSize
+      : isSm
+        ? tokens.typography.fontSizeXs
+        : tokens.typography.fontSizeSm
   const dotSize = isSm ? 6 : 8
+  const foreground =
+    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : colorPair.foreground
 
   return StyleSheet.create({
     container: {
@@ -136,12 +163,21 @@ function makeStyles(
       width: dotSize,
       height: dotSize,
       borderRadius: dotSize / 2,
-      backgroundColor: colorPair.foreground,
+      backgroundColor: foreground,
     },
     label: {
       fontSize,
-      color: colorPair.foreground,
-      fontWeight: tokens.typography.fontWeightSemibold,
+      color: foreground,
+      fontWeight:
+        typeof sharedTextStyle.fontWeight === 'string'
+          ? sharedTextStyle.fontWeight
+          : tokens.typography.fontWeightSemibold,
+      lineHeight:
+        typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+      letterSpacing:
+        typeof sharedTextStyle.letterSpacing === 'number'
+          ? sharedTextStyle.letterSpacing
+          : undefined,
     },
   })
 }

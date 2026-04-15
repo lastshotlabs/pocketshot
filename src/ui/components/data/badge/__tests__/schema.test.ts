@@ -42,4 +42,19 @@ describe('BadgeSchema', () => {
   it('rejects invalid size', () => {
     expect(BadgeSchema.safeParse({ label: 'X', size: 'xl' }).success).toBe(false)
   })
+
+  it('accepts shared styling fields and slot surfaces', () => {
+    expect(
+      BadgeSchema.safeParse({
+        label: 'Styled',
+        color: 'primary',
+        fontSize: 'lg',
+        slots: {
+          label: {
+            letterSpacing: 'wide',
+          },
+        },
+      }).success,
+    ).toBe(true)
+  })
 })

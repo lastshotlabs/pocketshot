@@ -49,4 +49,17 @@ describe('AvatarGroupSchema', () => {
     })
     expect(result.avatars).toHaveLength(2)
   })
+
+  it('accepts named slot surfaces', () => {
+    expect(
+      AvatarGroupSchema.safeParse({
+        avatars: [{ name: 'Alice' }],
+        slots: {
+          overflow: {
+            bg: 'muted',
+          },
+        },
+      }).success,
+    ).toBe(true)
+  })
 })

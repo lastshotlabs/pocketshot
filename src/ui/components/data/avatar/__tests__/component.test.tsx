@@ -93,4 +93,21 @@ describe('Avatar', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('accepts named slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Avatar
+        config={{
+          name: 'Jane Doe',
+          size: 'md',
+          shape: 'circle',
+          slots: {
+            initials: { letterSpacing: 'wide' },
+            fallback: { bg: 'muted' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

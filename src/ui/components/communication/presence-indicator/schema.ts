@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 export const PresenceIndicatorSchema = extendComponentSchema({
@@ -11,5 +11,6 @@ export const PresenceIndicatorSchema = extendComponentSchema({
   showLabel: z.boolean().default(false),
   label: z.string().optional(),
   bordered: z.boolean().default(true),
+  slots: slotsSchema(['root', 'dot', 'label']).optional(),
   testID: z.string().optional(),
 })

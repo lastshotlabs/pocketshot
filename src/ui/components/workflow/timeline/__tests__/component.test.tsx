@@ -99,4 +99,11 @@ describe('Timeline', () => {
     const { toJSON } = renderWithProviders(<Timeline config={{ data: { from: 'eventFeed' } }} />)
     expect(toJSON()).toBeTruthy()
   })
+
+  it('accepts shared text styling props without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Timeline config={{ items: BASIC_ITEMS, color: 'muted', fontSize: 'lg', textAlign: 'center' }} />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

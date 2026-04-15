@@ -60,4 +60,21 @@ describe('Badge', () => {
     )
     expect(getByRole('button')).toBeTruthy()
   })
+
+  it('accepts shared text styling props and slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Badge
+        config={{
+          label: 'Styled',
+          color: 'primary',
+          fontSize: 'lg',
+          slots: {
+            root: { paddingX: 'lg' },
+            label: { letterSpacing: 'wide' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

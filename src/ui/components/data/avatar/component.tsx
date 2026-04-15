@@ -1,15 +1,19 @@
 import React, { useCallback, useState } from 'react'
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native'
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  type ImageStyle,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { AvatarConfig } from './types'
-
-// ---------------------------------------------------------------------------
-// Size map: xs=24, sm=32, md=40, lg=56, xl=72
-// ---------------------------------------------------------------------------
 
 const SIZE_MAP = {
   xs: 24,
@@ -18,10 +22,6 @@ const SIZE_MAP = {
   lg: 56,
   xl: 72,
 } as const
-
-// ---------------------------------------------------------------------------
-// Initials background color — deterministic from name string
-// ---------------------------------------------------------------------------
 
 const INITIALS_PALETTE = [
   '#E57373',
@@ -51,10 +51,6 @@ function getInitials(name: string): string {
   return ((words[0][0] ?? '') + (words[words.length - 1][0] ?? '')).toUpperCase()
 }
 
-// ---------------------------------------------------------------------------
-// Try to load expo-image; fall back to RN Image
-// ---------------------------------------------------------------------------
-
 let ExpoImage: React.ComponentType<{
   source: { uri: string }
   style: object
@@ -70,30 +66,28 @@ try {
   ExpoImage = null
 }
 
-// ---------------------------------------------------------------------------
-// Avatar image sub-component
-// ---------------------------------------------------------------------------
-
 function AvatarImage({
   src,
   size,
   borderRadius,
   name,
   onError,
+  style,
 }: {
   src: string
   size: number
   borderRadius: number
   name: string
   onError: () => void
+  style?: ImageStyle
 }) {
-  const imageStyle = { width: size, height: size, borderRadius }
+  const imageStyle = [{ width: size, height: size, borderRadius }, style].filter(Boolean) as ImageStyle[]
 
   if (ExpoImage) {
     return (
       <ExpoImage
         source={{ uri: src }}
-        style={imageStyle}
+        style={imageStyle as object}
         contentFit="cover"
         accessibilityLabel={name ? `${name} avatar` : 'Avatar'}
         onError={onError}
@@ -111,10 +105,6 @@ function AvatarImage({
     />
   )
 }
-
-// ---------------------------------------------------------------------------
-// Avatar
-// ---------------------------------------------------------------------------
 
 export function Avatar({ config }: { config: AvatarConfig }) {
   const tokens = useTokens()
@@ -147,16 +137,68 @@ export function Avatar({ config }: { config: AvatarConfig }) {
     ? pickInitialsColor(resolvedName)
     : tokens.colors.surfaceAlt
 
-  const styles = makeStyles(tokens, size, borderRadius, initialsBackground)
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const imageSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.image as Record<string, unknown> | undefined,
+  })
+  const initialsSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.initials as Record<string, unknown> | undefined,
+  })
+  const fallbackSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.fallback as Record<string, unknown> | undefined,
+  })
 
   const handlePress = useCallback(async () => {
     if (!config.onPress) return
     await dispatch(config.onPress)
   }, [config.onPress, dispatch])
 
+  const containerStyle: ViewStyle = {
+    width: size,
+    height: size,
+    borderRadius,
+    backgroundColor: initialsBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  }
+  const initialsStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : Math.round(size * 0.38),
+    color:
+      typeof sharedTextStyle.color === 'string'
+        ? sharedTextStyle.color
+        : tokens.colors.textInverse,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightSemibold,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+  }
+
   const content = (
     <View
-      style={styles.container}
+      style={[
+        containerStyle,
+        rootSurface.style as ViewStyle | undefined,
+        !showImage ? (fallbackSurface.style as ViewStyle | undefined) : undefined,
+      ]}
       accessibilityLabel={resolvedName ? `${resolvedName} avatar` : 'Avatar'}
     >
       {showImage ? (
@@ -166,9 +208,10 @@ export function Avatar({ config }: { config: AvatarConfig }) {
           borderRadius={borderRadius}
           name={resolvedName ?? ''}
           onError={() => setImgError(true)}
+          style={imageSurface.style as ImageStyle | undefined}
         />
       ) : (
-        <Text style={styles.initials} accessibilityElementsHidden>
+        <Text style={[initialsStyle, initialsSurface.style as TextStyle | undefined]} accessibilityElementsHidden>
           {initials}
         </Text>
       )}
@@ -193,29 +236,3 @@ export function Avatar({ config }: { config: AvatarConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(
-  tokens: DesignTokens,
-  size: number,
-  borderRadius: number,
-  initialsBackground: string,
-) {
-  const fontSize = Math.round(size * 0.38)
-  return StyleSheet.create({
-    container: {
-      width: size,
-      height: size,
-      borderRadius,
-      backgroundColor: initialsBackground,
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    },
-    initials: {
-      fontSize,
-      color: tokens.colors.textInverse,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-  })
-}
-

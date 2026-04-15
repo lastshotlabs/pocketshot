@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useComponentData } from '../../_base/useComponentData'
 import type { DesignTokens } from '../../../tokens/types'
@@ -11,7 +12,7 @@ const LINE_WIDTH = 2
 
 export function Timeline({ config }: { config: TimelineConfig }) {
   const tokens = useTokens()
-  const styles = makeStyles(tokens)
+  const styles = makeStyles(tokens, config)
 
   const { data: fetchedItems, isLoading } = useComponentData<TimelineItem[]>(config.data)
 
@@ -78,7 +79,29 @@ export function Timeline({ config }: { config: TimelineConfig }) {
   )
 }
 
-function makeStyles(tokens: DesignTokens) {
+function makeStyles(tokens: DesignTokens, config: TimelineConfig) {
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const baseFontSize =
+    typeof sharedTextStyle.fontSize === 'number'
+      ? sharedTextStyle.fontSize
+      : tokens.typography.fontSizeMd
+  const baseColor =
+    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text
+  const textAlign =
+    sharedTextStyle.textAlign === 'center' ||
+    sharedTextStyle.textAlign === 'right' ||
+    sharedTextStyle.textAlign === 'justify'
+      ? sharedTextStyle.textAlign
+      : 'left'
+  const lineHeight =
+    typeof sharedTextStyle.lineHeight === 'number'
+      ? sharedTextStyle.lineHeight
+      : baseFontSize * tokens.typography.lineHeightNormal
+  const letterSpacing =
+    typeof sharedTextStyle.letterSpacing === 'number'
+      ? sharedTextStyle.letterSpacing
+      : undefined
+
   return StyleSheet.create({
     list: {
       width: '100%',
@@ -120,20 +143,30 @@ function makeStyles(tokens: DesignTokens) {
       paddingBottom: tokens.spacing[4],
     },
     title: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightSemibold,
+      fontSize: baseFontSize,
+      color: baseColor,
+      fontWeight:
+        typeof sharedTextStyle.fontWeight === 'string'
+          ? sharedTextStyle.fontWeight
+          : tokens.typography.fontWeightSemibold,
+      textAlign,
+      lineHeight,
+      letterSpacing,
     },
     description: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
+      fontSize: Math.max(baseFontSize - 2, tokens.typography.fontSizeXs),
+      color: typeof sharedTextStyle.color === 'string' ? baseColor : tokens.colors.textMuted,
       marginTop: tokens.spacing[1],
-      lineHeight: tokens.typography.fontSizeSm * tokens.typography.lineHeightNormal,
+      lineHeight: Math.max(lineHeight - 2, tokens.typography.fontSizeSm),
+      textAlign,
+      letterSpacing,
     },
     timestamp: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
+      fontSize: Math.max(baseFontSize - 4, tokens.typography.fontSizeXs),
+      color: typeof sharedTextStyle.color === 'string' ? baseColor : tokens.colors.textMuted,
       marginTop: tokens.spacing[1],
+      textAlign,
+      letterSpacing,
     },
   })
 }

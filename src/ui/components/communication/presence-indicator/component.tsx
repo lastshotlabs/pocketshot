@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { View, Text, Animated, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -94,12 +95,28 @@ export function PresenceIndicator({ config }: { config: PresenceIndicatorConfig 
   const status = resolveFromRef(config.status, values) as PresenceStatus
   const diameter = DOT_SIZES[config.size]
   const dotColor = resolveStatusColor(status, tokens)
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const dotSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.dot as Record<string, unknown> | undefined,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+  })
 
   const labelText = config.label ?? status
-  const styles = useMemo(() => makeStyles(tokens, diameter, config.bordered), [tokens, diameter, config.bordered])
+  const styles = useMemo(
+    () => makeStyles(tokens, diameter, config.bordered, sharedTextStyle, dotColor),
+    [tokens, diameter, config.bordered, sharedTextStyle, dotColor],
+  )
 
   const dot = (
-    <View style={[styles.dot, { backgroundColor: dotColor }]}>
+    <View style={[styles.dot, { backgroundColor: dotColor }, dotSurface.style]}>
       {status === 'online' && <PulseRing diameter={diameter} color={dotColor} />}
     </View>
   )
@@ -108,16 +125,17 @@ export function PresenceIndicator({ config }: { config: PresenceIndicatorConfig 
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.showLabel ? (
         <View
-          style={styles.row}
+          style={[styles.row, rootSurface.style]}
           accessibilityRole="text"
           accessibilityLabel={`Status: ${labelText}`}
           testID={config.testID}
         >
           {dot}
-          <Text style={[styles.label, { color: dotColor }]}>{labelText}</Text>
+          <Text style={[styles.label, { color: dotColor }, labelSurface.style]}>{labelText}</Text>
         </View>
       ) : (
         <View
+          style={rootSurface.style}
           accessibilityRole="image"
           accessibilityLabel={`Status: ${labelText}`}
           testID={config.testID}
@@ -131,7 +149,13 @@ export function PresenceIndicator({ config }: { config: PresenceIndicatorConfig 
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-function makeStyles(tokens: DesignTokens, diameter: number, bordered: boolean) {
+function makeStyles(
+  tokens: DesignTokens,
+  diameter: number,
+  bordered: boolean,
+  sharedTextStyle: ReturnType<typeof resolveNativeTextStyle>,
+  dotColor: string,
+) {
   return StyleSheet.create({
     dot: {
       width: diameter,
@@ -147,8 +171,22 @@ function makeStyles(tokens: DesignTokens, diameter: number, bordered: boolean) {
       gap: tokens.spacing[1],
     },
     label: {
-      fontSize: tokens.typography.fontSizeXs,
-      fontWeight: tokens.typography.fontWeightMedium,
+      fontSize:
+        typeof sharedTextStyle.fontSize === 'number'
+          ? sharedTextStyle.fontSize
+          : tokens.typography.fontSizeXs,
+      fontWeight:
+        typeof sharedTextStyle.fontWeight === 'string'
+          ? sharedTextStyle.fontWeight
+          : tokens.typography.fontWeightMedium,
+      color:
+        typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : dotColor,
+      lineHeight:
+        typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+      letterSpacing:
+        typeof sharedTextStyle.letterSpacing === 'number'
+          ? sharedTextStyle.letterSpacing
+          : undefined,
       textTransform: 'capitalize',
     },
   })

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -18,5 +18,14 @@ export const AlertSchema = extendComponentSchema({
       onPress: ActionSchema,
     })
     .optional(),
+  slots: slotsSchema([
+    'root',
+    'icon',
+    'content',
+    'title',
+    'description',
+    'action',
+    'dismiss',
+  ]).optional(),
   testID: z.string().optional(),
 })

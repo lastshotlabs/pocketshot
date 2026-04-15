@@ -47,4 +47,16 @@ describe('TimelineSchema', () => {
     expect(result.items![0].icon).toBe('check')
     expect(result.items![0].color).toBe('#00ff00')
   })
+
+  it('accepts shared text styling props on the root config', () => {
+    const result = TimelineSchema.parse({
+      color: 'muted',
+      fontSize: 'lg',
+      textAlign: 'center',
+    })
+
+    expect(result.color).toBe('muted')
+    expect(result.fontSize).toBe('lg')
+    expect(result.textAlign).toBe('center')
+  })
 })

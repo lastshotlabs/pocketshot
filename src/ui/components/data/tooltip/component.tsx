@@ -1,14 +1,16 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   View,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   Modal,
-  StyleSheet,
   type LayoutRectangle,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
@@ -22,49 +24,46 @@ const ARROW_SIZE = 6
 function computeTooltipPosition(
   layout: LayoutRectangle | null,
   position: Position,
-): { top?: number; bottom?: number; left?: number; right?: number; alignSelf?: string } {
+): { top?: number; left?: number } {
   if (!layout) return { top: 100, left: 40 }
 
-  const TOOLTIP_WIDTH = 180
-  const TOOLTIP_APPROX_HEIGHT = 40
-  const MARGIN = 8
+  const tooltipWidth = 180
+  const tooltipApproxHeight = 40
+  const margin = 8
 
   const centerX = layout.x + layout.width / 2
-  const left = Math.max(MARGIN, centerX - TOOLTIP_WIDTH / 2)
+  const left = Math.max(margin, centerX - tooltipWidth / 2)
 
   switch (position) {
     case 'top':
       return {
-        top: layout.y - TOOLTIP_APPROX_HEIGHT - ARROW_SIZE - MARGIN,
+        top: layout.y - tooltipApproxHeight - ARROW_SIZE - margin,
         left,
       }
     case 'bottom':
       return {
-        top: layout.y + layout.height + ARROW_SIZE + MARGIN,
+        top: layout.y + layout.height + ARROW_SIZE + margin,
         left,
       }
     case 'left':
       return {
-        top: layout.y + layout.height / 2 - TOOLTIP_APPROX_HEIGHT / 2,
-        left: Math.max(MARGIN, layout.x - TOOLTIP_WIDTH - ARROW_SIZE - MARGIN),
+        top: layout.y + layout.height / 2 - tooltipApproxHeight / 2,
+        left: Math.max(margin, layout.x - tooltipWidth - ARROW_SIZE - margin),
       }
     case 'right':
       return {
-        top: layout.y + layout.height / 2 - TOOLTIP_APPROX_HEIGHT / 2,
-        left: layout.x + layout.width + ARROW_SIZE + MARGIN,
+        top: layout.y + layout.height / 2 - tooltipApproxHeight / 2,
+        left: layout.x + layout.width + ARROW_SIZE + margin,
       }
   }
 }
 
-function getArrowStyle(
-  position: Position,
-  tokens: DesignTokens,
-): object {
-  const arrowBase = {
+function getArrowStyle(position: Position, tokens: DesignTokens): ViewStyle {
+  const arrowBase: ViewStyle = {
     width: ARROW_SIZE * 2,
     height: ARROW_SIZE * 2,
     backgroundColor: tokens.colors.text,
-    position: 'absolute' as const,
+    position: 'absolute',
   }
 
   switch (position) {
@@ -72,14 +71,14 @@ function getArrowStyle(
       return {
         ...arrowBase,
         bottom: -ARROW_SIZE,
-        alignSelf: 'center' as const,
+        alignSelf: 'center',
         transform: [{ rotate: '45deg' }],
       }
     case 'bottom':
       return {
         ...arrowBase,
         top: -ARROW_SIZE,
-        alignSelf: 'center' as const,
+        alignSelf: 'center',
         transform: [{ rotate: '45deg' }],
       }
     case 'left':
@@ -99,26 +98,40 @@ function getArrowStyle(
   }
 }
 
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
+function makeStyles(tokens: DesignTokens, sharedTextStyle: ReturnType<typeof resolveNativeTextStyle>) {
+  return {
     trigger: {
       borderBottomWidth: 1,
-      borderStyle: 'dotted' as const,
+      borderStyle: 'dotted',
       borderColor: tokens.colors.textMuted,
       alignSelf: 'flex-start',
-    },
+    } satisfies ViewStyle,
     triggerText: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-    },
+      fontSize:
+        typeof sharedTextStyle.fontSize === 'number'
+          ? sharedTextStyle.fontSize
+          : tokens.typography.fontSizeMd,
+      color:
+        typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text,
+      fontWeight:
+        typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+      lineHeight:
+        typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+      letterSpacing:
+        typeof sharedTextStyle.letterSpacing === 'number'
+          ? sharedTextStyle.letterSpacing
+          : undefined,
+      textAlign:
+        typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    } satisfies TextStyle,
     backdrop: {
       flex: 1,
-    },
+    } satisfies ViewStyle,
     tooltipWrapper: {
       position: 'absolute',
       width: 180,
       alignItems: 'center',
-    },
+    } satisfies ViewStyle,
     bubble: {
       backgroundColor: tokens.colors.text,
       borderRadius: tokens.radius.md,
@@ -126,13 +139,30 @@ function makeStyles(tokens: DesignTokens) {
       paddingVertical: tokens.spacing[1],
       maxWidth: 180,
       ...tokens.shadows.sm,
-    },
+    } satisfies ViewStyle,
     bubbleText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textInverse,
-      lineHeight: tokens.typography.fontSizeXs * tokens.typography.lineHeightNormal,
-    },
-  })
+      fontSize:
+        typeof sharedTextStyle.fontSize === 'number'
+          ? sharedTextStyle.fontSize
+          : tokens.typography.fontSizeXs,
+      color:
+        typeof sharedTextStyle.color === 'string'
+          ? sharedTextStyle.color
+          : tokens.colors.textInverse,
+      fontWeight:
+        typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+      lineHeight:
+        typeof sharedTextStyle.lineHeight === 'number'
+          ? sharedTextStyle.lineHeight
+          : tokens.typography.fontSizeXs * tokens.typography.lineHeightNormal,
+      letterSpacing:
+        typeof sharedTextStyle.letterSpacing === 'number'
+          ? sharedTextStyle.letterSpacing
+          : undefined,
+      textAlign:
+        typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    } satisfies TextStyle,
+  }
 }
 
 export function Tooltip({ config }: { config: TooltipConfig }) {
@@ -144,13 +174,25 @@ export function Tooltip({ config }: { config: TooltipConfig }) {
   const resolvedTrigger = isFromRef(config.trigger)
     ? String(resolveFromRef(config.trigger, values) ?? '')
     : config.trigger
-
   const resolvedContent = isFromRef(config.content)
     ? String(resolveFromRef(config.content, values) ?? '')
     : config.content
 
   const position = config.position ?? 'top'
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const contentSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.content as Record<string, unknown> | undefined,
+  })
+  const arrowSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.arrow as Record<string, unknown> | undefined,
+  })
+  const styles = useMemo(() => makeStyles(tokens, sharedTextStyle), [tokens, sharedTextStyle])
 
   const handleTriggerPress = useCallback(() => {
     setVisible((v) => !v)
@@ -171,7 +213,7 @@ export function Tooltip({ config }: { config: TooltipConfig }) {
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handleTriggerPress}
-        style={styles.trigger}
+        style={[styles.trigger, rootSurface.style as ViewStyle | undefined]}
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={`Tooltip: ${resolvedTrigger}`}
@@ -195,15 +237,16 @@ export function Tooltip({ config }: { config: TooltipConfig }) {
           testID={config.testID ? `${config.testID}-backdrop` : undefined}
         >
           <View style={styles.backdrop}>
-            <View
-              style={[styles.tooltipWrapper, tooltipPos as object]}
-              pointerEvents="none"
-            >
-              {position === 'bottom' ? <View style={arrowStyle} /> : null}
-              <View style={styles.bubble}>
+            <View style={[styles.tooltipWrapper, tooltipPos as ViewStyle]} pointerEvents="none">
+              {position === 'bottom' ? (
+                <View style={[arrowStyle, arrowSurface.style as ViewStyle | undefined]} />
+              ) : null}
+              <View style={[styles.bubble, contentSurface.style as ViewStyle | undefined]}>
                 <Text style={styles.bubbleText}>{resolvedContent}</Text>
               </View>
-              {position === 'top' ? <View style={arrowStyle} /> : null}
+              {position === 'top' ? (
+                <View style={[arrowStyle, arrowSurface.style as ViewStyle | undefined]} />
+              ) : null}
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -211,4 +254,3 @@ export function Tooltip({ config }: { config: TooltipConfig }) {
     </ComponentWrapper>
   )
 }
-

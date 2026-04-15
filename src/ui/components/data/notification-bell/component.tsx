@@ -1,22 +1,32 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Animated, Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { NotificationBellConfig } from './types'
 
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 }
 
-// ── NotificationBell ───────────────────────────────────────────────────────────
-
 export function NotificationBell({ config }: { config: NotificationBellConfig }) {
   const tokens = useTokens()
   const { dispatch, values } = useScreenContext()
-  const styles = makeStyles(tokens)
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
-  // Resolve count
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const buttonSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.button as Record<string, unknown> | undefined,
+  })
+  const badgeSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.badge as Record<string, unknown> | undefined,
+  })
+
   const resolvedCount = useMemo<number>(() => {
     if (config.count === undefined) return 0
     if (isFromRef(config.count)) {
@@ -30,7 +40,6 @@ export function NotificationBell({ config }: { config: NotificationBellConfig })
   const badgeLabel = resolvedCount > maxCount ? `${maxCount}+` : String(resolvedCount)
   const showBadge = resolvedCount > 0
 
-  // Jiggle animation
   const rotate = useRef(new Animated.Value(0)).current
   const prevCountRef = useRef(resolvedCount)
 
@@ -42,7 +51,6 @@ export function NotificationBell({ config }: { config: NotificationBellConfig })
     prevCountRef.current = resolvedCount
 
     if (config.animated && (wasZero ? isNowPositive : increased)) {
-      // Jiggle: -15 → 15 → -10 → 10 → 0 degrees
       Animated.sequence([
         Animated.timing(rotate, { toValue: -15, duration: 60, useNativeDriver: true }),
         Animated.timing(rotate, { toValue: 15, duration: 80, useNativeDriver: true }),
@@ -65,11 +73,65 @@ export function NotificationBell({ config }: { config: NotificationBellConfig })
 
   const accessibilityLabel = `Notifications${resolvedCount > 0 ? `, ${resolvedCount} unread` : ''}`
 
+  const containerStyle: ViewStyle = {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 36,
+    height: 36,
+  }
+  const bellStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeXl,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number'
+        ? sharedTextStyle.lineHeight
+        : tokens.typography.fontSizeXl * 1.4,
+    color: typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : undefined,
+  }
+  const badgeBaseStyle: ViewStyle = {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: tokens.radius.full,
+    backgroundColor: tokens.colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: badgeLabel.length > 2 ? 5 : 3,
+  }
+  const badgeTextStyle: TextStyle = {
+    color:
+      typeof sharedTextStyle.color === 'string'
+        ? sharedTextStyle.color
+        : tokens.colors.errorForeground,
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeXs,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightBold,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : 13,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+  }
+
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.7}
+        style={buttonSurface.style as ViewStyle | undefined}
         hitSlop={HIT_SLOP}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
@@ -77,25 +139,34 @@ export function NotificationBell({ config }: { config: NotificationBellConfig })
         testID={config.testID ?? (config.id ? `${config.id}-notification-bell` : 'notification-bell')}
         disabled={!config.onPress}
       >
-        <View style={styles.container}>
+        <View style={[containerStyle, rootSurface.style as ViewStyle | undefined]}>
           <Animated.Text
-            style={[styles.bell, { transform: [{ rotate: rotateDeg }] }]}
+            style={[
+              bellStyle,
+              { transform: [{ rotate: rotateDeg }] },
+            ]}
             accessibilityElementsHidden
             importantForAccessibility="no"
           >
-            🔔
+            ðŸ””
           </Animated.Text>
 
           {showBadge ? (
             <View
               style={[
-                styles.badge,
-                badgeLabel.length > 2 ? styles.badgeWide : undefined,
+                badgeBaseStyle,
+                badgeSurface.style as ViewStyle | undefined,
               ]}
               accessibilityElementsHidden
               importantForAccessibility="no"
             >
-              <Text style={styles.badgeText}>{badgeLabel}</Text>
+              <Text
+                style={[
+                  badgeTextStyle,
+                ]}
+              >
+                {badgeLabel}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -103,43 +174,3 @@ export function NotificationBell({ config }: { config: NotificationBellConfig })
     </ComponentWrapper>
   )
 }
-
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      position: 'relative',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 36,
-      height: 36,
-    },
-    bell: {
-      fontSize: tokens.typography.fontSizeXl,
-      lineHeight: tokens.typography.fontSizeXl * 1.4,
-    },
-    badge: {
-      position: 'absolute',
-      top: -4,
-      right: -4,
-      minWidth: 18,
-      height: 18,
-      borderRadius: tokens.radius.full,
-      backgroundColor: tokens.colors.error,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 3,
-    },
-    badgeWide: {
-      paddingHorizontal: 5,
-    },
-    badgeText: {
-      color: tokens.colors.errorForeground,
-      fontSize: tokens.typography.fontSizeXs,
-      fontWeight: tokens.typography.fontWeightBold,
-      lineHeight: 13,
-    },
-  })
-}
-

@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, TouchableOpacity } from 'react-native'
+import { Animated, TouchableOpacity, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import type { FavoriteButtonConfig } from './types'
-
-// ── Size map ───────────────────────────────────────────────────────────────────
 
 const FONT_SIZE: Record<'sm' | 'md' | 'lg', number> = {
   sm: 20,
@@ -16,13 +15,10 @@ const FONT_SIZE: Record<'sm' | 'md' | 'lg', number> = {
 
 const HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 }
 
-// ── FavoriteButton ─────────────────────────────────────────────────────────────
-
 export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
   const tokens = useTokens()
   const { dispatch, setValue, values } = useScreenContext()
 
-  // Resolve controlled value from ref or direct boolean
   let controlledValue: boolean | undefined
   if (config.value !== undefined) {
     if (isFromRef(config.value)) {
@@ -38,21 +34,27 @@ export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
     controlledValue !== undefined ? controlledValue : (config.defaultValue ?? false),
   )
 
-  // Sync if controlled value changes
   useEffect(() => {
     if (controlledValue !== undefined) {
       setActive(controlledValue)
     }
   }, [controlledValue])
 
-  // Animation refs
   const scale = useRef(new Animated.Value(1)).current
   const opacity = useRef(new Animated.Value(1)).current
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const iconSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.icon as Record<string, unknown> | undefined,
+  })
 
   const handlePress = useCallback(async () => {
     const nextActive = !active
 
-    // Scale bounce animation
     Animated.sequence([
       Animated.spring(scale, {
         toValue: 1.4,
@@ -68,7 +70,6 @@ export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
       }),
     ]).start()
 
-    // Opacity flicker when going inactive
     if (!nextActive) {
       Animated.sequence([
         Animated.timing(opacity, { toValue: 0.4, duration: 80, useNativeDriver: true }),
@@ -85,7 +86,6 @@ export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
     }
   }, [active, config.id, config.onToggleAction, dispatch, opacity, scale, setValue])
 
-  // Resolve colors
   const activeColor =
     config.activeColor !== undefined
       ? config.activeColor
@@ -94,18 +94,38 @@ export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
         : tokens.colors.warning
 
   const inactiveColor = tokens.colors.textMuted
-
-  // Icon characters
   const icon =
     config.variant === 'heart' ? (active ? '♥' : '♡') : active ? '★' : '☆'
-
   const fontSize = FONT_SIZE[config.size ?? 'md']
+
+  const iconStyle: TextStyle = {
+    fontSize: typeof sharedTextStyle.fontSize === 'number' ? sharedTextStyle.fontSize : fontSize,
+    color:
+      typeof sharedTextStyle.color === 'string'
+        ? sharedTextStyle.color
+        : active
+          ? activeColor
+          : inactiveColor,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number'
+        ? sharedTextStyle.lineHeight
+        : fontSize * 1.2,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+  }
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={1}
+        style={rootSurface.style as ViewStyle | undefined}
         hitSlop={HIT_SLOP}
         accessibilityRole="togglebutton"
         accessibilityLabel={`${config.variant ?? 'heart'} button${active ? ', active' : ''}`}
@@ -113,13 +133,14 @@ export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
         testID={config.testID ?? (config.id ? `${config.id}-favorite-button` : 'favorite-button')}
       >
         <Animated.Text
-          style={{
-            fontSize,
-            color: active ? activeColor : inactiveColor,
-            transform: [{ scale }],
-            opacity,
-            lineHeight: fontSize * 1.2,
-          }}
+          style={[
+            iconStyle,
+            {
+              transform: [{ scale }],
+              opacity,
+            },
+            iconSurface.style as TextStyle | undefined,
+          ]}
           accessibilityElementsHidden
           importantForAccessibility="no"
         >
@@ -129,4 +150,3 @@ export function FavoriteButton({ config }: { config: FavoriteButtonConfig }) {
     </ComponentWrapper>
   )
 }
-

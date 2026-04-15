@@ -62,4 +62,30 @@ describe('StatusBadgeSchema', () => {
   it('rejects invalid size', () => {
     expect(StatusBadgeSchema.safeParse({ status: 'x', size: 'lg' }).success).toBe(false)
   })
+
+  it('accepts shared text styling props', () => {
+    const result = StatusBadgeSchema.parse({
+      status: 'active',
+      color: 'primary',
+      fontSize: 'lg',
+      fontWeight: 'bold',
+    })
+
+    expect(result.color).toBe('primary')
+    expect(result.fontSize).toBe('lg')
+    expect(result.fontWeight).toBe('bold')
+  })
+
+  it('accepts named slot surfaces', () => {
+    expect(
+      StatusBadgeSchema.safeParse({
+        status: 'active',
+        slots: {
+          label: {
+            letterSpacing: 'wide',
+          },
+        },
+      }).success,
+    ).toBe(true)
+  })
 })

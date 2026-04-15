@@ -46,4 +46,17 @@ describe('AvatarSchema', () => {
   it('rejects invalid shape', () => {
     expect(AvatarSchema.safeParse({ shape: 'hexagon' }).success).toBe(false)
   })
+
+  it('accepts named slot surfaces', () => {
+    expect(
+      AvatarSchema.safeParse({
+        name: 'Jane Doe',
+        slots: {
+          initials: {
+            letterSpacing: 'wide',
+          },
+        },
+      }).success,
+    ).toBe(true)
+  })
 })

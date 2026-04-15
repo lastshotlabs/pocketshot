@@ -1,10 +1,11 @@
 import React, { useCallback } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { ColorTokens, DesignTokens, TypographyTokens } from '../../../tokens/types'
+import type { ColorTokens, TypographyTokens } from '../../../tokens/types'
 import type { BadgeConfig } from './types'
 
 type Variant = NonNullable<BadgeConfig['variant']>
@@ -54,17 +55,55 @@ export function Badge({ config }: { config: BadgeConfig }) {
   const variantColors = resolveVariantColors(config.variant ?? 'default', tokens.colors)
   const sizeStyle = SIZE_PADDING[config.size ?? 'md']
   const fontSize = tokens.typography[SIZE_FONT_TOKEN[config.size ?? 'md']] as number
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
-  const styles = makeStyles(tokens, variantColors, sizeStyle, fontSize)
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      backgroundColor: variantColors.background,
+      borderRadius: 'full',
+      paddingX: sizeStyle.paddingHorizontal,
+      paddingY: sizeStyle.paddingVertical,
+    },
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+  })
 
   const handlePress = useCallback(async () => {
     if (!config.onPress) return
     await dispatch(config.onPress)
   }, [config.onPress, dispatch])
 
+  const containerStyle: ViewStyle = {
+    alignSelf: 'flex-start',
+  }
+  const labelStyle: TextStyle = {
+    fontSize: typeof sharedTextStyle.fontSize === 'number' ? sharedTextStyle.fontSize : fontSize,
+    color:
+      typeof sharedTextStyle.color === 'string'
+        ? sharedTextStyle.color
+        : variantColors.foreground,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightSemibold,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : 0.2,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
   const badge = (
-    <View style={styles.container}>
-      <Text style={styles.label} numberOfLines={1}>
+    <View style={[containerStyle, rootSurface.style as ViewStyle | undefined]}>
+      <Text style={[labelStyle, labelSurface.style as TextStyle | undefined]} numberOfLines={1}>
         {resolvedLabel}
       </Text>
     </View>
@@ -87,27 +126,3 @@ export function Badge({ config }: { config: BadgeConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(
-  tokens: DesignTokens,
-  variantColors: { background: string; foreground: string },
-  sizeStyle: { paddingHorizontal: number; paddingVertical: number },
-  fontSize: number,
-) {
-  return StyleSheet.create({
-    container: {
-      alignSelf: 'flex-start',
-      backgroundColor: variantColors.background,
-      borderRadius: tokens.radius.full,
-      paddingHorizontal: sizeStyle.paddingHorizontal,
-      paddingVertical: sizeStyle.paddingVertical,
-    },
-    label: {
-      fontSize,
-      color: variantColors.foreground,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      letterSpacing: 0.2,
-    },
-  })
-}
-
