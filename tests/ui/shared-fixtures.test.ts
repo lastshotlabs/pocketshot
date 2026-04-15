@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('react-native', () => ({
@@ -12,7 +13,7 @@ import { executeAction, type ActionExecutorDeps } from '../../src/ui/actions/exe
 function readSharedFixture<T>(relativePath: string): T {
   return JSON.parse(
     readFileSync(
-      new URL(`../../../frontend-contract/fixtures/${relativePath}`, import.meta.url),
+      fileURLToPath(new URL(`../../../frontend-contract/fixtures/${relativePath}`, import.meta.url).href),
       'utf8',
     ),
   ) as T

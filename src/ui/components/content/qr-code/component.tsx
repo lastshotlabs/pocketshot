@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeStyleProps } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -112,8 +113,18 @@ export function QrCode({ config }: { config: QrCodeConfig }) {
 
   const value = resolveFromRef(config.value, values) as string
   const size = config.size ?? 200
-  const color = config.color ?? tokens.colors.text
-  const bgColor = config.backgroundColor ?? tokens.colors.surface
+  const resolvedStyle = resolveNativeStyleProps(
+    {
+      color: config.color,
+      bg: config.bg,
+    },
+    tokens,
+  )
+  const color = typeof resolvedStyle.color === 'string' ? resolvedStyle.color : tokens.colors.text
+  const bgColor =
+    typeof resolvedStyle.backgroundColor === 'string'
+      ? resolvedStyle.backgroundColor
+      : tokens.colors.surface
   const styles = useMemo(() => makeStyles(tokens, bgColor), [tokens, bgColor])
 
   const testId = config.testID ?? config.id ?? 'qr-code'

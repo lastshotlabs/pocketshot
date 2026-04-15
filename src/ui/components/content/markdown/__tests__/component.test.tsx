@@ -1,15 +1,21 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { Markdown, parseMarkdown } from '../component'
+import { MarkdownSchema } from '../schema'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
+
+function cfg(overrides: Record<string, unknown> = {}) {
+  return MarkdownSchema.parse({
+    content: '# Heading\nHello **world**',
+    ...overrides,
+  })
+}
 
 describe('Markdown', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('renders plain markdown content', () => {
-    const { getByText } = renderWithProviders(
-      <Markdown config={{ content: '# Heading\nHello **world**' }} />,
-    )
+    const { getByText } = renderWithProviders(<Markdown config={cfg()} />)
 
     expect(getByText('Heading')).toBeTruthy()
     expect(getByText('Hello world')).toBeTruthy()
@@ -17,8 +23,8 @@ describe('Markdown', () => {
 
   it('resolves content from screen context', () => {
     const { getByText } = renderWithProviders(
-      <Markdown config={{ content: { from: 'article.body' }, textAlign: 'center' }} />,
-      { initialValues: { 'article.body': '## Intro\nBody copy' } },
+      <Markdown config={cfg({ content: { from: 'article.body' }, textAlign: 'center' })} />,
+      { initialValues: { article: { body: '## Intro\nBody copy' } } },
     )
 
     expect(getByText('Intro')).toBeTruthy()

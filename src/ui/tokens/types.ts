@@ -134,13 +134,13 @@ export interface AnimationTokens {
 
 /** Opacity scale tokens */
 export interface OpacityTokens {
-  transparent: 0
-  subtle: 0.08
-  light: 0.16
-  medium: 0.38
-  heavy: 0.62
-  opaque: 0.87
-  full: 1
+  transparent: number
+  subtle: number
+  light: number
+  medium: number
+  heavy: number
+  opaque: number
+  full: number
 }
 
 /** Z-index scale tokens */

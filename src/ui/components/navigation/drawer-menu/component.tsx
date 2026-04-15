@@ -69,10 +69,18 @@ function makeStyles(
 
   return StyleSheet.create({
     fill: {
-      ...StyleSheet.absoluteFillObject,
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
     },
     backdrop: {
-      ...StyleSheet.absoluteFillObject,
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
       backgroundColor: tokens.colors.overlay,
     },
     drawer: {

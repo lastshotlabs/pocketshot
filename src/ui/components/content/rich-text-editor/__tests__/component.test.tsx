@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { act } from 'react-test-renderer'
 import { RichTextEditor } from '../component'
+import { RichTextEditorSchema } from '../schema'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 
 function findAllByType(node: unknown, type: string): any[] {
@@ -14,13 +15,18 @@ function findAllByType(node: unknown, type: string): any[] {
   return results
 }
 
+function cfg(overrides: Record<string, unknown> = {}) {
+  return RichTextEditorSchema.parse({
+    id: 'notes',
+    ...overrides,
+  })
+}
+
 describe('RichTextEditor', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('renders the editor input and toolbar', () => {
-    const { getByTestId, getByText } = renderWithProviders(
-      <RichTextEditor config={{ id: 'notes' }} />,
-    )
+    const { getByTestId, getByText } = renderWithProviders(<RichTextEditor config={cfg()} />)
 
     expect(getByTestId('notes-input')).toBeTruthy()
     expect(getByText('Markdown supported')).toBeTruthy()
@@ -28,14 +34,7 @@ describe('RichTextEditor', () => {
 
   it('renders with widened dimension inputs without crashing', () => {
     const { toJSON } = renderWithProviders(
-      <RichTextEditor
-        config={{
-          id: 'notes',
-          minHeight: '50%',
-          maxHeight: 480,
-          borderRadius: 'xl',
-        }}
-      />,
+      <RichTextEditor config={cfg({ minHeight: '50%', maxHeight: 480, borderRadius: 'xl' })} />,
     )
 
     expect(toJSON()).toBeTruthy()
@@ -43,7 +42,7 @@ describe('RichTextEditor', () => {
 
   it('updates the character count as the value changes', () => {
     const { getByText, instance } = renderWithProviders(
-      <RichTextEditor config={{ id: 'notes', defaultValue: 'Hi' }} />,
+      <RichTextEditor config={cfg({ defaultValue: 'Hi' })} />,
     )
 
     act(() => {

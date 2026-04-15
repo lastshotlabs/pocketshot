@@ -286,7 +286,11 @@ function makeOverlayStyles(tokens: DesignTokens) {
   const overlayBg = 'rgba(0,0,0,0.5)'
   return StyleSheet.create({
     overlayContainer: {
-      ...StyleSheet.absoluteFillObject,
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
     },
     topOverlay: {
       flex: 1,
