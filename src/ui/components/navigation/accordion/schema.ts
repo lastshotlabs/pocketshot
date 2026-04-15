@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const AccordionSchema = z.object({
+export const AccordionSchema = extendComponentSchema({
   id: z.string().optional(),
   sections: z.array(
     z.object({
@@ -20,3 +21,4 @@ export const AccordionSchema = z.object({
   onSectionChange: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

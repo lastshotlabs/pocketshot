@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const InlineEditSchema = z.object({
+export const InlineEditSchema = extendComponentSchema({
   id: z.string(),
   value: z.union([z.string(), FromRefSchema]).optional(),
   defaultValue: z.string().optional().default(''),
@@ -16,3 +17,4 @@ export const InlineEditSchema = z.object({
   onSaveAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

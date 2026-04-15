@@ -1,8 +1,9 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 
-export const ChatBubbleSchema = z.object({
+export const ChatBubbleSchema = extendComponentSchema({
   id: z.string().optional(),
   message: z.union([z.string(), FromRefSchema]),
   sender: z.string().optional(),
@@ -17,3 +18,4 @@ export const ChatBubbleSchema = z.object({
     .optional(),
   testID: z.string().optional(),
 })
+

@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const ConfirmDialogSchema = z.object({
+export const ConfirmDialogSchema = extendComponentSchema({
   id: z.string(),
   title: z.string(),
   message: z.string(),
@@ -14,3 +15,4 @@ export const ConfirmDialogSchema = z.object({
   onCancel: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

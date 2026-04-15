@@ -138,7 +138,10 @@ function DropdownItemRow({ item, onPress, tokens, styles, isLast }: DropdownItem
       >
         {item.icon != null && (
           <Text
-            style={[styles.itemIcon, item.destructive ? { color: tokens.colors.destructive } : undefined]}
+            style={[
+              styles.itemIcon,
+              item.destructive ? { color: tokens.colors.destructive } : undefined,
+            ]}
             accessibilityElementsHidden
           >
             {item.icon}
@@ -227,9 +230,7 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
     if (!triggerLayout) return {}
     const align = config.align ?? 'start'
     const panelLeft =
-      align === 'start'
-        ? triggerLayout.x
-        : triggerLayout.x + triggerLayout.width - 160 // approximate minWidth
+      align === 'start' ? triggerLayout.x : triggerLayout.x + triggerLayout.width - 160 // approximate minWidth
     const panelTop = triggerLayout.y + triggerLayout.height + 4
 
     return {
@@ -238,7 +239,9 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
     }
   }, [triggerLayout, config.align])
 
-  const triggerTestID = config.testID ? `${config.testID}-trigger` : `${config.id ?? 'dropdown'}-trigger`
+  const triggerTestID = config.testID
+    ? `${config.testID}-trigger`
+    : `${config.id ?? 'dropdown'}-trigger`
 
   const renderItem = useCallback(
     ({ item, index }: { item: DropdownMenuConfig['items'][number]; index: number }) => (
@@ -256,7 +259,12 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
   const keyExtractor = useCallback((item: DropdownMenuConfig['items'][number]) => item.id, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={visible ? ['open'] : undefined}
+    >
       {/* Trigger */}
       <View ref={triggerRef} collapsable={false}>
         <TouchableOpacity
@@ -299,11 +307,7 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
 
           {/* Panel */}
           <Animated.View
-            style={[
-              styles.panel,
-              panelStyle,
-              { opacity, transform: [{ translateY }] },
-            ]}
+            style={[styles.panel, panelStyle, { opacity, transform: [{ translateY }] }]}
             accessibilityRole="menu"
             accessibilityLabel={`${config.trigger.label} menu`}
           >
@@ -319,4 +323,3 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
     </ComponentWrapper>
   )
 }
-

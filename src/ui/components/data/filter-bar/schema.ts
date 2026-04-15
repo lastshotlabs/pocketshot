@@ -1,17 +1,18 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const FilterOptionSchema = z.object({
+export const FilterOptionSchema = extendComponentSchema({
   id: z.string(),
   label: z.string(),
   icon: z.string().optional(),
   count: z.number().optional(),
 })
 
-export const FilterBarSchema = z.object({
+export const FilterBarSchema = extendComponentSchema({
   id: z.string().optional(),
   filters: z.array(FilterOptionSchema),
   value: z.union([z.string(), z.array(z.string()), FromRefSchema]).optional(),
@@ -22,3 +23,4 @@ export const FilterBarSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const RegisterFormSchema = z.object({
+export const RegisterFormSchema = extendComponentSchema({
   id: z.string().optional(),
   fields: z
     .array(z.enum(['email', 'username', 'password', 'confirmPassword']))
@@ -14,3 +15,4 @@ export const RegisterFormSchema = z.object({
   loginAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

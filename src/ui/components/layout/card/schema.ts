@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 
 /**
  * Action is typed as unknown in the schema because the Action discriminated
@@ -7,7 +8,7 @@ import { z } from 'zod'
  */
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
-export const CardSchema = z.object({
+export const CardSchema = extendComponentSchema({
   id: z.string().optional(),
   padding: z.number().optional().default(4),
   radius: z.enum(['none', 'sm', 'md', 'lg', 'xl', '2xl']).optional().default('lg'),
@@ -16,3 +17,4 @@ export const CardSchema = z.object({
   onPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const SectionSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const SectionSchema = extendComponentSchema({
   id: z.string().optional(),
   title: z.string().optional(),
   description: z.string().optional(),
@@ -9,3 +10,4 @@ export const SectionSchema = z.object({
   children: z.array(z.unknown()).optional(),
   testID: z.string().optional(),
 })
+

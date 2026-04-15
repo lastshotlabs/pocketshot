@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const LoginFormSchema = z.object({
+export const LoginFormSchema = extendComponentSchema({
   id: z.string().optional(),
   onSubmit: ActionSchema,
   submitLabel: z.string().optional().default('Sign In'),
@@ -16,3 +17,4 @@ export const LoginFormSchema = z.object({
     .default([]),
   testID: z.string().optional(),
 })
+

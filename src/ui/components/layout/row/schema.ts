@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const RowSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const RowSchema = extendComponentSchema({
   id: z.string().optional(),
   gap: z.number().optional().default(0),
   padding: z.number().optional(),
@@ -16,3 +17,4 @@ export const RowSchema = z.object({
   backgroundColor: z.string().optional(),
   testID: z.string().optional(),
 })
+

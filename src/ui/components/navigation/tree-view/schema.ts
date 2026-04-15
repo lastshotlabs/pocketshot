@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 import type { TreeNode } from './types'
@@ -15,7 +16,7 @@ const TreeNodeSchema: z.ZodType<TreeNode> = z.lazy(() =>
   }),
 )
 
-export const TreeViewSchema = z.object({
+export const TreeViewSchema = extendComponentSchema({
   id: z.string().optional(),
   data: z.union([z.array(TreeNodeSchema), FromRefSchema]),
   defaultExpandedIds: z.array(z.string()).optional(),
@@ -26,3 +27,4 @@ export const TreeViewSchema = z.object({
 })
 
 export { TreeNodeSchema }
+

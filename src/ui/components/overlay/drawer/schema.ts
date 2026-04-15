@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 // Action and FromRef are available for future extension
 const _ActionSchema = z.custom<Action>()
 
-export const DrawerSchema = z.object({
+export const DrawerSchema = extendComponentSchema({
   id: z.string(),
   position: z.enum(['left', 'right']).optional().default('left'),
   widthPercent: z.number().optional().default(80),
@@ -14,3 +15,4 @@ export const DrawerSchema = z.object({
   closeOnBackdrop: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

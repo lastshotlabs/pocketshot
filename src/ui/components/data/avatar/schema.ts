@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const AvatarSchema = z.object({
+export const AvatarSchema = extendComponentSchema({
   id: z.string().optional(),
   src: z.union([z.string(), z.object({ from: z.string() })]).optional(),
   name: z.union([z.string(), z.object({ from: z.string() })]).optional(),
@@ -12,3 +13,4 @@ export const AvatarSchema = z.object({
   onPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

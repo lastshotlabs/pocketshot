@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const NotificationItemSchema = z.object({
+export const NotificationItemSchema = extendComponentSchema({
   id: z.string().optional(),
   title: z.union([z.string(), FromRefSchema]),
   body: z.union([z.string(), FromRefSchema]).optional(),
@@ -15,3 +16,4 @@ export const NotificationItemSchema = z.object({
   onDismiss: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

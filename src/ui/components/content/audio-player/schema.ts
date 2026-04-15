@@ -1,8 +1,9 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 
-export const AudioPlayerSchema = z.object({
+export const AudioPlayerSchema = extendComponentSchema({
   id: z.string().optional(),
   source: z.union([z.string(), FromRefSchema]),
   title: z.string().optional(),
@@ -11,3 +12,4 @@ export const AudioPlayerSchema = z.object({
   autoPlay: z.boolean().optional().default(false),
   testID: z.string().optional(),
 })
+

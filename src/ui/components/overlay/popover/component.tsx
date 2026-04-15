@@ -139,7 +139,12 @@ export function Popover({ config }: { config: PopoverConfig }) {
   const closeTestID = config.testID ? `${config.testID}-close` : `${config.id}-close`
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={visible ? ['open'] : undefined}
+    >
       {/* Trigger button */}
       <TouchableOpacity
         onPress={openPopover}
@@ -204,4 +209,3 @@ export function Popover({ config }: { config: PopoverConfig }) {
     </ComponentWrapper>
   )
 }
-

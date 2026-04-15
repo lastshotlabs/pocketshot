@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 
 /**
  * Action is typed via z.custom at the boundaries since Action is defined as a
@@ -7,7 +8,7 @@ import { z } from 'zod'
  */
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
-export const ScrollContainerSchema = z.object({
+export const ScrollContainerSchema = extendComponentSchema({
   id: z.string().optional(),
   horizontal: z.boolean().optional().default(false),
   showsScrollIndicator: z.boolean().optional().default(false),
@@ -17,3 +18,4 @@ export const ScrollContainerSchema = z.object({
   onRefresh: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

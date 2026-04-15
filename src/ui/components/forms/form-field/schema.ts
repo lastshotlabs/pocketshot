@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const FormFieldSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const FormFieldSchema = extendComponentSchema({
   id: z.string().optional(),
   label: z.string().optional(),
   required: z.boolean().optional().default(false),
@@ -8,3 +9,4 @@ export const FormFieldSchema = z.object({
   errorKey: z.string().optional(),
   testID: z.string().optional(),
 })
+

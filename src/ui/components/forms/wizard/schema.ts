@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const WizardFieldSchema = z.object({
+export const WizardFieldSchema = extendComponentSchema({
   id: z.string(),
   type: z.enum(['text', 'email', 'password', 'number', 'textarea', 'select', 'checkbox']),
   label: z.string(),
@@ -17,14 +18,14 @@ export const WizardFieldSchema = z.object({
   helperText: z.string().optional(),
 })
 
-export const WizardStepSchema = z.object({
+export const WizardStepSchema = extendComponentSchema({
   id: z.string(),
   title: z.string(),
   description: z.string().optional(),
   fields: z.array(WizardFieldSchema),
 })
 
-export const WizardSchema = z.object({
+export const WizardSchema = extendComponentSchema({
   id: z.string(),
   steps: z.array(WizardStepSchema),
   title: z.string().optional(),
@@ -40,3 +41,4 @@ export const WizardSchema = z.object({
 
 // Re-export for convenience
 export { FromRefSchema }
+

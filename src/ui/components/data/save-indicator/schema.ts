@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const SaveIndicatorSchema = z.object({
+export const SaveIndicatorSchema = extendComponentSchema({
   id: z.string().optional(),
   status: z
     .union([z.enum(['idle', 'saving', 'saved', 'error']), FromRefSchema])
@@ -15,3 +16,4 @@ export const SaveIndicatorSchema = z.object({
   errorLabel: z.string().optional().default('Error saving'),
   testID: z.string().optional(),
 })
+

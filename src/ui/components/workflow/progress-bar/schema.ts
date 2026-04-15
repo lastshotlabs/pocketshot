@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const ProgressBarSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const ProgressBarSchema = extendComponentSchema({
   id: z.string().optional(),
   value: z.union([z.number().min(0).max(100), z.object({ from: z.string() })]),
   label: z.string().optional(),
@@ -11,3 +12,4 @@ export const ProgressBarSchema = z.object({
   radius: z.enum(['none', 'sm', 'md', 'full']).optional().default('full'),
   testID: z.string().optional(),
 })
+

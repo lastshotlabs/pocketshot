@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
 
-export const RatingInputSchema = z.object({
+export const RatingInputSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
   maxStars: z.number().optional().default(5),
@@ -16,3 +17,4 @@ export const RatingInputSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

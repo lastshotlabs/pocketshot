@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const CartItemSchema = z.object({
+export const CartItemSchema = extendComponentSchema({
   id: z.string().optional(),
   image: z.union([z.string(), z.object({ from: z.string() })]).optional(),
   title: z.union([z.string(), z.object({ from: z.string() })]),
@@ -18,3 +19,4 @@ export const CartItemSchema = z.object({
   onRemove: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

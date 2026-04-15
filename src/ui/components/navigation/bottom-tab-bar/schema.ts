@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -11,7 +12,7 @@ const TabItemSchema = z.object({
   onPress: ActionSchema.optional(),
 })
 
-export const BottomTabBarSchema = z.object({
+export const BottomTabBarSchema = extendComponentSchema({
   id: z.string(),
   tabs: z.array(TabItemSchema).min(2).max(5),
   activeTab: z.union([z.string(), FromRefSchema]).optional(),
@@ -20,3 +21,4 @@ export const BottomTabBarSchema = z.object({
   showLabels: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

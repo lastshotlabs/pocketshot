@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const ContextMenuSchema = z.object({
+export const ContextMenuSchema = extendComponentSchema({
   id: z.string().optional(),
   triggerLabel: z.string().optional(),
   items: z.array(
@@ -18,3 +19,4 @@ export const ContextMenuSchema = z.object({
   ),
   testID: z.string().optional(),
 })
+

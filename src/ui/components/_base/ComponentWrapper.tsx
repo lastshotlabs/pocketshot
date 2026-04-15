@@ -2,6 +2,7 @@ import React, { type ReactNode, Component } from 'react'
 import { View, Text, type ViewStyle } from 'react-native'
 import { useTokens } from '../../context/AppContext'
 import { useScreenContext } from '../../context/ScreenContext'
+import { evaluateRuntimeExpression, isExprRef } from '../../runtime/expression'
 import { isFromRef, resolveFromRef } from './fromRef'
 import { resolveSurfacePresentation } from './style-surfaces'
 import type { RuntimeSurfaceState } from './surface-state'
@@ -100,9 +101,16 @@ export function ComponentWrapper({
       ? config.visible
       : isFromRef(config?.visible)
         ? Boolean(resolveFromRef(config.visible, values))
-        : true
+        : isExprRef(config?.visible)
+          ? Boolean(evaluateRuntimeExpression(config.visible.expr, values))
+          : true
 
-  if (!visible) {
+  const visibleWhen =
+    typeof config?.visibleWhen === 'string'
+      ? Boolean(evaluateRuntimeExpression(config.visibleWhen, values))
+      : true
+
+  if (!visible || !visibleWhen) {
     return null
   }
 

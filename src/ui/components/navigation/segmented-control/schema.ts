@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
-export const SegmentedControlSchema = z.object({
+export const SegmentedControlSchema = extendComponentSchema({
   id: z.string(),
   options: z.array(
     z.object({
@@ -16,3 +17,4 @@ export const SegmentedControlSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

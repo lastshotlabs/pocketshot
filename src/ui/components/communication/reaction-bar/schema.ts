@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -11,10 +12,11 @@ const ReactionItemSchema = z.object({
   reacted: z.boolean().optional().default(false),
 })
 
-export const ReactionBarSchema = z.object({
+export const ReactionBarSchema = extendComponentSchema({
   id: z.string().optional(),
   reactions: z.union([z.array(ReactionItemSchema), FromRefSchema]),
   onReactAction: ActionSchema.optional(),
   maxDisplay: z.number().int().min(1).default(8),
   testID: z.string().optional(),
 })
+

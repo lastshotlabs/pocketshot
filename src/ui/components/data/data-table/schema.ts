@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const DataTableColumnSchema = z.object({
+export const DataTableColumnSchema = extendComponentSchema({
   key: z.string(),
   label: z.string(),
   sortable: z.boolean().optional().default(false),
@@ -13,7 +14,7 @@ export const DataTableColumnSchema = z.object({
   align: z.enum(['left', 'center', 'right']).optional().default('left'),
 })
 
-export const DataTableSchema = z.object({
+export const DataTableSchema = extendComponentSchema({
   id: z.string().optional(),
   data: z.union([z.string(), FromRefSchema]),
   columns: z.array(DataTableColumnSchema),
@@ -28,3 +29,4 @@ export const DataTableSchema = z.object({
   stickyHeader: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

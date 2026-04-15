@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const PaginationSchema = z.object({
+export const PaginationSchema = extendComponentSchema({
   id: z.string(),
   mode: z.enum(['pages', 'load-more', 'infinite']),
   totalPages: z.number().optional(),
@@ -14,3 +15,4 @@ export const PaginationSchema = z.object({
   onLoadMore: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -19,7 +20,7 @@ const AutoFormFieldSchema = z.object({
   defaultValue: z.union([z.string(), z.boolean(), z.number()]).optional(),
 })
 
-export const AutoFormSchema = z.object({
+export const AutoFormSchema = extendComponentSchema({
   id: z.string(),
   fields: z.array(AutoFormFieldSchema),
   submitLabel: z.string().optional().default('Submit'),
@@ -28,3 +29,4 @@ export const AutoFormSchema = z.object({
   validationErrors: FromRefSchema.optional(),
   testID: z.string().optional(),
 })
+

@@ -4,6 +4,7 @@ import {
   isFromRef,
   type FromRef,
 } from '@lastshotlabs/frontend-contract/refs'
+import { evaluateRuntimeExpression, isExprRef } from './expression'
 
 export interface ResolveRuntimeValueOptions {
   values?: Record<string, unknown>
@@ -50,6 +51,10 @@ function resolveRuntimeValueInternal(value: unknown, scope: Record<string, unkno
   if (isFromRef(value)) {
     const resolved = getNestedValue(scope, value.from)
     return applyTransform(resolved, value.transform, value.transformArg)
+  }
+
+  if (isExprRef(value)) {
+    return evaluateRuntimeExpression(value.expr, scope)
   }
 
   if (typeof value === 'string') {

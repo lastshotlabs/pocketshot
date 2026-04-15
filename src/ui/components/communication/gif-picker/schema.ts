@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -11,7 +12,7 @@ const GifResultSchema = z.object({
   height: z.number().optional(),
 })
 
-export const GifPickerSchema = z.object({
+export const GifPickerSchema = extendComponentSchema({
   id: z.string(),
   onSelect: ActionSchema,
   placeholder: z.string().default('Search GIFs...'),
@@ -21,3 +22,4 @@ export const GifPickerSchema = z.object({
   sampleGifs: z.array(GifResultSchema).optional(),
   testID: z.string().optional(),
 })
+

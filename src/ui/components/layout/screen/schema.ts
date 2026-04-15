@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const ScreenSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const ScreenSchema = extendComponentSchema({
   id: z.string().optional(),
   scrollable: z.boolean().optional().default(true),
   background: z.string().optional(),
@@ -11,3 +12,4 @@ export const ScreenSchema = z.object({
     .default(['top', 'bottom', 'left', 'right']),
   testID: z.string().optional(),
 })
+

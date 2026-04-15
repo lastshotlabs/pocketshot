@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const FilterSheetSectionSchema = z.object({
+export const FilterSheetSectionSchema = extendComponentSchema({
   id: z.string(),
   label: z.string(),
   type: z.enum(['select', 'multi-select', 'range', 'toggle']),
@@ -15,7 +16,7 @@ export const FilterSheetSectionSchema = z.object({
   step: z.number().optional(),
 })
 
-export const FilterSheetSchema = z.object({
+export const FilterSheetSchema = extendComponentSchema({
   id: z.string(),
   title: z.string().optional().default('Filters'),
   sections: z.array(FilterSheetSectionSchema),
@@ -23,3 +24,4 @@ export const FilterSheetSchema = z.object({
   onReset: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

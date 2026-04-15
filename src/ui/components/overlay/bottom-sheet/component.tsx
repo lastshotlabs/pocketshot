@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native'
+import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import type { DesignTokens } from '../../../tokens/types'
@@ -320,21 +321,35 @@ export function BottomSheet({ config, children }: BottomSheetProps) {
 
   if (gorhom) {
     return (
-      <GorhomBottomSheet
+      <ComponentWrapper
+        id={config.id}
+        testID={config.testID}
         config={config}
-        isOpen={isOpen}
-        onClose={handleClose}
-        tokens={tokens}
-        gorhom={gorhom}
+        activeStates={isOpen ? ['open'] : undefined}
       >
-        {children}
-      </GorhomBottomSheet>
+        <GorhomBottomSheet
+          config={config}
+          isOpen={isOpen}
+          onClose={handleClose}
+          tokens={tokens}
+          gorhom={gorhom}
+        >
+          {children}
+        </GorhomBottomSheet>
+      </ComponentWrapper>
     )
   }
 
   return (
-    <CustomBottomSheet config={config} isOpen={isOpen} onClose={handleClose} tokens={tokens}>
-      {children}
-    </CustomBottomSheet>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={isOpen ? ['open'] : undefined}
+    >
+      <CustomBottomSheet config={config} isOpen={isOpen} onClose={handleClose} tokens={tokens}>
+        {children}
+      </CustomBottomSheet>
+    </ComponentWrapper>
   )
 }

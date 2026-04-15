@@ -1,8 +1,9 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 
-export const ImageViewerSchema = z.object({
+export const ImageViewerSchema = extendComponentSchema({
   id: z.string().optional(),
   source: z.union([z.string(), FromRefSchema]),
   alt: z.string().optional(),
@@ -13,3 +14,4 @@ export const ImageViewerSchema = z.object({
   showCloseButton: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

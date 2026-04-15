@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const FavoriteButtonSchema = z.object({
+export const FavoriteButtonSchema = extendComponentSchema({
   id: z.string().optional(),
   value: z.union([z.boolean(), FromRefSchema]).optional(),
   defaultValue: z.boolean().default(false),
@@ -14,3 +15,4 @@ export const FavoriteButtonSchema = z.object({
   onToggleAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

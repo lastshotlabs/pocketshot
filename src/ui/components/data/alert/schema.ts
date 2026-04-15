@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const AlertSchema = z.object({
+export const AlertSchema = extendComponentSchema({
   id: z.string().optional(),
   variant: z
     .enum(['default', 'success', 'warning', 'error', 'info'])
@@ -22,3 +23,4 @@ export const AlertSchema = z.object({
     .optional(),
   testID: z.string().optional(),
 })
+

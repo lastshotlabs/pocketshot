@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const CommandPaletteSchema = z.object({
+export const CommandPaletteSchema = extendComponentSchema({
   id: z.string(),
   placeholder: z.string().optional().default('Type a command...'),
   items: z.array(
@@ -20,3 +21,4 @@ export const CommandPaletteSchema = z.object({
   maxResults: z.number().optional().default(20),
   testID: z.string().optional(),
 })
+

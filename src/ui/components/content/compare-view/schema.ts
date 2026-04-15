@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 
@@ -7,7 +8,7 @@ const SideSchema = z.object({
   content: z.union([z.string(), FromRefSchema]),
 })
 
-export const CompareViewSchema = z.object({
+export const CompareViewSchema = extendComponentSchema({
   id: z.string().optional(),
   left: SideSchema,
   right: SideSchema,
@@ -16,3 +17,4 @@ export const CompareViewSchema = z.object({
   highlightDiffs: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

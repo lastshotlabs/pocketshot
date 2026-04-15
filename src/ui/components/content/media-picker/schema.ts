@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const MediaPickerSchema = z.object({
+export const MediaPickerSchema = extendComponentSchema({
   id: z.string(),
   mediaTypes: z.array(z.enum(['image', 'video', 'document'])).default(['image']),
   maxSelections: z.number().optional().default(1),
@@ -11,3 +12,4 @@ export const MediaPickerSchema = z.object({
   onSelect: ActionSchema,
   testID: z.string().optional(),
 })
+

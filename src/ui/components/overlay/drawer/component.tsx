@@ -137,7 +137,12 @@ export function Drawer({ config }: { config: DrawerConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={isOpen ? ['open'] : undefined}
+    >
       <Modal
         transparent
         animationType="none"
@@ -172,11 +177,7 @@ export function Drawer({ config }: { config: DrawerConfig }) {
                 <Text
                   style={styles.title}
                   accessibilityRole="header"
-                  testID={
-                    config.testID
-                      ? `${config.testID}-title`
-                      : `drawer-${config.id}-title`
-                  }
+                  testID={config.testID ? `${config.testID}-title` : `drawer-${config.id}-title`}
                 >
                   {config.title}
                 </Text>
@@ -196,4 +197,3 @@ export function Drawer({ config }: { config: DrawerConfig }) {
     </ComponentWrapper>
   )
 }
-

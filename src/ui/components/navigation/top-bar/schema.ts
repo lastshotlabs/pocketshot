@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -14,7 +15,7 @@ const RightActionSchema = z.object({
   badge: z.number().optional(),
 })
 
-export const TopBarSchema = z.object({
+export const TopBarSchema = extendComponentSchema({
   id: z.string().optional(),
   title: z.union([z.string(), FromRefSchema]),
   subtitle: z.string().optional(),
@@ -26,3 +27,4 @@ export const TopBarSchema = z.object({
   elevated: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

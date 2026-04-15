@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const ChatWindowSchema = z.object({
+export const ChatWindowSchema = extendComponentSchema({
   id: z.string(),
   data: z.union([z.string(), FromRefSchema]),
   currentUserId: z.union([z.string(), FromRefSchema]),
@@ -16,3 +17,4 @@ export const ChatWindowSchema = z.object({
   showAvatars: z.boolean().default(true),
   testID: z.string().optional(),
 })
+

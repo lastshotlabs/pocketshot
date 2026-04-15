@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 
 const TimelineItemSchema = z.object({
   id: z.string(),
@@ -9,9 +10,10 @@ const TimelineItemSchema = z.object({
   color: z.string().optional(),
 })
 
-export const TimelineSchema = z.object({
+export const TimelineSchema = extendComponentSchema({
   id: z.string().optional(),
   data: z.union([z.string(), z.object({ from: z.string() })]).optional(),
   items: z.array(TimelineItemSchema).optional(),
   testID: z.string().optional(),
 })
+

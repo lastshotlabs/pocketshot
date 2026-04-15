@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const BadgeSchema = z.object({
+export const BadgeSchema = extendComponentSchema({
   id: z.string().optional(),
   label: z.union([z.string(), z.object({ from: z.string() })]),
   variant: z
@@ -14,3 +15,4 @@ export const BadgeSchema = z.object({
   onPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

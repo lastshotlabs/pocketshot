@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 
@@ -8,7 +9,7 @@ const ChartDataItemSchema = z.object({
   color: z.string().optional(),
 })
 
-export const ChartSchema = z.object({
+export const ChartSchema = extendComponentSchema({
   id: z.string().optional(),
   type: z.enum(['bar', 'line', 'donut', 'pie']).default('bar'),
   data: z.union([z.array(ChartDataItemSchema), FromRefSchema]),
@@ -20,3 +21,4 @@ export const ChartSchema = z.object({
   animated: z.boolean().default(true),
   testID: z.string().optional(),
 })
+

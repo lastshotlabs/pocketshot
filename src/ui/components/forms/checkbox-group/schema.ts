@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -10,7 +11,7 @@ const OptionSchema = z.object({
   disabled: z.boolean().optional(),
 })
 
-export const CheckboxGroupSchema = z.object({
+export const CheckboxGroupSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
   options: z.union([z.array(OptionSchema), FromRefSchema]),
@@ -20,3 +21,4 @@ export const CheckboxGroupSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

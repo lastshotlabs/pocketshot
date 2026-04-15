@@ -1,8 +1,9 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 
 const StatusColorSchema = z.enum(['primary', 'success', 'warning', 'error', 'info', 'default'])
 
-export const StatusBadgeSchema = z.object({
+export const StatusBadgeSchema = extendComponentSchema({
   id: z.string().optional(),
   status: z.union([z.string(), z.object({ from: z.string() })]),
   statusMap: z
@@ -18,3 +19,4 @@ export const StatusBadgeSchema = z.object({
   showDot: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

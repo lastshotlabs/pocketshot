@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const StepperSchema = z.object({
+export const StepperSchema = extendComponentSchema({
   id: z.string(),
   steps: z.array(
     z.object({
@@ -17,3 +18,4 @@ export const StepperSchema = z.object({
   onStepPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

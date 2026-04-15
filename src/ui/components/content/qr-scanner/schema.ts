@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const QrScannerSchema = z.object({
+export const QrScannerSchema = extendComponentSchema({
   id: z.string().optional(),
   onScan: ActionSchema,
   torchEnabled: z.boolean().optional().default(false),
@@ -11,3 +12,4 @@ export const QrScannerSchema = z.object({
   overlayText: z.string().optional(),
   testID: z.string().optional(),
 })
+

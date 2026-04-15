@@ -1,8 +1,9 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 
-export const PresenceIndicatorSchema = z.object({
+export const PresenceIndicatorSchema = extendComponentSchema({
   id: z.string().optional(),
   status: z.union([z.enum(['online', 'offline', 'away', 'busy', 'idle']), FromRefSchema]).default(
     'offline',
@@ -13,3 +14,4 @@ export const PresenceIndicatorSchema = z.object({
   bordered: z.boolean().default(true),
   testID: z.string().optional(),
 })
+

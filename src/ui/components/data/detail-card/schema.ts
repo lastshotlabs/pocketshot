@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const DetailCardFieldSchema = z.object({
+export const DetailCardFieldSchema = extendComponentSchema({
   label: z.string(),
   value: z.union([z.string(), FromRefSchema]),
   type: z
@@ -13,12 +14,12 @@ export const DetailCardFieldSchema = z.object({
     .default('text'),
 })
 
-export const DetailCardSectionSchema = z.object({
+export const DetailCardSectionSchema = extendComponentSchema({
   title: z.string().optional(),
   fields: z.array(DetailCardFieldSchema),
 })
 
-export const DetailCardSchema = z.object({
+export const DetailCardSchema = extendComponentSchema({
   id: z.string().optional(),
   title: z.string().optional(),
   subtitle: z.string().optional(),
@@ -27,3 +28,4 @@ export const DetailCardSchema = z.object({
   onEditPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

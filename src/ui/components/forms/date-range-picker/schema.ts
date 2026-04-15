@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const DateRangePickerSchema = z.object({
+export const DateRangePickerSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
   startPlaceholder: z.string().optional().default('Start date'),
@@ -17,3 +18,4 @@ export const DateRangePickerSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

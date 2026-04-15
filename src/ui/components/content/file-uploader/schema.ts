@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const FileUploaderSchema = z.object({
+export const FileUploaderSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
   accept: z.enum(['image', 'video', 'document', 'any']).optional().default('any'),
@@ -15,3 +16,4 @@ export const FileUploaderSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

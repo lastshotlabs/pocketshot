@@ -271,9 +271,7 @@ export function CommandPalette({ config }: { config: CommandPaletteConfig }) {
               </Text>
             )}
           </View>
-          {item.shortcut != null && (
-            <Text style={styles.itemShortcut}>{item.shortcut}</Text>
-          )}
+          {item.shortcut != null && <Text style={styles.itemShortcut}>{item.shortcut}</Text>}
         </TouchableOpacity>
       )
     },
@@ -285,7 +283,12 @@ export function CommandPalette({ config }: { config: CommandPaletteConfig }) {
   const baseTestID = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={isOpen ? ['open'] : undefined}
+    >
       <RNModal
         visible={isOpen}
         transparent
@@ -297,9 +300,7 @@ export function CommandPalette({ config }: { config: CommandPaletteConfig }) {
         <TouchableWithoutFeedback onPress={handleClose} accessibilityLabel="Close command palette">
           <Animated.View style={[styles.backdrop, { opacity }]}>
             <TouchableWithoutFeedback>
-              <Animated.View
-                style={[styles.container, { transform: [{ translateY }] }]}
-              >
+              <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
                 <View style={styles.panel}>
                   {/* Search bar */}
                   <View style={styles.searchContainer}>
@@ -355,4 +356,3 @@ export function CommandPalette({ config }: { config: CommandPaletteConfig }) {
     </ComponentWrapper>
   )
 }
-

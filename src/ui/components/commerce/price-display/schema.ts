@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const PriceDisplaySchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const PriceDisplaySchema = extendComponentSchema({
   id: z.string().optional(),
   amount: z.union([z.number(), z.string(), z.object({ from: z.string() })]),
   currency: z.string().optional().default('USD'),
@@ -11,3 +12,4 @@ export const PriceDisplaySchema = z.object({
   color: z.string().optional(),
   testID: z.string().optional(),
 })
+

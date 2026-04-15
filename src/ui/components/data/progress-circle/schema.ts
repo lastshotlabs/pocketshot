@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const ProgressCircleSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const ProgressCircleSchema = extendComponentSchema({
   id: z.string().optional(),
   value: z.union([z.number().min(0).max(100), z.object({ from: z.string() })]),
   size: z.enum(['sm', 'md', 'lg']).optional().default('md'),
@@ -12,3 +13,4 @@ export const ProgressCircleSchema = z.object({
   animated: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

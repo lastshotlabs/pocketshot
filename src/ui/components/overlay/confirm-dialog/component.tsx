@@ -138,7 +138,12 @@ export function ConfirmDialog({ config }: { config: ConfirmDialogConfig }) {
   const baseTestID = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={isOpen ? ['open'] : undefined}
+    >
       <RNModal
         visible={isOpen}
         transparent
@@ -203,4 +208,3 @@ export function ConfirmDialog({ config }: { config: ConfirmDialogConfig }) {
     </ComponentWrapper>
   )
 }
-

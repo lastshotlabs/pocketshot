@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const BottomSheetSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const BottomSheetSchema = extendComponentSchema({
   id: z.string(),
   snapPoints: z.array(z.string()).optional().default(['50%']),
   title: z.string().optional(),
@@ -8,3 +9,4 @@ export const BottomSheetSchema = z.object({
   closeOnBackdrop: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
+

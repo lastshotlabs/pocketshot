@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const SortPickerSchema = z.object({
+export const SortPickerSchema = extendComponentSchema({
   id: z.string(),
   options: z.array(
     z.object({
@@ -16,3 +17,4 @@ export const SortPickerSchema = z.object({
   onSelect: ActionSchema,
   testID: z.string().optional(),
 })
+

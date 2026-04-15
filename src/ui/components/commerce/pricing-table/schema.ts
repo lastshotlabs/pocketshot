@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const PricingTableSchema = z.object({
+export const PricingTableSchema = extendComponentSchema({
   id: z.string().optional(),
   title: z.string().optional(),
   subtitle: z.string().optional(),
@@ -25,3 +26,4 @@ export const PricingTableSchema = z.object({
   highlightedLabel: z.string().default('Most Popular'),
   testID: z.string().optional(),
 })
+

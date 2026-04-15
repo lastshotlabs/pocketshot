@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 // Inline action schema for zod — the discriminated union is complex to replicate,
@@ -7,7 +8,7 @@ const ActionSchema = z.custom<Action>()
 
 const DataSpecSchema = z.union([z.string(), z.object({ from: z.string() })])
 
-export const DataListSchema = z.object({
+export const DataListSchema = extendComponentSchema({
   id: z.string().optional(),
   data: DataSpecSchema.optional(),
   itemType: z.string(),
@@ -20,3 +21,4 @@ export const DataListSchema = z.object({
   estimatedItemSize: z.number().positive().optional().default(80),
   testID: z.string().optional(),
 })
+

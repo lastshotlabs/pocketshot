@@ -126,7 +126,10 @@ function ContextMenuItemRow({ item, onPress, tokens, styles, isLast }: ContextMe
       >
         {item.icon != null && (
           <Text
-            style={[styles.itemIcon, item.destructive ? { color: tokens.colors.destructive } : undefined]}
+            style={[
+              styles.itemIcon,
+              item.destructive ? { color: tokens.colors.destructive } : undefined,
+            ]}
             accessibilityElementsHidden
           >
             {item.icon}
@@ -237,7 +240,12 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
   const keyExtractor = useCallback((item: ContextMenuConfig['items'][number]) => item.id, [])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={visible ? ['open'] : undefined}
+    >
       <View ref={triggerRef} collapsable={false}>
         <Pressable
           onLongPress={handleLongPress}
@@ -264,11 +272,7 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
           </TouchableWithoutFeedback>
 
           <Animated.View
-            style={[
-              styles.panel,
-              panelStyle,
-              { opacity, transform: [{ scale }] },
-            ]}
+            style={[styles.panel, panelStyle, { opacity, transform: [{ scale }] }]}
             accessibilityRole="menu"
             accessibilityLabel="Context menu"
           >
@@ -284,4 +288,3 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
     </ComponentWrapper>
   )
 }
-

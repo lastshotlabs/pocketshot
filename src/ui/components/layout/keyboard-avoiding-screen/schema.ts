@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const KeyboardAvoidingScreenSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const KeyboardAvoidingScreenSchema = extendComponentSchema({
   id: z.string().optional(),
   scrollable: z.boolean().optional().default(true),
   background: z.string().optional(),
@@ -8,3 +9,4 @@ export const KeyboardAvoidingScreenSchema = z.object({
   behavior: z.enum(['padding', 'height', 'position']).optional(),
   testID: z.string().optional(),
 })
+

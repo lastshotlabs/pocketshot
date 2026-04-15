@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const MarkdownSchema = z.object({
+export const MarkdownSchema = extendComponentSchema({
   id: z.string().optional(),
   content: z.union([z.string(), FromRefSchema]),
   fontSize: z.enum(['sm', 'md', 'lg']).optional().default('md'),
@@ -12,3 +13,4 @@ export const MarkdownSchema = z.object({
 })
 
 void ActionSchema
+

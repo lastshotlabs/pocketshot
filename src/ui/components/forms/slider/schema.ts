@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
 
-export const SliderSchema = z.object({
+export const SliderSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
   min: z.number().optional().default(0),
@@ -16,3 +17,4 @@ export const SliderSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

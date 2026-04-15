@@ -1,6 +1,7 @@
-import { z } from 'zod'
 
-export const SkeletonSchema = z.object({
+import { extendComponentSchema } from '../../_base'
+
+export const SkeletonSchema = extendComponentSchema({
   id: z.string().optional(),
   variant: z.enum(['text', 'avatar', 'card', 'list-item', 'custom']).optional().default('text'),
   lines: z.number().int().positive().optional().default(3),
@@ -10,3 +11,4 @@ export const SkeletonSchema = z.object({
   count: z.number().int().positive().optional().default(1),
   testID: z.string().optional(),
 })
+

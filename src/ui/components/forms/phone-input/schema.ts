@@ -1,9 +1,10 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const PhoneInputSchema = z.object({
+export const PhoneInputSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
   placeholder: z.string().optional().default('Phone number'),
@@ -13,3 +14,4 @@ export const PhoneInputSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

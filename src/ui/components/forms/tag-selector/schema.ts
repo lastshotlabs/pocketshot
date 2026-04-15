@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const TagSelectorSchema = z.object({
+export const TagSelectorSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
   availableTags: z.array(
@@ -20,3 +21,4 @@ export const TagSelectorSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+

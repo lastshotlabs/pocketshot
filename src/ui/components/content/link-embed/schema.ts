@@ -1,10 +1,11 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const LinkEmbedSchema = z.object({
+export const LinkEmbedSchema = extendComponentSchema({
   id: z.string().optional(),
   url: z.union([z.string(), FromRefSchema]),
   title: z.union([z.string(), FromRefSchema]).optional(),
@@ -55,3 +56,4 @@ export const LinkEmbedSchema = z.object({
   lastModified: z.string().optional(),
   thumbnailUrl: z.string().optional(),
 })
+

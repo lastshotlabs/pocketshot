@@ -1,4 +1,5 @@
-import { z } from 'zod'
+
+import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -10,7 +11,7 @@ const LocationValueSchema = z.object({
   address: z.string().optional(),
 })
 
-export const LocationInputSchema = z.object({
+export const LocationInputSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
   placeholder: z.string().optional().default('Enter an address'),
@@ -19,3 +20,4 @@ export const LocationInputSchema = z.object({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
+
