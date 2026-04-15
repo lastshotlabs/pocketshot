@@ -14,5 +14,3 @@ export const PhoneInputSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

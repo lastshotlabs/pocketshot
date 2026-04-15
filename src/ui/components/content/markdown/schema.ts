@@ -1,9 +1,6 @@
 import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import type { Action } from '../../../actions/types'
-
-const ActionSchema = z.custom<Action>()
 
 export const MarkdownSchema = extendComponentSchema({
   id: z.string().optional(),
@@ -11,7 +8,3 @@ export const MarkdownSchema = extendComponentSchema({
   fontSize: z.enum(['sm', 'md', 'lg']).optional().default('md'),
   testID: z.string().optional(),
 })
-
-void ActionSchema
-
-

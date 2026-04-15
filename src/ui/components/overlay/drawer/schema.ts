@@ -15,5 +15,3 @@ export const DrawerSchema = extendComponentSchema({
   closeOnBackdrop: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
-
-

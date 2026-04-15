@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 
@@ -20,6 +20,3 @@ export const StatusBadgeSchema = extendComponentSchema({
   showDot: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
-
-
-

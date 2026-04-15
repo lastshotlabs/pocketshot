@@ -16,5 +16,3 @@ export const FileUploaderSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

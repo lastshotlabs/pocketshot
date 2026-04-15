@@ -21,5 +21,3 @@ export const AccordionSchema = extendComponentSchema({
   onSectionChange: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

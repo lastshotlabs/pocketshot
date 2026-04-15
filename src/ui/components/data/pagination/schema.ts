@@ -15,5 +15,3 @@ export const PaginationSchema = extendComponentSchema({
   onLoadMore: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

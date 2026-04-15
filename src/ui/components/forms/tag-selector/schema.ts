@@ -21,5 +21,3 @@ export const TagSelectorSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

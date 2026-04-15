@@ -15,5 +15,3 @@ export const FavoriteButtonSchema = extendComponentSchema({
   onToggleAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

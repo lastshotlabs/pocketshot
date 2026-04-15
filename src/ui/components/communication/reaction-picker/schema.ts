@@ -11,5 +11,3 @@ export const ReactionPickerSchema = extendComponentSchema({
   triggerLabel: z.string().optional(),
   testID: z.string().optional(),
 })
-
-

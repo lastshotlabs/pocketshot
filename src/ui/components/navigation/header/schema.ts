@@ -19,5 +19,3 @@ export const HeaderSchema = extendComponentSchema({
   showBack: z.boolean().optional().default(false),
   testID: z.string().optional(),
 })
-
-

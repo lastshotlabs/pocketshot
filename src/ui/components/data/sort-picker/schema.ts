@@ -17,5 +17,3 @@ export const SortPickerSchema = extendComponentSchema({
   onSelect: ActionSchema,
   testID: z.string().optional(),
 })
-
-

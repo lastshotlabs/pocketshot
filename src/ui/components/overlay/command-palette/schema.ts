@@ -21,5 +21,3 @@ export const CommandPaletteSchema = extendComponentSchema({
   maxResults: z.number().optional().default(20),
   testID: z.string().optional(),
 })
-
-

@@ -17,5 +17,3 @@ export const ChatWindowSchema = extendComponentSchema({
   showAvatars: z.boolean().default(true),
   testID: z.string().optional(),
 })
-
-

@@ -32,5 +32,3 @@ export const DrawerMenuSchema = extendComponentSchema({
   widthPercent: z.number().optional().default(80),
   testID: z.string().optional(),
 })
-
-

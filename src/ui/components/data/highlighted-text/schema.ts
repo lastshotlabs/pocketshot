@@ -14,5 +14,3 @@ export const HighlightedTextSchema = extendComponentSchema({
   fontSize: z.enum(['xs', 'sm', 'md', 'lg', 'xl']).optional().default('md'),
   testID: z.string().optional(),
 })
-
-

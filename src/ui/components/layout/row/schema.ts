@@ -17,5 +17,3 @@ export const RowSchema = extendComponentSchema({
   backgroundColor: z.string().optional(),
   testID: z.string().optional(),
 })
-
-

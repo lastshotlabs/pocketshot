@@ -16,5 +16,3 @@ export const CommentSectionSchema = extendComponentSchema({
   onDeleteComment: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

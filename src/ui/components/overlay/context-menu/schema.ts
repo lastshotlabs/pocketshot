@@ -19,5 +19,3 @@ export const ContextMenuSchema = extendComponentSchema({
   ),
   testID: z.string().optional(),
 })
-
-

@@ -13,5 +13,3 @@ export const NotificationBellSchema = extendComponentSchema({
   animated: z.boolean().default(true),
   testID: z.string().optional(),
 })
-
-

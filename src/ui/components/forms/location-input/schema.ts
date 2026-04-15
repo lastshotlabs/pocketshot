@@ -20,5 +20,3 @@ export const LocationInputSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

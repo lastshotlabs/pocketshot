@@ -19,5 +19,3 @@ export const ReactionBarSchema = extendComponentSchema({
   maxDisplay: z.number().int().min(1).default(8),
   testID: z.string().optional(),
 })
-
-

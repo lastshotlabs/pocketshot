@@ -17,5 +17,3 @@ export const CardSchema = extendComponentSchema({
   onPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

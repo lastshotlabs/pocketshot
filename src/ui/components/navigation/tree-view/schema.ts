@@ -27,5 +27,3 @@ export const TreeViewSchema = extendComponentSchema({
 })
 
 export { TreeNodeSchema }
-
-

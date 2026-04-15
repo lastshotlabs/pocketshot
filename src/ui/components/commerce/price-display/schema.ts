@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 
@@ -13,6 +13,3 @@ export const PriceDisplaySchema = extendComponentSchema({
   color: z.string().optional(),
   testID: z.string().optional(),
 })
-
-
-

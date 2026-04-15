@@ -1,11 +1,5 @@
 import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
-import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import type { Action } from '../../../actions/types'
-const ActionSchema = z.custom<Action>()
-
-void ActionSchema
-void FromRefSchema
 
 export const PopoverSchema = extendComponentSchema({
   id: z.string(),
@@ -17,5 +11,3 @@ export const PopoverSchema = extendComponentSchema({
   closeOnBackdrop: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
-
-

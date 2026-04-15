@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 
@@ -14,6 +14,3 @@ export const ProgressCircleSchema = extendComponentSchema({
   animated: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
-
-
-

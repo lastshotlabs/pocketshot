@@ -7,5 +7,3 @@ export const DividerSchema = extendComponentSchema({
   marginVertical: z.number().optional().default(2),
   orientation: z.enum(['horizontal', 'vertical']).optional().default('horizontal'),
 })
-
-

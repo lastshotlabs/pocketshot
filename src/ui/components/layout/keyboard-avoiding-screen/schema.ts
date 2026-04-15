@@ -9,5 +9,3 @@ export const KeyboardAvoidingScreenSchema = extendComponentSchema({
   behavior: z.enum(['padding', 'height', 'position']).optional(),
   testID: z.string().optional(),
 })
-
-

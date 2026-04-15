@@ -6,10 +6,7 @@ const ActionSchema = z.custom<Action>()
 
 export const AlertSchema = extendComponentSchema({
   id: z.string().optional(),
-  variant: z
-    .enum(['default', 'success', 'warning', 'error', 'info'])
-    .optional()
-    .default('default'),
+  variant: z.enum(['default', 'success', 'warning', 'error', 'info']).optional().default('default'),
   title: z.string(),
   body: z.string().optional(),
   icon: z.string().optional(),
@@ -23,5 +20,3 @@ export const AlertSchema = extendComponentSchema({
     .optional(),
   testID: z.string().optional(),
 })
-
-

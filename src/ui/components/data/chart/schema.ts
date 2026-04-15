@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
-
 const ChartDataItemSchema = z.object({
   label: z.string(),
   value: z.number(),
@@ -21,5 +20,3 @@ export const ChartSchema = extendComponentSchema({
   animated: z.boolean().default(true),
   testID: z.string().optional(),
 })
-
-

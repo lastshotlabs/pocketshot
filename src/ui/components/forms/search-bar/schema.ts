@@ -13,5 +13,3 @@ export const SearchBarSchema = extendComponentSchema({
   onSubmitAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

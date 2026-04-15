@@ -12,5 +12,3 @@ export const PullToRefreshSchema = extendComponentSchema({
   color: z.string().optional(),
   testID: z.string().optional(),
 })
-
-

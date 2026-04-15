@@ -18,5 +18,3 @@ export const DateRangePickerSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

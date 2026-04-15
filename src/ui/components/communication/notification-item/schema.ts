@@ -16,5 +16,3 @@ export const NotificationItemSchema = extendComponentSchema({
   onDismiss: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

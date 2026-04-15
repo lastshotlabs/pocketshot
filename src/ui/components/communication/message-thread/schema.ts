@@ -16,5 +16,3 @@ export const MessageThreadSchema = extendComponentSchema({
   showAvatars: z.boolean().default(true),
   testID: z.string().optional(),
 })
-
-

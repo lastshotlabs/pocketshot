@@ -12,5 +12,3 @@ export const QrScannerSchema = extendComponentSchema({
   overlayText: z.string().optional(),
   testID: z.string().optional(),
 })
-
-

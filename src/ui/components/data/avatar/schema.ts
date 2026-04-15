@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
@@ -14,6 +14,3 @@ export const AvatarSchema = extendComponentSchema({
   onPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-
-

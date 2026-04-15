@@ -5,20 +5,18 @@ import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const WizardFieldSchema = extendComponentSchema({
+export const WizardFieldSchema = z.object({
   id: z.string(),
   type: z.enum(['text', 'email', 'password', 'number', 'textarea', 'select', 'checkbox']),
   label: z.string(),
   placeholder: z.string().optional(),
   required: z.boolean().optional().default(false),
-  options: z
-    .array(z.object({ value: z.string(), label: z.string() }))
-    .optional(),
+  options: z.array(z.object({ value: z.string(), label: z.string() })).optional(),
   defaultValue: z.union([z.string(), z.boolean()]).optional(),
   helperText: z.string().optional(),
 })
 
-export const WizardStepSchema = extendComponentSchema({
+export const WizardStepSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().optional(),
@@ -41,5 +39,3 @@ export const WizardSchema = extendComponentSchema({
 
 // Re-export for convenience
 export { FromRefSchema }
-
-

@@ -7,14 +7,10 @@ const ActionSchema = z.custom<Action>()
 
 export const SaveIndicatorSchema = extendComponentSchema({
   id: z.string().optional(),
-  status: z
-    .union([z.enum(['idle', 'saving', 'saved', 'error']), FromRefSchema])
-    .default('idle'),
+  status: z.union([z.enum(['idle', 'saving', 'saved', 'error']), FromRefSchema]).default('idle'),
   idleLabel: z.string().optional().default(''),
   savingLabel: z.string().optional().default('Saving…'),
   savedLabel: z.string().optional().default('Saved'),
   errorLabel: z.string().optional().default('Error saving'),
   testID: z.string().optional(),
 })
-
-

@@ -10,5 +10,3 @@ export const SectionSchema = extendComponentSchema({
   children: z.array(z.unknown()).optional(),
   testID: z.string().optional(),
 })
-
-

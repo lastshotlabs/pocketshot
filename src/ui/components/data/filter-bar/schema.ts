@@ -5,7 +5,7 @@ import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const FilterOptionSchema = extendComponentSchema({
+export const FilterOptionSchema = z.object({
   id: z.string(),
   label: z.string(),
   icon: z.string().optional(),
@@ -23,5 +23,3 @@ export const FilterBarSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

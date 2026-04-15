@@ -17,5 +17,3 @@ export const SegmentedControlSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

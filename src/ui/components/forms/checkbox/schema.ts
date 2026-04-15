@@ -4,7 +4,6 @@ import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
-
 export const CheckboxSchema = extendComponentSchema({
   id: z.string(),
   label: z.string(),
@@ -14,5 +13,3 @@ export const CheckboxSchema = extendComponentSchema({
   disabled: z.boolean().optional().default(false),
   testID: z.string().optional(),
 })
-
-

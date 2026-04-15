@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
-
 export const ActivityFeedSchema = extendComponentSchema({
   id: z.string().optional(),
   data: z.union([z.string(), FromRefSchema]).optional(),
@@ -10,5 +9,3 @@ export const ActivityFeedSchema = extendComponentSchema({
   itemHeight: z.number().optional().default(72),
   testID: z.string().optional(),
 })
-
-

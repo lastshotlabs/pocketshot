@@ -5,7 +5,7 @@ import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
 
-export const DataTableColumnSchema = extendComponentSchema({
+export const DataTableColumnSchema = z.object({
   key: z.string(),
   label: z.string(),
   sortable: z.boolean().optional().default(false),
@@ -29,5 +29,3 @@ export const DataTableSchema = extendComponentSchema({
   stickyHeader: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
-
-

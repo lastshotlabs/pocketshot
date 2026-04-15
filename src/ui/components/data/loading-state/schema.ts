@@ -8,5 +8,3 @@ export const LoadingStateSchema = extendComponentSchema({
   height: z.number().positive().optional().default(48),
   testID: z.string().optional(),
 })
-
-

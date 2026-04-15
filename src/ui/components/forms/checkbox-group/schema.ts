@@ -4,7 +4,6 @@ import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
-
 const OptionSchema = z.object({
   value: z.string(),
   label: z.string(),
@@ -21,5 +20,3 @@ export const CheckboxGroupSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

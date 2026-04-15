@@ -9,5 +9,3 @@ export const FormFieldSchema = extendComponentSchema({
   errorKey: z.string().optional(),
   testID: z.string().optional(),
 })
-
-

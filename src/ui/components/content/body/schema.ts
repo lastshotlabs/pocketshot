@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
-
 export const BodySchema = extendComponentSchema({
   id: z.string().optional(),
   text: z.union([z.string(), FromRefSchema]),
@@ -13,5 +12,3 @@ export const BodySchema = extendComponentSchema({
   numberOfLines: z.number().optional(),
   testID: z.string().optional(),
 })
-
-

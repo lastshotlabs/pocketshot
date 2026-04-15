@@ -17,5 +17,3 @@ export const EmptyStateSchema = extendComponentSchema({
     .optional(),
   testID: z.string().optional(),
 })
-
-

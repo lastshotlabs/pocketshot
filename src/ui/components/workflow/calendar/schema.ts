@@ -26,5 +26,3 @@ export const CalendarSchema = extendComponentSchema({
   showNavigation: z.boolean().default(true),
   testID: z.string().optional(),
 })
-
-

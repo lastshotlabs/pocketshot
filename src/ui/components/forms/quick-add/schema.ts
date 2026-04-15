@@ -11,5 +11,3 @@ export const QuickAddSchema = extendComponentSchema({
   onSubmit: ActionSchema,
   testID: z.string().optional(),
 })
-
-

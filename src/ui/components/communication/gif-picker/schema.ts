@@ -22,5 +22,3 @@ export const GifPickerSchema = extendComponentSchema({
   sampleGifs: z.array(GifResultSchema).optional(),
   testID: z.string().optional(),
 })
-
-

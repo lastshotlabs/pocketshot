@@ -12,5 +12,3 @@ export const MediaPickerSchema = extendComponentSchema({
   onSelect: ActionSchema,
   testID: z.string().optional(),
 })
-
-

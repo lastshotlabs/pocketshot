@@ -4,7 +4,6 @@ import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
-
 const OptionSchema = z.object({
   label: z.string(),
   value: z.string(),
@@ -19,5 +18,3 @@ export const SelectSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

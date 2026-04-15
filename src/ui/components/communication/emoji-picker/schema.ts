@@ -11,5 +11,3 @@ export const EmojiPickerSchema = extendComponentSchema({
   categories: z.array(z.string()).optional(),
   testID: z.string().optional(),
 })
-
-

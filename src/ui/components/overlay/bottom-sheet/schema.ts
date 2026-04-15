@@ -9,5 +9,3 @@ export const BottomSheetSchema = extendComponentSchema({
   closeOnBackdrop: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
-
-

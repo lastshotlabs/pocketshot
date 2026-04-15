@@ -4,7 +4,6 @@ import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
-
 export const PasswordInputSchema = extendComponentSchema({
   id: z.string(),
   label: z.string().optional(),
@@ -20,5 +19,3 @@ export const PasswordInputSchema = extendComponentSchema({
   onSubmitAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

@@ -17,5 +17,3 @@ export const InlineEditSchema = extendComponentSchema({
   onSaveAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

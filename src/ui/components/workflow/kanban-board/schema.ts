@@ -32,5 +32,3 @@ export const KanbanBoardSchema = extendComponentSchema({
   onItemPress: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

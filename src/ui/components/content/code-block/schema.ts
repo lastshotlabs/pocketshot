@@ -15,5 +15,3 @@ export const CodeBlockSchema = extendComponentSchema({
   onCopy: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

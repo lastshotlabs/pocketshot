@@ -17,5 +17,3 @@ export const LoginFormSchema = extendComponentSchema({
     .default([]),
   testID: z.string().optional(),
 })
-
-

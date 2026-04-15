@@ -15,5 +15,3 @@ export const RegisterFormSchema = extendComponentSchema({
   loginAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

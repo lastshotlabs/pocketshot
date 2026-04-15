@@ -1,10 +1,7 @@
 import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
-import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 const ActionSchema = z.custom<Action>()
-
-void FromRefSchema
 
 export const DropdownMenuSchema = extendComponentSchema({
   id: z.string().optional(),
@@ -25,5 +22,3 @@ export const DropdownMenuSchema = extendComponentSchema({
   align: z.enum(['start', 'end']).optional().default('start'),
   testID: z.string().optional(),
 })
-
-

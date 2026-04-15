@@ -15,5 +15,3 @@ export const NotificationFeedSchema = extendComponentSchema({
   showMarkAllRead: z.boolean().default(true),
   testID: z.string().optional(),
 })
-
-

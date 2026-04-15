@@ -12,5 +12,3 @@ export const ScreenSchema = extendComponentSchema({
     .default(['top', 'bottom', 'left', 'right']),
   testID: z.string().optional(),
 })
-
-

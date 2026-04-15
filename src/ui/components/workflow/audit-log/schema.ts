@@ -15,5 +15,3 @@ export const AuditLogSchema = extendComponentSchema({
   emptyMessage: z.string().default('No activity yet'),
   testID: z.string().optional(),
 })
-
-

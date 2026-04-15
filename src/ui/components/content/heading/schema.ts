@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { extendComponentSchema } from '../../_base'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
-
 export const HeadingSchema = extendComponentSchema({
   id: z.string().optional(),
   text: z.union([z.string(), FromRefSchema]),
@@ -14,5 +13,3 @@ export const HeadingSchema = extendComponentSchema({
   color: z.string().optional(),
   testID: z.string().optional(),
 })
-
-

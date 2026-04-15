@@ -13,5 +13,3 @@ export const PinInputSchema = extendComponentSchema({
   onComplete: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

@@ -13,5 +13,3 @@ export const LinkSchema = extendComponentSchema({
   underline: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
-
-

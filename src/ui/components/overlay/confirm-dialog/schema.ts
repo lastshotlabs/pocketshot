@@ -15,5 +15,3 @@ export const ConfirmDialogSchema = extendComponentSchema({
   onCancel: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

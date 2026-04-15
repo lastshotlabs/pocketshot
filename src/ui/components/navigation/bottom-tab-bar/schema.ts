@@ -21,5 +21,3 @@ export const BottomTabBarSchema = extendComponentSchema({
   showLabels: z.boolean().optional().default(true),
   testID: z.string().optional(),
 })
-
-

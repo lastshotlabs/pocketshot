@@ -11,5 +11,3 @@ export const ForgotPasswordFormSchema = extendComponentSchema({
   backAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

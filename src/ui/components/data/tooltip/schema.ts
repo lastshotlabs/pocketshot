@@ -12,5 +12,3 @@ export const TooltipSchema = extendComponentSchema({
   position: z.enum(['top', 'bottom', 'left', 'right']).optional().default('top'),
   testID: z.string().optional(),
 })
-
-

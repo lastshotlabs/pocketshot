@@ -1,4 +1,4 @@
-
+import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import { extendComponentSchema } from '../../_base'
 import type { Action } from '../../../actions/types'
@@ -22,6 +22,3 @@ export const DataListSchema = extendComponentSchema({
   estimatedItemSize: z.number().positive().optional().default(80),
   testID: z.string().optional(),
 })
-
-
-

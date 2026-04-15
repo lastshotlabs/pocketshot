@@ -19,5 +19,3 @@ export const TabsSchema = extendComponentSchema({
   onTabChange: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

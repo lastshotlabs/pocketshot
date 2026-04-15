@@ -18,9 +18,9 @@ export const LinkEmbedSchema = extendComponentSchema({
 
   // ── Provider-specific metadata ────────────────────────────────────────────
   /** Override auto-detected provider. Auto-detects: youtube, twitter, github, spotify, figma, notion, linear */
-  provider: z.enum([
-    'youtube', 'twitter', 'github', 'spotify', 'figma', 'notion', 'linear', 'generic',
-  ]).optional(),
+  provider: z
+    .enum(['youtube', 'twitter', 'github', 'spotify', 'figma', 'notion', 'linear', 'generic'])
+    .optional(),
 
   // YouTube
   videoId: z.string().optional(),
@@ -30,11 +30,13 @@ export const LinkEmbedSchema = extendComponentSchema({
   authorHandle: z.string().optional(),
   authorAvatarUrl: z.string().optional(),
   tweetText: z.string().optional(),
-  metrics: z.object({
-    likes: z.number().optional(),
-    retweets: z.number().optional(),
-    replies: z.number().optional(),
-  }).optional(),
+  metrics: z
+    .object({
+      likes: z.number().optional(),
+      retweets: z.number().optional(),
+      replies: z.number().optional(),
+    })
+    .optional(),
 
   // GitHub
   repoOwner: z.string().optional(),
@@ -56,5 +58,3 @@ export const LinkEmbedSchema = extendComponentSchema({
   lastModified: z.string().optional(),
   thumbnailUrl: z.string().optional(),
 })
-
-

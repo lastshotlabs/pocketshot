@@ -4,7 +4,6 @@ import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
-
 const FieldOptionSchema = z.object({
   label: z.string(),
   value: z.string(),
@@ -29,5 +28,3 @@ export const AutoFormSchema = extendComponentSchema({
   validationErrors: FromRefSchema.optional(),
   testID: z.string().optional(),
 })
-
-

@@ -17,5 +17,3 @@ export const MultiSelectSchema = extendComponentSchema({
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-

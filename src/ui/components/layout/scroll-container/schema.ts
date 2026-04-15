@@ -18,5 +18,3 @@ export const ScrollContainerSchema = extendComponentSchema({
   onRefresh: ActionSchema.optional(),
   testID: z.string().optional(),
 })
-
-
