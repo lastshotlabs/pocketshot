@@ -4,6 +4,7 @@ import { ProductCardSchema } from '../../src/ui/components/commerce/product-card
 import { ChatBubbleSchema } from '../../src/ui/components/communication/chat-bubble/schema'
 import { TextInputSchema } from '../../src/ui/components/forms/text-input/schema'
 import { RowSchema } from '../../src/ui/components/layout/row/schema'
+import { CardSchema } from '../../src/ui/components/layout/card/schema'
 import { AccordionSchema } from '../../src/ui/components/navigation/accordion/schema'
 import { DrawerSchema } from '../../src/ui/components/overlay/drawer/schema'
 import { TimelineSchema } from '../../src/ui/components/workflow/timeline/schema'
@@ -13,10 +14,12 @@ describe('component schemas inherit the shared base contract', () => {
     expect(
       RowSchema.parse({
         id: 'layout-root',
-        gap: 12,
+        gap: 'lg',
         visibleWhen: 'defined(user.id)',
         bg: 'background',
         padding: 'lg',
+        alignItems: 'center',
+        justifyContent: 'between',
         slots: {
           root: {
             paddingX: 'xl',
@@ -31,6 +34,28 @@ describe('component schemas inherit the shared base contract', () => {
     ).toMatchObject({
       id: 'layout-root',
       padding: 'lg',
+    })
+
+    expect(
+      CardSchema.parse({
+        id: 'summary-card',
+        bg: 'card',
+        padding: 'xl',
+        borderRadius: 'xl',
+        shadow: 'lg',
+        slots: {
+          root: {
+            states: {
+              open: {
+                shadow: 'xl',
+              },
+            },
+          },
+        },
+      }),
+    ).toMatchObject({
+      id: 'summary-card',
+      borderRadius: 'xl',
     })
 
     expect(

@@ -51,7 +51,7 @@ export const dashboardPreset: PresetFactory<DashboardPresetConfig> = (config) =>
   components.push({
     type: 'Row',
     id: `${config.id}-stats-row`,
-    spacing: 'md',
+    gap: 'md',
     children: statCards,
   })
 

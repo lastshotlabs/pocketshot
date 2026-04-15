@@ -8,26 +8,26 @@ describe('CardSchema', () => {
 
   it('applies defaults', () => {
     const result = CardSchema.parse({})
-    expect(result.padding).toBe(4)
-    expect(result.radius).toBe('lg')
+    expect(result.padding).toBe('lg')
+    expect(result.borderRadius).toBe('lg')
     expect(result.shadow).toBe('md')
   })
 
   it('parses a full config', () => {
     const result = CardSchema.parse({
       id: 'user-card',
-      padding: 16,
-      radius: 'xl',
+      padding: 'xl',
+      borderRadius: 'xl',
       shadow: 'lg',
-      backgroundColor: '#fff',
+      bg: '#fff',
       testID: 'user-card',
     })
-    expect(result.radius).toBe('xl')
+    expect(result.borderRadius).toBe('xl')
     expect(result.shadow).toBe('lg')
   })
 
-  it('rejects invalid radius value', () => {
-    expect(CardSchema.safeParse({ radius: 'massive' }).success).toBe(false)
+  it('rejects invalid borderRadius value', () => {
+    expect(CardSchema.safeParse({ borderRadius: { bad: true } }).success).toBe(false)
   })
 
   it('rejects invalid shadow value', () => {

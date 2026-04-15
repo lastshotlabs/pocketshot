@@ -46,7 +46,7 @@ describe('ScrollContainer', () => {
   })
 
   it('renders with padding without crashing', () => {
-    const { toJSON } = renderWithProviders(<ScrollContainer config={{ padding: 4 }} />)
+    const { toJSON } = renderWithProviders(<ScrollContainer config={{ padding: 'lg' }} />)
     expect(toJSON()).toBeTruthy()
   })
 

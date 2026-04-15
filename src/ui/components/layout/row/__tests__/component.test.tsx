@@ -36,36 +36,34 @@ describe('Row', () => {
     expect(toJSON()).toBeTruthy()
   })
 
-  it('renders with wrap enabled without crashing', () => {
-    const { toJSON } = renderWithProviders(<Row config={{ wrap: true }} />)
+  it('renders with flexWrap enabled without crashing', () => {
+    const { toJSON } = renderWithProviders(<Row config={{ flexWrap: 'wrap' }} />)
     expect(toJSON()).toBeTruthy()
   })
 
-  it('renders with all align variants without crashing', () => {
-    const variants = ['flex-start', 'center', 'flex-end', 'stretch'] as const
-    for (const align of variants) {
-      const { toJSON } = renderWithProviders(<Row config={{ align }} />)
+  it('renders with all alignItems variants without crashing', () => {
+    const variants = ['start', 'center', 'end', 'stretch', 'baseline'] as const
+    for (const alignItems of variants) {
+      const { toJSON } = renderWithProviders(<Row config={{ alignItems }} />)
       expect(toJSON()).toBeTruthy()
     }
   })
 
-  it('renders with all justify variants without crashing', () => {
-    const variants = ['flex-start', 'center', 'flex-end', 'space-between', 'space-around'] as const
-    for (const justify of variants) {
-      const { toJSON } = renderWithProviders(<Row config={{ justify }} />)
+  it('renders with all justifyContent variants without crashing', () => {
+    const variants = ['start', 'center', 'end', 'between', 'around', 'evenly'] as const
+    for (const justifyContent of variants) {
+      const { toJSON } = renderWithProviders(<Row config={{ justifyContent }} />)
       expect(toJSON()).toBeTruthy()
     }
   })
 
   it('renders with padding props without crashing', () => {
-    const { toJSON } = renderWithProviders(
-      <Row config={{ padding: 4, paddingHorizontal: 8, paddingVertical: 2 }} />,
-    )
+    const { toJSON } = renderWithProviders(<Row config={{ padding: 4, paddingX: 8, paddingY: 2 }} />)
     expect(toJSON()).toBeTruthy()
   })
 
-  it('renders with backgroundColor without crashing', () => {
-    const { toJSON } = renderWithProviders(<Row config={{ backgroundColor: '#f0f0f0' }} />)
+  it('renders with bg without crashing', () => {
+    const { toJSON } = renderWithProviders(<Row config={{ bg: '#f0f0f0' }} />)
     expect(toJSON()).toBeTruthy()
   })
 })

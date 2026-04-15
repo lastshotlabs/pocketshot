@@ -8,7 +8,7 @@ describe('SectionSchema', () => {
 
   it('applies defaults', () => {
     const result = SectionSchema.parse({})
-    expect(result.padding).toBe(4)
+    expect(result.padding).toBe('lg')
     expect(result.titleSize).toBe('md')
   })
 
@@ -17,7 +17,7 @@ describe('SectionSchema', () => {
       id: 'profile-section',
       title: 'Profile',
       description: 'Manage your profile',
-      padding: 16,
+      padding: 'xl',
       titleSize: 'lg',
       testID: 'profile-section',
     })

@@ -52,10 +52,10 @@ describe('Card', () => {
     expect(getByText('inside pressable')).toBeTruthy()
   })
 
-  it('renders with all radius variants without crashing', () => {
-    const variants = ['none', 'sm', 'md', 'lg', 'xl', '2xl'] as const
-    for (const radius of variants) {
-      const { toJSON } = renderWithProviders(<Card config={{ radius }} />)
+  it('renders with all borderRadius variants without crashing', () => {
+    const variants = ['none', 'sm', 'md', 'lg', 'xl', 'full'] as const
+    for (const borderRadius of variants) {
+      const { toJSON } = renderWithProviders(<Card config={{ borderRadius }} />)
       expect(toJSON()).toBeTruthy()
     }
   })
@@ -68,8 +68,8 @@ describe('Card', () => {
     }
   })
 
-  it('renders with a custom backgroundColor without crashing', () => {
-    const { toJSON } = renderWithProviders(<Card config={{ backgroundColor: '#ff0000' }} />)
+  it('renders with a custom bg without crashing', () => {
+    const { toJSON } = renderWithProviders(<Card config={{ bg: '#ff0000' }} />)
     expect(toJSON()).toBeTruthy()
   })
 

@@ -18,8 +18,8 @@ describe('ScrollContainerSchema', () => {
       id: 'main-scroll',
       horizontal: true,
       showsScrollIndicator: true,
-      padding: 16,
-      contentPadding: 8,
+      padding: 'lg',
+      contentPadding: 'md',
       refreshable: true,
       testID: 'main-scroll',
     })

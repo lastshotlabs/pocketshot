@@ -10,41 +10,41 @@ describe('StackSchema', () => {
   it('applies defaults', () => {
     const result = StackSchema.parse({})
     expect(result.gap).toBe(0)
-    expect(result.align).toBe('stretch')
-    expect(result.justify).toBe('flex-start')
+    expect(result.alignItems).toBe('stretch')
+    expect(result.justifyContent).toBe('start')
   })
 
   it('parses a full config', () => {
     const result = StackSchema.parse({
       id: 'main-stack',
       gap: 8,
-      padding: 16,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      align: 'center',
-      justify: 'space-between',
-      backgroundColor: '#ffffff',
+      padding: 'lg',
+      paddingX: 'md',
+      paddingY: 'sm',
+      alignItems: 'center',
+      justifyContent: 'between',
+      bg: '#ffffff',
       testID: 'main-stack',
     })
     expect(result.id).toBe('main-stack')
     expect(result.gap).toBe(8)
-    expect(result.align).toBe('center')
-    expect(result.justify).toBe('space-between')
+    expect(result.alignItems).toBe('center')
+    expect(result.justifyContent).toBe('between')
   })
 
-  it('rejects invalid align value', () => {
-    const result = StackSchema.safeParse({ align: 'invalid' })
+  it('rejects invalid alignItems value', () => {
+    const result = StackSchema.safeParse({ alignItems: 'invalid' })
     expect(result.success).toBe(false)
   })
 
-  it('rejects invalid justify value', () => {
-    const result = StackSchema.safeParse({ justify: 'invalid' })
+  it('rejects invalid justifyContent value', () => {
+    const result = StackSchema.safeParse({ justifyContent: 'invalid' })
     expect(result.success).toBe(false)
   })
 
-  it('rejects non-number gap', () => {
-    const result = StackSchema.safeParse({ gap: 'big' })
-    expect(result.success).toBe(false)
+  it('accepts token gap values', () => {
+    const result = StackSchema.safeParse({ gap: 'lg' })
+    expect(result.success).toBe(true)
   })
 
   it('accepts children array', () => {
