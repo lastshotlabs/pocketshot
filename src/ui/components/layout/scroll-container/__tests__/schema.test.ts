@@ -32,6 +32,22 @@ describe('ScrollContainerSchema', () => {
     expect(result.onRefresh).toBeDefined()
   })
 
+  it('accepts named slot styling surfaces', () => {
+    const result = ScrollContainerSchema.parse({
+      slots: {
+        root: {
+          bg: 'card',
+        },
+        viewport: {
+          paddingX: 'lg',
+        },
+      },
+    })
+
+    expect(result.slots?.root).toMatchObject({ bg: 'card' })
+    expect(result.slots?.viewport).toMatchObject({ paddingX: 'lg' })
+  })
+
   it('rejects non-boolean horizontal', () => {
     expect(ScrollContainerSchema.safeParse({ horizontal: 'yes' }).success).toBe(false)
   })

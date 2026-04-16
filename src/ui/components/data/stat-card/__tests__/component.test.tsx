@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import React from 'react'
 import { StatCard } from '../component'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
@@ -34,9 +34,9 @@ describe('StatCard', () => {
 
   it('renders icon text when provided', () => {
     const { getByText } = renderWithProviders(
-      <StatCard config={{ label: 'Revenue', value: '1,200', icon: '💰' }} />,
+      <StatCard config={{ label: 'Revenue', value: '1,200', icon: '$' }} />,
     )
-    expect(getByText('💰')).toBeTruthy()
+    expect(getByText('$')).toBeTruthy()
   })
 
   it('does not render icon when omitted', () => {
@@ -44,7 +44,7 @@ describe('StatCard', () => {
       <StatCard config={{ label: 'Revenue', value: '1,200' }} />,
     )
     const json = JSON.stringify(toJSON())
-    expect(json).not.toContain('💰')
+    expect(json).not.toContain('"$"')
   })
 
   it('renders upward trend indicator', () => {
@@ -138,16 +138,46 @@ describe('StatCard', () => {
         config={{
           label: 'Revenue',
           value: '$10,000',
-          icon: '💰',
+          icon: '$',
           trend: { direction: 'up', value: '+5%' },
           onPress: { type: 'navigate', to: '/RevenueDetail' },
         }}
       />,
     )
-    expect(getByText('💰')).toBeTruthy()
+    expect(getByText('$')).toBeTruthy()
     expect(getByText('Revenue')).toBeTruthy()
     expect(getByText('$10,000')).toBeTruthy()
     expect(getByText('↑ +5%')).toBeTruthy()
     expect(getByRole('button')).toBeTruthy()
+  })
+
+  it('renders with shared styling and named slot surfaces', () => {
+    const { toJSON, getByText } = renderWithProviders(
+      <StatCard
+        config={{
+          label: 'Revenue',
+          value: '1,200',
+          color: 'primary',
+          fontWeight: 'bold',
+          slots: {
+            root: {
+              paddingX: 'xl',
+            },
+            value: {
+              letterSpacing: 'wide',
+            },
+            trend: {
+              opacity: 0.8,
+            },
+          },
+          trend: { direction: 'up', value: '+8%' },
+        }}
+      />,
+    )
+
+    expect(getByText('Revenue')).toBeTruthy()
+    expect(getByText('1,200')).toBeTruthy()
+    expect(getByText('↑ +8%')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
   })
 })

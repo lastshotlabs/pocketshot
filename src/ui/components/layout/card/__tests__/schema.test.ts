@@ -16,7 +16,10 @@ describe('CardSchema', () => {
   it('parses a full config', () => {
     const result = CardSchema.parse({
       id: 'user-card',
+      title: 'User',
+      subtitle: 'Details',
       padding: 'xl',
+      gap: 'md',
       borderRadius: 'xl',
       shadow: 'lg',
       bg: '#fff',
@@ -37,5 +40,32 @@ describe('CardSchema', () => {
   it('accepts action for onPress', () => {
     const result = CardSchema.parse({ onPress: { type: 'navigate', to: '/detail' } })
     expect(result.onPress).toBeDefined()
+  })
+
+  it('accepts named slot styling surfaces', () => {
+    const result = CardSchema.parse({
+      title: 'Profile',
+      subtitle: 'Details',
+      slots: {
+        header: {
+          paddingY: 'sm',
+        },
+        title: {
+          letterSpacing: 'wide',
+        },
+        subtitle: {
+          color: 'muted',
+        },
+        content: {
+          gap: 'md',
+        },
+        item: {
+          paddingY: 'sm',
+        },
+      },
+    })
+
+    expect(result.slots?.header).toMatchObject({ paddingY: 'sm' })
+    expect(result.slots?.item).toMatchObject({ paddingY: 'sm' })
   })
 })

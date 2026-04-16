@@ -23,4 +23,26 @@ describe('ProgressCircleSchema', () => {
     const result = ProgressCircleSchema.parse({ value: 48, color: 'success' })
     expect(result.color).toBe('success')
   })
+
+  it('accepts named circular slot surfaces', () => {
+    const result = ProgressCircleSchema.parse({
+      value: 48,
+      label: { from: 'stats.label' },
+      slots: {
+        value: {
+          letterSpacing: 'wide',
+        },
+        circularTrack: {
+          opacity: 0.4,
+        },
+        circularFill: {
+          opacity: 0.9,
+        },
+      },
+    })
+
+    expect(result.label).toEqual({ from: 'stats.label' })
+    expect(result.slots?.value).toMatchObject({ letterSpacing: 'wide' })
+    expect(result.slots?.circularTrack).toMatchObject({ opacity: 0.4 })
+  })
 })

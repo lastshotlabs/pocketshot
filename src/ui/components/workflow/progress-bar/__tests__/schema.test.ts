@@ -57,4 +57,29 @@ describe('ProgressBarSchema', () => {
   it('rejects non-positive height', () => {
     expect(ProgressBarSchema.safeParse({ value: 50, height: 0 }).success).toBe(false)
   })
+
+  it('accepts bar slot styling surfaces', () => {
+    const result = ProgressBarSchema.parse({
+      value: 50,
+      label: { from: 'upload.label' },
+      slots: {
+        label: {
+          letterSpacing: 'wide',
+        },
+        value: {
+          color: 'muted',
+        },
+        track: {
+          opacity: 0.5,
+        },
+        fill: {
+          opacity: 0.9,
+        },
+      },
+    })
+
+    expect(result.label).toEqual({ from: 'upload.label' })
+    expect(result.slots?.label).toMatchObject({ letterSpacing: 'wide' })
+    expect(result.slots?.fill).toMatchObject({ opacity: 0.9 })
+  })
 })

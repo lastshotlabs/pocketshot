@@ -32,6 +32,22 @@ describe('StackSchema', () => {
     expect(result.justifyContent).toBe('between')
   })
 
+  it('accepts named slot styling surfaces', () => {
+    const result = StackSchema.parse({
+      slots: {
+        root: {
+          bg: 'card',
+        },
+        item: {
+          paddingY: 'sm',
+        },
+      },
+    })
+
+    expect(result.slots?.root).toMatchObject({ bg: 'card' })
+    expect(result.slots?.item).toMatchObject({ paddingY: 'sm' })
+  })
+
   it('rejects invalid alignItems value', () => {
     const result = StackSchema.safeParse({ alignItems: 'invalid' })
     expect(result.success).toBe(false)

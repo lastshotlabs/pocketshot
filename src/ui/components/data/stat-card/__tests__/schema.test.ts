@@ -49,4 +49,22 @@ describe('StatCardSchema', () => {
   it('all optional fields are optional', () => {
     expect(StatCardSchema.safeParse({ label: 'X', value: 0 }).success).toBe(true)
   })
+
+  it('accepts named slot styling surfaces', () => {
+    const result = StatCardSchema.parse({
+      label: 'Revenue',
+      value: 5000,
+      slots: {
+        value: {
+          letterSpacing: 'wide',
+        },
+        trend: {
+          color: 'success',
+        },
+      },
+    })
+
+    expect(result.slots?.value).toMatchObject({ letterSpacing: 'wide' })
+    expect(result.slots?.trend).toMatchObject({ color: 'success' })
+  })
 })

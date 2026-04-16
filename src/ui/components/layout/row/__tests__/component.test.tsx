@@ -66,4 +66,25 @@ describe('Row', () => {
     const { toJSON } = renderWithProviders(<Row config={{ bg: '#f0f0f0' }} />)
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders item slot wrappers without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <Row
+        config={{
+          slots: {
+            item: {
+              paddingX: 'sm',
+            },
+          },
+        }}
+      >
+        <Text>first row child</Text>
+        <Text>second row child</Text>
+      </Row>,
+    )
+
+    expect(getByText('first row child')).toBeTruthy()
+    expect(getByText('second row child')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
 })

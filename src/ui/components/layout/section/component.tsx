@@ -1,6 +1,7 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 import type { SectionConfig } from './types'
@@ -14,6 +15,11 @@ export function Section({
 }) {
   const tokens = useTokens()
   const styles = makeStyles(tokens, config)
+  const itemSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.item as Record<string, unknown> | undefined,
+  })
+  const items = React.Children.toArray(children)
 
   return (
     <ComponentWrapper
@@ -30,7 +36,18 @@ export function Section({
       {config.description !== undefined && (
         <Text style={styles.description}>{config.description}</Text>
       )}
-      {children !== undefined && <View style={styles.content}>{children}</View>}
+      {children !== undefined && (
+        <View style={styles.content}>
+          {items.map((child, index) => (
+            <View
+              key={React.isValidElement(child) && child.key != null ? child.key : index}
+              style={itemSurface.style as ViewStyle | undefined}
+            >
+              {child}
+            </View>
+          ))}
+        </View>
+      )}
     </ComponentWrapper>
   )
 }

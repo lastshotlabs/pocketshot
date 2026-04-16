@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, StyleSheet, Text, View } from 'react-native'
+import { Animated, StyleSheet, Text, View, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeStyleProps, toNumericDimensionValue } from '../../_base'
+import { resolveNativeStyleProps, resolveSurfacePresentation, toNumericDimensionValue } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
@@ -39,19 +39,29 @@ function Legend({
   data,
   tokens,
   styles,
+  legendStyle,
+  legendItemStyle,
+  axisTextStyle,
 }: {
   data: ChartDataItem[]
   tokens: DesignTokens
   styles: ReturnType<typeof makeStyles>
+  legendStyle?: ViewStyle
+  legendItemStyle?: ViewStyle
+  axisTextStyle?: TextStyle
 }) {
   return (
-    <View style={styles.legend} accessibilityRole="list" accessibilityLabel="Chart legend">
+    <View
+      style={[styles.legend, legendStyle]}
+      accessibilityRole="list"
+      accessibilityLabel="Chart legend"
+    >
       {data.map((item, i) => {
         const color = item.color ?? getPaletteColor(i, tokens)
         return (
-          <View key={`${item.label}-${i}`} style={styles.legendItem}>
+          <View key={`${item.label}-${i}`} style={[styles.legendItem, legendItemStyle]}>
             <View style={[styles.legendSwatch, { backgroundColor: color }]} />
-            <Text style={styles.legendLabel} numberOfLines={1}>
+            <Text style={[styles.legendLabel, axisTextStyle]} numberOfLines={1}>
               {item.label}
             </Text>
           </View>
@@ -71,6 +81,8 @@ function BarChart({
   animated: shouldAnimate,
   tokens,
   styles,
+  seriesStyle,
+  axisTextStyle,
 }: {
   data: ChartDataItem[]
   height: number
@@ -79,6 +91,8 @@ function BarChart({
   animated: boolean
   tokens: DesignTokens
   styles: ReturnType<typeof makeStyles>
+  seriesStyle?: ViewStyle
+  axisTextStyle?: TextStyle
 }) {
   const progress = useRef(new Animated.Value(0)).current
 
@@ -116,7 +130,7 @@ function BarChart({
             <View key={`${item.label}-${i}`} style={styles.barColumn}>
               {/* Value label above bar */}
               {showValues ? (
-                <Text style={styles.barValueLabel} numberOfLines={1}>
+                <Text style={[styles.barValueLabel, axisTextStyle]} numberOfLines={1}>
                   {item.value}
                 </Text>
               ) : null}
@@ -135,6 +149,7 @@ function BarChart({
                       inputRange: [0, 1],
                       outputRange: [0, chartAreaHeight * barHeightRatio],
                     }),
+                    ...(seriesStyle ?? {}),
                   }}
                   accessibilityElementsHidden
                   importantForAccessibility="no"
@@ -143,7 +158,7 @@ function BarChart({
 
               {/* Label below bar */}
               {showLabels ? (
-                <Text style={styles.barLabel} numberOfLines={1}>
+                <Text style={[styles.barLabel, axisTextStyle]} numberOfLines={1}>
                   {item.label}
                 </Text>
               ) : null}
@@ -165,6 +180,8 @@ function LineChart({
   animated: shouldAnimate,
   tokens,
   styles,
+  seriesStyle,
+  axisTextStyle,
 }: {
   data: ChartDataItem[]
   height: number
@@ -173,6 +190,8 @@ function LineChart({
   animated: boolean
   tokens: DesignTokens
   styles: ReturnType<typeof makeStyles>
+  seriesStyle?: ViewStyle
+  axisTextStyle?: TextStyle
 }) {
   const [containerWidth, setContainerWidth] = useState(0)
   const progress = useRef(new Animated.Value(0)).current
@@ -238,6 +257,7 @@ function LineChart({
                   opacity: 0.7,
                   transformOrigin: '0 1px',
                   transform: [{ rotate: `${angle}deg` }],
+                  ...(seriesStyle ?? {}),
                 }}
                 accessibilityElementsHidden
                 importantForAccessibility="no"
@@ -260,6 +280,7 @@ function LineChart({
                   borderRadius: 4,
                   backgroundColor: color,
                   opacity: progress,
+                  ...(seriesStyle ?? {}),
                 }}
                 accessibilityElementsHidden
                 importantForAccessibility="no"
@@ -274,6 +295,7 @@ function LineChart({
                   key={pt.index}
                   style={[
                     styles.lineValueLabel,
+                    axisTextStyle,
                     {
                       position: 'absolute',
                       left: pt.x - 20,
@@ -313,7 +335,7 @@ function LineChart({
                 alignItems: 'center',
               }}
             >
-              <Text style={styles.barLabel} numberOfLines={1}>
+              <Text style={[styles.barLabel, axisTextStyle]} numberOfLines={1}>
                 {pt.item.label}
               </Text>
             </View>
@@ -330,10 +352,16 @@ function DonutFallback({
   data,
   tokens,
   styles,
+  legendItemStyle,
+  seriesStyle,
+  axisTextStyle,
 }: {
   data: ChartDataItem[]
   tokens: DesignTokens
   styles: ReturnType<typeof makeStyles>
+  legendItemStyle?: ViewStyle
+  seriesStyle?: ViewStyle
+  axisTextStyle?: TextStyle
 }) {
   const total = useMemo(() => data.reduce((s, d) => s + d.value, 0) || 1, [data])
 
@@ -343,9 +371,9 @@ function DonutFallback({
         const color = item.color ?? getPaletteColor(i, tokens)
         const pct = Math.round((item.value / total) * 100)
         return (
-          <View key={`${item.label}-${i}`} style={styles.donutRow}>
-            <View style={[styles.donutSwatch, { backgroundColor: color }]} />
-            <Text style={styles.donutLabel} numberOfLines={1}>
+          <View key={`${item.label}-${i}`} style={[styles.donutRow, legendItemStyle]}>
+            <View style={[styles.donutSwatch, { backgroundColor: color }, seriesStyle]} />
+            <Text style={[styles.donutLabel, axisTextStyle]} numberOfLines={1}>
               {item.label}
             </Text>
             <View style={styles.donutBarTrack}>
@@ -353,10 +381,11 @@ function DonutFallback({
                 style={[
                   styles.donutBarFill,
                   { width: `${pct}%` as `${number}%`, backgroundColor: color },
+                  seriesStyle,
                 ]}
               />
             </View>
-            <Text style={styles.donutPct}>{pct}%</Text>
+            <Text style={[styles.donutPct, axisTextStyle]}>{pct}%</Text>
           </View>
         )
       })}
@@ -455,12 +484,28 @@ export function Chart({ config }: { config: ChartConfig }) {
 
   const chartType = config.type ?? 'bar'
   const height = useMemo(() => resolveChartHeight(tokens, config), [config, tokens])
+  const legendSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.legend as Record<string, unknown> | undefined,
+  })
+  const legendItemSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.legendItem as Record<string, unknown> | undefined,
+  })
+  const seriesSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.series as Record<string, unknown> | undefined,
+  })
+  const axisSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.axis as Record<string, unknown> | undefined,
+  })
 
   const renderChart = useCallback(() => {
     if (isEmpty) {
       return (
         <View style={[styles.emptyState, { height }]}>
-          <Text style={styles.emptyText}>No data</Text>
+          <Text style={[styles.emptyText, axisSurface.style as TextStyle | undefined]}>No data</Text>
         </View>
       )
     }
@@ -476,6 +521,8 @@ export function Chart({ config }: { config: ChartConfig }) {
             animated={config.animated ?? true}
             tokens={tokens}
             styles={styles}
+            seriesStyle={seriesSurface.style as ViewStyle | undefined}
+            axisTextStyle={axisSurface.style as TextStyle | undefined}
           />
         )
 
@@ -489,6 +536,8 @@ export function Chart({ config }: { config: ChartConfig }) {
             animated={config.animated ?? true}
             tokens={tokens}
             styles={styles}
+            seriesStyle={seriesSurface.style as ViewStyle | undefined}
+            axisTextStyle={axisSurface.style as TextStyle | undefined}
           />
         )
 
@@ -508,10 +557,19 @@ export function Chart({ config }: { config: ChartConfig }) {
           )
         }
         // Fallback: horizontal bar representation
-        return <DonutFallback data={resolvedData} tokens={tokens} styles={styles} />
+        return (
+          <DonutFallback
+            data={resolvedData}
+            tokens={tokens}
+            styles={styles}
+            legendItemStyle={legendItemSurface.style as ViewStyle | undefined}
+            seriesStyle={seriesSurface.style as ViewStyle | undefined}
+            axisTextStyle={axisSurface.style as TextStyle | undefined}
+          />
+        )
       }
     }
-  }, [chartType, config, height, isEmpty, resolvedData, styles, tokens])
+  }, [axisSurface.style, chartType, config, height, isEmpty, legendItemSurface.style, resolvedData, seriesSurface.style, styles, tokens])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
@@ -519,7 +577,14 @@ export function Chart({ config }: { config: ChartConfig }) {
         {config.title ? <Text style={styles.title}>{config.title}</Text> : null}
         {renderChart()}
         {config.showLegend && !isEmpty ? (
-          <Legend data={resolvedData} tokens={tokens} styles={styles} />
+          <Legend
+            data={resolvedData}
+            tokens={tokens}
+            styles={styles}
+            legendStyle={legendSurface.style as ViewStyle | undefined}
+            legendItemStyle={legendItemSurface.style as ViewStyle | undefined}
+            axisTextStyle={axisSurface.style as TextStyle | undefined}
+          />
         ) : null}
       </View>
     </ComponentWrapper>

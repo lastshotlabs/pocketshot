@@ -33,4 +33,25 @@ describe('LoadingStateSchema', () => {
   it('rejects non-positive height', () => {
     expect(LoadingStateSchema.safeParse({ height: -1 }).success).toBe(false)
   })
+
+  it('accepts label and loading slot surfaces', () => {
+    const result = LoadingStateSchema.parse({
+      label: { from: 'loading.label' },
+      slots: {
+        spinner: {
+          opacity: 0.8,
+        },
+        label: {
+          textAlign: 'center',
+        },
+        line: {
+          opacity: 0.5,
+        },
+      },
+    })
+
+    expect(result.label).toEqual({ from: 'loading.label' })
+    expect(result.slots?.spinner).toMatchObject({ opacity: 0.8 })
+    expect(result.slots?.line).toMatchObject({ opacity: 0.5 })
+  })
 })

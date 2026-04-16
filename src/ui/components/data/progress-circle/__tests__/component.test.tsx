@@ -33,4 +33,41 @@ describe('ProgressCircle', () => {
     const { toJSON } = renderWithProviders(<ProgressCircle config={cfg({ color: 'success' })} />)
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders label from screen context via from-ref', () => {
+    const { getByText } = renderWithProviders(
+      <ProgressCircle config={cfg({ label: { from: 'stats.label' } })} />,
+      { initialValues: { stats: { label: 'Storage' } } },
+    )
+
+    expect(getByText('Storage')).toBeTruthy()
+  })
+
+  it('renders with circular slot surfaces without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <ProgressCircle
+        config={cfg({
+          label: 'Upload',
+          slots: {
+            value: {
+              letterSpacing: 'wide',
+            },
+            label: {
+              textAlign: 'center',
+            },
+            circularTrack: {
+              opacity: 0.5,
+            },
+            circularFill: {
+              opacity: 0.9,
+            },
+          },
+        })}
+      />,
+    )
+
+    expect(getByText('64%')).toBeTruthy()
+    expect(getByText('Upload')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
 })

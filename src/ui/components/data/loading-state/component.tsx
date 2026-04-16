@@ -1,25 +1,43 @@
 import React, { useEffect, useMemo, useRef } from 'react'
-import { ActivityIndicator, Animated, View, StyleSheet, type DimensionValue } from 'react-native'
+import {
+  ActivityIndicator,
+  Animated,
+  Text,
+  View,
+  type DimensionValue,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeStyleProps, toNativeDimensionValue } from '../../_base'
+import {
+  resolveNativeStyleProps,
+  resolveNativeTextStyle,
+  resolveSurfacePresentation,
+  toNativeDimensionValue,
+} from '../../_base'
 import { useTokens } from '../../../context/AppContext'
+import { useScreenContext } from '../../../context/ScreenContext'
+import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { LoadingStateConfig } from './types'
-
-// ---------------------------------------------------------------------------
-// Skeleton rows
-// ---------------------------------------------------------------------------
 
 function SkeletonRows({
   count,
   height,
   borderRadius,
   tokens,
+  lineStyle,
+  label,
+  labelStyle,
 }: {
   count: number
   height: DimensionValue
   borderRadius: number
   tokens: DesignTokens
+  lineStyle?: ViewStyle
+  label?: string
+  labelStyle?: StyleProp<TextStyle>
 }) {
   const opacity = useRef(new Animated.Value(0.4)).current
 
@@ -34,44 +52,110 @@ function SkeletonRows({
     return () => anim.stop()
   }, [opacity])
 
-  const styles = makeSkeletonStyles(tokens, height, borderRadius)
-
   return (
     <View
-      style={styles.container}
+      style={{
+        paddingHorizontal: tokens.spacing[4],
+        paddingTop: tokens.spacing[2],
+      }}
       accessibilityLabel="Loading"
       accessibilityRole="progressbar"
       importantForAccessibility="yes"
     >
+      {label ? <Text style={labelStyle}>{label}</Text> : null}
       {Array.from({ length: count }, (_, i) => (
-        <Animated.View key={i} style={[styles.row, { opacity }]} />
+        <Animated.View
+          key={i}
+          style={[
+            {
+              height,
+              borderRadius,
+              backgroundColor: tokens.colors.surfaceAlt,
+              marginBottom: tokens.spacing[3],
+              opacity,
+            },
+            lineStyle,
+          ]}
+        />
       ))}
     </View>
   )
 }
 
-// ---------------------------------------------------------------------------
-// LoadingState
-// ---------------------------------------------------------------------------
-
 export function LoadingState({ config }: { config: LoadingStateConfig }) {
   const tokens = useTokens()
-  const styles = makeContainerStyles(tokens)
+  const { values } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const resolvedLabel =
+    config.label == null
+      ? undefined
+      : isFromRef(config.label)
+        ? String(resolveFromRef(config.label, values) ?? '')
+        : config.label
   const skeletonFrame = useMemo(() => resolveLoadingSkeletonFrame(tokens, config), [config, tokens])
+  const spinnerSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.spinner as Record<string, unknown> | undefined,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+  })
+  const lineSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.line as Record<string, unknown> | undefined,
+  })
+
+  const labelTextStyle: TextStyle = {
+    marginBottom: tokens.spacing[2],
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeSm,
+    color:
+      typeof sharedTextStyle.color === 'string'
+        ? sharedTextStyle.color
+        : tokens.colors.textMuted,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightMedium,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : 'center',
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       {config.variant === 'spinner' ? (
         <View
-          style={styles.spinnerContainer}
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: tokens.spacing[8],
+          }}
           accessibilityLabel="Loading"
           accessibilityRole="progressbar"
         >
-          <ActivityIndicator
-            size="large"
-            color={tokens.colors.primary}
-            accessibilityElementsHidden
-          />
+          <View style={spinnerSurface.style as ViewStyle | undefined}>
+            <ActivityIndicator
+              size="large"
+              color={tokens.colors.primary}
+              accessibilityElementsHidden
+            />
+          </View>
+          {resolvedLabel ? (
+            <Text style={[labelTextStyle, labelSurface.style as TextStyle | undefined]}>
+              {resolvedLabel}
+            </Text>
+          ) : null}
         </View>
       ) : (
         <SkeletonRows
@@ -79,40 +163,13 @@ export function LoadingState({ config }: { config: LoadingStateConfig }) {
           height={skeletonFrame.height}
           borderRadius={skeletonFrame.borderRadius}
           tokens={tokens}
+          lineStyle={lineSurface.style as ViewStyle | undefined}
+          label={resolvedLabel}
+          labelStyle={[labelTextStyle, labelSurface.style as TextStyle | undefined]}
         />
       )}
     </ComponentWrapper>
   )
-}
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeContainerStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    spinnerContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: tokens.spacing[8],
-    },
-  })
-}
-
-function makeSkeletonStyles(tokens: DesignTokens, height: DimensionValue, borderRadius: number) {
-  return StyleSheet.create({
-    container: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[2],
-    },
-    row: {
-      height,
-      borderRadius,
-      backgroundColor: tokens.colors.surfaceAlt,
-      marginBottom: tokens.spacing[3],
-    },
-  })
 }
 
 function resolveLoadingSkeletonFrame(tokens: DesignTokens, config: LoadingStateConfig): {
@@ -133,4 +190,3 @@ function resolveLoadingSkeletonFrame(tokens: DesignTokens, config: LoadingStateC
       typeof resolvedStyle.borderRadius === 'number' ? resolvedStyle.borderRadius : tokens.radius.md,
   }
 }
-

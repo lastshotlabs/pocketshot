@@ -106,4 +106,45 @@ describe('Timeline', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders with top-level and per-item slot surfaces without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <Timeline
+        config={{
+          items: [
+            {
+              id: 'e1',
+              title: 'Styled event',
+              description: 'Has slots',
+              timestamp: 'Now',
+              slots: {
+                marker: {
+                  opacity: 0.8,
+                },
+                meta: {
+                  color: 'muted',
+                },
+              },
+            },
+          ],
+          slots: {
+            item: {
+              paddingY: 'sm',
+            },
+            title: {
+              letterSpacing: 'wide',
+            },
+            description: {
+              textAlign: 'center',
+            },
+          },
+        }}
+      />,
+    )
+
+    expect(getByText('Styled event')).toBeTruthy()
+    expect(getByText('Has slots')).toBeTruthy()
+    expect(getByText('Now')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
 })

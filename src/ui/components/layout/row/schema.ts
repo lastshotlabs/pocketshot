@@ -4,6 +4,7 @@ import {
   componentFlexWrapSchema,
   componentJustifyContentSchema,
   extendComponentSchema,
+  slotsSchema,
   spacingValueSchema,
 } from '../../_base/schema'
 
@@ -13,4 +14,5 @@ export const RowSchema = extendComponentSchema({
   justifyContent: componentJustifyContentSchema.optional().default('start'),
   flexWrap: componentFlexWrapSchema.optional().default('nowrap'),
   children: z.array(z.unknown()).optional(),
+  slots: slotsSchema(['root', 'item']).optional(),
 })

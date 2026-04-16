@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { dimensionValueSchema, extendComponentSchema } from '../../_base/schema'
+import { dimensionValueSchema, extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ChartDataItemSchema = z.object({
@@ -19,4 +19,5 @@ export const ChartSchema = extendComponentSchema({
   showLegend: z.boolean().default(false),
   animated: z.boolean().default(true),
   testID: z.string().optional(),
+  slots: slotsSchema(['root', 'legend', 'legendItem', 'tooltip', 'series', 'axis', 'grid']).optional(),
 })

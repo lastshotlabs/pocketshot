@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { Action } from '../../../actions/types'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 
 const ActionSchema = z.custom<Action>()
 
@@ -16,4 +16,5 @@ export const StatCardSchema = extendComponentSchema({
     .optional(),
   icon: z.string().optional(),
   onPress: ActionSchema.optional(),
+  slots: slotsSchema(['root', 'label', 'valueRow', 'value', 'icon', 'trend']).optional(),
 })

@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useRef } from 'react'
-import { View, Text, Animated, StyleSheet } from 'react-native'
+import React, { useEffect, useRef } from 'react'
+import { Animated, Text, View, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ProgressCircleConfig } from './types'
 
 type Size = NonNullable<ProgressCircleConfig['size']>
@@ -23,25 +22,20 @@ function defaultStrokeWidth(size: Size): number {
   }
 }
 
-/**
- * Renders a single half-circle clipped to one side.
- *
- * The technique: a View of full circle size is clipped by a parent with half
- * the width and overflow:hidden. Rotating the inner circle reveals a portion
- * of the stroke arc on that side.
- */
 function HalfCircle({
   diameter,
   strokeWidth,
   color,
   rotation,
   side,
+  style,
 }: {
   diameter: number
   strokeWidth: number
   color: string
   rotation: Animated.AnimatedInterpolation<string>
   side: 'left' | 'right'
+  style?: ViewStyle
 }) {
   const half = diameter / 2
 
@@ -57,17 +51,20 @@ function HalfCircle({
       }}
     >
       <Animated.View
-        style={{
-          width: diameter,
-          height: diameter,
-          borderRadius: half,
-          borderWidth: strokeWidth,
-          borderColor: color,
-          position: 'absolute',
-          top: 0,
-          left: side === 'left' ? 0 : -half,
-          transform: [{ rotate: rotation }],
-        }}
+        style={[
+          {
+            width: diameter,
+            height: diameter,
+            borderRadius: half,
+            borderWidth: strokeWidth,
+            borderColor: color,
+            position: 'absolute',
+            top: 0,
+            left: side === 'left' ? 0 : -half,
+            transform: [{ rotate: rotation }],
+          },
+          style,
+        ]}
       />
     </View>
   )
@@ -80,13 +77,38 @@ export function ProgressCircle({ config }: { config: ProgressCircleConfig }) {
   const resolvedValue = isFromRef(config.value)
     ? Math.min(100, Math.max(0, Number(resolveFromRef(config.value, values) ?? 0)))
     : Math.min(100, Math.max(0, config.value))
+  const resolvedLabel =
+    config.label == null
+      ? undefined
+      : isFromRef(config.label)
+        ? String(resolveFromRef(config.label, values) ?? '')
+        : config.label
 
   const size = config.size ?? 'md'
   const diameter = SIZE_MAP[size]
   const strokeWidth = config.strokeWidth ?? defaultStrokeWidth(size)
   const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-  const fillColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.primary
+  const fillColor =
+    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.primary
   const trackColor = config.trackColor ?? tokens.colors.border
+  const innerDiameter = diameter - strokeWidth * 2
+
+  const valueSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.value as Record<string, unknown> | undefined,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+  })
+  const circularTrackSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.circularTrack as Record<string, unknown> | undefined,
+  })
+  const circularFillSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.circularFill as Record<string, unknown> | undefined,
+  })
 
   const animatedValue = useRef(new Animated.Value(resolvedValue)).current
 
@@ -95,69 +117,134 @@ export function ProgressCircle({ config }: { config: ProgressCircleConfig }) {
       Animated.timing(animatedValue, {
         toValue: resolvedValue,
         duration: 400,
-        useNativeDriver: false, // transform rotate with interpolation requires JS driver for this technique
+        useNativeDriver: false,
       }).start()
     } else {
       animatedValue.setValue(resolvedValue)
     }
   }, [resolvedValue, config.animated, animatedValue])
 
-  // Right half: covers 0-50%. Rotates from 0deg (nothing visible) to 180deg (full right half).
   const rightRotation = animatedValue.interpolate({
     inputRange: [0, 50, 100],
     outputRange: ['0deg', '180deg', '180deg'],
     extrapolate: 'clamp',
   })
-
-  // Left half: covers 50-100%. Rotates from 0deg to 180deg.
   const leftRotation = animatedValue.interpolate({
     inputRange: [0, 50, 100],
     outputRange: ['0deg', '0deg', '180deg'],
     extrapolate: 'clamp',
   })
 
-  const styles = useMemo(() => makeStyles(tokens, diameter, strokeWidth), [tokens, diameter, strokeWidth])
+  const valueTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : diameter <= 60
+          ? tokens.typography.fontSizeSm
+          : tokens.typography.fontSizeLg,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightBold,
+    color:
+      typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+  const labelTextStyle: TextStyle = {
+    marginTop: tokens.spacing[2],
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? Math.max(sharedTextStyle.fontSize - 2, tokens.typography.fontSizeSm)
+        : tokens.typography.fontSizeSm,
+    color:
+      typeof sharedTextStyle.color === 'string'
+        ? sharedTextStyle.color
+        : tokens.colors.textMuted,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightMedium,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : 'center',
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      style={{ alignItems: 'center' }}
+    >
       <View
-        style={styles.wrapper}
         accessibilityRole="progressbar"
         accessibilityValue={{ min: 0, max: 100, now: Math.round(resolvedValue) }}
-        accessibilityLabel={config.label ?? 'Progress'}
+        accessibilityLabel={resolvedLabel ?? 'Progress'}
       >
-        <View style={styles.circleContainer}>
-          {/* Track (background ring) */}
+        <View style={{ width: diameter, height: diameter }}>
           <View
             style={[
-              styles.track,
-              { borderColor: trackColor },
+              {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: diameter,
+                height: diameter,
+                borderRadius: diameter / 2,
+                borderWidth: strokeWidth,
+                borderColor: trackColor,
+              },
+              circularTrackSurface.style as ViewStyle | undefined,
             ]}
           />
 
-          {/* Right half-circle (0-50%) */}
           <HalfCircle
             diameter={diameter}
             strokeWidth={strokeWidth}
             color={fillColor}
             rotation={rightRotation}
             side="right"
+            style={circularFillSurface.style as ViewStyle | undefined}
           />
 
-          {/* Left half-circle (50-100%) */}
           <HalfCircle
             diameter={diameter}
             strokeWidth={strokeWidth}
             color={fillColor}
             rotation={leftRotation}
             side="left"
+            style={circularFillSurface.style as ViewStyle | undefined}
           />
 
-          {/* Center content */}
           {config.showValue !== false ? (
-            <View style={styles.center}>
+            <View
+              style={{
+                position: 'absolute',
+                top: strokeWidth,
+                left: strokeWidth,
+                width: innerDiameter,
+                height: innerDiameter,
+                borderRadius: innerDiameter / 2,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Text
-                style={styles.valueText}
+                style={[valueTextStyle, valueSurface.style as TextStyle | undefined]}
                 accessibilityElementsHidden
                 importantForAccessibility="no"
               >
@@ -167,56 +254,12 @@ export function ProgressCircle({ config }: { config: ProgressCircleConfig }) {
           ) : null}
         </View>
 
-        {config.label != null ? (
-          <Text style={styles.label}>{config.label}</Text>
+        {resolvedLabel ? (
+          <Text style={[labelTextStyle, labelSurface.style as TextStyle | undefined]}>
+            {resolvedLabel}
+          </Text>
         ) : null}
       </View>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, diameter: number, strokeWidth: number) {
-  const innerDiameter = diameter - strokeWidth * 2
-
-  return StyleSheet.create({
-    wrapper: {
-      alignItems: 'center',
-    },
-    circleContainer: {
-      width: diameter,
-      height: diameter,
-    },
-    track: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: diameter,
-      height: diameter,
-      borderRadius: diameter / 2,
-      borderWidth: strokeWidth,
-    },
-    center: {
-      position: 'absolute',
-      top: strokeWidth,
-      left: strokeWidth,
-      width: innerDiameter,
-      height: innerDiameter,
-      borderRadius: innerDiameter / 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    valueText: {
-      fontSize: diameter <= 60 ? tokens.typography.fontSizeSm : tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors.text,
-    },
-    label: {
-      marginTop: tokens.spacing[2],
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      fontWeight: tokens.typography.fontWeightMedium,
-      textAlign: 'center',
-    },
-  })
-}
-

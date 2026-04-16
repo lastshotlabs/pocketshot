@@ -31,6 +31,22 @@ describe('RowSchema', () => {
     expect(result.justifyContent).toBe('between')
   })
 
+  it('accepts named slot styling surfaces', () => {
+    const result = RowSchema.parse({
+      slots: {
+        root: {
+          bg: 'card',
+        },
+        item: {
+          paddingX: 'sm',
+        },
+      },
+    })
+
+    expect(result.slots?.root).toMatchObject({ bg: 'card' })
+    expect(result.slots?.item).toMatchObject({ paddingX: 'sm' })
+  })
+
   it('rejects invalid alignItems value', () => {
     expect(RowSchema.safeParse({ alignItems: 'top' }).success).toBe(false)
   })

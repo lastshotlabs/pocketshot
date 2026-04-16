@@ -21,6 +21,18 @@ describe('Card', () => {
     expect(getByText('card content')).toBeTruthy()
   })
 
+  it('renders title and subtitle when provided', () => {
+    const { getByText } = renderWithProviders(
+      <Card config={{ title: 'Profile', subtitle: 'User details' }}>
+        <Text>body</Text>
+      </Card>,
+    )
+
+    expect(getByText('Profile')).toBeTruthy()
+    expect(getByText('User details')).toBeTruthy()
+    expect(getByText('body')).toBeTruthy()
+  })
+
   it('forwards testID to the wrapper', () => {
     const { getByTestId } = renderWithProviders(<Card config={{ testID: 'card-main' }} />)
     expect(getByTestId('card-main')).toBeTruthy()
@@ -81,5 +93,40 @@ describe('Card', () => {
   it('uses id as testID when testID is not explicitly set', () => {
     const { getByTestId } = renderWithProviders(<Card config={{ id: 'card-by-id' }} />)
     expect(getByTestId('card-by-id')).toBeTruthy()
+  })
+
+  it('renders with slot surfaces and child item wrappers without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <Card
+        config={{
+          title: 'Revenue',
+          subtitle: 'This month',
+          gap: 'md',
+          slots: {
+            header: {
+              paddingY: 'sm',
+            },
+            title: {
+              letterSpacing: 'wide',
+            },
+            content: {
+              gap: 'sm',
+            },
+            item: {
+              paddingY: 'sm',
+            },
+          },
+        }}
+      >
+        <Text>first item</Text>
+        <Text>second item</Text>
+      </Card>,
+    )
+
+    expect(getByText('Revenue')).toBeTruthy()
+    expect(getByText('This month')).toBeTruthy()
+    expect(getByText('first item')).toBeTruthy()
+    expect(getByText('second item')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
   })
 })

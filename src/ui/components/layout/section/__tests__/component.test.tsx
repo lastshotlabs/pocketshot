@@ -86,4 +86,25 @@ describe('Section', () => {
     expect(getByText('Desc')).toBeTruthy()
     expect(getByText('inner content')).toBeTruthy()
   })
+
+  it('renders item slot wrappers without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <Section
+        config={{
+          slots: {
+            item: {
+              paddingY: 'sm',
+            },
+          },
+        }}
+      >
+        <Text>section first</Text>
+        <Text>section second</Text>
+      </Section>,
+    )
+
+    expect(getByText('section first')).toBeTruthy()
+    expect(getByText('section second')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
 })

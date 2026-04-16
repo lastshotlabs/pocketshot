@@ -25,6 +25,22 @@ describe('SectionSchema', () => {
     expect(result.titleSize).toBe('lg')
   })
 
+  it('accepts named slot styling surfaces', () => {
+    const result = SectionSchema.parse({
+      slots: {
+        root: {
+          bg: 'card',
+        },
+        item: {
+          paddingY: 'sm',
+        },
+      },
+    })
+
+    expect(result.slots?.root).toMatchObject({ bg: 'card' })
+    expect(result.slots?.item).toMatchObject({ paddingY: 'sm' })
+  })
+
   it('rejects invalid titleSize', () => {
     expect(SectionSchema.safeParse({ titleSize: 'huge' }).success).toBe(false)
   })

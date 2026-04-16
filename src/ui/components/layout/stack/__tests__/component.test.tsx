@@ -74,4 +74,25 @@ describe('Stack', () => {
     expect(getByText('second')).toBeTruthy()
     expect(getByText('third')).toBeTruthy()
   })
+
+  it('renders item slot wrappers without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <Stack
+        config={{
+          slots: {
+            item: {
+              paddingY: 'sm',
+            },
+          },
+        }}
+      >
+        <Text>stack first</Text>
+        <Text>stack second</Text>
+      </Stack>,
+    )
+
+    expect(getByText('stack first')).toBeTruthy()
+    expect(getByText('stack second')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
 })

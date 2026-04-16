@@ -96,4 +96,46 @@ describe('ProgressBar', () => {
     )
     expect(getByText('0%')).toBeTruthy()
   })
+
+  it('resolves label from screen context via from-ref', () => {
+    const { getByText } = renderWithProviders(
+      <ProgressBar config={{ value: 50, label: { from: 'upload.label' } }} />,
+      { initialValues: { upload: { label: 'Upload progress' } } },
+    )
+
+    expect(getByText('Upload progress')).toBeTruthy()
+  })
+
+  it('renders with bar slot surfaces without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <ProgressBar
+        config={{
+          value: 50,
+          label: 'Upload',
+          showValue: true,
+          slots: {
+            labelRow: {
+              paddingY: 'xs',
+            },
+            label: {
+              letterSpacing: 'wide',
+            },
+            value: {
+              color: 'muted',
+            },
+            track: {
+              opacity: 0.5,
+            },
+            fill: {
+              opacity: 0.9,
+            },
+          },
+        }}
+      />,
+    )
+
+    expect(getByText('Upload')).toBeTruthy()
+    expect(getByText('50%')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
 })

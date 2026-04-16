@@ -1,16 +1,15 @@
 import React, { useCallback } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { StatCardConfig } from './types'
 
 export function StatCard({ config }: { config: StatCardConfig }) {
   const tokens = useTokens()
   const { dispatch, values } = useScreenContext()
-  const styles = makeStyles(tokens)
 
   const resolvedValue = isFromRef(config.value)
     ? String(resolveFromRef(config.value, values) ?? '')
@@ -31,22 +30,159 @@ export function StatCard({ config }: { config: StatCardConfig }) {
   const trendIcon =
     config.trend?.direction === 'up' ? '↑' : config.trend?.direction === 'down' ? '↓' : '→'
 
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      backgroundColor: tokens.colors.surface,
+      borderRadius: tokens.radius.lg,
+      padding: tokens.spacing[4],
+      ...tokens.shadows.md,
+    },
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+  })
+  const valueRowSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.valueRow as Record<string, unknown> | undefined,
+  })
+  const valueSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.value as Record<string, unknown> | undefined,
+  })
+  const iconSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.icon as Record<string, unknown> | undefined,
+  })
+  const trendSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.trend as Record<string, unknown> | undefined,
+  })
+
+  const headerStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: tokens.spacing[1],
+  }
+  const valueRowStyle: ViewStyle = {
+    marginBottom: config.trend ? tokens.spacing[1] : 0,
+  }
+  const trendRowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+  }
+  const labelStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeSm,
+    color:
+      typeof sharedTextStyle.color === 'string'
+        ? sharedTextStyle.color
+        : tokens.colors.textMuted,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightMedium,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+    flexShrink: 1,
+  }
+  const valueStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? Math.max(sharedTextStyle.fontSize, tokens.typography.fontSize3xl)
+        : tokens.typography.fontSize3xl,
+    color:
+      typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightBold,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+  const iconStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeLg,
+    color:
+      typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+    marginRight: tokens.spacing[2],
+  }
+  const trendStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeSm,
+    color: trendColor,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightMedium,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
   const inner = (
-    <View style={styles.card}>
-      <View style={styles.header}>
+    <View style={rootSurface.style as ViewStyle | undefined}>
+      <View style={headerStyle}>
         {config.icon ? (
-          <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
+          <Text
+            style={[iconStyle, iconSurface.style as TextStyle | undefined]}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          >
             {config.icon}
           </Text>
         ) : null}
-        <Text style={styles.label}>{config.label}</Text>
+        <Text style={[labelStyle, labelSurface.style as TextStyle | undefined]}>{config.label}</Text>
       </View>
-      <Text style={styles.value} accessibilityLabel={`${config.label}: ${resolvedValue}`}>
-        {resolvedValue}
-      </Text>
+      <View style={[valueRowStyle, valueRowSurface.style as ViewStyle | undefined]}>
+        <Text
+          style={[valueStyle, valueSurface.style as TextStyle | undefined]}
+          accessibilityLabel={`${config.label}: ${resolvedValue}`}
+        >
+          {resolvedValue}
+        </Text>
+      </View>
       {config.trend ? (
-        <View style={styles.trendRow}>
-          <Text style={[styles.trendText, { color: trendColor }]}>
+        <View style={trendRowStyle}>
+          <Text style={[trendStyle, trendSurface.style as TextStyle | undefined]}>
             {trendIcon} {config.trend.value}
           </Text>
         </View>
@@ -71,44 +207,4 @@ export function StatCard({ config }: { config: StatCardConfig }) {
       )}
     </ComponentWrapper>
   )
-}
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    card: {
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.lg,
-      padding: tokens.spacing[4],
-      ...tokens.shadows.md,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: tokens.spacing[1],
-    },
-    icon: {
-      fontSize: tokens.typography.fontSizeLg,
-      marginRight: tokens.spacing[2],
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      fontWeight: tokens.typography.fontWeightMedium,
-      flexShrink: 1,
-    },
-    value: {
-      fontSize: tokens.typography.fontSize3xl,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightBold,
-      marginBottom: tokens.spacing[1],
-    },
-    trendRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    trendText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-    },
-  })
 }

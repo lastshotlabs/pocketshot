@@ -1,8 +1,10 @@
 import { z } from 'zod'
+import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import {
   extendComponentSchema,
   radiusValueSchema,
   shadowValueSchema,
+  slotsSchema,
   spacingValueSchema,
 } from '../../_base/schema'
 
@@ -14,8 +16,12 @@ import {
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
 export const CardSchema = extendComponentSchema({
+  title: z.union([z.string(), FromRefSchema]).optional(),
+  subtitle: z.union([z.string(), FromRefSchema]).optional(),
   padding: spacingValueSchema.optional().default('lg'),
+  gap: spacingValueSchema.optional(),
   borderRadius: radiusValueSchema.optional().default('lg'),
   shadow: shadowValueSchema.optional().default('md'),
   onPress: ActionSchema.optional(),
+  slots: slotsSchema(['root', 'header', 'title', 'subtitle', 'content', 'item']).optional(),
 })

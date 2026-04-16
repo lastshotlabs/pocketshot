@@ -70,4 +70,26 @@ describe('ScrollContainer', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders with root and viewport slot surfaces without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <ScrollContainer
+        config={{
+          slots: {
+            root: {
+              bg: 'card',
+            },
+            viewport: {
+              paddingX: 'lg',
+            },
+          },
+        }}
+      >
+        <Text>styled scroll child</Text>
+      </ScrollContainer>,
+    )
+
+    expect(getByText('styled scroll child')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
 })

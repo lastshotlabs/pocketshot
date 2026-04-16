@@ -21,6 +21,8 @@ import { BadgeSchema } from '../../src/ui/components/data/badge/schema'
 import { ChartSchema } from '../../src/ui/components/data/chart/schema'
 import { EmptyStateSchema } from '../../src/ui/components/data/empty-state/schema'
 import { FavoriteButtonSchema } from '../../src/ui/components/data/favorite-button/schema'
+import { DetailCardSchema } from '../../src/ui/components/data/detail-card/schema'
+import { HighlightedTextSchema } from '../../src/ui/components/data/highlighted-text/schema'
 import { LoadingStateSchema } from '../../src/ui/components/data/loading-state/schema'
 import { NotificationBellSchema } from '../../src/ui/components/data/notification-bell/schema'
 import { ProgressCircleSchema } from '../../src/ui/components/data/progress-circle/schema'
@@ -94,11 +96,25 @@ describe('component schemas inherit the shared base contract', () => {
     expect(
       CardSchema.parse({
         id: 'summary-card',
+        title: 'Summary',
+        subtitle: { from: 'screen.subtitle' },
         bg: 'card',
         padding: 'xl',
         borderRadius: 'xl',
         shadow: 'lg',
         slots: {
+          header: {
+            paddingY: 'sm',
+          },
+          title: {
+            letterSpacing: 'wide',
+          },
+          content: {
+            gap: 'md',
+          },
+          item: {
+            paddingY: 'sm',
+          },
           root: {
             states: {
               open: {
@@ -257,6 +273,20 @@ describe('component schemas inherit the shared base contract', () => {
         data: [{ label: 'Q1', value: 10 }],
         height: 240,
         shadow: 'sm',
+        slots: {
+          legend: {
+            paddingY: 'sm',
+          },
+          legendItem: {
+            paddingX: 'xs',
+          },
+          series: {
+            opacity: 0.9,
+          },
+          axis: {
+            color: 'muted',
+          },
+        },
       }),
     ).toBeDefined()
 
@@ -321,9 +351,31 @@ describe('component schemas inherit the shared base contract', () => {
     ).toBeDefined()
 
     expect(
+      HighlightedTextSchema.parse({
+        text: { from: 'search.result' },
+        highlight: { from: 'search.query' },
+        slots: {
+          mark: {
+            letterSpacing: 'wide',
+            color: 'warning',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
       LoadingStateSchema.parse({
         height: '50%',
         borderRadius: 'lg',
+        label: { from: 'loading.label' },
+        slots: {
+          label: {
+            textAlign: 'center',
+          },
+          line: {
+            opacity: 0.5,
+          },
+        },
       }),
     ).toBeDefined()
 
@@ -333,6 +385,18 @@ describe('component schemas inherit the shared base contract', () => {
         width: '60%',
         height: 32,
         borderRadius: 'full',
+        animated: false,
+        slots: {
+          shape: {
+            opacity: 0.6,
+          },
+          title: {
+            width: '70%',
+          },
+          body: {
+            opacity: 0.4,
+          },
+        },
       }),
     ).toBeDefined()
 
@@ -356,9 +420,57 @@ describe('component schemas inherit the shared base contract', () => {
     ).toBeDefined()
 
     expect(
+      DetailCardSchema.parse({
+        title: { from: 'profile.title' },
+        subtitle: { from: 'profile.subtitle' },
+        sections: [
+          {
+            fields: [
+              {
+                label: 'Email',
+                value: { from: 'profile.email' },
+                slots: {
+                  fieldLabel: {
+                    color: 'muted',
+                  },
+                },
+              },
+            ],
+          },
+        ],
+        slots: {
+          panel: {
+            bg: 'card',
+          },
+          title: {
+            letterSpacing: 'wide',
+          },
+          actionButton: {
+            paddingX: 'sm',
+          },
+          fieldValue: {
+            color: 'primary',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
       ProgressCircleSchema.parse({
         value: 64,
         color: 'success',
+        label: { from: 'upload.label' },
+        slots: {
+          value: {
+            letterSpacing: 'wide',
+          },
+          circularTrack: {
+            opacity: 0.4,
+          },
+          circularFill: {
+            opacity: 0.9,
+          },
+        },
       }),
     ).toBeDefined()
 
@@ -491,14 +603,48 @@ describe('component schemas inherit the shared base contract', () => {
         animation: {
           enter: 'fade-up',
         },
+        slots: {
+          item: {
+            paddingY: 'sm',
+          },
+          title: {
+            letterSpacing: 'wide',
+          },
+        },
+        items: [
+          {
+            id: 'activity-1',
+            title: 'Created',
+            slots: {
+              marker: {
+                opacity: 0.8,
+              },
+            },
+          },
+        ],
       }),
     ).toBeDefined()
 
     expect(
       ProgressBarSchema.parse({
         value: { from: 'upload.progress' },
+        label: { from: 'upload.label' },
         height: 12,
         borderRadius: 'lg',
+        slots: {
+          label: {
+            letterSpacing: 'wide',
+          },
+          value: {
+            color: 'muted',
+          },
+          track: {
+            opacity: 0.5,
+          },
+          fill: {
+            opacity: 0.9,
+          },
+        },
       }),
     ).toBeDefined()
 

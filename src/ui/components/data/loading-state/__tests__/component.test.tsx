@@ -76,4 +76,35 @@ describe('LoadingState', () => {
     const json = JSON.stringify(toJSON())
     expect(json).toContain('Loading')
   })
+
+  it('renders spinner label from screen context', () => {
+    const { getByText } = renderWithProviders(
+      <LoadingState config={{ variant: 'spinner', label: { from: 'loading.label' } }} />,
+      { initialValues: { loading: { label: 'Fetching data' } } },
+    )
+
+    expect(getByText('Fetching data')).toBeTruthy()
+  })
+
+  it('renders skeleton with label and slot surfaces without crashing', () => {
+    const { getByText, toJSON } = renderWithProviders(
+      <LoadingState
+        config={{
+          variant: 'skeleton',
+          label: 'Loading records',
+          slots: {
+            label: {
+              textAlign: 'center',
+            },
+            line: {
+              opacity: 0.5,
+            },
+          },
+        }}
+      />,
+    )
+
+    expect(getByText('Loading records')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
 })

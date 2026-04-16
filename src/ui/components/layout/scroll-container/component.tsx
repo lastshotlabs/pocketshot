@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react'
-import { ScrollView, RefreshControl, StyleSheet } from 'react-native'
+import { ScrollView, RefreshControl, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ScrollContainerConfig } from './types'
 
 // Safe area insets — gracefully degrade if the package is not installed.
@@ -52,13 +52,32 @@ export function ScrollContainer({
     }
   }, [config.onRefresh, dispatch])
 
-  const styles = makeStyles(tokens, config, safeBottom)
+  const contentPaddingValue =
+    config.contentPadding !== undefined
+      ? (tokens.spacing[config.contentPadding as keyof typeof tokens.spacing] ?? config.contentPadding)
+      : undefined
+  const rootSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+    },
+    componentSurface: config.slots?.root as Record<string, unknown> | undefined,
+  })
+  const viewportSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexGrow: 1,
+      paddingBottom: safeBottom,
+      ...(contentPaddingValue !== undefined ? { padding: contentPaddingValue } : {}),
+    },
+    componentSurface: config.slots?.viewport as Record<string, unknown> | undefined,
+  })
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
+        style={rootSurface.style as ViewStyle | undefined}
+        contentContainerStyle={viewportSurface.style as ViewStyle | undefined}
         horizontal={config.horizontal}
         showsHorizontalScrollIndicator={config.horizontal ? config.showsScrollIndicator : false}
         showsVerticalScrollIndicator={config.horizontal ? false : config.showsScrollIndicator}
@@ -78,25 +97,5 @@ export function ScrollContainer({
       </ScrollView>
     </ComponentWrapper>
   )
-}
-
-function makeStyles(tokens: DesignTokens, config: ScrollContainerConfig, safeBottom: number) {
-  const spacing = tokens.spacing
-
-  const contentPaddingValue =
-    config.contentPadding !== undefined
-      ? (spacing[config.contentPadding as keyof typeof spacing] ?? config.contentPadding)
-      : undefined
-
-  return StyleSheet.create({
-    scroll: {
-      flex: 1,
-    },
-    content: {
-      flexGrow: 1,
-      paddingBottom: safeBottom,
-      ...(contentPaddingValue !== undefined && { padding: contentPaddingValue }),
-    },
-  })
 }
 

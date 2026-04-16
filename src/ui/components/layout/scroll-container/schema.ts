@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, spacingValueSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema, spacingValueSchema } from '../../_base/schema'
 
 /**
  * Action is typed via z.custom at the boundaries since Action is defined as a
@@ -14,4 +14,5 @@ export const ScrollContainerSchema = extendComponentSchema({
   contentPadding: spacingValueSchema.optional(),
   refreshable: z.boolean().optional().default(false),
   onRefresh: ActionSchema.optional(),
+  slots: slotsSchema(['root', 'viewport']).optional(),
 })

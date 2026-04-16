@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { ChartSchema } from './schema'
 
-export type ChartConfig = z.infer<typeof ChartSchema>
+export type ChartConfig = z.input<typeof ChartSchema>
 
 export interface ChartDataItem {
   label: string

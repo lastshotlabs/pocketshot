@@ -59,4 +59,34 @@ describe('TimelineSchema', () => {
     expect(result.fontSize).toBe('lg')
     expect(result.textAlign).toBe('center')
   })
+
+  it('accepts top-level and per-item slot styling surfaces', () => {
+    const result = TimelineSchema.parse({
+      slots: {
+        item: {
+          paddingY: 'sm',
+        },
+        title: {
+          letterSpacing: 'wide',
+        },
+      },
+      items: [
+        {
+          id: 'e1',
+          title: 'Event',
+          slots: {
+            marker: {
+              opacity: 0.8,
+            },
+            meta: {
+              color: 'muted',
+            },
+          },
+        },
+      ],
+    })
+
+    expect(result.slots?.item).toMatchObject({ paddingY: 'sm' })
+    expect(result.items?.[0]?.slots?.marker).toMatchObject({ opacity: 0.8 })
+  })
 })
