@@ -68,31 +68,25 @@ const letterSpacingTokenMap = {
   wide: 0.25,
 } as const
 
-const colorTokenMap = {
-  primary: 'primary',
-  secondary: 'secondary',
-  accent: 'accent',
-  muted: 'muted',
-  destructive: 'destructive',
-  success: 'success',
-  warning: 'warning',
-  info: 'info',
-  background: 'background',
+const colorAliasMap = {
   foreground: 'text',
   card: 'surface',
   popover: 'surfaceAlt',
-  border: 'border',
   input: 'inputBackground',
   'primary-foreground': 'primaryForeground',
   'secondary-foreground': 'secondaryForeground',
   'muted-foreground': 'mutedForeground',
   'accent-foreground': 'accentForeground',
   'destructive-foreground': 'destructiveForeground',
+  'error-foreground': 'errorForeground',
   'success-foreground': 'successForeground',
   'warning-foreground': 'warningForeground',
   'info-foreground': 'infoForeground',
   'card-foreground': 'text',
   'popover-foreground': 'text',
+  'input-border': 'inputBorder',
+  'input-text': 'inputText',
+  'input-placeholder': 'inputPlaceholder',
 } as const
 
 export function resolveNativeStyleProps(
@@ -114,10 +108,18 @@ export function resolveNativeStyleProps(
   applyBoxSpacing(style, 'padding', baseValue(config.padding), tokens)
   applyAxisSpacing(style, ['paddingLeft', 'paddingRight'], baseValue(config.paddingX), tokens)
   applyAxisSpacing(style, ['paddingTop', 'paddingBottom'], baseValue(config.paddingY), tokens)
+  applySideSpacing(style, 'paddingTop', baseValue(config.paddingTop), tokens)
+  applySideSpacing(style, 'paddingRight', baseValue(config.paddingRight), tokens)
+  applySideSpacing(style, 'paddingBottom', baseValue(config.paddingBottom), tokens)
+  applySideSpacing(style, 'paddingLeft', baseValue(config.paddingLeft), tokens)
 
   applyBoxSpacing(style, 'margin', baseValue(config.margin), tokens)
   applyAxisSpacing(style, ['marginLeft', 'marginRight'], baseValue(config.marginX), tokens)
   applyAxisSpacing(style, ['marginTop', 'marginBottom'], baseValue(config.marginY), tokens)
+  applySideSpacing(style, 'marginTop', baseValue(config.marginTop), tokens)
+  applySideSpacing(style, 'marginRight', baseValue(config.marginRight), tokens)
+  applySideSpacing(style, 'marginBottom', baseValue(config.marginBottom), tokens)
+  applySideSpacing(style, 'marginLeft', baseValue(config.marginLeft), tokens)
 
   const gap = resolveSpacing(baseValue(config.gap), tokens)
   if (gap != null) style.gap = gap
@@ -142,6 +144,15 @@ export function resolveNativeStyleProps(
 
   const borderRadius = resolveRadius(baseValue(config.borderRadius), tokens)
   if (borderRadius != null) style.borderRadius = borderRadius
+  applyRadiusStyle(style, 'borderTopLeftRadius', baseValue(config.borderTopLeftRadius), tokens)
+  applyRadiusStyle(style, 'borderTopRightRadius', baseValue(config.borderTopRightRadius), tokens)
+  applyRadiusStyle(style, 'borderBottomLeftRadius', baseValue(config.borderBottomLeftRadius), tokens)
+  applyRadiusStyle(
+    style,
+    'borderBottomRightRadius',
+    baseValue(config.borderBottomRightRadius),
+    tokens,
+  )
 
   if (config.border != null && typeof config.border === 'string') {
     const border = config.border.trim()
@@ -154,6 +165,16 @@ export function resolveNativeStyleProps(
       style.borderColor = resolveColor(parts[parts.length - 1]!, tokens)
     }
   }
+  applyNumericStyle(style, 'borderWidth', baseValue(config.borderWidth))
+  applyColorStyle(style, 'borderColor', baseValue(config.borderColor), tokens)
+  applyNumericStyle(style, 'borderTopWidth', baseValue(config.borderTopWidth))
+  applyColorStyle(style, 'borderTopColor', baseValue(config.borderTopColor), tokens)
+  applyNumericStyle(style, 'borderRightWidth', baseValue(config.borderRightWidth))
+  applyColorStyle(style, 'borderRightColor', baseValue(config.borderRightColor), tokens)
+  applyNumericStyle(style, 'borderBottomWidth', baseValue(config.borderBottomWidth))
+  applyColorStyle(style, 'borderBottomColor', baseValue(config.borderBottomColor), tokens)
+  applyNumericStyle(style, 'borderLeftWidth', baseValue(config.borderLeftWidth))
+  applyColorStyle(style, 'borderLeftColor', baseValue(config.borderLeftColor), tokens)
 
   if (config.shadow != null) {
     Object.assign(style, resolveShadow(baseValue(config.shadow), tokens))
@@ -172,14 +193,18 @@ export function resolveNativeStyleProps(
   }
 
   if (config.inset != null) {
-    const inset = baseValue(config.inset)
-    if (typeof inset === 'number') {
+    const inset = resolveInsetValue(baseValue(config.inset), tokens)
+    if (inset != null) {
       style.top = inset
       style.right = inset
       style.bottom = inset
       style.left = inset
     }
   }
+  applyInsetStyle(style, 'top', baseValue(config.top), tokens)
+  applyInsetStyle(style, 'right', baseValue(config.right), tokens)
+  applyInsetStyle(style, 'bottom', baseValue(config.bottom), tokens)
+  applyInsetStyle(style, 'left', baseValue(config.left), tokens)
 
   const display = baseValue(config.display)
   if (display != null) {
@@ -206,6 +231,9 @@ export function resolveNativeStyleProps(
   if (config.flex != null) {
     style.flex = typeof config.flex === 'number' ? config.flex : Number(config.flex)
   }
+  applyNumericStyle(style, 'flexGrow', baseValue(config.flexGrow))
+  applyNumericStyle(style, 'flexShrink', baseValue(config.flexShrink))
+  applyAlignSelfStyle(style, baseValue(config.alignSelf))
 
   if (config.textAlign != null) {
     style.textAlign = String(config.textAlign)
@@ -222,6 +250,24 @@ export function resolveNativeStyleProps(
 
   const letterSpacing = resolveLetterSpacing(baseValue(config.letterSpacing))
   if (letterSpacing != null) style.letterSpacing = letterSpacing
+
+  if (config.textDecorationLine != null) {
+    style.textDecorationLine = String(baseValue(config.textDecorationLine))
+  }
+
+  if (config.fontStyle != null) {
+    style.fontStyle = String(baseValue(config.fontStyle))
+  }
+
+  if (config.textTransform != null) {
+    style.textTransform = String(baseValue(config.textTransform))
+  }
+
+  const zIndex = resolveZIndex(baseValue(config.zIndex), tokens)
+  if (zIndex != null) style.zIndex = zIndex
+
+  const aspectRatio = resolveNumber(baseValue(config.aspectRatio))
+  if (aspectRatio != null) style.aspectRatio = aspectRatio
 
   return style
 }
@@ -249,6 +295,17 @@ function resolveSpacing(value: unknown, tokens: DesignTokens): number | undefine
   return Number.isNaN(numeric) ? undefined : numeric
 }
 
+function resolveSpacingOrRaw(value: unknown, tokens: DesignTokens): number | string | undefined {
+  if (value == null) return undefined
+  if (typeof value === 'number') return value
+  const token = spacingTokenMap[value as keyof typeof spacingTokenMap]
+  if (token != null) {
+    return tokens.spacing[token]
+  }
+  const numeric = Number(value)
+  return Number.isNaN(numeric) ? String(value) : numeric
+}
+
 function resolveRadius(value: unknown, tokens: DesignTokens): number | undefined {
   if (value == null) return undefined
   if (typeof value === 'number') return value
@@ -271,8 +328,11 @@ function resolveColor(value: unknown, tokens: DesignTokens): string {
   if (typeof value !== 'string') {
     return String(value ?? '')
   }
-  const token = colorTokenMap[value as keyof typeof colorTokenMap]
-  return token ? tokens.colors[token] : value
+  if (value in tokens.colors) {
+    return tokens.colors[value as keyof typeof tokens.colors]
+  }
+  const alias = colorAliasMap[value as keyof typeof colorAliasMap]
+  return alias ? tokens.colors[alias] : value
 }
 
 function resolveFontSize(value: unknown, tokens: DesignTokens): number | undefined {
@@ -325,6 +385,17 @@ function resolveAlignItems(value: string): string {
   }
 }
 
+function resolveAlignSelf(value: string): string {
+  switch (value) {
+    case 'start':
+      return 'flex-start'
+    case 'end':
+      return 'flex-end'
+    default:
+      return value
+  }
+}
+
 function resolveJustifyContent(value: string): string {
   switch (value) {
     case 'start':
@@ -365,9 +436,82 @@ function applyAxisSpacing(
   }
 }
 
+function applySideSpacing(
+  style: NativeResolvedStyle,
+  property: string,
+  value: unknown,
+  tokens: DesignTokens,
+): void {
+  const resolved = resolveSpacingOrRaw(value, tokens)
+  if (resolved != null) style[property] = resolved
+}
+
 function applyDimension(style: NativeResolvedStyle, property: string, value: unknown): void {
   if (value == null) return
   if (typeof value === 'number' || typeof value === 'string') {
     style[property] = value
   }
+}
+
+function applyColorStyle(
+  style: NativeResolvedStyle,
+  property: string,
+  value: unknown,
+  tokens: DesignTokens,
+): void {
+  if (value == null) return
+  style[property] = resolveColor(value, tokens)
+}
+
+function applyNumericStyle(style: NativeResolvedStyle, property: string, value: unknown): void {
+  const resolved = resolveNumber(value)
+  if (resolved != null) style[property] = resolved
+}
+
+function applyRadiusStyle(
+  style: NativeResolvedStyle,
+  property: string,
+  value: unknown,
+  tokens: DesignTokens,
+): void {
+  const resolved = resolveRadius(value, tokens)
+  if (resolved != null) style[property] = resolved
+}
+
+function applyInsetStyle(
+  style: NativeResolvedStyle,
+  property: string,
+  value: unknown,
+  tokens: DesignTokens,
+): void {
+  const resolved = resolveInsetValue(value, tokens)
+  if (resolved != null) style[property] = resolved
+}
+
+function applyAlignSelfStyle(style: NativeResolvedStyle, value: unknown): void {
+  if (value == null) return
+  style.alignSelf = resolveAlignSelf(String(value))
+}
+
+function resolveInsetValue(value: unknown, tokens: DesignTokens): number | string | undefined {
+  return resolveSpacingOrRaw(value, tokens)
+}
+
+function resolveNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') return value
+  if (typeof value !== 'string') return undefined
+  const numeric = Number(value)
+  return Number.isNaN(numeric) ? undefined : numeric
+}
+
+function resolveZIndex(value: unknown, tokens: DesignTokens): number | undefined {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    if (value in tokens.zIndex) {
+      return tokens.zIndex[value as keyof typeof tokens.zIndex]
+    }
+    const numeric = Number(value)
+    return Number.isNaN(numeric) ? undefined : numeric
+  }
+  return undefined
 }

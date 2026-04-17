@@ -53,6 +53,62 @@ describe('native universal styling runtime', () => {
     expect(style.shadowColor).toBe(tokens.shadows.md.shadowColor)
   })
 
+  it('supports parity fields used by internal universal surfaces', () => {
+    const style = resolveNativeStyleProps(
+      {
+        color: 'errorForeground',
+        backgroundColor: 'error',
+        paddingTop: 'lg',
+        paddingRight: 'sm',
+        marginBottom: 'xs',
+        top: 'sm',
+        right: '50%',
+        flexGrow: 1,
+        flexShrink: '0',
+        alignSelf: 'start',
+        borderTopWidth: 2,
+        borderTopColor: 'divider',
+        borderBottomWidth: '1',
+        borderBottomColor: 'inputBorder',
+        borderTopLeftRadius: 'xl',
+        borderTopRightRadius: 'lg',
+        textDecorationLine: 'line-through',
+        fontStyle: 'italic',
+        textTransform: 'uppercase',
+        zIndex: 'toast',
+        aspectRatio: '1.5',
+        inset: 'md',
+      },
+      tokens,
+    )
+
+    expect(style).toMatchObject({
+      color: tokens.colors.errorForeground,
+      backgroundColor: tokens.colors.error,
+      paddingTop: tokens.spacing[4],
+      paddingRight: tokens.spacing[2],
+      marginBottom: tokens.spacing[1],
+      top: tokens.spacing[2],
+      right: '50%',
+      bottom: tokens.spacing[3],
+      left: tokens.spacing[3],
+      flexGrow: 1,
+      flexShrink: 0,
+      alignSelf: 'flex-start',
+      borderTopWidth: 2,
+      borderTopColor: tokens.colors.divider,
+      borderBottomWidth: 1,
+      borderBottomColor: tokens.colors.inputBorder,
+      borderTopLeftRadius: tokens.radius.xl,
+      borderTopRightRadius: tokens.radius.lg,
+      textDecorationLine: 'line-through',
+      fontStyle: 'italic',
+      textTransform: 'uppercase',
+      zIndex: tokens.zIndex.toast,
+      aspectRatio: 1.5,
+    })
+  })
+
   it('merges implementation, component, item, and active state surfaces in canonical order', () => {
     const presentation = resolveSurfacePresentation({
       tokens,

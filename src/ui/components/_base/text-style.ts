@@ -10,6 +10,9 @@ const TEXT_STYLE_KEYS = [
   'fontWeight',
   'lineHeight',
   'letterSpacing',
+  'fontStyle',
+  'textDecorationLine',
+  'textTransform',
   'opacity',
 ] as const
 
