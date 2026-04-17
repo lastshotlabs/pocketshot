@@ -2,22 +2,20 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   FlatList,
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
   RefreshControl,
+  Text,
+  TouchableOpacity,
+  View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { useComponentData } from '../../_base/useComponentData'
 import type { DesignTokens } from '../../../tokens/types'
 import type { DataListConfig } from './types'
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function getNestedValue(obj: unknown, path: string): unknown {
   if (typeof obj !== 'object' || obj === null) return undefined
@@ -30,11 +28,15 @@ function getNestedValue(obj: unknown, path: string): unknown {
   return current
 }
 
-// ---------------------------------------------------------------------------
-// Loading skeleton
-// ---------------------------------------------------------------------------
-
-function LoadingSkeleton({ count, tokens }: { count: number; tokens: DesignTokens }) {
+function LoadingSkeleton({
+  count,
+  tokens,
+  config,
+}: {
+  count: number
+  tokens: DesignTokens
+  config: DataListConfig
+}) {
   const opacity = useRef(new Animated.Value(0.4)).current
 
   useEffect(() => {
@@ -48,51 +50,149 @@ function LoadingSkeleton({ count, tokens }: { count: number; tokens: DesignToken
     return () => anim.stop()
   }, [opacity])
 
-  const styles = makeSkeletonStyles(tokens)
+  const loadingStateSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.loadingState as Record<string, unknown> | undefined,
+  })
+  const loadingItemSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.loadingItem as Record<string, unknown> | undefined,
+  })
+  const loadingBodySurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.loadingBody as Record<string, unknown> | undefined,
+  })
+  const loadingTitleSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.loadingTitle as Record<string, unknown> | undefined,
+  })
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        {
+          paddingHorizontal: tokens.spacing[4],
+          paddingTop: tokens.spacing[2],
+        },
+        loadingStateSurface.style as ViewStyle | undefined,
+      ]}
+    >
       {Array.from({ length: count }, (_, i) => (
         <Animated.View
           key={i}
-          style={[styles.row, { opacity }]}
+          style={[
+            {
+              paddingVertical: tokens.spacing[3],
+              borderBottomWidth: 1,
+              borderBottomColor: tokens.colors.divider,
+              opacity,
+            },
+            loadingItemSurface.style as ViewStyle | undefined,
+          ]}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-        />
+        >
+          <View
+            style={[
+              {
+                gap: tokens.spacing[2],
+              },
+              loadingBodySurface.style as ViewStyle | undefined,
+            ]}
+          >
+            <View
+              style={[
+                {
+                  width: '65%',
+                  height: 12,
+                  borderRadius: tokens.radius.sm,
+                  backgroundColor: tokens.colors.surfaceAlt,
+                },
+                loadingTitleSurface.style as ViewStyle | undefined,
+              ]}
+            />
+            <View
+              style={{
+                width: '90%',
+                height: 10,
+                borderRadius: tokens.radius.sm,
+                backgroundColor: tokens.colors.surfaceAlt,
+              }}
+            />
+          </View>
+        </Animated.View>
       ))}
     </View>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Inline empty state
-// ---------------------------------------------------------------------------
-
-function InlineEmptyState({ message, tokens }: { message: string; tokens: DesignTokens }) {
-  const styles = makeEmptyStyles(tokens)
+function InlineState({
+  message,
+  tokens,
+  surface,
+  textStyle,
+}: {
+  message: string
+  tokens: DesignTokens
+  surface?: Record<string, unknown>
+  textStyle?: TextStyle
+}) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>{message}</Text>
+    <View
+      style={[
+        {
+          padding: tokens.spacing[8],
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        surface as ViewStyle | undefined,
+      ]}
+    >
+      <Text
+        style={[
+          {
+            fontSize: tokens.typography.fontSizeMd,
+            color: tokens.colors.textMuted,
+            textAlign: 'center',
+          },
+          textStyle,
+        ]}
+      >
+        {message}
+      </Text>
     </View>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Item shell
-// ---------------------------------------------------------------------------
 
 function DataListItemShell({
   item,
   itemType,
   tokens,
+  config,
 }: {
   item: unknown
   itemType: string
   tokens: DesignTokens
+  config: DataListConfig
 }) {
-  const styles = makeItemStyles(tokens)
-  // itemType is resolved by the manifest registry at runtime.
-  // This shell renders the most common label field as a fallback.
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const itemSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.item as Record<string, unknown> | undefined,
+  })
+  const itemBodySurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.itemBody as Record<string, unknown> | undefined,
+  })
+  const itemTitleSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.itemTitle as Record<string, unknown> | undefined,
+  })
+  const dividerSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.divider as Record<string, unknown> | undefined,
+  })
+
   const label =
     typeof item === 'object' && item !== null
       ? String(
@@ -103,25 +203,95 @@ function DataListItemShell({
         )
       : itemType
 
+  const titleStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeMd,
+    color:
+      typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightRegular,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
   return (
-    <View style={styles.item}>
-      <Text style={styles.itemText} numberOfLines={1}>
-        {label}
-      </Text>
+    <View
+      style={[
+        {
+          paddingVertical: tokens.spacing[3],
+          paddingHorizontal: tokens.spacing[4],
+          borderBottomWidth: 1,
+          borderBottomColor: tokens.colors.divider,
+        },
+        dividerSurface.style as ViewStyle | undefined,
+        itemSurface.style as ViewStyle | undefined,
+      ]}
+    >
+      <View style={itemBodySurface.style as ViewStyle | undefined}>
+        <Text style={[titleStyle, itemTitleSurface.style as TextStyle | undefined]} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
     </View>
   )
 }
-
-// ---------------------------------------------------------------------------
-// DataList
-// ---------------------------------------------------------------------------
 
 export function DataList({ config }: { config: DataListConfig }) {
   const tokens = useTokens()
   const { dispatch, setValue } = useScreenContext()
   const { data, isLoading, error } = useComponentData<unknown[]>(config.data)
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
   const [refreshing, setRefreshing] = useState(false)
+  const listSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.list as Record<string, unknown> | undefined,
+  })
+  const itemLinkSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.itemLink as Record<string, unknown> | undefined,
+  })
+  const emptyStateSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.emptyState as Record<string, unknown> | undefined,
+  })
+  const errorStateSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.errorState as Record<string, unknown> | undefined,
+  })
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const stateTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeMd,
+    color:
+      typeof sharedTextStyle.color === 'string'
+        ? sharedTextStyle.color
+        : tokens.colors.textMuted,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightRegular,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : 'center',
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
   const handleRefresh = useCallback(async () => {
     if (!config.refreshable) return
@@ -152,24 +322,25 @@ export function DataList({ config }: { config: DataListConfig }) {
       if (config.onItemPress) {
         return (
           <TouchableOpacity
-            onPress={() => handleItemPress(item)}
+            onPress={() => void handleItemPress(item)}
             accessibilityRole="button"
             accessibilityLabel={`${config.itemType} item`}
             activeOpacity={0.7}
+            style={itemLinkSurface.style as ViewStyle | undefined}
           >
-            <DataListItemShell item={item} itemType={config.itemType} tokens={tokens} />
+            <DataListItemShell item={item} itemType={config.itemType} tokens={tokens} config={config} />
           </TouchableOpacity>
         )
       }
-      return <DataListItemShell item={item} itemType={config.itemType} tokens={tokens} />
+      return <DataListItemShell item={item} itemType={config.itemType} tokens={tokens} config={config} />
     },
-    [config.onItemPress, config.itemType, handleItemPress, tokens],
+    [config, handleItemPress, itemLinkSurface.style, tokens],
   )
 
   if (isLoading && !data) {
     return (
       <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <LoadingSkeleton count={config.loadingCount ?? 3} tokens={tokens} />
+        <LoadingSkeleton count={config.loadingCount ?? 3} tokens={tokens} config={config} />
       </ComponentWrapper>
     )
   }
@@ -177,7 +348,12 @@ export function DataList({ config }: { config: DataListConfig }) {
   if (error) {
     return (
       <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <InlineEmptyState message="Failed to load data." tokens={tokens} />
+        <InlineState
+          message="Failed to load data."
+          tokens={tokens}
+          surface={errorStateSurface.style}
+          textStyle={stateTextStyle}
+        />
       </ComponentWrapper>
     )
   }
@@ -191,9 +367,23 @@ export function DataList({ config }: { config: DataListConfig }) {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         numColumns={config.numColumns}
-        contentContainerStyle={items.length === 0 ? styles.emptyContent : undefined}
+        style={listSurface.style as ViewStyle | undefined}
+        contentContainerStyle={
+          items.length === 0
+            ? ({
+                flexGrow: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              } as ViewStyle)
+            : undefined
+        }
         ListEmptyComponent={
-          <InlineEmptyState message={config.emptyMessage ?? 'Nothing here yet'} tokens={tokens} />
+          <InlineState
+            message={config.emptyMessage ?? 'Nothing here yet'}
+            tokens={tokens}
+            surface={emptyStateSurface.style}
+            textStyle={stateTextStyle}
+          />
         }
         refreshControl={
           config.refreshable ? (
@@ -209,63 +399,4 @@ export function DataList({ config }: { config: DataListConfig }) {
       />
     </ComponentWrapper>
   )
-}
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(_tokens: DesignTokens) {
-  return StyleSheet.create({
-    emptyContent: {
-      flexGrow: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-  })
-}
-
-function makeSkeletonStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[2],
-    },
-    row: {
-      height: tokens.spacing[12],
-      borderRadius: tokens.radius.md,
-      backgroundColor: tokens.colors.surfaceAlt,
-      marginBottom: tokens.spacing[3],
-    },
-  })
-}
-
-function makeEmptyStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      padding: tokens.spacing[8],
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    text: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.textMuted,
-      textAlign: 'center',
-    },
-  })
-}
-
-function makeItemStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    item: {
-      paddingVertical: tokens.spacing[3],
-      paddingHorizontal: tokens.spacing[4],
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.divider,
-    },
-    itemText: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-    },
-  })
 }

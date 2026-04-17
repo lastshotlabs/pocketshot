@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, type ReactNode } from 'react'
-import { ScrollView, RefreshControl } from 'react-native'
+import { ScrollView, RefreshControl, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import { resolveFromRef } from '../../_base/fromRef'
+import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import type { PullToRefreshConfig } from './types'
 
 // ---------------------------------------------------------------------------
@@ -24,13 +24,21 @@ export function PullToRefresh({ config, children }: PullToRefreshProps) {
   const tokens = useTokens()
   const { dispatch, values } = useScreenContext()
 
-  const refreshing = resolveFromRef<boolean>(
-    config.refreshing as boolean | { from: string },
-    values,
-  ) ?? false
+  const refreshing = isFromRef(config.refreshing)
+    ? (resolveFromRef<boolean>(config.refreshing, values) ?? false)
+    : Boolean(config.refreshing)
 
   const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-  const tintColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.primary
+  const tintColor =
+    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.primary
+  const scrollViewSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      minHeight: '100%',
+    },
+    componentSurface: config.slots?.scrollView as Record<string, unknown> | undefined,
+  })
+  const baseTestID = config.testID ?? config.id ?? 'pull-to-refresh'
 
   const handleRefresh = useCallback(async () => {
     await dispatch(config.onRefresh)
@@ -44,11 +52,11 @@ export function PullToRefresh({ config, children }: PullToRefreshProps) {
         tintColor={tintColor}
         colors={[tintColor]}
         progressBackgroundColor={tokens.colors.surface}
-        testID={config.testID ? `${config.testID}-refresh` : `${config.id ?? 'pull-to-refresh'}-refresh`}
+        testID={`${baseTestID}-refresh`}
         accessibilityLabel="Pull to refresh"
       />
     ),
-    [refreshing, handleRefresh, tintColor, tokens.colors.surface, config.testID, config.id],
+    [baseTestID, refreshing, handleRefresh, tintColor, tokens.colors.surface],
   )
 
   return (
@@ -57,7 +65,8 @@ export function PullToRefresh({ config, children }: PullToRefreshProps) {
         refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
-        testID={config.testID ?? config.id ?? 'pull-to-refresh'}
+        style={scrollViewSurface.style as ViewStyle | undefined}
+        testID={`${baseTestID}-scroll`}
       >
         {children}
       </ScrollView>

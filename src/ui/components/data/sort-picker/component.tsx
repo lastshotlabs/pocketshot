@@ -4,120 +4,44 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  StyleSheet,
   Animated,
   Modal as RNModal,
   FlatList,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation, isFromRef, resolveFromRef } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { SortPickerConfig } from './types'
 
 type SortOption = SortPickerConfig['options'][number]
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: tokens.colors.overlay,
-      justifyContent: 'flex-end',
-    },
-    container: {
-      backgroundColor: tokens.colors.surface,
-      borderTopLeftRadius: tokens.radius.lg,
-      borderTopRightRadius: tokens.radius.lg,
-      paddingBottom: tokens.spacing[8],
-      ...tokens.shadows.xl,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[4],
-      paddingBottom: tokens.spacing[2],
-    },
-    headerTitle: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.textMuted,
-      textAlign: 'center' as const,
-    },
-    divider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: tokens.colors.divider,
-    },
-    optionRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[4],
-      gap: tokens.spacing[2],
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.divider,
-    },
-    optionIcon: {
-      fontSize: 16,
-      width: 24,
-      textAlign: 'center' as const,
-    },
-    optionLabel: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-    },
-    optionLabelSelected: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.primary,
-    },
-    checkmark: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.primary,
-    },
-    cancelSeparator: {
-      height: tokens.spacing[2],
-      backgroundColor: tokens.colors.background,
-    },
-    cancelOption: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[4],
-    },
-    cancelText: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-      textAlign: 'center' as const,
-    },
-  })
-}
-
-// ---------------------------------------------------------------------------
-// SortPicker
-// ---------------------------------------------------------------------------
-
-/**
- * Sort options bottom sheet. Opens via setValue('__sortPicker_<id>', true).
- * Renders radio-style options with checkmark on selected. Dispatches onSelect
- * and publishes selected value via setValue.
- */
 export function SortPicker({ config }: { config: SortPickerConfig }) {
   const tokens = useTokens()
-  const { getValue, setValue, dispatch } = useScreenContext()
+  const { getValue, setValue, dispatch, values } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   const isOpen = Boolean(getValue(`__sortPicker_${config.id}`))
-  const [selected, setSelected] = useState(config.defaultValue ?? '')
+  const resolvedValue = useMemo(() => {
+    if (isFromRef(config.value)) {
+      const resolved = resolveFromRef(config.value, values)
+      return typeof resolved === 'string' ? resolved : undefined
+    }
+    return typeof config.value === 'string' ? config.value : undefined
+  }, [config.value, values])
+  const [selected, setSelected] = useState(resolvedValue ?? config.defaultValue ?? '')
+
+  useEffect(() => {
+    if (resolvedValue !== undefined) {
+      setSelected(resolvedValue)
+    }
+  }, [resolvedValue])
+
   const opacity = useRef(new Animated.Value(0)).current
   const translateY = useRef(new Animated.Value(300)).current
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
-
   const baseTestID = config.testID ?? config.id
 
   useEffect(() => {
@@ -128,13 +52,139 @@ export function SortPicker({ config }: { config: SortPickerConfig }) {
         Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
         Animated.timing(translateY, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start()
-    } else {
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 300, duration: 250, useNativeDriver: true }),
-      ]).start()
+      return
     }
+
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 300, duration: 250, useNativeDriver: true }),
+    ]).start()
   }, [isOpen, opacity, translateY])
+
+  const headerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'between',
+      paddingX: 'md',
+      paddingY: 'md',
+    },
+    componentSurface: config.slots?.header as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'muted',
+      textAlign: 'center',
+    },
+    componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+  })
+  const dividerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'border',
+    },
+    componentSurface: config.slots?.divider as Record<string, unknown> | undefined,
+  })
+  const optionSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingX: 'md',
+      paddingY: 'md',
+      gap: 'sm',
+      states: {
+        selected: {
+          bg: 'accent',
+        },
+      },
+    },
+    componentSurface: config.slots?.option as Record<string, unknown> | undefined,
+  })
+  const optionLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+      states: {
+        selected: {
+          color: 'primary',
+          fontWeight: 'semibold',
+        },
+      },
+    },
+    componentSurface: config.slots?.optionLabel as Record<string, unknown> | undefined,
+  })
+  const optionIconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      color: 'muted',
+    },
+    componentSurface: config.slots?.optionIcon as Record<string, unknown> | undefined,
+  })
+  const checkmarkSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      color: 'primary',
+      fontWeight: 'bold',
+    },
+    componentSurface: config.slots?.checkmark as Record<string, unknown> | undefined,
+  })
+  const cancelButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+      paddingY: 'md',
+    },
+    componentSurface: config.slots?.cancelButton as Record<string, unknown> | undefined,
+  })
+  const cancelLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      fontWeight: 'semibold',
+      color: 'foreground',
+      textAlign: 'center',
+    },
+    componentSurface: config.slots?.cancelLabel as Record<string, unknown> | undefined,
+  })
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'rgba(0,0,0,0.55)',
+    },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+  })
+  const panelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      shadow: 'xl',
+    },
+    componentSurface: config.slots?.panel as Record<string, unknown> | undefined,
+  })
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
   const handleClose = useCallback(() => {
     setValue(`__sortPicker_${config.id}`, false)
@@ -149,39 +199,81 @@ export function SortPicker({ config }: { config: SortPickerConfig }) {
       handleClose()
       await dispatch(config.onSelect)
     },
-    [config.id, config.onSelect, setValue, handleClose, dispatch],
+    [config.id, config.onSelect, dispatch, handleClose, setValue],
   )
 
   const renderItem = useCallback(
     ({ item }: { item: SortOption }) => {
       const isSelected = item.value === selected
+      const activeStates: RuntimeSurfaceState[] | undefined = isSelected ? ['selected'] : undefined
+
       return (
         <TouchableOpacity
-          onPress={() => handleSelect(item)}
-          style={styles.optionRow}
+          onPress={() => void handleSelect(item)}
+          style={
+            resolveSurfacePresentation({
+              tokens,
+              implementationBase: optionSurface.resolvedConfigForWrapper,
+              activeStates,
+            }).style as ViewStyle | undefined
+          }
           accessibilityRole="radio"
           accessibilityLabel={item.label}
           accessibilityState={{ checked: isSelected }}
           testID={`${baseTestID}-option-${item.value}`}
           activeOpacity={0.7}
         >
-          {item.icon != null && (
-            <Text style={styles.optionIcon} accessibilityElementsHidden>
+          {item.icon != null ? (
+            <Text
+              style={{
+                ...baseTextStyle,
+                width: 24,
+                textAlign: 'center',
+                ...(optionIconSurface.style as TextStyle | undefined),
+              }}
+              accessibilityElementsHidden
+            >
               {item.icon}
             </Text>
-          )}
-          <Text style={isSelected ? styles.optionLabelSelected : styles.optionLabel}>
+          ) : null}
+          <Text
+            style={{
+              ...baseTextStyle,
+              flex: 1,
+              ...(resolveSurfacePresentation({
+                tokens,
+                implementationBase: optionLabelSurface.resolvedConfigForWrapper,
+                activeStates,
+              }).style as TextStyle | undefined),
+            }}
+          >
             {item.label}
           </Text>
-          {isSelected && (
-            <Text style={styles.checkmark} accessibilityElementsHidden>
-              ✓
+          {isSelected ? (
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(checkmarkSurface.style as TextStyle | undefined),
+              }}
+              accessibilityElementsHidden
+            >
+              Check
             </Text>
-          )}
+          ) : null}
         </TouchableOpacity>
       )
     },
-    [selected, styles, handleSelect, baseTestID],
+    [
+      baseTestID,
+      baseTextStyle,
+      checkmarkSurface.style,
+      handleSelect,
+      optionIconSurface.style,
+      optionLabelSurface.resolvedConfigForWrapper,
+      optionSurface.resolvedConfigForWrapper,
+      selected,
+      tokens,
+    ],
   )
 
   const keyExtractor = useCallback((item: SortOption) => item.value, [])
@@ -197,15 +289,45 @@ export function SortPicker({ config }: { config: SortPickerConfig }) {
         accessibilityViewIsModal
       >
         <TouchableWithoutFeedback onPress={handleClose} accessibilityLabel="Dismiss">
-          <Animated.View style={[styles.backdrop, { opacity }]}>
+          <Animated.View
+            style={[
+              {
+                flex: 1,
+                justifyContent: 'flex-end',
+              },
+              backdropSurface.style as ViewStyle | undefined,
+              { opacity },
+            ]}
+          >
             <TouchableWithoutFeedback>
-              <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
-                <View style={styles.header}>
-                  <Text style={styles.headerTitle} accessibilityRole="header">
+              <Animated.View
+                style={[
+                  {
+                    borderTopLeftRadius: tokens.radius.lg,
+                    borderTopRightRadius: tokens.radius.lg,
+                    paddingBottom: tokens.spacing[8],
+                  },
+                  panelSurface.style as ViewStyle | undefined,
+                  { transform: [{ translateY }] },
+                ]}
+              >
+                <View style={headerSurface.style as ViewStyle | undefined}>
+                  <Text
+                    style={{
+                      ...baseTextStyle,
+                      ...(titleSurface.style as TextStyle | undefined),
+                    }}
+                    accessibilityRole="header"
+                  >
                     Sort by
                   </Text>
                 </View>
-                <View style={styles.divider} />
+                <View
+                  style={[
+                    { height: 1 },
+                    dividerSurface.style as ViewStyle | undefined,
+                  ]}
+                />
 
                 <FlatList
                   data={config.options}
@@ -214,15 +336,21 @@ export function SortPicker({ config }: { config: SortPickerConfig }) {
                   scrollEnabled={false}
                 />
 
-                <View style={styles.cancelSeparator} />
                 <TouchableOpacity
                   onPress={handleClose}
-                  style={styles.cancelOption}
+                  style={cancelButtonSurface.style as ViewStyle | undefined}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel"
                   testID={`${baseTestID}-cancel`}
                 >
-                  <Text style={styles.cancelText}>Cancel</Text>
+                  <Text
+                    style={{
+                      ...baseTextStyle,
+                      ...(cancelLabelSurface.style as TextStyle | undefined),
+                    }}
+                  >
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
               </Animated.View>
             </TouchableWithoutFeedback>
@@ -232,4 +360,3 @@ export function SortPicker({ config }: { config: SortPickerConfig }) {
     </ComponentWrapper>
   )
 }
-

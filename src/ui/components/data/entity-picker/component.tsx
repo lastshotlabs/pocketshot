@@ -4,205 +4,32 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  StyleSheet,
   Animated,
   Modal,
   FlatList,
   TextInput as RNTextInput,
   Dimensions,
   Image,
+  type TextStyle,
+  type ViewStyle,
+  type ImageStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { EntityPickerConfig, EntityOption } from './types'
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 const PANEL_MAX_HEIGHT = SCREEN_HEIGHT * 0.7
 const AVATAR_SIZE = 32
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function getInitials(label: string): string {
   const parts = label.trim().split(/\s+/)
   if (parts.length === 1) return label.slice(0, 2).toUpperCase()
   return (parts[0]![0]! + parts[1]![0]!).toUpperCase()
 }
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    triggerField: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: tokens.colors.inputBackground,
-      borderWidth: 1,
-      borderColor: tokens.colors.inputBorder,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[3],
-      gap: tokens.spacing[2],
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[1],
-    },
-    selectedAvatar: {
-      width: AVATAR_SIZE - 8,
-      height: AVATAR_SIZE - 8,
-      borderRadius: tokens.radius.full,
-      backgroundColor: tokens.colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    },
-    selectedAvatarImage: {
-      width: AVATAR_SIZE - 8,
-      height: AVATAR_SIZE - 8,
-      borderRadius: tokens.radius.full,
-      resizeMode: 'cover',
-    },
-    selectedAvatarInitials: {
-      fontSize: tokens.typography.fontSizeXs,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors.primaryForeground,
-    },
-    triggerText: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputText,
-    },
-    triggerPlaceholder: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputPlaceholder,
-    },
-    triggerChevron: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-    },
-    clearButton: {
-      width: 24,
-      height: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: tokens.radius.full,
-    },
-    clearButtonText: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      lineHeight: 18,
-    },
-    backdrop: {
-      flex: 1,
-      backgroundColor: tokens.colors.overlay,
-      justifyContent: 'flex-end',
-    },
-    panel: {
-      backgroundColor: tokens.colors.surface,
-      borderTopLeftRadius: tokens.radius.lg,
-      borderTopRightRadius: tokens.radius.lg,
-      maxHeight: PANEL_MAX_HEIGHT,
-      ...tokens.shadows.xl,
-    },
-    dragHandle: {
-      alignSelf: 'center',
-      marginTop: tokens.spacing[2],
-      marginBottom: tokens.spacing[2],
-      width: 40,
-      height: 4,
-      borderRadius: tokens.radius.full,
-      backgroundColor: tokens.colors.border,
-    },
-    searchContainer: {
-      paddingHorizontal: tokens.spacing[3],
-      paddingBottom: tokens.spacing[2],
-    },
-    searchInput: {
-      backgroundColor: tokens.colors.surfaceAlt,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputText,
-    },
-    entityRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[3],
-      gap: tokens.spacing[3],
-    },
-    entityAvatar: {
-      width: AVATAR_SIZE,
-      height: AVATAR_SIZE,
-      borderRadius: tokens.radius.full,
-      backgroundColor: tokens.colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    },
-    entityAvatarImage: {
-      width: AVATAR_SIZE,
-      height: AVATAR_SIZE,
-      borderRadius: tokens.radius.full,
-      resizeMode: 'cover',
-    },
-    entityAvatarInitials: {
-      fontSize: tokens.typography.fontSizeXs,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors.primaryForeground,
-    },
-    entityInfo: {
-      flex: 1,
-    },
-    entityLabel: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-    },
-    entitySubtitle: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-      marginTop: 2,
-    },
-    checkmark: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.primary,
-      fontWeight: tokens.typography.fontWeightBold,
-    },
-    separator: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: tokens.colors.divider,
-      marginHorizontal: tokens.spacing[3],
-    },
-    emptyContainer: {
-      paddingVertical: tokens.spacing[8],
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    emptyText: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.textMuted,
-      textAlign: 'center',
-    },
-    listContent: {
-      paddingBottom: tokens.spacing[6],
-    },
-  })
-}
-
-// ---------------------------------------------------------------------------
-// Avatar helper
-// ---------------------------------------------------------------------------
 
 function EntityAvatar({
   entity,
@@ -213,58 +40,80 @@ function EntityAvatar({
 }: {
   entity: EntityOption
   size: number
-  avatarStyle: object
-  imageStyle: object
-  initialsStyle: object
+  avatarStyle?: ViewStyle
+  imageStyle?: ImageStyle
+  initialsStyle?: TextStyle
 }) {
   if (entity.avatarUrl) {
     return (
-      <View style={[avatarStyle, { width: size, height: size }]}>
+      <View
+        style={[
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            overflow: 'hidden',
+          },
+          avatarStyle,
+        ]}
+      >
         <Image
           source={{ uri: entity.avatarUrl }}
-          style={[imageStyle, { width: size, height: size }]}
+          style={[
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              resizeMode: 'cover',
+            },
+            imageStyle,
+          ]}
           accessibilityLabel={`${entity.label} avatar`}
         />
       </View>
     )
   }
+
   return (
-    <View style={[avatarStyle, { width: size, height: size }]}>
+    <View
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        },
+        avatarStyle,
+      ]}
+    >
       <Text style={initialsStyle}>{getInitials(entity.label)}</Text>
     </View>
   )
 }
 
-// ---------------------------------------------------------------------------
-// EntityPicker
-// ---------------------------------------------------------------------------
-
-/**
- * A field that opens a searchable slide-up panel to select a single entity.
- * Supports static option arrays and from-ref data binding. Publishes selected
- * value to ScreenContext via config.id.
- */
 export function EntityPicker({ config }: { config: EntityPickerConfig }) {
   const tokens = useTokens()
   const { values, setValue, dispatch } = useScreenContext()
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
-  // Resolve data from static array or from-ref
   const resolvedData = useMemo<EntityOption[]>(() => {
-    const raw = config.data
-    if (isFromRef(raw)) {
-      const resolved = resolveFromRef(raw, values)
+    if (isFromRef(config.data)) {
+      const resolved = resolveFromRef(config.data, values)
       return Array.isArray(resolved) ? (resolved as EntityOption[]) : []
     }
-    return raw as EntityOption[]
+    return config.data as EntityOption[]
   }, [config.data, values])
 
-  // Resolve current value from prop or from-ref
   const resolvedValue = useMemo<string | undefined>(() => {
-    const v = config.value
-    if (v === undefined || v === null) return undefined
-    if (isFromRef(v)) return resolveFromRef<string>(v as unknown as string, values)
-    return v as unknown as string
+    const value = config.value
+    if (value == null) return undefined
+    if (isFromRef(value)) {
+      const resolved = resolveFromRef(value, values)
+      return typeof resolved === 'string' ? resolved : undefined
+    }
+    return typeof value === 'string' ? value : undefined
   }, [config.value, values])
 
   const [internalValue, setInternalValue] = useState<string | undefined>(
@@ -274,25 +123,254 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
   const [searchQuery, setSearchQuery] = useState('')
   const panelTranslateY = useRef(new Animated.Value(PANEL_MAX_HEIGHT)).current
 
-  // Keep internal value in sync with external from-ref
   useEffect(() => {
     if (resolvedValue !== undefined) {
       setInternalValue(resolvedValue)
     }
   }, [resolvedValue])
 
-  const selectedEntity = useMemo(
-    () => resolvedData.find((e) => e.value === internalValue),
-    [resolvedData, internalValue],
-  )
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+      marginY: 'xs',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+  })
+  const triggerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'sm',
+      bg: 'input',
+      border: '1px solid border',
+      borderRadius: 'md',
+      paddingX: 'md',
+      paddingY: 'md',
+    },
+    componentSurface: config.slots?.trigger as Record<string, unknown> | undefined,
+  })
+  const triggerTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.triggerText as Record<string, unknown> | undefined,
+  })
+  const triggerPlaceholderSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.triggerPlaceholder as Record<string, unknown> | undefined,
+  })
+  const triggerChevronSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.triggerChevron as Record<string, unknown> | undefined,
+  })
+  const clearButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      borderRadius: 'full',
+      padding: 'xs',
+    },
+    componentSurface: config.slots?.clearButton as Record<string, unknown> | undefined,
+  })
+  const clearButtonTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.clearButtonText as Record<string, unknown> | undefined,
+  })
+  const selectedAvatarSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'primary',
+    },
+    componentSurface: config.slots?.selectedAvatar as Record<string, unknown> | undefined,
+  })
+  const selectedAvatarImageSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.selectedAvatarImage as Record<string, unknown> | undefined,
+  })
+  const selectedAvatarInitialsSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      fontWeight: 'bold',
+      color: 'primary-foreground',
+    },
+    componentSurface: config.slots?.selectedAvatarInitials as Record<string, unknown> | undefined,
+  })
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'rgba(0,0,0,0.55)',
+    },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+  })
+  const panelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      shadow: 'xl',
+    },
+    componentSurface: config.slots?.panel as Record<string, unknown> | undefined,
+  })
+  const dragHandleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'border',
+      borderRadius: 'full',
+    },
+    componentSurface: config.slots?.dragHandle as Record<string, unknown> | undefined,
+  })
+  const searchContainerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+      paddingY: 'sm',
+    },
+    componentSurface: config.slots?.searchContainer as Record<string, unknown> | undefined,
+  })
+  const searchInputSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'popover',
+      borderRadius: 'md',
+      paddingX: 'md',
+      paddingY: 'sm',
+      fontSize: 'base',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.searchInput as Record<string, unknown> | undefined,
+  })
+  const entityRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'md',
+      paddingX: 'md',
+      paddingY: 'md',
+    },
+    componentSurface: config.slots?.entityRow as Record<string, unknown> | undefined,
+  })
+  const entityAvatarSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'primary',
+    },
+    componentSurface: config.slots?.entityAvatar as Record<string, unknown> | undefined,
+  })
+  const entityAvatarImageSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.entityAvatarImage as Record<string, unknown> | undefined,
+  })
+  const entityAvatarInitialsSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      fontWeight: 'bold',
+      color: 'primary-foreground',
+    },
+    componentSurface: config.slots?.entityAvatarInitials as Record<string, unknown> | undefined,
+  })
+  const entityInfoSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.entityInfo as Record<string, unknown> | undefined,
+  })
+  const entityLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.entityLabel as Record<string, unknown> | undefined,
+  })
+  const entitySubtitleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.entitySubtitle as Record<string, unknown> | undefined,
+  })
+  const checkmarkSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      fontWeight: 'bold',
+      color: 'primary',
+    },
+    componentSurface: config.slots?.checkmark as Record<string, unknown> | undefined,
+  })
+  const separatorSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'border',
+    },
+    componentSurface: config.slots?.separator as Record<string, unknown> | undefined,
+  })
+  const emptyStateSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingY: 'xl',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.emptyState as Record<string, unknown> | undefined,
+  })
+  const emptyTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'muted',
+      textAlign: 'center',
+    },
+    componentSurface: config.slots?.emptyText as Record<string, unknown> | undefined,
+  })
+
+  const selectedEntity = useMemo(
+    () => resolvedData.find((entity) => entity.value === internalValue),
+    [internalValue, resolvedData],
+  )
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) return resolvedData
-    const q = searchQuery.toLowerCase()
+    const query = searchQuery.toLowerCase()
     return resolvedData.filter(
-      (e) =>
-        e.label.toLowerCase().includes(q) ||
-        (e.subtitle != null && e.subtitle.toLowerCase().includes(q)),
+      (entity) =>
+        entity.label.toLowerCase().includes(query) ||
+        (entity.subtitle != null && entity.subtitle.toLowerCase().includes(query)),
     )
   }, [resolvedData, searchQuery])
 
@@ -327,7 +405,7 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
         await dispatch(config.onChangeAction)
       }
     },
-    [config.id, config.onChangeAction, closeModal, dispatch, setValue],
+    [closeModal, config.id, config.onChangeAction, dispatch, setValue],
   )
 
   const handleClear = useCallback(() => {
@@ -343,11 +421,12 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
   const renderEntityRow = useCallback(
     ({ item, index }: { item: EntityOption; index: number }) => {
       const isSelected = item.value === internalValue
+
       return (
-        <>
+        <View>
           <TouchableOpacity
-            onPress={() => handleSelect(item)}
-            style={styles.entityRow}
+            onPress={() => void handleSelect(item)}
+            style={entityRowSurface.style as ViewStyle | undefined}
             accessibilityRole="button"
             accessibilityLabel={item.label}
             accessibilityState={{ selected: isSelected }}
@@ -357,89 +436,174 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
             <EntityAvatar
               entity={item}
               size={AVATAR_SIZE}
-              avatarStyle={styles.entityAvatar}
-              imageStyle={styles.entityAvatarImage}
-              initialsStyle={styles.entityAvatarInitials}
+              avatarStyle={entityAvatarSurface.style as ViewStyle | undefined}
+              imageStyle={entityAvatarImageSurface.style as ImageStyle | undefined}
+              initialsStyle={{
+                ...baseTextStyle,
+                ...(entityAvatarInitialsSurface.style as TextStyle | undefined),
+              }}
             />
-            <View style={styles.entityInfo}>
-              <Text style={styles.entityLabel} numberOfLines={1}>
+            <View style={[{ flex: 1 }, entityInfoSurface.style as ViewStyle | undefined]}>
+              <Text
+                style={{
+                  ...baseTextStyle,
+                  ...(entityLabelSurface.style as TextStyle | undefined),
+                }}
+                numberOfLines={1}
+              >
                 {item.label}
               </Text>
-              {item.subtitle != null && (
-                <Text style={styles.entitySubtitle} numberOfLines={1}>
+              {item.subtitle != null ? (
+                <Text
+                  style={{
+                    ...baseTextStyle,
+                    marginTop: 2,
+                    ...(entitySubtitleSurface.style as TextStyle | undefined),
+                  }}
+                  numberOfLines={1}
+                >
                   {item.subtitle}
                 </Text>
-              )}
+              ) : null}
             </View>
-            {isSelected && (
-              <Text style={styles.checkmark} accessibilityElementsHidden>
-                ✓
+            {isSelected ? (
+              <Text
+                style={{
+                  ...baseTextStyle,
+                  ...(checkmarkSurface.style as TextStyle | undefined),
+                }}
+                accessibilityElementsHidden
+              >
+                Check
               </Text>
-            )}
+            ) : null}
           </TouchableOpacity>
-          {index < filteredData.length - 1 && <View style={styles.separator} />}
-        </>
+          {index < filteredData.length - 1 ? (
+            <View
+              style={[
+                { height: 1, marginHorizontal: tokens.spacing[3] },
+                separatorSurface.style as ViewStyle | undefined,
+              ]}
+            />
+          ) : null}
+        </View>
       )
     },
-    [internalValue, handleSelect, styles, filteredData.length],
+    [
+      baseTextStyle,
+      checkmarkSurface.style,
+      entityAvatarImageSurface.style,
+      entityAvatarInitialsSurface.style,
+      entityAvatarSurface.style,
+      entityInfoSurface.style,
+      entityLabelSurface.style,
+      entityRowSurface.style,
+      entitySubtitleSurface.style,
+      filteredData.length,
+      handleSelect,
+      internalValue,
+      separatorSurface.style,
+      tokens.spacing,
+    ],
   )
 
-  const triggerTestID = config.testID ?? `${config.id}-trigger`
   const fieldLabel = config.label
+  const placeholder = config.placeholder ?? 'Select...'
+  const searchPlaceholder = config.searchPlaceholder ?? 'Search...'
+  const emptyMessage = config.emptyMessage ?? 'No results'
+  const searchable = config.searchable !== false
+  const clearable = config.clearable !== false
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      {fieldLabel != null && <Text style={styles.label}>{fieldLabel}</Text>}
+      {fieldLabel != null ? (
+        <Text
+          style={{
+            ...baseTextStyle,
+            ...(labelSurface.style as TextStyle | undefined),
+          }}
+        >
+          {fieldLabel}
+        </Text>
+      ) : null}
 
-      {/* Trigger field */}
       <TouchableOpacity
         onPress={openModal}
-        style={styles.triggerField}
+        style={triggerSurface.style as ViewStyle | undefined}
         accessibilityRole="combobox"
         accessibilityLabel={`${fieldLabel ?? 'Entity'} picker`}
         accessibilityState={{ expanded: modalVisible }}
-        testID={triggerTestID}
+        testID={config.testID ?? `${config.id}-trigger`}
         activeOpacity={0.8}
       >
-        {selectedEntity != null && (
+        {selectedEntity != null ? (
           <EntityAvatar
             entity={selectedEntity}
             size={AVATAR_SIZE - 8}
-            avatarStyle={styles.selectedAvatar}
-            imageStyle={styles.selectedAvatarImage}
-            initialsStyle={styles.selectedAvatarInitials}
+            avatarStyle={selectedAvatarSurface.style as ViewStyle | undefined}
+            imageStyle={selectedAvatarImageSurface.style as ImageStyle | undefined}
+            initialsStyle={{
+              ...baseTextStyle,
+              ...(selectedAvatarInitialsSurface.style as TextStyle | undefined),
+            }}
           />
-        )}
+        ) : null}
 
         {selectedEntity != null ? (
-          <Text style={styles.triggerText} numberOfLines={1}>
+          <Text
+            style={{
+              ...baseTextStyle,
+              flex: 1,
+              ...(triggerTextSurface.style as TextStyle | undefined),
+            }}
+            numberOfLines={1}
+          >
             {selectedEntity.label}
           </Text>
         ) : (
-          <Text style={styles.triggerPlaceholder} numberOfLines={1}>
-            {config.placeholder ?? 'Select…'}
+          <Text
+            style={{
+              ...baseTextStyle,
+              flex: 1,
+              ...(triggerPlaceholderSurface.style as TextStyle | undefined),
+            }}
+            numberOfLines={1}
+          >
+            {placeholder}
           </Text>
         )}
 
-        {selectedEntity != null && (config.clearable ?? true) ? (
+        {selectedEntity != null && clearable ? (
           <TouchableOpacity
             onPress={handleClear}
-            style={styles.clearButton}
+            style={clearButtonSurface.style as ViewStyle | undefined}
             accessibilityRole="button"
             accessibilityLabel="Clear selection"
             testID={`${config.id}-clear`}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.clearButtonText}>✕</Text>
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(clearButtonTextSurface.style as TextStyle | undefined),
+              }}
+            >
+              Clear
+            </Text>
           </TouchableOpacity>
         ) : (
-          <Text style={styles.triggerChevron} accessibilityElementsHidden>
-            ▼
+          <Text
+            style={{
+              ...baseTextStyle,
+              ...(triggerChevronSurface.style as TextStyle | undefined),
+            }}
+            accessibilityElementsHidden
+          >
+            Open
           </Text>
         )}
       </TouchableOpacity>
 
-      {/* Bottom sheet modal */}
       <Modal
         visible={modalVisible}
         transparent
@@ -449,20 +613,43 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
         accessibilityViewIsModal
       >
         <TouchableWithoutFeedback onPress={closeModal} accessibilityLabel="Close entity picker">
-          <View style={styles.backdrop}>
+          <View
+            style={[
+              { flex: 1, justifyContent: 'flex-end' },
+              backdropSurface.style as ViewStyle | undefined,
+            ]}
+          >
             <TouchableWithoutFeedback>
               <Animated.View
-                style={[styles.panel, { transform: [{ translateY: panelTranslateY }] }]}
+                style={[
+                  {
+                    borderTopLeftRadius: tokens.radius.lg,
+                    borderTopRightRadius: tokens.radius.lg,
+                    maxHeight: PANEL_MAX_HEIGHT,
+                  },
+                  panelSurface.style as ViewStyle | undefined,
+                  { transform: [{ translateY: panelTranslateY }] },
+                ]}
               >
-                {/* Drag handle */}
-                <View style={styles.dragHandle} accessibilityElementsHidden />
+                <View
+                  style={[
+                    {
+                      alignSelf: 'center',
+                      marginTop: tokens.spacing[2],
+                      marginBottom: tokens.spacing[2],
+                      width: 40,
+                      height: 4,
+                    },
+                    dragHandleSurface.style as ViewStyle | undefined,
+                  ]}
+                  accessibilityElementsHidden
+                />
 
-                {/* Search input */}
-                {(config.searchable ?? true) && (
-                  <View style={styles.searchContainer}>
+                {searchable ? (
+                  <View style={searchContainerSurface.style as ViewStyle | undefined}>
                     <RNTextInput
-                      style={styles.searchInput}
-                      placeholder={config.searchPlaceholder ?? 'Search…'}
+                      style={searchInputSurface.style as TextStyle | undefined}
+                      placeholder={searchPlaceholder}
                       placeholderTextColor={tokens.colors.inputPlaceholder}
                       value={searchQuery}
                       onChangeText={setSearchQuery}
@@ -473,22 +660,25 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
                       testID={`${config.id}-search`}
                     />
                   </View>
-                )}
+                ) : null}
 
-                {/* Entity list */}
                 <FlatList
                   data={filteredData}
                   keyExtractor={keyExtractor}
                   renderItem={renderEntityRow}
-                  contentContainerStyle={
-                    filteredData.length === 0 ? undefined : styles.listContent
-                  }
                   keyboardShouldPersistTaps="handled"
                   accessibilityRole="list"
                   accessibilityLabel={`${fieldLabel ?? 'Entity'} options`}
                   ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                      <Text style={styles.emptyText}>{config.emptyMessage ?? 'No results'}</Text>
+                    <View style={emptyStateSurface.style as ViewStyle | undefined}>
+                      <Text
+                        style={{
+                          ...baseTextStyle,
+                          ...(emptyTextSurface.style as TextStyle | undefined),
+                        }}
+                      >
+                        {emptyMessage}
+                      </Text>
                     </View>
                   }
                 />
@@ -500,4 +690,3 @@ export function EntityPicker({ config }: { config: EntityPickerConfig }) {
     </ComponentWrapper>
   )
 }
-

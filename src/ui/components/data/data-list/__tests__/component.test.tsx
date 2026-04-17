@@ -133,4 +133,71 @@ describe('DataList', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders with list slot surfaces without crashing', () => {
+    mockUseComponentData.mockReturnValue({
+      data: [{ id: '1', name: 'Alice' }],
+      isLoading: false,
+      error: null,
+    })
+    const { getByText, toJSON } = renderWithProviders(
+      <DataList
+        config={{
+          itemType: 'user',
+          data: '/api/users',
+          slots: {
+            list: {
+              bg: 'card',
+            },
+            item: {
+              paddingY: 'sm',
+            },
+            itemTitle: {
+              letterSpacing: 'wide',
+            },
+          },
+        }}
+      />,
+    )
+
+    expect(getByText('Alice')).toBeTruthy()
+    expect(toJSON()).toBeTruthy()
+  })
+
+  it('renders empty and loading slot surfaces without crashing', () => {
+    mockUseComponentData.mockReturnValue({ data: [], isLoading: false, error: null })
+    const empty = renderWithProviders(
+      <DataList
+        config={{
+          itemType: 'user',
+          data: '/api/users',
+          slots: {
+            emptyState: {
+              paddingY: 'lg',
+            },
+          },
+        }}
+      />,
+    )
+    expect(empty.toJSON()).toBeTruthy()
+
+    mockUseComponentData.mockReturnValue({ data: null, isLoading: true, error: null })
+    const loading = renderWithProviders(
+      <DataList
+        config={{
+          itemType: 'user',
+          data: '/api/users',
+          slots: {
+            loadingItem: {
+              paddingY: 'sm',
+            },
+            loadingTitle: {
+              opacity: 0.7,
+            },
+          },
+        }}
+      />,
+    )
+    expect(loading.toJSON()).toBeTruthy()
+  })
 })

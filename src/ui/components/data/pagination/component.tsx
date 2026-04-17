@@ -1,102 +1,128 @@
-import React, { useCallback, useMemo, useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { View, Text, TouchableOpacity, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation, isFromRef, resolveFromRef } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { PaginationConfig } from './types'
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: tokens.spacing[3],
-      gap: tokens.spacing[2],
-    },
-    navButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-      borderRadius: tokens.radius.md,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      backgroundColor: tokens.colors.surface,
-    },
-    navButtonDisabled: {
-      opacity: 0.4,
-    },
-    navButtonText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-    },
-    pageIndicator: {
-      paddingHorizontal: tokens.spacing[3],
-    },
-    pageText: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-    },
-    pageTextCurrent: {
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-    },
-    loadMoreButton: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: tokens.spacing[3],
-      paddingHorizontal: tokens.spacing[5],
-      borderRadius: tokens.radius.md,
-      backgroundColor: tokens.colors.surfaceAlt,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      alignSelf: 'center',
-    },
-    loadMoreText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.primary,
-    },
-  })
-}
-
-// ---------------------------------------------------------------------------
-// Pagination
-// ---------------------------------------------------------------------------
-
-/**
- * Page navigation or load-more component.
- * - Pages mode: previous/next buttons + page indicator
- * - Load-more mode: "Load More" button
- * - Infinite mode: renders nothing (parent FlatList handles onEndReached)
- *
- * Publishes current page to ScreenContext via setValue.
- */
 export function Pagination({ config }: { config: PaginationConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
-  // Resolve currentPage from from-ref or direct value
-  const resolvedCurrentPage = resolveFromRef<number | undefined>(
-    config.currentPage as number | { from: string } | undefined,
-    values,
-  )
+  const resolvedCurrentPage = useMemo(() => {
+    if (isFromRef(config.currentPage)) {
+      const resolved = resolveFromRef(config.currentPage, values)
+      return typeof resolved === 'number' ? resolved : undefined
+    }
+    return typeof config.currentPage === 'number' ? config.currentPage : undefined
+  }, [config.currentPage, values])
 
   const [internalPage, setInternalPage] = useState(resolvedCurrentPage ?? 1)
+
+  useEffect(() => {
+    if (resolvedCurrentPage !== undefined) {
+      setInternalPage(resolvedCurrentPage)
+    }
+  }, [resolvedCurrentPage])
+
   const currentPage = resolvedCurrentPage ?? internalPage
   const totalPages = config.totalPages ?? 1
-
   const baseTestID = config.testID ?? config.id
+
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingY: 'md',
+      gap: 'sm',
+    },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+  })
+  const navButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+      paddingY: 'sm',
+      borderRadius: 'md',
+      border: '1px solid border',
+      bg: 'card',
+      states: {
+        disabled: {
+          opacity: 0.4,
+        },
+      },
+    },
+    componentSurface: config.slots?.navButton as Record<string, unknown> | undefined,
+  })
+  const pageIndicatorSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+    },
+    componentSurface: config.slots?.pageIndicator as Record<string, unknown> | undefined,
+  })
+  const pageTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.pageText as Record<string, unknown> | undefined,
+  })
+  const currentPageSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'semibold',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.currentPage as Record<string, unknown> | undefined,
+  })
+  const loadMoreButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'xl',
+      paddingY: 'md',
+      borderRadius: 'md',
+      border: '1px solid border',
+      bg: 'popover',
+    },
+    componentSurface: config.slots?.loadMoreButton as Record<string, unknown> | undefined,
+  })
+  const loadMoreTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'primary',
+    },
+    componentSurface: config.slots?.loadMoreText as Record<string, unknown> | undefined,
+  })
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeSm,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
   const goToPage = useCallback(
     async (page: number) => {
@@ -108,7 +134,7 @@ export function Pagination({ config }: { config: PaginationConfig }) {
         await dispatch(config.onPageChange)
       }
     },
-    [config.id, config.onPageChange, setValue, dispatch],
+    [config.id, config.onPageChange, dispatch, setValue],
   )
 
   const handlePrevious = useCallback(async () => {
@@ -121,7 +147,7 @@ export function Pagination({ config }: { config: PaginationConfig }) {
     if (currentPage < totalPages) {
       await goToPage(currentPage + 1)
     }
-  }, [currentPage, totalPages, goToPage])
+  }, [currentPage, goToPage, totalPages])
 
   const handleLoadMore = useCallback(async () => {
     if (config.onLoadMore) {
@@ -129,73 +155,124 @@ export function Pagination({ config }: { config: PaginationConfig }) {
     }
   }, [config.onLoadMore, dispatch])
 
-  // Infinite mode renders nothing visible
   if (config.mode === 'infinite') {
-    return <ComponentWrapper id={config.id} testID={config.testID} config={config}><View /></ComponentWrapper>
+    return (
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+        <View />
+      </ComponentWrapper>
+    )
   }
 
-  // Load-more mode
   if (config.mode === 'load-more') {
     return (
       <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <View style={styles.container}>
+        <View style={containerSurface.style as ViewStyle | undefined}>
           <TouchableOpacity
             onPress={handleLoadMore}
-            style={styles.loadMoreButton}
+            style={loadMoreButtonSurface.style as ViewStyle | undefined}
             accessibilityRole="button"
             accessibilityLabel="Load more"
             testID={`${baseTestID}-load-more`}
             activeOpacity={0.7}
           >
-            <Text style={styles.loadMoreText}>Load More</Text>
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(loadMoreTextSurface.style as TextStyle | undefined),
+              }}
+            >
+              Load More
+            </Text>
           </TouchableOpacity>
         </View>
       </ComponentWrapper>
     )
   }
 
-  // Pages mode
   const isFirstPage = currentPage <= 1
   const isLastPage = currentPage >= totalPages
 
+  function renderNavButton(params: {
+    label: string
+    onPress: () => void | Promise<void>
+    disabled: boolean
+    testID: string
+    accessibilityLabel: string
+  }) {
+    const activeStates: RuntimeSurfaceState[] | undefined = params.disabled ? ['disabled'] : undefined
+
+    return (
+      <TouchableOpacity
+        onPress={() => void params.onPress()}
+        style={
+          resolveSurfacePresentation({
+            tokens,
+            implementationBase: navButtonSurface.resolvedConfigForWrapper,
+            activeStates,
+          }).style as ViewStyle | undefined
+        }
+        disabled={params.disabled}
+        accessibilityRole="button"
+        accessibilityLabel={params.accessibilityLabel}
+        accessibilityState={{ disabled: params.disabled }}
+        testID={params.testID}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={{
+            ...baseTextStyle,
+            color: tokens.colors.text,
+          }}
+        >
+          {params.label}
+        </Text>
+      </TouchableOpacity>
+    )
+  }
+
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container} accessibilityRole="toolbar" accessibilityLabel="Pagination">
-        <TouchableOpacity
-          onPress={handlePrevious}
-          style={[styles.navButton, isFirstPage && styles.navButtonDisabled]}
-          disabled={isFirstPage}
-          accessibilityRole="button"
-          accessibilityLabel="Previous page"
-          accessibilityState={{ disabled: isFirstPage }}
-          testID={`${baseTestID}-previous`}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.navButtonText}>← Previous</Text>
-        </TouchableOpacity>
+      <View
+        style={containerSurface.style as ViewStyle | undefined}
+        accessibilityRole="toolbar"
+        accessibilityLabel="Pagination"
+      >
+        {renderNavButton({
+          label: 'Previous',
+          onPress: handlePrevious,
+          disabled: isFirstPage,
+          accessibilityLabel: 'Previous page',
+          testID: `${baseTestID}-previous`,
+        })}
 
-        <View style={styles.pageIndicator}>
-          <Text style={styles.pageText}>
-            <Text style={styles.pageTextCurrent}>{currentPage}</Text>
+        <View style={pageIndicatorSurface.style as ViewStyle | undefined}>
+          <Text
+            style={{
+              ...baseTextStyle,
+              ...(pageTextSurface.style as TextStyle | undefined),
+            }}
+          >
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(currentPageSurface.style as TextStyle | undefined),
+              }}
+            >
+              {currentPage}
+            </Text>
             {' / '}
             {totalPages}
           </Text>
         </View>
 
-        <TouchableOpacity
-          onPress={handleNext}
-          style={[styles.navButton, isLastPage && styles.navButtonDisabled]}
-          disabled={isLastPage}
-          accessibilityRole="button"
-          accessibilityLabel="Next page"
-          accessibilityState={{ disabled: isLastPage }}
-          testID={`${baseTestID}-next`}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.navButtonText}>Next →</Text>
-        </TouchableOpacity>
+        {renderNavButton({
+          label: 'Next',
+          onPress: handleNext,
+          disabled: isLastPage,
+          accessibilityLabel: 'Next page',
+          testID: `${baseTestID}-next`,
+        })}
       </View>
     </ComponentWrapper>
   )
 }
-

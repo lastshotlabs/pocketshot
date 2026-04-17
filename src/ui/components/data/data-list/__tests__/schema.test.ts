@@ -49,4 +49,30 @@ describe('DataListSchema', () => {
     })
     expect(result.onItemPress).toBeDefined()
   })
+
+  it('accepts list slot styling surfaces', () => {
+    const result = DataListSchema.parse({
+      itemType: 'Card',
+      slots: {
+        list: {
+          bg: 'card',
+        },
+        item: {
+          paddingY: 'sm',
+        },
+        itemTitle: {
+          letterSpacing: 'wide',
+        },
+        emptyState: {
+          paddingY: 'lg',
+        },
+        loadingTitle: {
+          opacity: 0.7,
+        },
+      },
+    })
+
+    expect(result.slots?.list).toMatchObject({ bg: 'card' })
+    expect(result.slots?.loadingTitle).toMatchObject({ opacity: 0.7 })
+  })
 })

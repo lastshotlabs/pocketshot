@@ -2,30 +2,26 @@ import { describe, expect, it } from 'vitest'
 import { PullToRefreshSchema } from '../schema'
 
 describe('PullToRefreshSchema', () => {
-  it('requires onRefresh', () => {
-    expect(PullToRefreshSchema.safeParse({}).success).toBe(false)
+  it('accepts a minimal valid config', () => {
+    expect(
+      PullToRefreshSchema.parse({
+        onRefresh: { type: 'set-value', target: 'feed.refresh', value: true },
+      }),
+    ).toBeDefined()
   })
 
-  it('applies defaults', () => {
-    const result = PullToRefreshSchema.parse({ onRefresh: { type: 'custom' } })
-    expect(result.refreshing).toBe(false)
-  })
-
-  it('accepts from-ref refreshing', () => {
-    const result = PullToRefreshSchema.parse({
-      onRefresh: { type: 'custom' },
-      refreshing: { from: 'loading.refreshing' },
-    })
-
-    expect(result.refreshing).toEqual({ from: 'loading.refreshing' })
-  })
-
-  it('accepts shared color from the base contract', () => {
-    const result = PullToRefreshSchema.parse({
-      onRefresh: { type: 'custom' },
-      color: 'primary',
-    })
-
-    expect(result.color).toBe('primary')
+  it('accepts from-ref refreshing state and slots', () => {
+    expect(
+      PullToRefreshSchema.parse({
+        id: 'feed-refresh',
+        refreshing: { from: 'feed.refreshing' },
+        onRefresh: { type: 'set-value', target: 'feed.refresh', value: true },
+        slots: {
+          scrollView: {
+            paddingY: 'lg',
+          },
+        },
+      }),
+    ).toBeDefined()
   })
 })

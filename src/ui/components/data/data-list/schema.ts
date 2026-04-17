@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 // Inline action schema for zod — the discriminated union is complex to replicate,
@@ -21,4 +21,19 @@ export const DataListSchema = extendComponentSchema({
   numColumns: z.number().int().positive().optional().default(1),
   estimatedItemSize: z.number().positive().optional().default(80),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'list',
+    'item',
+    'itemBody',
+    'itemLink',
+    'itemTitle',
+    'divider',
+    'emptyState',
+    'loadingState',
+    'loadingItem',
+    'loadingBody',
+    'loadingTitle',
+    'errorState',
+  ]).optional(),
 })

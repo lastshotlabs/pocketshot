@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -10,4 +10,5 @@ export const PullToRefreshSchema = extendComponentSchema({
   refreshing: z.union([z.boolean(), FromRefSchema]).optional().default(false),
   onRefresh: ActionSchema,
   testID: z.string().optional(),
+  slots: slotsSchema(['root', 'scrollView']).optional(),
 })

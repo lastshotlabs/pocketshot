@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -22,4 +22,14 @@ export const FilterBarSchema = extendComponentSchema({
   allLabel: z.string().optional().default('All'),
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'track',
+    'allChip',
+    'chip',
+    'chipLabel',
+    'chipIcon',
+    'countBadge',
+    'countLabel',
+  ]).optional(),
 })

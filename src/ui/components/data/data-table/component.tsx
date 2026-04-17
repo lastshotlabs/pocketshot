@@ -1,24 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
   Animated,
   FlatList,
   ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import { useComponentData } from '../../_base/useComponentData'
 import type { DesignTokens } from '../../../tokens/types'
 import type { DataTableConfig } from './types'
-
-// ---------------------------------------------------------------------------
-// Sort helpers
-// ---------------------------------------------------------------------------
 
 type SortDir = 'asc' | 'desc'
 
@@ -31,8 +29,8 @@ function sortData(
     const av = a[key]
     const bv = b[key]
     if (av === bv) return 0
-    if (av === null || av === undefined) return 1
-    if (bv === null || bv === undefined) return -1
+    if (av == null) return 1
+    if (bv == null) return -1
     const aStr = typeof av === 'number' ? av : String(av).toLowerCase()
     const bStr = typeof bv === 'number' ? bv : String(bv).toLowerCase()
     if (aStr < bStr) return dir === 'asc' ? -1 : 1
@@ -46,18 +44,16 @@ function sortIcon(colKey: string, sortKey: string | undefined, sortDir: SortDir)
   return sortDir === 'asc' ? '↑' : '↓'
 }
 
-// ---------------------------------------------------------------------------
-// Skeleton
-// ---------------------------------------------------------------------------
-
 function TableSkeleton({
   count,
   tokens,
   columnCount,
+  surface,
 }: {
   count: number
   tokens: DesignTokens
   columnCount: number
+  surface?: ViewStyle
 }) {
   const opacity = useRef(new Animated.Value(0.4)).current
 
@@ -73,20 +69,19 @@ function TableSkeleton({
   }, [opacity])
 
   return (
-    <View
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
+    <View style={surface}>
       {Array.from({ length: count }, (_, rowIdx) => (
         <View
           key={rowIdx}
           style={{
             flexDirection: 'row',
-            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomWidth: 1,
             borderBottomColor: tokens.colors.divider,
           }}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
         >
-          {Array.from({ length: columnCount }, (__, colIdx) => (
+          {Array.from({ length: columnCount }, (_, colIdx) => (
             <Animated.View
               key={colIdx}
               style={{
@@ -106,25 +101,37 @@ function TableSkeleton({
   )
 }
 
-// ---------------------------------------------------------------------------
-// Empty state
-// ---------------------------------------------------------------------------
-
-function TableEmpty({ message, tokens }: { message: string; tokens: DesignTokens }) {
+function TableEmpty({
+  message,
+  tokens,
+  surface,
+  textStyle,
+}: {
+  message: string
+  tokens: DesignTokens
+  surface?: ViewStyle
+  textStyle?: TextStyle
+}) {
   return (
     <View
-      style={{
-        padding: tokens.spacing[8],
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+      style={[
+        {
+          padding: tokens.spacing[8],
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        surface,
+      ]}
     >
       <Text
-        style={{
-          fontSize: tokens.typography.fontSizeMd,
-          color: tokens.colors.textMuted,
-          textAlign: 'center',
-        }}
+        style={[
+          {
+            fontSize: tokens.typography.fontSizeMd,
+            color: tokens.colors.textMuted,
+            textAlign: 'center',
+          },
+          textStyle,
+        ]}
       >
         {message}
       </Text>
@@ -132,34 +139,105 @@ function TableEmpty({ message, tokens }: { message: string; tokens: DesignTokens
   )
 }
 
-// ---------------------------------------------------------------------------
-// DataTable
-// ---------------------------------------------------------------------------
-
 export function DataTable({ config }: { config: DataTableConfig }) {
   const tokens = useTokens()
   const { dispatch, setValue, values } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   const resolvedSortKey: string | undefined = isFromRef(config.sortKey)
-    ? resolveFromRef<string>(config.sortKey as unknown as string, values)
-    : (config.sortKey as string | undefined)
-
+    ? (() => {
+        const resolved = resolveFromRef(config.sortKey, values) as unknown
+        return typeof resolved === 'string' ? resolved : undefined
+      })()
+    : typeof config.sortKey === 'string'
+      ? config.sortKey
+      : undefined
   const resolvedSortDir: SortDir | undefined = isFromRef(config.sortDirection)
-    ? resolveFromRef<SortDir>(config.sortDirection as unknown as SortDir, values)
-    : (config.sortDirection as SortDir | undefined)
+    ? (() => {
+        const resolved = resolveFromRef(config.sortDirection, values) as unknown
+        return resolved === 'asc' || resolved === 'desc' ? resolved : undefined
+      })()
+    : config.sortDirection === 'asc' || config.sortDirection === 'desc'
+      ? config.sortDirection
+      : undefined
 
   const [localSortKey, setLocalSortKey] = useState<string | undefined>(resolvedSortKey)
   const [localSortDir, setLocalSortDir] = useState<SortDir>(resolvedSortDir ?? 'asc')
-
   const { data, isLoading, error } = useComponentData<Record<string, unknown>[]>(config.data)
+
+  const headerRowSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.headerRow as Record<string, unknown> | undefined,
+  })
+  const headerCellSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.headerCell as Record<string, unknown> | undefined,
+  })
+  const rowSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.row as Record<string, unknown> | undefined,
+  })
+  const cellSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.cell as Record<string, unknown> | undefined,
+  })
+  const emptyStateSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.emptyState as Record<string, unknown> | undefined,
+  })
+  const loadingStateSurface = resolveSurfacePresentation({
+    tokens,
+    componentSurface: config.slots?.loadingState as Record<string, unknown> | undefined,
+  })
+
+  const headerTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeSm,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightSemibold,
+    color:
+      typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+  const cellTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : tokens.typography.fontSizeSm,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string'
+        ? sharedTextStyle.fontWeight
+        : tokens.typography.fontWeightRegular,
+    color:
+      typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
   const sortedData = useMemo(() => {
     const rows = Array.isArray(data) ? data : []
     if (!localSortKey) return rows
     return sortData(rows, localSortKey, localSortDir)
-  }, [data, localSortKey, localSortDir])
-
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  }, [data, localSortDir, localSortKey])
 
   const handleHeaderPress = useCallback(
     (colKey: string, sortable: boolean) => {
@@ -175,7 +253,7 @@ export function DataTable({ config }: { config: DataTableConfig }) {
         return newKey
       })
     },
-    [localSortDir, config.id, setValue],
+    [config.id, localSortDir, setValue],
   )
 
   const handleRowPress = useCallback(
@@ -187,13 +265,10 @@ export function DataTable({ config }: { config: DataTableConfig }) {
     [config.onRowPress, dispatch, setValue],
   )
 
-  const keyExtractor = useCallback(
-    (item: Record<string, unknown>, index: number) => {
-      const id = item['id'] ?? item['_id']
-      return id !== undefined ? String(id) : String(index)
-    },
-    [],
-  )
+  const keyExtractor = useCallback((item: Record<string, unknown>, index: number) => {
+    const id = item['id'] ?? item['_id']
+    return id !== undefined ? String(id) : String(index)
+  }, [])
 
   const renderRow = useCallback(
     ({ item, index }: { item: Record<string, unknown>; index: number }) => {
@@ -201,23 +276,35 @@ export function DataTable({ config }: { config: DataTableConfig }) {
 
       const rowContent = (
         <View
-          style={[styles.row, { backgroundColor: rowBg }]}
+          style={[
+            {
+              flexDirection: 'row',
+              borderBottomWidth: 1,
+              borderBottomColor: tokens.colors.divider,
+              backgroundColor: rowBg,
+            },
+            rowSurface.style as ViewStyle | undefined,
+          ]}
         >
           {config.columns.map((col) => {
             const cellValue = item[col.key]
-            const displayValue =
-              cellValue === null || cellValue === undefined ? '' : String(cellValue)
+            const displayValue = cellValue == null ? '' : String(cellValue)
             return (
               <View
                 key={col.key}
                 style={[
-                  styles.cell,
+                  {
+                    paddingHorizontal: tokens.spacing[3],
+                    paddingVertical: tokens.spacing[3],
+                    justifyContent: 'center',
+                  },
                   col.width ? { width: col.width } : { flex: col.flex ?? 1 },
+                  cellSurface.style as ViewStyle | undefined,
                 ]}
               >
                 <Text
                   style={[
-                    styles.cellText,
+                    cellTextStyle,
                     col.align === 'center' && { textAlign: 'center' },
                     col.align === 'right' && { textAlign: 'right' },
                   ]}
@@ -235,7 +322,7 @@ export function DataTable({ config }: { config: DataTableConfig }) {
       if (config.onRowPress) {
         return (
           <TouchableOpacity
-            onPress={() => handleRowPress(item)}
+            onPress={() => void handleRowPress(item)}
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel="Table row"
@@ -248,56 +335,74 @@ export function DataTable({ config }: { config: DataTableConfig }) {
 
       return rowContent
     },
-    [config.columns, config.onRowPress, config.testID, handleRowPress, styles, tokens],
+    [cellSurface.style, cellTextStyle, config.columns, config.onRowPress, config.testID, handleRowPress, rowSurface.style, tokens],
   )
 
   const headerRow = (
-    <View style={styles.headerRow} accessibilityRole="header">
+    <View
+      style={[
+        {
+          flexDirection: 'row',
+          backgroundColor: tokens.colors.surfaceAlt,
+          borderBottomWidth: 1,
+          borderBottomColor: tokens.colors.border,
+        },
+        headerRowSurface.style as ViewStyle | undefined,
+      ]}
+      accessibilityRole="header"
+    >
       {config.columns.map((col) => {
         const isSorted = col.key === localSortKey
         const icon = sortIcon(col.key, localSortKey, localSortDir)
+        const label = `${col.label}${col.sortable ? `  ${icon}` : ''}`
 
-        return col.sortable ? (
-          <TouchableOpacity
-            key={col.key}
-            style={[
-              styles.headerCell,
-              col.width ? { width: col.width } : { flex: col.flex ?? 1 },
-            ]}
-            onPress={() => handleHeaderPress(col.key, true)}
-            accessibilityRole="button"
-            accessibilityLabel={`Sort by ${col.label}${isSorted ? `, currently ${localSortDir}ending` : ''}`}
-            testID={
-              config.testID
-                ? `${config.testID}-header-${col.key}`
-                : `data-table-header-${col.key}`
-            }
-          >
-            <Text
+        if (col.sortable) {
+          return (
+            <TouchableOpacity
+              key={col.key}
               style={[
-                styles.headerText,
-                col.align === 'center' && { textAlign: 'center' },
-                col.align === 'right' && { textAlign: 'right' },
-                isSorted && { color: tokens.colors.primary },
+                {
+                  paddingHorizontal: tokens.spacing[3],
+                  paddingVertical: tokens.spacing[3],
+                },
+                col.width ? { width: col.width } : { flex: col.flex ?? 1 },
+                headerCellSurface.style as ViewStyle | undefined,
               ]}
-              numberOfLines={1}
+              onPress={() => handleHeaderPress(col.key, true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Sort by ${col.label}${isSorted ? `, currently ${localSortDir}ending` : ''}`}
+              testID={config.testID ? `${config.testID}-header-${col.key}` : `data-table-header-${col.key}`}
             >
-              {col.label}
-              {'  '}
-              <Text style={styles.sortIcon}>{icon}</Text>
-            </Text>
-          </TouchableOpacity>
-        ) : (
+              <Text
+                style={[
+                  headerTextStyle,
+                  col.align === 'center' && { textAlign: 'center' },
+                  col.align === 'right' && { textAlign: 'right' },
+                  isSorted && { color: tokens.colors.primary },
+                ]}
+                numberOfLines={1}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          )
+        }
+
+        return (
           <View
             key={col.key}
             style={[
-              styles.headerCell,
+              {
+                paddingHorizontal: tokens.spacing[3],
+                paddingVertical: tokens.spacing[3],
+              },
               col.width ? { width: col.width } : { flex: col.flex ?? 1 },
+              headerCellSurface.style as ViewStyle | undefined,
             ]}
           >
             <Text
               style={[
-                styles.headerText,
+                headerTextStyle,
                 col.align === 'center' && { textAlign: 'center' },
                 col.align === 'right' && { textAlign: 'right' },
               ]}
@@ -313,31 +418,36 @@ export function DataTable({ config }: { config: DataTableConfig }) {
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        bounces={false}
-        style={styles.horizontalScroll}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false} style={{ flexShrink: 1 }}>
         <View>
           {config.stickyHeader ? headerRow : null}
           {isLoading && !data ? (
             <TableSkeleton
-              count={config.loadingCount}
+              count={config.loadingCount ?? 5}
               tokens={tokens}
               columnCount={config.columns.length}
+              surface={loadingStateSurface.style as ViewStyle | undefined}
             />
           ) : error ? (
-            <TableEmpty message="Failed to load data." tokens={tokens} />
+            <TableEmpty
+              message="Failed to load data."
+              tokens={tokens}
+              surface={emptyStateSurface.style as ViewStyle | undefined}
+              textStyle={cellTextStyle}
+            />
           ) : (
             <FlatList
               data={sortedData}
               keyExtractor={keyExtractor}
               renderItem={renderRow}
-              stickyHeaderIndices={!config.stickyHeader ? undefined : undefined}
               ListHeaderComponent={!config.stickyHeader ? headerRow : null}
               ListEmptyComponent={
-                <TableEmpty message={config.emptyMessage} tokens={tokens} />
+                <TableEmpty
+                  message={config.emptyMessage ?? 'No data'}
+                  tokens={tokens}
+                  surface={emptyStateSurface.style as ViewStyle | undefined}
+                  textStyle={cellTextStyle}
+                />
               }
               scrollEnabled={false}
               accessibilityRole="list"
@@ -349,49 +459,3 @@ export function DataTable({ config }: { config: DataTableConfig }) {
     </ComponentWrapper>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    horizontalScroll: {
-      flexShrink: 1,
-    },
-    headerRow: {
-      flexDirection: 'row',
-      backgroundColor: tokens.colors.surfaceAlt,
-      borderBottomWidth: 1,
-      borderBottomColor: tokens.colors.border,
-    },
-    headerCell: {
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[3],
-    },
-    headerText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-    },
-    sortIcon: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-    },
-    row: {
-      flexDirection: 'row',
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.divider,
-    },
-    cell: {
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[3],
-      justifyContent: 'center',
-    },
-    cellText: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.text,
-    },
-  })
-}
-

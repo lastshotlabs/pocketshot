@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -21,4 +21,26 @@ export const FilterSheetSchema = extendComponentSchema({
   onApply: ActionSchema,
   onReset: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'backdrop',
+    'panel',
+    'header',
+    'title',
+    'closeButton',
+    'closeText',
+    'scrollContent',
+    'section',
+    'sectionLabel',
+    'optionRow',
+    'optionIndicator',
+    'optionLabel',
+    'rangeField',
+    'rangeSeparator',
+    'footer',
+    'resetButton',
+    'resetText',
+    'applyButton',
+    'applyText',
+  ]).optional(),
 })

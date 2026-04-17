@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { DataTableSchema } from './schema'
 
-export type DataTableConfig = z.infer<typeof DataTableSchema>
+export type DataTableConfig = z.input<typeof DataTableSchema>
 
 export interface TableColumn {
   key: string

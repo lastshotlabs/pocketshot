@@ -19,16 +19,23 @@ import { AvatarSchema } from '../../src/ui/components/data/avatar/schema'
 import { AvatarGroupSchema } from '../../src/ui/components/data/avatar-group/schema'
 import { BadgeSchema } from '../../src/ui/components/data/badge/schema'
 import { ChartSchema } from '../../src/ui/components/data/chart/schema'
+import { DataListSchema } from '../../src/ui/components/data/data-list/schema'
+import { DataTableSchema } from '../../src/ui/components/data/data-table/schema'
 import { EmptyStateSchema } from '../../src/ui/components/data/empty-state/schema'
+import { EntityPickerSchema } from '../../src/ui/components/data/entity-picker/schema'
 import { FavoriteButtonSchema } from '../../src/ui/components/data/favorite-button/schema'
+import { FilterBarSchema } from '../../src/ui/components/data/filter-bar/schema'
+import { FilterSheetSchema } from '../../src/ui/components/data/filter-sheet/schema'
 import { DetailCardSchema } from '../../src/ui/components/data/detail-card/schema'
 import { HighlightedTextSchema } from '../../src/ui/components/data/highlighted-text/schema'
 import { LoadingStateSchema } from '../../src/ui/components/data/loading-state/schema'
 import { NotificationBellSchema } from '../../src/ui/components/data/notification-bell/schema'
+import { PaginationSchema } from '../../src/ui/components/data/pagination/schema'
 import { ProgressCircleSchema } from '../../src/ui/components/data/progress-circle/schema'
 import { PullToRefreshSchema } from '../../src/ui/components/data/pull-to-refresh/schema'
 import { SaveIndicatorSchema } from '../../src/ui/components/data/save-indicator/schema'
 import { SkeletonSchema } from '../../src/ui/components/data/skeleton/schema'
+import { SortPickerSchema } from '../../src/ui/components/data/sort-picker/schema'
 import { StatCardSchema } from '../../src/ui/components/data/stat-card/schema'
 import { TooltipSchema } from '../../src/ui/components/data/tooltip/schema'
 import { TextInputSchema } from '../../src/ui/components/forms/text-input/schema'
@@ -285,6 +292,242 @@ describe('component schemas inherit the shared base contract', () => {
           },
           axis: {
             color: 'muted',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
+      DataListSchema.parse({
+        itemType: 'user',
+        data: { from: 'users.items' },
+        slots: {
+          list: {
+            bg: 'card',
+          },
+          item: {
+            paddingY: 'sm',
+          },
+          itemTitle: {
+            letterSpacing: 'wide',
+          },
+          emptyState: {
+            paddingY: 'lg',
+          },
+          loadingTitle: {
+            opacity: 0.7,
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
+      DataTableSchema.parse({
+        data: { from: 'users.rows' },
+        columns: [
+          { key: 'name', label: 'Name', sortable: true },
+          { key: 'email', label: 'Email' },
+        ],
+        sortKey: { from: 'users.sortKey' },
+        sortDirection: { from: 'users.sortDir' },
+        slots: {
+          headerRow: {
+            bg: 'card',
+          },
+          headerCell: {
+            paddingY: 'sm',
+          },
+          row: {
+            paddingY: 'sm',
+          },
+          cell: {
+            color: 'muted',
+          },
+          emptyState: {
+            paddingY: 'lg',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
+      FilterBarSchema.parse({
+        id: 'content-filters',
+        filters: [
+          { id: 'all', label: 'All' },
+          { id: 'favorites', label: 'Favorites', count: 4 },
+        ],
+        value: { from: 'filters.selected' },
+        slots: {
+          track: {
+            paddingX: 'lg',
+          },
+          chip: {
+            paddingY: 'sm',
+            states: {
+              selected: {
+                bg: 'primary',
+              },
+            },
+          },
+          allChip: {
+            borderRadius: 'full',
+          },
+          chipLabel: {
+            letterSpacing: 'wide',
+          },
+          countBadge: {
+            bg: 'muted',
+          },
+          countLabel: {
+            color: 'primary',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
+      EntityPickerSchema.parse({
+        id: 'content-assignee',
+        data: { from: 'people.options' },
+        value: { from: 'people.selected' },
+        slots: {
+          trigger: {
+            paddingY: 'sm',
+          },
+          searchInput: {
+            bg: 'card',
+          },
+          entityRow: {
+            paddingY: 'sm',
+          },
+          entityLabel: {
+            letterSpacing: 'wide',
+          },
+          emptyText: {
+            color: 'muted',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
+      FilterSheetSchema.parse({
+        id: 'content-filters-advanced',
+        sections: [
+          {
+            id: 'type',
+            label: 'Type',
+            type: 'multi-select',
+            options: [{ value: 'a', label: 'Alpha' }],
+          },
+        ],
+        onApply: { type: 'set-value', target: 'filters.applied', value: true },
+        onReset: { type: 'set-value', target: 'filters.reset', value: true },
+        slots: {
+          panel: {
+            bg: 'card',
+          },
+          header: {
+            paddingY: 'lg',
+          },
+          optionRow: {
+            paddingY: 'sm',
+            states: {
+              selected: {
+                bg: 'accent',
+              },
+            },
+          },
+          applyText: {
+            letterSpacing: 'wide',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
+      PaginationSchema.parse({
+        id: 'content-pagination',
+        mode: 'pages',
+        totalPages: 8,
+        currentPage: { from: 'table.page' },
+        slots: {
+          container: {
+            paddingY: 'lg',
+          },
+          navButton: {
+            paddingX: 'sm',
+            states: {
+              disabled: {
+                opacity: 0.4,
+              },
+            },
+          },
+          pageIndicator: {
+            paddingX: 'md',
+          },
+          pageText: {
+            letterSpacing: 'wide',
+          },
+          currentPage: {
+            color: 'primary',
+          },
+          loadMoreButton: {
+            bg: 'card',
+          },
+          loadMoreText: {
+            color: 'primary',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
+      PullToRefreshSchema.parse({
+        id: 'content-refresh',
+        refreshing: { from: 'feed.refreshing' },
+        onRefresh: { type: 'set-value', target: 'feed.refresh', value: true },
+        slots: {
+          scrollView: {
+            paddingY: 'lg',
+          },
+        },
+      }),
+    ).toBeDefined()
+
+    expect(
+      SortPickerSchema.parse({
+        id: 'content-sort',
+        value: { from: 'sort.selected' },
+        options: [
+          { value: 'recent', label: 'Most Recent', icon: 'clock' },
+          { value: 'oldest', label: 'Oldest' },
+        ],
+        onSelect: { type: 'custom' },
+        slots: {
+          backdrop: {
+            bg: 'rgba(0,0,0,0.6)',
+          },
+          panel: {
+            bg: 'card',
+          },
+          header: {
+            paddingY: 'lg',
+          },
+          option: {
+            paddingY: 'sm',
+            states: {
+              selected: {
+                bg: 'accent',
+              },
+            },
+          },
+          optionLabel: {
+            letterSpacing: 'wide',
+          },
+          cancelLabel: {
+            color: 'primary',
           },
         },
       }),

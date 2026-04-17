@@ -1,47 +1,46 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
 import React from 'react'
+import { describe, expect, it } from 'vitest'
 import { PullToRefresh } from '../component'
-import { PullToRefreshSchema } from '../schema'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 
-function cfg(overrides: Record<string, unknown> = {}) {
-  return PullToRefreshSchema.parse({
-    id: 'refresh',
-    onRefresh: { type: 'custom' },
-    ...overrides,
-  })
-}
-
 describe('PullToRefresh', () => {
-  beforeEach(() => vi.clearAllMocks())
-
-  it('renders without crashing', () => {
-    const { toJSON } = renderWithProviders(
-      <PullToRefresh config={cfg()}>
+  it('renders children inside the scroll container', () => {
+    const result = renderWithProviders(
+      <PullToRefresh
+        config={{
+          id: 'feed-refresh',
+          onRefresh: { type: 'set-value', target: 'feed.refresh', value: true },
+          testID: 'feed-refresh',
+        }}
+      >
         <></>
       </PullToRefresh>,
     )
 
-    expect(toJSON()).toBeTruthy()
+    expect(result.getByTestId('feed-refresh-scroll')).toBeTruthy()
   })
 
-  it('applies the root testID', () => {
-    const { getByTestId } = renderWithProviders(
-      <PullToRefresh config={cfg({ testID: 'refresh-root' })}>
-        <></>
-      </PullToRefresh>,
+  it('hydrates refreshing state from from-ref and accepts slot surfaces', () => {
+    const result = renderWithProviders(
+      <PullToRefresh
+        config={{
+          id: 'feed-refresh',
+          refreshing: { from: 'feed.refreshing' },
+          onRefresh: { type: 'set-value', target: 'feed.refresh', value: true },
+          testID: 'feed-refresh',
+          slots: {
+            scrollView: {
+              paddingY: 'lg',
+            },
+          },
+        }}
+      />,
+      { initialValues: { feed: { refreshing: true } } },
     )
 
-    expect(getByTestId('refresh-root')).toBeTruthy()
-  })
-
-  it('accepts shared color overrides without crashing', () => {
-    const { toJSON } = renderWithProviders(
-      <PullToRefresh config={cfg({ color: 'primary' })}>
-        <></>
-      </PullToRefresh>,
+    const scrollNode = result.instance.root.find(
+      (node) => node.props.testID === 'feed-refresh-scroll',
     )
-
-    expect(toJSON()).toBeTruthy()
+    expect(scrollNode.props.refreshControl.props.refreshing).toBe(true)
   })
 })

@@ -4,357 +4,31 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  StyleSheet,
   Animated,
   Modal as RNModal,
   ScrollView,
   Switch,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { FilterSheetConfig, FilterSheetSectionConfig } from './types'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 type FilterState = Record<string, unknown>
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: tokens.colors.overlay,
-      justifyContent: 'flex-end',
-    },
-    container: {
-      backgroundColor: tokens.colors.surface,
-      borderTopLeftRadius: tokens.radius.xl,
-      borderTopRightRadius: tokens.radius.xl,
-      maxHeight: '85%',
-      ...tokens.shadows.xl,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[4],
-      paddingBottom: tokens.spacing[3],
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.divider,
-    },
-    headerTitle: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: tokens.radius.full,
-    },
-    closeText: {
-      fontSize: tokens.typography.fontSizeLg,
-      color: tokens.colors.textMuted,
-      lineHeight: 22,
-    },
-    scrollContent: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[4],
-    },
-    sectionContainer: {
-      marginBottom: tokens.spacing[5],
-    },
-    sectionLabel: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[2],
-    },
-    optionRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: tokens.spacing[2],
-      gap: tokens.spacing[2],
-    },
-    optionRadio: {
-      width: 20,
-      height: 20,
-      borderRadius: tokens.radius.full,
-      borderWidth: 2,
-      borderColor: tokens.colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    optionRadioSelected: {
-      borderColor: tokens.colors.primary,
-    },
-    optionRadioInner: {
-      width: 10,
-      height: 10,
-      borderRadius: tokens.radius.full,
-      backgroundColor: tokens.colors.primary,
-    },
-    optionCheckbox: {
-      width: 20,
-      height: 20,
-      borderRadius: tokens.radius.sm,
-      borderWidth: 2,
-      borderColor: tokens.colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    optionCheckboxSelected: {
-      borderColor: tokens.colors.primary,
-      backgroundColor: tokens.colors.primary,
-    },
-    checkmark: {
-      fontSize: 12,
-      color: tokens.colors.primaryForeground,
-      lineHeight: 14,
-    },
-    optionLabel: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.text,
-    },
-    toggleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: tokens.spacing[1],
-    },
-    rangeContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: tokens.spacing[2],
-      paddingVertical: tokens.spacing[2],
-    },
-    rangeInput: {
-      flex: 1,
-      height: 40,
-      backgroundColor: tokens.colors.inputBackground,
-      borderWidth: 1,
-      borderColor: tokens.colors.inputBorder,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.inputText,
-      textAlign: 'center' as const,
-    },
-    rangeSeparator: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-    },
-    footer: {
-      flexDirection: 'row',
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[4],
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: tokens.colors.divider,
-      gap: tokens.spacing[3],
-    },
-    resetButton: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: tokens.spacing[3],
-      borderRadius: tokens.radius.md,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      backgroundColor: tokens.colors.surface,
-    },
-    resetText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-    },
-    applyButton: {
-      flex: 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: tokens.spacing[3],
-      borderRadius: tokens.radius.md,
-      backgroundColor: tokens.colors.primary,
-    },
-    applyText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.primaryForeground,
-    },
-  })
-}
-
-// ---------------------------------------------------------------------------
-// Section renderers
-// ---------------------------------------------------------------------------
-
-interface SectionProps {
-  section: FilterSheetSectionConfig
-  value: unknown
-  onChange: (sectionId: string, value: unknown) => void
-  tokens: DesignTokens
-  styles: ReturnType<typeof makeStyles>
-  testIDPrefix: string
-}
-
-function SelectSection({ section, value, onChange, styles, testIDPrefix }: SectionProps) {
-  const selected = (value as string) ?? ''
-  return (
-    <>
-      {section.options?.map((opt) => (
-        <TouchableOpacity
-          key={opt.value}
-          onPress={() => onChange(section.id, opt.value)}
-          style={styles.optionRow}
-          accessibilityRole="radio"
-          accessibilityLabel={opt.label}
-          accessibilityState={{ checked: selected === opt.value }}
-          testID={`${testIDPrefix}-${section.id}-${opt.value}`}
-        >
-          <View
-            style={[
-              styles.optionRadio,
-              selected === opt.value && styles.optionRadioSelected,
-            ]}
-          >
-            {selected === opt.value && <View style={styles.optionRadioInner} />}
-          </View>
-          <Text style={styles.optionLabel}>{opt.label}</Text>
-        </TouchableOpacity>
-      ))}
-    </>
-  )
-}
-
-function MultiSelectSection({ section, value, onChange, styles, testIDPrefix }: SectionProps) {
-  const selected = (value as string[]) ?? []
-  const handleToggle = useCallback(
-    (optValue: string) => {
-      const next = selected.includes(optValue)
-        ? selected.filter((s) => s !== optValue)
-        : [...selected, optValue]
-      onChange(section.id, next)
-    },
-    [section.id, selected, onChange],
-  )
-
-  return (
-    <>
-      {section.options?.map((opt) => {
-        const isSelected = selected.includes(opt.value)
-        return (
-          <TouchableOpacity
-            key={opt.value}
-            onPress={() => handleToggle(opt.value)}
-            style={styles.optionRow}
-            accessibilityRole="checkbox"
-            accessibilityLabel={opt.label}
-            accessibilityState={{ checked: isSelected }}
-            testID={`${testIDPrefix}-${section.id}-${opt.value}`}
-          >
-            <View
-              style={[
-                styles.optionCheckbox,
-                isSelected && styles.optionCheckboxSelected,
-              ]}
-            >
-              {isSelected && <Text style={styles.checkmark}>✓</Text>}
-            </View>
-            <Text style={styles.optionLabel}>{opt.label}</Text>
-          </TouchableOpacity>
-        )
-      })}
-    </>
-  )
-}
-
-function RangeSection({ section, value, onChange, styles, testIDPrefix }: SectionProps) {
-  const range = (value as { min?: number; max?: number }) ?? {}
-  return (
-    <View style={styles.rangeContainer}>
-      <TouchableOpacity
-        style={styles.rangeInput}
-        accessibilityLabel={`${section.label} minimum`}
-        accessibilityRole="adjustable"
-        testID={`${testIDPrefix}-${section.id}-min`}
-        onPress={() => {
-          const current = range.min ?? section.min ?? 0
-          onChange(section.id, { ...range, min: current })
-        }}
-      >
-        <Text style={{ color: range.min != null ? styles.optionLabel.color : styles.rangeSeparator.color }}>
-          {range.min != null ? String(range.min) : 'Min'}
-        </Text>
-      </TouchableOpacity>
-      <Text style={styles.rangeSeparator}>—</Text>
-      <TouchableOpacity
-        style={styles.rangeInput}
-        accessibilityLabel={`${section.label} maximum`}
-        accessibilityRole="adjustable"
-        testID={`${testIDPrefix}-${section.id}-max`}
-        onPress={() => {
-          const current = range.max ?? section.max ?? 100
-          onChange(section.id, { ...range, max: current })
-        }}
-      >
-        <Text style={{ color: range.max != null ? styles.optionLabel.color : styles.rangeSeparator.color }}>
-          {range.max != null ? String(range.max) : 'Max'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  )
-}
-
-function ToggleSection({ section, value, onChange, tokens, styles, testIDPrefix }: SectionProps) {
-  const enabled = Boolean(value)
-  return (
-    <View style={styles.toggleRow}>
-      <Text style={styles.optionLabel}>{section.label}</Text>
-      <Switch
-        value={enabled}
-        onValueChange={(v) => onChange(section.id, v)}
-        trackColor={{ false: tokens.colors.border, true: tokens.colors.primary }}
-        thumbColor={tokens.colors.surface}
-        accessibilityLabel={section.label}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: enabled }}
-        testID={`${testIDPrefix}-${section.id}-toggle`}
-      />
-    </View>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// FilterSheet
-// ---------------------------------------------------------------------------
-
-/**
- * Bottom-sheet advanced filter panel. Opens via setValue('__filterSheet_<id>', true).
- * Renders sections with select, multi-select, range, and toggle controls.
- * Publishes filter state via setValue on apply.
- */
 export function FilterSheet({ config }: { config: FilterSheetConfig }) {
   const tokens = useTokens()
   const { getValue, setValue, dispatch } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   const isOpen = Boolean(getValue(`__filterSheet_${config.id}`))
   const [filterState, setFilterState] = useState<FilterState>({})
   const opacity = useRef(new Animated.Value(0)).current
   const translateY = useRef(new Animated.Value(300)).current
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
-
-  const title = config.title ?? 'Filters'
-  const baseTestID = config.testID ?? config.id
 
   useEffect(() => {
     if (isOpen) {
@@ -364,20 +38,230 @@ export function FilterSheet({ config }: { config: FilterSheetConfig }) {
         Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
         Animated.timing(translateY, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start()
-    } else {
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 300, duration: 250, useNativeDriver: true }),
-      ]).start()
+      return
     }
+
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 300, duration: 250, useNativeDriver: true }),
+    ]).start()
   }, [isOpen, opacity, translateY])
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'rgba(0,0,0,0.55)',
+    },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+  })
+  const panelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      shadow: 'xl',
+    },
+    componentSurface: config.slots?.panel as Record<string, unknown> | undefined,
+  })
+  const headerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'between',
+      paddingX: 'md',
+      paddingY: 'md',
+      border: '1px solid border',
+    },
+    componentSurface: config.slots?.header as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      fontWeight: 'semibold',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+  })
+  const closeButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      borderRadius: 'full',
+      padding: 'xs',
+    },
+    componentSurface: config.slots?.closeButton as Record<string, unknown> | undefined,
+  })
+  const closeTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.closeText as Record<string, unknown> | undefined,
+  })
+  const scrollContentSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+      paddingY: 'md',
+    },
+    componentSurface: config.slots?.scrollContent as Record<string, unknown> | undefined,
+  })
+  const sectionSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      marginY: 'sm',
+    },
+    componentSurface: config.slots?.section as Record<string, unknown> | undefined,
+  })
+  const sectionLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'semibold',
+      color: 'foreground',
+      marginY: 'xs',
+    },
+    componentSurface: config.slots?.sectionLabel as Record<string, unknown> | undefined,
+  })
+  const optionRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'sm',
+      paddingY: 'sm',
+      states: {
+        selected: {
+          bg: 'accent',
+        },
+      },
+    },
+    componentSurface: config.slots?.optionRow as Record<string, unknown> | undefined,
+  })
+  const optionIndicatorSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      border: '2px solid border',
+      borderRadius: 'full',
+      states: {
+        selected: {
+          bg: 'primary',
+          border: '2px solid primary',
+        },
+      },
+    },
+    componentSurface: config.slots?.optionIndicator as Record<string, unknown> | undefined,
+  })
+  const optionLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.optionLabel as Record<string, unknown> | undefined,
+  })
+  const rangeFieldSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'input',
+      border: '1px solid border',
+      borderRadius: 'md',
+      paddingX: 'md',
+      paddingY: 'sm',
+    },
+    componentSurface: config.slots?.rangeField as Record<string, unknown> | undefined,
+  })
+  const rangeSeparatorSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.rangeSeparator as Record<string, unknown> | undefined,
+  })
+  const footerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      gap: 'md',
+      paddingX: 'md',
+      paddingY: 'md',
+      border: '1px solid border',
+    },
+    componentSurface: config.slots?.footer as Record<string, unknown> | undefined,
+  })
+  const resetButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingY: 'md',
+      borderRadius: 'md',
+      border: '1px solid border',
+      bg: 'card',
+    },
+    componentSurface: config.slots?.resetButton as Record<string, unknown> | undefined,
+  })
+  const resetTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.resetText as Record<string, unknown> | undefined,
+  })
+  const applyButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingY: 'md',
+      borderRadius: 'md',
+      bg: 'primary',
+    },
+    componentSurface: config.slots?.applyButton as Record<string, unknown> | undefined,
+  })
+  const applyTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'semibold',
+      color: 'primary-foreground',
+    },
+    componentSurface: config.slots?.applyText as Record<string, unknown> | undefined,
+  })
+
+  const title = config.title ?? 'Filters'
+  const baseTestID = config.testID ?? config.id
 
   const handleClose = useCallback(() => {
     setValue(`__filterSheet_${config.id}`, false)
   }, [config.id, setValue])
 
   const handleSectionChange = useCallback((sectionId: string, value: unknown) => {
-    setFilterState((prev) => ({ ...prev, [sectionId]: value }))
+    setFilterState((previous) => ({ ...previous, [sectionId]: value }))
   }, [])
 
   const handleApply = useCallback(async () => {
@@ -386,7 +270,7 @@ export function FilterSheet({ config }: { config: FilterSheetConfig }) {
     }
     handleClose()
     await dispatch(config.onApply)
-  }, [config.id, config.onApply, filterState, setValue, handleClose, dispatch])
+  }, [config.id, config.onApply, dispatch, filterState, handleClose, setValue])
 
   const handleReset = useCallback(async () => {
     setFilterState({})
@@ -396,32 +280,229 @@ export function FilterSheet({ config }: { config: FilterSheetConfig }) {
     if (config.onReset) {
       await dispatch(config.onReset)
     }
-  }, [config.id, config.onReset, setValue, dispatch])
+  }, [config.id, config.onReset, dispatch, setValue])
+
+  const renderOptionRow = useCallback(
+    (
+      section: FilterSheetSectionConfig,
+      option: { value: string; label: string },
+      selected: boolean,
+      accessibilityRole: 'radio' | 'checkbox',
+      onPress: () => void,
+    ) => {
+      const activeStates: RuntimeSurfaceState[] | undefined = selected ? ['selected'] : undefined
+      const rowStyle = resolveSurfacePresentation({
+        tokens,
+        implementationBase: optionRowSurface.resolvedConfigForWrapper,
+        activeStates,
+      }).style as ViewStyle | undefined
+      const indicatorStyle = resolveSurfacePresentation({
+        tokens,
+        implementationBase: optionIndicatorSurface.resolvedConfigForWrapper,
+        activeStates,
+      }).style as ViewStyle | undefined
+
+      return (
+        <TouchableOpacity
+          key={option.value}
+          onPress={onPress}
+          style={rowStyle}
+          accessibilityRole={accessibilityRole}
+          accessibilityLabel={option.label}
+          accessibilityState={{ checked: selected }}
+          testID={`${baseTestID}-${section.id}-${option.value}`}
+        >
+          <View
+            style={[
+              {
+                width: 20,
+                height: 20,
+                borderRadius: accessibilityRole === 'radio' ? 10 : tokens.radius.sm,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+              indicatorStyle,
+            ]}
+          >
+            {selected && accessibilityRole === 'checkbox' ? (
+              <Text
+                style={{
+                  ...baseTextStyle,
+                  color: tokens.colors.primaryForeground,
+                  fontSize: tokens.typography.fontSizeXs,
+                }}
+              >
+                Check
+              </Text>
+            ) : null}
+          </View>
+          <Text
+            style={{
+              ...baseTextStyle,
+              flex: 1,
+              ...(optionLabelSurface.style as TextStyle | undefined),
+            }}
+          >
+            {option.label}
+          </Text>
+        </TouchableOpacity>
+      )
+    },
+    [
+      baseTestID,
+      baseTextStyle,
+      optionIndicatorSurface.resolvedConfigForWrapper,
+      optionLabelSurface.style,
+      optionRowSurface.resolvedConfigForWrapper,
+      tokens,
+    ],
+  )
 
   const renderSection = useCallback(
     (section: FilterSheetSectionConfig) => {
-      const props: SectionProps = {
-        section,
-        value: filterState[section.id],
-        onChange: handleSectionChange,
-        tokens,
-        styles,
-        testIDPrefix: baseTestID,
-      }
+      const value = filterState[section.id]
 
       return (
-        <View key={section.id} style={styles.sectionContainer}>
-          {section.type !== 'toggle' && (
-            <Text style={styles.sectionLabel}>{section.label}</Text>
-          )}
-          {section.type === 'select' && <SelectSection {...props} />}
-          {section.type === 'multi-select' && <MultiSelectSection {...props} />}
-          {section.type === 'range' && <RangeSection {...props} />}
-          {section.type === 'toggle' && <ToggleSection {...props} />}
+        <View
+          key={section.id}
+          style={sectionSurface.style as ViewStyle | undefined}
+        >
+          {section.type !== 'toggle' ? (
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(sectionLabelSurface.style as TextStyle | undefined),
+              }}
+            >
+              {section.label}
+            </Text>
+          ) : null}
+
+          {section.type === 'select'
+            ? section.options?.map((option) =>
+                renderOptionRow(
+                  section,
+                  option,
+                  value === option.value,
+                  'radio',
+                  () => handleSectionChange(section.id, option.value),
+                ),
+              )
+            : null}
+
+          {section.type === 'multi-select'
+            ? section.options?.map((option) => {
+                const selectedValues = (value as string[] | undefined) ?? []
+                const isSelected = selectedValues.includes(option.value)
+                return renderOptionRow(section, option, isSelected, 'checkbox', () => {
+                  const next = isSelected
+                    ? selectedValues.filter((item) => item !== option.value)
+                    : [...selectedValues, option.value]
+                  handleSectionChange(section.id, next)
+                })
+              })
+            : null}
+
+          {section.type === 'range' ? (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: tokens.spacing[2],
+                paddingVertical: tokens.spacing[2],
+              }}
+            >
+              <TouchableOpacity
+                style={[{ flex: 1 }, rangeFieldSurface.style as ViewStyle | undefined]}
+                accessibilityLabel={`${section.label} minimum`}
+                accessibilityRole="adjustable"
+                testID={`${baseTestID}-${section.id}-min`}
+                onPress={() => {
+                  const current = (value as { min?: number } | undefined)?.min ?? section.min ?? 0
+                  handleSectionChange(section.id, { ...(value as object), min: current })
+                }}
+              >
+                <Text style={{ ...baseTextStyle, textAlign: 'center' }}>
+                  {(value as { min?: number } | undefined)?.min != null
+                    ? String((value as { min?: number }).min)
+                    : 'Min'}
+                </Text>
+              </TouchableOpacity>
+              <Text
+                style={{
+                  ...baseTextStyle,
+                  ...(rangeSeparatorSurface.style as TextStyle | undefined),
+                }}
+              >
+                to
+              </Text>
+              <TouchableOpacity
+                style={[{ flex: 1 }, rangeFieldSurface.style as ViewStyle | undefined]}
+                accessibilityLabel={`${section.label} maximum`}
+                accessibilityRole="adjustable"
+                testID={`${baseTestID}-${section.id}-max`}
+                onPress={() => {
+                  const current = (value as { max?: number } | undefined)?.max ?? section.max ?? 100
+                  handleSectionChange(section.id, { ...(value as object), max: current })
+                }}
+              >
+                <Text style={{ ...baseTextStyle, textAlign: 'center' }}>
+                  {(value as { max?: number } | undefined)?.max != null
+                    ? String((value as { max?: number }).max)
+                    : 'Max'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {section.type === 'toggle' ? (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingVertical: tokens.spacing[1],
+              }}
+            >
+              <Text
+                style={{
+                  ...baseTextStyle,
+                  ...(optionLabelSurface.style as TextStyle | undefined),
+                }}
+              >
+                {section.label}
+              </Text>
+              <Switch
+                value={Boolean(value)}
+                onValueChange={(next) => handleSectionChange(section.id, next)}
+                trackColor={{ false: tokens.colors.border, true: tokens.colors.primary }}
+                thumbColor={tokens.colors.surface}
+                accessibilityLabel={section.label}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: Boolean(value) }}
+                testID={`${baseTestID}-${section.id}-toggle`}
+              />
+            </View>
+          ) : null}
         </View>
       )
     },
-    [filterState, handleSectionChange, tokens, styles, baseTestID],
+    [
+      baseTestID,
+      baseTextStyle,
+      filterState,
+      handleSectionChange,
+      optionLabelSurface.style,
+      rangeFieldSurface.style,
+      rangeSeparatorSurface.style,
+      renderOptionRow,
+      sectionLabelSurface.style,
+      sectionSurface.style,
+      tokens.colors.border,
+      tokens.colors.primary,
+      tokens.colors.surface,
+      tokens.spacing,
+    ],
   )
 
   return (
@@ -435,57 +516,97 @@ export function FilterSheet({ config }: { config: FilterSheetConfig }) {
         accessibilityViewIsModal
       >
         <TouchableWithoutFeedback onPress={handleClose} accessibilityLabel="Dismiss filters">
-          <Animated.View style={[styles.backdrop, { opacity }]}>
+          <Animated.View
+            style={[
+              { flex: 1, justifyContent: 'flex-end' },
+              backdropSurface.style as ViewStyle | undefined,
+              { opacity },
+            ]}
+          >
             <TouchableWithoutFeedback>
-              <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
-                {/* Header */}
-                <View style={styles.header}>
-                  <Text style={styles.headerTitle} accessibilityRole="header">
+              <Animated.View
+                style={[
+                  {
+                    borderTopLeftRadius: tokens.radius.xl,
+                    borderTopRightRadius: tokens.radius.xl,
+                    maxHeight: '85%',
+                  },
+                  panelSurface.style as ViewStyle | undefined,
+                  { transform: [{ translateY }] },
+                ]}
+              >
+                <View style={headerSurface.style as ViewStyle | undefined}>
+                  <Text
+                    style={{
+                      ...baseTextStyle,
+                      ...(titleSurface.style as TextStyle | undefined),
+                    }}
+                    accessibilityRole="header"
+                  >
                     {title}
                   </Text>
                   <TouchableOpacity
                     onPress={handleClose}
-                    style={styles.closeButton}
+                    style={closeButtonSurface.style as ViewStyle | undefined}
                     accessibilityLabel="Close filters"
                     accessibilityRole="button"
                     testID={`${baseTestID}-close`}
                   >
-                    <Text style={styles.closeText}>✕</Text>
+                    <Text
+                      style={{
+                        ...baseTextStyle,
+                        ...(closeTextSurface.style as TextStyle | undefined),
+                      }}
+                    >
+                      Close
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* Sections */}
                 <ScrollView
-                  contentContainerStyle={styles.scrollContent}
+                  contentContainerStyle={scrollContentSurface.style as ViewStyle | undefined}
                   showsVerticalScrollIndicator={false}
                   bounces={false}
                 >
                   {config.sections.map(renderSection)}
                 </ScrollView>
 
-                {/* Footer */}
-                <View style={styles.footer}>
-                  {config.onReset && (
+                <View style={footerSurface.style as ViewStyle | undefined}>
+                  {config.onReset ? (
                     <TouchableOpacity
-                      onPress={handleReset}
-                      style={styles.resetButton}
+                      onPress={() => void handleReset()}
+                      style={resetButtonSurface.style as ViewStyle | undefined}
                       accessibilityRole="button"
                       accessibilityLabel="Reset filters"
                       testID={`${baseTestID}-reset`}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.resetText}>Reset</Text>
+                      <Text
+                        style={{
+                          ...baseTextStyle,
+                          ...(resetTextSurface.style as TextStyle | undefined),
+                        }}
+                      >
+                        Reset
+                      </Text>
                     </TouchableOpacity>
-                  )}
+                  ) : null}
                   <TouchableOpacity
-                    onPress={handleApply}
-                    style={styles.applyButton}
+                    onPress={() => void handleApply()}
+                    style={applyButtonSurface.style as ViewStyle | undefined}
                     accessibilityRole="button"
                     accessibilityLabel="Apply filters"
                     testID={`${baseTestID}-apply`}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.applyText}>Apply</Text>
+                    <Text
+                      style={{
+                        ...baseTextStyle,
+                        ...(applyTextSurface.style as TextStyle | undefined),
+                      }}
+                    >
+                      Apply
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </Animated.View>
@@ -496,4 +617,3 @@ export function FilterSheet({ config }: { config: FilterSheetConfig }) {
     </ComponentWrapper>
   )
 }
-

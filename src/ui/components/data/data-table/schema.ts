@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -28,4 +28,13 @@ export const DataTableSchema = extendComponentSchema({
   loadingCount: z.number().optional().default(5),
   stickyHeader: z.boolean().optional().default(true),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'headerRow',
+    'headerCell',
+    'row',
+    'cell',
+    'emptyState',
+    'loadingState',
+  ]).optional(),
 })
