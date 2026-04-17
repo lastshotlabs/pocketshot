@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -57,4 +57,36 @@ export const LinkEmbedSchema = extendComponentSchema({
   fileName: z.string().optional(),
   lastModified: z.string().optional(),
   thumbnailUrl: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'card',
+    'body',
+    'providerRow',
+    'providerDot',
+    'providerLabel',
+    'externalArrow',
+    'brandIcon',
+    'title',
+    'description',
+    'thumbnailContainer',
+    'thumbnailImage',
+    'playOverlay',
+    'playButton',
+    'playIcon',
+    'twitterHeader',
+    'twitterAvatar',
+    'twitterName',
+    'twitterHandle',
+    'tweetText',
+    'tweetImage',
+    'metricsRow',
+    'metricText',
+    'ghRepoName',
+    'ghStatsRow',
+    'ghStat',
+    'ghLangDot',
+    'ghStatIcon',
+    'ghStatText',
+    'spotifyAlbumArt',
+  ]).optional(),
 })

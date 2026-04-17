@@ -1,75 +1,17 @@
 import React, { useCallback, useMemo, useRef } from 'react'
-import { View, Text, ScrollView, StyleSheet } from 'react-native'
-import type { NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
+import { ScrollView, Text, View, type TextStyle, type ViewStyle } from 'react-native'
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import {
+  resolveNativeStyleProps,
+  resolveNativeTextStyle,
+  resolveSurfacePresentation,
+} from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { CompareViewConfig, DiffLine } from './types'
-
-// ── Diff algorithm (simple line-by-line LCS) ───────────────────────────────────
-
-function computeDiff(leftLines: string[], rightLines: string[]): DiffLine[] {
-  const m = leftLines.length
-  const n = rightLines.length
-
-  // Build LCS table
-  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0) as number[])
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (leftLines[i - 1] === rightLines[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1
-      } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
-      }
-    }
-  }
-
-  // Backtrack to produce diff
-  const result: DiffLine[] = []
-  let i = m
-  let j = n
-  const stack: DiffLine[] = []
-
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && leftLines[i - 1] === rightLines[j - 1]) {
-      stack.push({
-        type: 'unchanged',
-        leftLineNum: i,
-        rightLineNum: j,
-        content: leftLines[i - 1],
-      })
-      i--
-      j--
-    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      stack.push({
-        type: 'added',
-        leftLineNum: null,
-        rightLineNum: j,
-        content: rightLines[j - 1],
-      })
-      j--
-    } else {
-      stack.push({
-        type: 'removed',
-        leftLineNum: i,
-        rightLineNum: null,
-        content: leftLines[i - 1],
-      })
-      i--
-    }
-  }
-
-  // Reverse since we built it backwards
-  for (let k = stack.length - 1; k >= 0; k--) {
-    result.push(stack[k])
-  }
-
-  return result
-}
-
-// ── Diff colors ────────────────────────────────────────────────────────────────
 
 const DIFF_COLORS = {
   addedBg: 'rgba(34, 197, 94, 0.15)',
@@ -84,69 +26,228 @@ const CODE_BG = '#1a1a2e'
 const HEADER_BG = '#2d2d44'
 const CODE_TEXT = '#e8e8e8'
 const LINE_NUMBER_COLOR = '#666666'
+const HEADER_TEXT_COLOR = '#aaaacc'
+const DIVIDER_COLOR = '#3d3d5c'
 const LINE_HEIGHT = 20
 
-// ── Inline mode ────────────────────────────────────────────────────────────────
+interface PanelLine {
+  lineNum: number | null
+  content: string
+  type: 'unchanged' | 'added' | 'removed'
+}
+
+function computeDiff(leftLines: string[], rightLines: string[]): DiffLine[] {
+  const leftCount = leftLines.length
+  const rightCount = rightLines.length
+  const table: number[][] = Array.from({ length: leftCount + 1 }, () =>
+    Array.from({ length: rightCount + 1 }, () => 0),
+  )
+
+  for (let leftIndex = 1; leftIndex <= leftCount; leftIndex += 1) {
+    for (let rightIndex = 1; rightIndex <= rightCount; rightIndex += 1) {
+      if (leftLines[leftIndex - 1] === rightLines[rightIndex - 1]) {
+        table[leftIndex]![rightIndex] = table[leftIndex - 1]![rightIndex - 1]! + 1
+      } else {
+        table[leftIndex]![rightIndex] = Math.max(
+          table[leftIndex - 1]![rightIndex]!,
+          table[leftIndex]![rightIndex - 1]!,
+        )
+      }
+    }
+  }
+
+  const stack: DiffLine[] = []
+  let leftIndex = leftCount
+  let rightIndex = rightCount
+
+  while (leftIndex > 0 || rightIndex > 0) {
+    if (
+      leftIndex > 0 &&
+      rightIndex > 0 &&
+      leftLines[leftIndex - 1] === rightLines[rightIndex - 1]
+    ) {
+      stack.push({
+        type: 'unchanged',
+        leftLineNum: leftIndex,
+        rightLineNum: rightIndex,
+        content: leftLines[leftIndex - 1]!,
+      })
+      leftIndex -= 1
+      rightIndex -= 1
+      continue
+    }
+
+    if (
+      rightIndex > 0 &&
+      (leftIndex === 0 ||
+        table[leftIndex]![rightIndex - 1]! >= table[leftIndex - 1]![rightIndex]!)
+    ) {
+      stack.push({
+        type: 'added',
+        leftLineNum: null,
+        rightLineNum: rightIndex,
+        content: rightLines[rightIndex - 1]!,
+      })
+      rightIndex -= 1
+      continue
+    }
+
+    stack.push({
+      type: 'removed',
+      leftLineNum: leftIndex,
+      rightLineNum: null,
+      content: leftLines[leftIndex - 1]!,
+    })
+    leftIndex -= 1
+  }
+
+  return stack.reverse()
+}
+
+function resolveSlotSurface(
+  config: CompareViewConfig,
+  tokens: DesignTokens,
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
+}
+
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
 
 function InlineView({
+  config,
   diff,
   showLineNumbers,
   highlightDiffs,
-  tokens,
+  sharedTextStyle,
+  codeTextColor,
+  headerTextColor,
 }: {
+  config: CompareViewConfig
   diff: DiffLine[]
   showLineNumbers: boolean
   highlightDiffs: boolean
-  tokens: DesignTokens
+  sharedTextStyle: TextStyle
+  codeTextColor: string
+  headerTextColor: string
 }) {
-  const styles = useMemo(() => makeInlineStyles(tokens), [tokens])
+  const tokens = useTokens()
+
+  const inlineScrollSurface = resolveSlotSurface(config, tokens, 'inlineScroll', {
+    maxHeight: 400,
+  })
+  const inlineContentSurface = resolveSlotSurface(config, tokens, 'inlineContent', {
+    padding: 'sm',
+  })
+  const inlineGutterSurface = resolveSlotSurface(config, tokens, 'inlineGutter', {
+    flexDirection: 'row',
+    width: 64,
+    marginRight: 'sm',
+    paddingX: 'xs',
+  })
+  const inlineLineNumberSurface = resolveSlotSurface(config, tokens, 'inlineLineNumber', {
+    color: LINE_NUMBER_COLOR,
+    fontSize: 'xs',
+    lineHeight: LINE_HEIGHT,
+    width: 28,
+    textAlign: 'right',
+  })
+  const inlineCodeLineSurface = resolveSlotSurface(config, tokens, 'inlineCodeLine', {
+    color: codeTextColor,
+    fontSize: 'sm',
+    lineHeight: LINE_HEIGHT,
+    flex: 1,
+  })
+  const resolvedHeaderColor =
+    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : headerTextColor
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator
-      style={styles.scrollArea}
-      contentContainerStyle={styles.scrollContent}
+      style={inlineScrollSurface.style as ViewStyle | undefined}
+      contentContainerStyle={inlineContentSurface.style as ViewStyle | undefined}
     >
       <View>
-        {diff.map((line, idx) => {
-          const bgColor =
-            highlightDiffs && line.type === 'added'
-              ? DIFF_COLORS.addedBg
-              : highlightDiffs && line.type === 'removed'
-                ? DIFF_COLORS.removedBg
-                : undefined
-
-          const gutterBg =
-            highlightDiffs && line.type === 'added'
-              ? DIFF_COLORS.addedGutter
-              : highlightDiffs && line.type === 'removed'
-                ? DIFF_COLORS.removedGutter
-                : undefined
-
-          const prefix = line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '
+        {diff.map((line, index) => {
+          const rowSurface = resolveSlotSurface(config, tokens, 'inlineLineRow', {
+            flexDirection: 'row',
+            alignItems: 'start',
+            minHeight: LINE_HEIGHT,
+            paddingX: 'xs',
+            backgroundColor:
+              highlightDiffs && line.type === 'added'
+                ? DIFF_COLORS.addedBg
+                : highlightDiffs && line.type === 'removed'
+                  ? DIFF_COLORS.removedBg
+                  : undefined,
+          })
+          const gutterSurface = resolveSlotSurface(config, tokens, 'inlineGutter', {
+            flexDirection: 'row',
+            width: 64,
+            marginRight: 'sm',
+            paddingX: 'xs',
+            backgroundColor:
+              highlightDiffs && line.type === 'added'
+                ? DIFF_COLORS.addedGutter
+                : highlightDiffs && line.type === 'removed'
+                  ? DIFF_COLORS.removedGutter
+                  : undefined,
+          })
+          const lineSurface = resolveSlotSurface(config, tokens, 'inlineCodeLine', {
+            color:
+              highlightDiffs && line.type === 'added'
+                ? DIFF_COLORS.addedText
+                : highlightDiffs && line.type === 'removed'
+                  ? DIFF_COLORS.removedText
+                  : resolvedHeaderColor === headerTextColor
+                    ? codeTextColor
+                    : resolvedHeaderColor,
+            fontSize: 'sm',
+            lineHeight: LINE_HEIGHT,
+            flex: 1,
+          })
+          const prefix =
+            line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '
 
           return (
-            <View key={idx} style={[styles.lineRow, bgColor != null ? { backgroundColor: bgColor } : undefined]}>
-              {showLineNumbers && (
-                <View style={[styles.gutterCell, gutterBg != null ? { backgroundColor: gutterBg } : undefined]}>
-                  <Text style={styles.lineNumber}>
+            <View
+              key={`${line.type}-${index}-${line.leftLineNum ?? 'x'}-${line.rightLineNum ?? 'x'}`}
+              style={rowSurface.style as ViewStyle | undefined}
+            >
+              {showLineNumbers ? (
+                <View style={gutterSurface.style as ViewStyle | undefined}>
+                  <Text style={mergeTextStyle(sharedTextStyle, inlineLineNumberSurface)}>
                     {line.leftLineNum != null ? String(line.leftLineNum) : ''}
                   </Text>
-                  <Text style={styles.lineNumber}>
+                  <Text style={mergeTextStyle(sharedTextStyle, inlineLineNumberSurface)}>
                     {line.rightLineNum != null ? String(line.rightLineNum) : ''}
                   </Text>
                 </View>
-              )}
+              ) : null}
               <Text
-                style={[
-                  styles.codeLine,
-                  highlightDiffs && line.type === 'added' && { color: DIFF_COLORS.addedText },
-                  highlightDiffs && line.type === 'removed' && { color: DIFF_COLORS.removedText },
-                ]}
+                style={{
+                  ...mergeTextStyle(sharedTextStyle, inlineCodeLineSurface),
+                  ...(lineSurface.style as TextStyle | undefined),
+                  fontFamily: 'monospace',
+                }}
                 selectable
               >
-                {prefix} {line.content}
+                {`${prefix} ${line.content}`}
               </Text>
             </View>
           )
@@ -156,85 +257,151 @@ function InlineView({
   )
 }
 
-// ── Side-by-side mode ──────────────────────────────────────────────────────────
-
 function SideBySideView({
+  config,
   diff,
   showLineNumbers,
   highlightDiffs,
   leftLabel,
   rightLabel,
-  tokens,
+  sharedTextStyle,
+  codeTextColor,
+  headerTextColor,
 }: {
+  config: CompareViewConfig
   diff: DiffLine[]
   showLineNumbers: boolean
   highlightDiffs: boolean
   leftLabel: string
   rightLabel: string
-  tokens: DesignTokens
+  sharedTextStyle: TextStyle
+  codeTextColor: string
+  headerTextColor: string
 }) {
+  const tokens = useTokens()
   const leftScrollRef = useRef<ScrollView>(null)
   const rightScrollRef = useRef<ScrollView>(null)
-  const isScrollingRef = useRef<'left' | 'right' | null>(null)
+  const activeScroller = useRef<'left' | 'right' | null>(null)
 
-  const styles = useMemo(() => makeSideBySideStyles(tokens), [tokens])
-
-  // Build separate left/right line arrays from diff
-  const { leftLines, rightLines } = useMemo(() => {
-    const left: Array<{ lineNum: number | null; content: string; type: 'unchanged' | 'added' | 'removed' }> = []
-    const right: Array<{ lineNum: number | null; content: string; type: 'unchanged' | 'added' | 'removed' }> = []
+  const panelData = useMemo(() => {
+    const leftLines: PanelLine[] = []
+    const rightLines: PanelLine[] = []
 
     for (const line of diff) {
       if (line.type === 'unchanged') {
-        left.push({ lineNum: line.leftLineNum, content: line.content, type: 'unchanged' })
-        right.push({ lineNum: line.rightLineNum, content: line.content, type: 'unchanged' })
-      } else if (line.type === 'removed') {
-        left.push({ lineNum: line.leftLineNum, content: line.content, type: 'removed' })
-        right.push({ lineNum: null, content: '', type: 'unchanged' })
-      } else {
-        left.push({ lineNum: null, content: '', type: 'unchanged' })
-        right.push({ lineNum: line.rightLineNum, content: line.content, type: 'added' })
+        leftLines.push({
+          lineNum: line.leftLineNum,
+          content: line.content,
+          type: 'unchanged',
+        })
+        rightLines.push({
+          lineNum: line.rightLineNum,
+          content: line.content,
+          type: 'unchanged',
+        })
+        continue
       }
+
+      if (line.type === 'removed') {
+        leftLines.push({
+          lineNum: line.leftLineNum,
+          content: line.content,
+          type: 'removed',
+        })
+        rightLines.push({
+          lineNum: null,
+          content: '',
+          type: 'unchanged',
+        })
+        continue
+      }
+
+      leftLines.push({
+        lineNum: null,
+        content: '',
+        type: 'unchanged',
+      })
+      rightLines.push({
+        lineNum: line.rightLineNum,
+        content: line.content,
+        type: 'added',
+      })
     }
 
-    return { leftLines: left, rightLines: right }
+    return { leftLines, rightLines }
   }, [diff])
 
-  const handleLeftScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      if (isScrollingRef.current === 'right') return
-      isScrollingRef.current = 'left'
-      rightScrollRef.current?.scrollTo({ y: e.nativeEvent.contentOffset.y, animated: false })
-      // Reset after frame
-      requestAnimationFrame(() => {
-        isScrollingRef.current = null
-      })
-    },
-    [],
-  )
+  const panelsSurface = resolveSlotSurface(config, tokens, 'panels', {
+    flexDirection: 'row',
+    maxHeight: 400,
+  })
+  const panelSurface = resolveSlotSurface(config, tokens, 'panel', {
+    flex: 1,
+  })
+  const panelHeaderSurface = resolveSlotSurface(config, tokens, 'panelHeader', {
+    bg: HEADER_BG,
+    paddingX: 'md',
+    paddingY: 'sm',
+  })
+  const panelLabelSurface = resolveSlotSurface(config, tokens, 'panelLabel', {
+    color: headerTextColor,
+    fontSize: 'xs',
+    fontWeight: 'medium',
+  })
+  const dividerSurface = resolveSlotSurface(config, tokens, 'divider', {
+    width: 1,
+    backgroundColor: DIVIDER_COLOR,
+  })
+  const panelScrollSurface = resolveSlotSurface(config, tokens, 'panelScroll', {
+    flex: 1,
+  })
+  const panelContentSurface = resolveSlotSurface(config, tokens, 'panelContent')
+  const panelLineNumberSurface = resolveSlotSurface(config, tokens, 'panelLineNumber', {
+    color: LINE_NUMBER_COLOR,
+    fontSize: 'xs',
+    lineHeight: LINE_HEIGHT,
+    width: 28,
+    textAlign: 'right',
+    marginRight: 'sm',
+  })
+  const panelCodeLineSurface = resolveSlotSurface(config, tokens, 'panelCodeLine', {
+    color: codeTextColor,
+    fontSize: 'sm',
+    lineHeight: LINE_HEIGHT,
+    flex: 1,
+  })
 
-  const handleRightScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      if (isScrollingRef.current === 'left') return
-      isScrollingRef.current = 'right'
-      leftScrollRef.current?.scrollTo({ y: e.nativeEvent.contentOffset.y, animated: false })
+  const syncScroll = useCallback(
+    (
+      source: 'left' | 'right',
+      event: NativeSyntheticEvent<NativeScrollEvent>,
+      target: React.RefObject<ScrollView | null>,
+    ) => {
+      if (activeScroller.current != null && activeScroller.current !== source) {
+        return
+      }
+
+      activeScroller.current = source
+      target.current?.scrollTo({
+        y: event.nativeEvent.contentOffset.y,
+        animated: false,
+      })
       requestAnimationFrame(() => {
-        isScrollingRef.current = null
+        activeScroller.current = null
       })
     },
     [],
   )
 
   const renderPanel = (
-    lines: typeof leftLines,
+    lines: PanelLine[],
     label: string,
-    scrollRef: React.RefObject<ScrollView>,
-    onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void,
-    side: 'left' | 'right',
+    scrollRef: React.RefObject<ScrollView | null>,
+    onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void,
   ) => (
-    <View style={styles.panel}>
-      <View style={styles.panelHeader}>
-        <Text style={styles.panelLabel} numberOfLines={1}>
+    <View style={panelSurface.style as ViewStyle | undefined}>
+      <View style={panelHeaderSurface.style as ViewStyle | undefined}>
+        <Text style={mergeTextStyle(sharedTextStyle, panelLabelSurface)} numberOfLines={1}>
           {label}
         </Text>
       </View>
@@ -243,34 +410,60 @@ function SideBySideView({
         onScroll={onScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        style={styles.panelScroll}
+        style={panelScrollSurface.style as ViewStyle | undefined}
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          contentContainerStyle={panelContentSurface.style as ViewStyle | undefined}
+        >
           <View>
-            {lines.map((line, idx) => {
-              const bgColor =
-                highlightDiffs && line.type === 'added'
-                  ? DIFF_COLORS.addedBg
-                  : highlightDiffs && line.type === 'removed'
-                    ? DIFF_COLORS.removedBg
-                    : undefined
+            {lines.map((line, index) => {
+              const rowSurface = resolveSlotSurface(config, tokens, 'panelLineRow', {
+                flexDirection: 'row',
+                alignItems: 'start',
+                minHeight: LINE_HEIGHT,
+                paddingX: 'sm',
+                backgroundColor:
+                  highlightDiffs && line.type === 'added'
+                    ? DIFF_COLORS.addedBg
+                    : highlightDiffs && line.type === 'removed'
+                      ? DIFF_COLORS.removedBg
+                      : undefined,
+              })
+              const codeLineSurface = resolveSlotSurface(config, tokens, 'panelCodeLine', {
+                color:
+                  highlightDiffs && line.type === 'added'
+                    ? DIFF_COLORS.addedText
+                    : highlightDiffs && line.type === 'removed'
+                      ? DIFF_COLORS.removedText
+                      : codeTextColor,
+                fontSize: 'sm',
+                lineHeight: LINE_HEIGHT,
+                flex: 1,
+              })
 
               return (
                 <View
-                  key={idx}
-                  style={[styles.lineRow, bgColor != null ? { backgroundColor: bgColor } : undefined]}
+                  key={`${label}-${line.type}-${index}-${line.lineNum ?? 'x'}`}
+                  style={rowSurface.style as ViewStyle | undefined}
                 >
-                  {showLineNumbers && (
-                    <Text style={styles.lineNumber}>
+                  {showLineNumbers ? (
+                    <Text
+                      style={{
+                        ...mergeTextStyle(sharedTextStyle, panelLineNumberSurface),
+                        fontFamily: 'monospace',
+                      }}
+                    >
                       {line.lineNum != null ? String(line.lineNum).padStart(3, ' ') : '   '}
                     </Text>
-                  )}
+                  ) : null}
                   <Text
-                    style={[
-                      styles.codeLine,
-                      highlightDiffs && line.type === 'added' && { color: DIFF_COLORS.addedText },
-                      highlightDiffs && line.type === 'removed' && { color: DIFF_COLORS.removedText },
-                    ]}
+                    style={{
+                      ...mergeTextStyle(sharedTextStyle, panelCodeLineSurface),
+                      ...(codeLineSurface.style as TextStyle | undefined),
+                      fontFamily: 'monospace',
+                    }}
                     selectable
                   >
                     {line.content}
@@ -285,178 +478,108 @@ function SideBySideView({
   )
 
   return (
-    <View style={styles.container}>
-      {renderPanel(leftLines, leftLabel, leftScrollRef as React.RefObject<ScrollView>, handleLeftScroll, 'left')}
-      <View style={styles.divider} />
-      {renderPanel(rightLines, rightLabel, rightScrollRef as React.RefObject<ScrollView>, handleRightScroll, 'right')}
+    <View style={panelsSurface.style as ViewStyle | undefined}>
+      {renderPanel(panelData.leftLines, leftLabel, leftScrollRef, (event) =>
+        syncScroll('left', event, rightScrollRef),
+      )}
+      <View style={dividerSurface.style as ViewStyle | undefined} />
+      {renderPanel(panelData.rightLines, rightLabel, rightScrollRef, (event) =>
+        syncScroll('right', event, leftScrollRef),
+      )}
     </View>
   )
 }
-
-// ── Component ──────────────────────────────────────────────────────────────────
 
 export function CompareView({ config }: { config: CompareViewConfig }) {
   const tokens = useTokens()
   const { values } = useScreenContext()
 
-  const leftContent = resolveFromRef(config.left.content, values) as string
-  const rightContent = resolveFromRef(config.right.content, values) as string
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const resolvedContainerStyle = resolveNativeStyleProps(
+    config as Record<string, unknown>,
+    tokens,
+  )
+  const leftContent = String(resolveFromRef(config.left.content, values) ?? '')
+  const rightContent = String(resolveFromRef(config.right.content, values) ?? '')
   const mode = config.mode ?? 'side-by-side'
   const showLineNumbers = config.showLineNumbers ?? true
   const highlightDiffs = config.highlightDiffs ?? true
 
-  const leftLines = useMemo(() => (leftContent ?? '').split('\n'), [leftContent])
-  const rightLines = useMemo(() => (rightContent ?? '').split('\n'), [rightContent])
-  const diff = useMemo(() => computeDiff(leftLines, rightLines), [leftLines, rightLines])
+  const containerBg =
+    typeof resolvedContainerStyle.backgroundColor === 'string'
+      ? resolvedContainerStyle.backgroundColor
+      : CODE_BG
+  const containerRadius =
+    typeof resolvedContainerStyle.borderRadius === 'number'
+      ? resolvedContainerStyle.borderRadius
+      : tokens.radius.lg
+  const headerBg = containerBg === CODE_BG ? HEADER_BG : containerBg
+  const codeTextColor =
+    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : CODE_TEXT
+  const headerTextColor =
+    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : HEADER_TEXT_COLOR
 
+  const diff = useMemo(
+    () => computeDiff(leftContent.split('\n'), rightContent.split('\n')),
+    [leftContent, rightContent],
+  )
   const testId = config.testID ?? config.id ?? 'compare-view'
-  const styles = useMemo(() => makeContainerStyles(tokens), [tokens])
+
+  const containerSurface = resolveSlotSurface(config, tokens, 'container', {
+    bg: containerBg,
+    borderRadius: containerRadius,
+    overflow: 'hidden',
+  })
+  const headerSurface = resolveSlotSurface(config, tokens, 'header', {
+    bg: headerBg,
+    paddingX: 'lg',
+    paddingY: 'sm',
+  })
+  const headerTextSurface = resolveSlotSurface(config, tokens, 'headerText', {
+    color: headerTextColor,
+    fontSize: 'xs',
+    fontWeight: 'medium',
+  })
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
-        style={styles.container}
+        style={containerSurface.style as ViewStyle | undefined}
         testID={testId}
         accessibilityRole="text"
         accessibilityLabel={`Comparison between ${config.left.label} and ${config.right.label}`}
       >
         {mode === 'inline' ? (
           <>
-            <View style={styles.header}>
-              <Text style={styles.headerText}>
-                {config.left.label} → {config.right.label}
+            <View style={headerSurface.style as ViewStyle | undefined}>
+              <Text style={mergeTextStyle(sharedTextStyle, headerTextSurface)}>
+                {`${config.left.label} -> ${config.right.label}`}
               </Text>
             </View>
             <InlineView
+              config={config}
               diff={diff}
               showLineNumbers={showLineNumbers}
               highlightDiffs={highlightDiffs}
-              tokens={tokens}
+              sharedTextStyle={sharedTextStyle}
+              codeTextColor={codeTextColor}
+              headerTextColor={headerTextColor}
             />
           </>
         ) : (
           <SideBySideView
+            config={config}
             diff={diff}
             showLineNumbers={showLineNumbers}
             highlightDiffs={highlightDiffs}
             leftLabel={config.left.label}
             rightLabel={config.right.label}
-            tokens={tokens}
+            sharedTextStyle={sharedTextStyle}
+            codeTextColor={codeTextColor}
+            headerTextColor={headerTextColor}
           />
         )}
       </View>
     </ComponentWrapper>
   )
 }
-
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-function makeContainerStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      backgroundColor: CODE_BG,
-      borderRadius: tokens.radius.lg,
-      overflow: 'hidden',
-    },
-    header: {
-      backgroundColor: HEADER_BG,
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[2],
-    },
-    headerText: {
-      color: '#aaaacc',
-      fontSize: tokens.typography.fontSizeXs,
-      fontWeight: tokens.typography.fontWeightMedium,
-    },
-  })
-}
-
-function makeInlineStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    scrollArea: {
-      maxHeight: 400,
-    },
-    scrollContent: {
-      padding: tokens.spacing[2],
-    },
-    lineRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      minHeight: LINE_HEIGHT,
-      paddingHorizontal: tokens.spacing[1],
-    },
-    gutterCell: {
-      flexDirection: 'row',
-      width: 64,
-      marginRight: tokens.spacing[2],
-      paddingHorizontal: tokens.spacing[1],
-    },
-    lineNumber: {
-      color: LINE_NUMBER_COLOR,
-      fontFamily: 'monospace',
-      fontSize: tokens.typography.fontSizeXs,
-      lineHeight: LINE_HEIGHT,
-      width: 28,
-      textAlign: 'right',
-    },
-    codeLine: {
-      color: CODE_TEXT,
-      fontFamily: 'monospace',
-      fontSize: tokens.typography.fontSizeSm,
-      lineHeight: LINE_HEIGHT,
-      flex: 1,
-    },
-  })
-}
-
-function makeSideBySideStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      flexDirection: 'row',
-      maxHeight: 400,
-    },
-    panel: {
-      flex: 1,
-    },
-    panelHeader: {
-      backgroundColor: HEADER_BG,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-    },
-    panelLabel: {
-      color: '#aaaacc',
-      fontSize: tokens.typography.fontSizeXs,
-      fontWeight: tokens.typography.fontWeightMedium,
-    },
-    panelScroll: {
-      flex: 1,
-    },
-    divider: {
-      width: 1,
-      backgroundColor: '#3d3d5c',
-    },
-    lineRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      minHeight: LINE_HEIGHT,
-      paddingHorizontal: tokens.spacing[2],
-    },
-    lineNumber: {
-      color: LINE_NUMBER_COLOR,
-      fontFamily: 'monospace',
-      fontSize: tokens.typography.fontSizeXs,
-      lineHeight: LINE_HEIGHT,
-      width: 28,
-      textAlign: 'right',
-      marginRight: tokens.spacing[2],
-    },
-    codeLine: {
-      color: CODE_TEXT,
-      fontFamily: 'monospace',
-      fontSize: tokens.typography.fontSizeSm,
-      lineHeight: LINE_HEIGHT,
-      flex: 1,
-    },
-  })
-}
-

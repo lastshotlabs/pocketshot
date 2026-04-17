@@ -5,16 +5,18 @@ import {
   Pressable,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  StyleSheet,
   Animated,
   Modal,
   FlatList,
   Dimensions,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ContextMenuConfig } from './types'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
@@ -27,137 +29,20 @@ interface TriggerLayout {
   height: number
 }
 
-// ---------------------------------------------------------------------------
-// Haptic helper — no-op safe per rule 32
-// ---------------------------------------------------------------------------
-
 function triggerHaptic() {
   try {
     const Haptics = require('expo-haptics')
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
   } catch {
-    // expo-haptics not available — no-op
+    // no-op
   }
 }
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    backdrop: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: SCREEN_WIDTH,
-      height: SCREEN_HEIGHT,
-    },
-    panel: {
-      position: 'absolute',
-      backgroundColor: tokens.colors.surface,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      borderRadius: tokens.radius.md,
-      minWidth: 180,
-      ...tokens.shadows.xl,
-      overflow: 'hidden',
-    },
-    itemRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[3],
-      gap: tokens.spacing[2],
-    },
-    itemIcon: {
-      fontSize: 16,
-      width: 20,
-      textAlign: 'center' as const,
-    },
-    itemLabel: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.text,
-    },
-    itemLabelDestructive: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.destructive,
-    },
-    separator: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: tokens.colors.divider,
-      marginHorizontal: tokens.spacing[3],
-    },
-  })
-}
-
-// ---------------------------------------------------------------------------
-// Item row
-// ---------------------------------------------------------------------------
-
-interface ContextMenuItemRowProps {
-  item: ContextMenuConfig['items'][number]
-  onPress: (item: ContextMenuConfig['items'][number]) => void
-  tokens: DesignTokens
-  styles: ReturnType<typeof makeStyles>
-  isLast: boolean
-}
-
-function ContextMenuItemRow({ item, onPress, tokens, styles, isLast }: ContextMenuItemRowProps) {
-  const handlePress = useCallback(() => {
-    if (!item.disabled) {
-      onPress(item)
-    }
-  }, [item, onPress])
-
-  return (
-    <>
-      <TouchableOpacity
-        onPress={handlePress}
-        style={[styles.itemRow, item.disabled ? { opacity: 0.4 } : undefined]}
-        disabled={item.disabled}
-        accessibilityRole="menuitem"
-        accessibilityLabel={item.label}
-        accessibilityState={{ disabled: item.disabled }}
-        testID={`context-menu-item-${item.id}`}
-        activeOpacity={0.7}
-      >
-        {item.icon != null && (
-          <Text
-            style={[
-              styles.itemIcon,
-              item.destructive ? { color: tokens.colors.destructive } : undefined,
-            ]}
-            accessibilityElementsHidden
-          >
-            {item.icon}
-          </Text>
-        )}
-        <Text style={item.destructive ? styles.itemLabelDestructive : styles.itemLabel}>
-          {item.label}
-        </Text>
-      </TouchableOpacity>
-      {!isLast && <View style={styles.separator} />}
-    </>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// ContextMenu
-// ---------------------------------------------------------------------------
 
 export interface ContextMenuProps {
   config: ContextMenuConfig
   children?: ReactNode
 }
 
-/**
- * Long-press context menu. Wraps children in a Pressable; on long press,
- * shows a positioned menu near the trigger with fade + scale animation.
- * Fires haptic feedback on long press.
- */
 export function ContextMenu({ config, children }: ContextMenuProps) {
   const tokens = useTokens()
   const { dispatch } = useScreenContext()
@@ -166,7 +51,85 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
   const triggerRef = useRef<View>(null)
   const opacity = useRef(new Animated.Value(0)).current
   const scale = useRef(new Animated.Value(0.9)).current
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: SCREEN_WIDTH,
+      height: SCREEN_HEIGHT,
+    },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+  })
+  const panelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      border: '1px solid border',
+      borderRadius: 'md',
+      minWidth: 180,
+      shadow: 'xl',
+      overflow: 'hidden',
+    },
+    componentSurface: config.slots?.panel as Record<string, unknown> | undefined,
+  })
+  const itemSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingX: 'lg',
+      paddingY: 'md',
+      gap: 'sm',
+      states: {
+        disabled: {
+          opacity: 0.4,
+        },
+      },
+    },
+    componentSurface: config.slots?.item as Record<string, unknown> | undefined,
+  })
+  const itemIconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.itemIcon as Record<string, unknown> | undefined,
+  })
+  const itemLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.itemLabel as Record<string, unknown> | undefined,
+  })
+  const separatorSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'border',
+    },
+    componentSurface: config.slots?.separator as Record<string, unknown> | undefined,
+  })
 
   const animateOpen = useCallback(() => {
     Animated.parallel([
@@ -187,8 +150,17 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
 
   const handleLongPress = useCallback(() => {
     triggerHaptic()
-    if (!triggerRef.current) return
-    triggerRef.current.measureInWindow((x, y, width, height) => {
+    const node = triggerRef.current as View & {
+      measureInWindow?: (callback: (x: number, y: number, width: number, height: number) => void) => void
+    }
+
+    if (!node?.measureInWindow) {
+      setTriggerLayout({ x: 8, y: 8, width: 180, height: 32 })
+      setVisible(true)
+      return
+    }
+
+    node.measureInWindow((x, y, width, height) => {
       setTriggerLayout({ x, y, width, height })
       setVisible(true)
     })
@@ -198,7 +170,7 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
     if (visible) {
       animateOpen()
     }
-  }, [visible, animateOpen])
+  }, [animateOpen, visible])
 
   const closeMenu = useCallback(() => {
     animateClose(() => setVisible(false))
@@ -212,7 +184,7 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
     [closeMenu, dispatch],
   )
 
-  const panelStyle = useMemo(() => {
+  const panelPositionStyle = useMemo(() => {
     if (!triggerLayout) return {}
     const panelTop = triggerLayout.y + triggerLayout.height + 4
     const panelLeft = triggerLayout.x
@@ -225,16 +197,73 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
   const triggerTestID = config.testID ?? config.id ?? 'context-menu'
 
   const renderItem = useCallback(
-    ({ item, index }: { item: ContextMenuConfig['items'][number]; index: number }) => (
-      <ContextMenuItemRow
-        item={item}
-        onPress={handleItemPress}
-        tokens={tokens}
-        styles={styles}
-        isLast={index === config.items.length - 1}
-      />
-    ),
-    [handleItemPress, tokens, styles, config.items.length],
+    ({ item, index }: { item: ContextMenuConfig['items'][number]; index: number }) => {
+      const activeStates: RuntimeSurfaceState[] | undefined = item.disabled ? ['disabled'] : undefined
+      const destructiveColor = item.destructive ? tokens.colors.destructive : undefined
+      const rowStyle = resolveSurfacePresentation({
+        tokens,
+        implementationBase: itemSurface.resolvedConfigForWrapper,
+        activeStates,
+      }).style as ViewStyle | undefined
+
+      return (
+        <View key={item.id}>
+          <TouchableOpacity
+            onPress={() => void (!item.disabled && handleItemPress(item))}
+            style={rowStyle}
+            disabled={item.disabled}
+            accessibilityRole="menuitem"
+            accessibilityLabel={item.label}
+            accessibilityState={{ disabled: item.disabled }}
+            testID={`context-menu-item-${item.id}`}
+            activeOpacity={0.7}
+          >
+            {item.icon != null ? (
+              <Text
+                style={{
+                  ...baseTextStyle,
+                  width: 20,
+                  textAlign: 'center',
+                  color: destructiveColor ?? undefined,
+                  ...(itemIconSurface.style as TextStyle | undefined),
+                }}
+                accessibilityElementsHidden
+              >
+                {item.icon}
+              </Text>
+            ) : null}
+            <Text
+              style={{
+                ...baseTextStyle,
+                flex: 1,
+                color: destructiveColor ?? undefined,
+                ...(itemLabelSurface.style as TextStyle | undefined),
+              }}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+          {index < config.items.length - 1 ? (
+            <View
+              style={[
+                { height: 1, marginHorizontal: tokens.spacing[3] },
+                separatorSurface.style as ViewStyle | undefined,
+              ]}
+            />
+          ) : null}
+        </View>
+      )
+    },
+    [
+      baseTextStyle,
+      config.items.length,
+      handleItemPress,
+      itemIconSurface.style,
+      itemLabelSurface.style,
+      itemSurface.resolvedConfigForWrapper,
+      separatorSurface.style,
+      tokens,
+    ],
   )
 
   const keyExtractor = useCallback((item: ContextMenuConfig['items'][number]) => item.id, [])
@@ -259,7 +288,7 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
         </Pressable>
       </View>
 
-      {visible && (
+      {visible ? (
         <Modal
           visible={visible}
           transparent
@@ -268,11 +297,19 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
           statusBarTranslucent
         >
           <TouchableWithoutFeedback onPress={closeMenu} accessibilityLabel="Close menu">
-            <View style={styles.backdrop} />
+            <View style={backdropSurface.style as ViewStyle | undefined} />
           </TouchableWithoutFeedback>
 
           <Animated.View
-            style={[styles.panel, panelStyle, { opacity, transform: [{ scale }] }]}
+            style={[
+              {
+                position: 'absolute',
+                opacity,
+                transform: [{ scale }],
+              },
+              panelSurface.style as ViewStyle | undefined,
+              panelPositionStyle,
+            ]}
             accessibilityRole="menu"
             accessibilityLabel="Context menu"
           >
@@ -284,7 +321,7 @@ export function ContextMenu({ config, children }: ContextMenuProps) {
             />
           </Animated.View>
         </Modal>
-      )}
+      ) : null}
     </ComponentWrapper>
   )
 }

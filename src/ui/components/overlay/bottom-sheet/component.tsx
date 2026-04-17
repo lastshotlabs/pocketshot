@@ -3,29 +3,23 @@ import {
   Animated,
   Dimensions,
   PanResponder,
-  StyleSheet,
   Text,
   TouchableWithoutFeedback,
   View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import type { DesignTokens } from '../../../tokens/types'
 import type { BottomSheetConfig } from './types'
 
-// ── Gorhom lazy loader (optional peer dep) ─────────────────────────────────────
-
-// We cannot statically import @gorhom/bottom-sheet — it is an optional peer.
-// We duck-type the minimum surface we use so tsc does not need the module.
-
 interface GorhomModule {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  BottomSheet: React.ComponentType<any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  BottomSheetView: React.ComponentType<any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  BottomSheetBackdrop: React.ComponentType<any>
+  BottomSheet: React.ComponentType<Record<string, unknown>>
+  BottomSheetView: React.ComponentType<Record<string, unknown>>
+  BottomSheetBackdrop: React.ComponentType<Record<string, unknown>>
 }
 
 interface GorhomSheetRef {
@@ -33,29 +27,105 @@ interface GorhomSheetRef {
   close(): void
 }
 
-let _gorhomCache: GorhomModule | null | undefined
+let gorhomCache: GorhomModule | null | undefined
 
 function tryGorhom(): GorhomModule | null {
-  if (_gorhomCache !== undefined) return _gorhomCache
+  if (gorhomCache !== undefined) return gorhomCache
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    _gorhomCache = require('@gorhom/bottom-sheet') as GorhomModule
+    gorhomCache = require('@gorhom/bottom-sheet') as GorhomModule
   } catch {
-    _gorhomCache = null
+    gorhomCache = null
   }
-  return _gorhomCache
+  return gorhomCache
 }
-
-// ── Custom bottom sheet (Animated + PanResponder fallback) ─────────────────────
 
 const WINDOW_HEIGHT = Dimensions.get('window').height
 
 function parseSnapPoint(point: string): number {
   if (point.endsWith('%')) {
-    const pct = parseFloat(point) / 100
-    return WINDOW_HEIGHT * pct
+    return WINDOW_HEIGHT * (parseFloat(point) / 100)
   }
   return parseFloat(point)
+}
+
+function resolveBottomSheetPresentation(config: BottomSheetConfig, tokens: DesignTokens) {
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  return {
+    baseTextStyle,
+    backdropSurface: resolveSurfacePresentation({
+      tokens,
+      implementationBase: {
+        bg: 'rgba(0,0,0,0.55)',
+      },
+      componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+    }),
+    panelSurface: resolveSurfacePresentation({
+      tokens,
+      implementationBase: {
+        bg: 'card',
+        borderRadius: 'lg',
+        shadow: 'lg',
+        overflow: 'hidden',
+      },
+      componentSurface: config.slots?.panel as Record<string, unknown> | undefined,
+    }),
+    handleContainerSurface: resolveSurfacePresentation({
+      tokens,
+      implementationBase: {
+        alignItems: 'center',
+        paddingTop: 'xs',
+        paddingBottom: 'xs',
+      },
+      componentSurface: config.slots?.handleContainer as Record<string, unknown> | undefined,
+    }),
+    handleSurface: resolveSurfacePresentation({
+      tokens,
+      implementationBase: {
+        width: 40,
+        height: 4,
+        borderRadius: 'full',
+        bg: 'border',
+      },
+      componentSurface: config.slots?.handle as Record<string, unknown> | undefined,
+    }),
+    titleSurface: resolveSurfacePresentation({
+      tokens,
+      implementationBase: {
+        fontSize: 'lg',
+        fontWeight: 'semibold',
+        color: 'foreground',
+        paddingX: 'md',
+        paddingY: 'sm',
+      },
+      componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+    }),
+    contentSurface: resolveSurfacePresentation({
+      tokens,
+      implementationBase: {
+        flex: 1,
+      },
+      componentSurface: config.slots?.content as Record<string, unknown> | undefined,
+    }),
+  }
 }
 
 interface CustomBottomSheetProps {
@@ -74,6 +144,16 @@ function CustomBottomSheet({ config, isOpen, onClose, tokens, children }: Custom
   const translateY = useRef(new Animated.Value(WINDOW_HEIGHT)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current
 
+  const {
+    baseTextStyle,
+    backdropSurface,
+    panelSurface,
+    handleContainerSurface,
+    handleSurface,
+    titleSurface,
+    contentSurface,
+  } = resolveBottomSheetPresentation(config, tokens)
+
   const animateOpen = useCallback(() => {
     Animated.parallel([
       Animated.timing(translateY, {
@@ -87,7 +167,7 @@ function CustomBottomSheet({ config, isOpen, onClose, tokens, children }: Custom
         useNativeDriver: true,
       }),
     ]).start()
-  }, [translateY, backdropOpacity, primaryHeight])
+  }, [backdropOpacity, primaryHeight, translateY])
 
   const animateClose = useCallback(() => {
     Animated.parallel([
@@ -102,15 +182,16 @@ function CustomBottomSheet({ config, isOpen, onClose, tokens, children }: Custom
         useNativeDriver: true,
       }),
     ]).start()
-  }, [translateY, backdropOpacity])
+  }, [backdropOpacity, translateY])
 
   useEffect(() => {
     if (isOpen) {
       animateOpen()
-    } else {
-      animateClose()
+      return
     }
-  }, [isOpen, animateOpen, animateClose])
+
+    animateClose()
+  }, [animateClose, animateOpen, isOpen])
 
   const panResponder = useRef(
     PanResponder.create({
@@ -123,98 +204,74 @@ function CustomBottomSheet({ config, isOpen, onClose, tokens, children }: Custom
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > primaryHeight * 0.3 || gestureState.vy > 0.5) {
           onClose()
-        } else {
-          Animated.spring(translateY, {
-            toValue: WINDOW_HEIGHT - primaryHeight,
-            useNativeDriver: true,
-          }).start()
+          return
         }
+
+        Animated.spring(translateY, {
+          toValue: WINDOW_HEIGHT - primaryHeight,
+          useNativeDriver: true,
+        }).start()
       },
     }),
   ).current
 
-  const styles = makeCustomStyles(tokens)
-
   return (
     <>
-      {/* Backdrop */}
       <TouchableWithoutFeedback
         onPress={config.closeOnBackdrop ? onClose : undefined}
         accessibilityLabel="Close sheet"
         accessibilityRole="button"
       >
         <Animated.View
-          style={[StyleSheet.absoluteFill, styles.backdrop, { opacity: backdropOpacity }]}
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              opacity: backdropOpacity,
+            },
+            backdropSurface.style as ViewStyle | undefined,
+          ]}
         />
       </TouchableWithoutFeedback>
 
-      {/* Sheet panel */}
       <Animated.View
         style={[
-          styles.sheet,
           {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
             height: primaryHeight,
             transform: [{ translateY }],
           },
+          panelSurface.style as ViewStyle | undefined,
         ]}
         {...panResponder.panHandlers}
       >
-        {config.showHandle && (
-          <View style={styles.handleContainer} accessible={false}>
-            <View style={styles.handle} />
+        {config.showHandle ? (
+          <View style={handleContainerSurface.style as ViewStyle | undefined} accessible={false}>
+            <View style={handleSurface.style as ViewStyle | undefined} />
           </View>
-        )}
-        {config.title != null && (
-          <Text style={styles.title} accessibilityRole="header">
+        ) : null}
+        {config.title != null ? (
+          <Text
+            style={{
+              ...baseTextStyle,
+              ...(titleSurface.style as TextStyle | undefined),
+            }}
+            accessibilityRole="header"
+          >
             {config.title}
           </Text>
-        )}
-        <View style={styles.content}>{children}</View>
+        ) : null}
+        <View style={contentSurface.style as ViewStyle | undefined}>{children}</View>
       </Animated.View>
     </>
   )
 }
-
-function makeCustomStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    backdrop: {
-      backgroundColor: tokens.colors.overlay,
-    },
-    sheet: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: tokens.colors.surface,
-      borderTopLeftRadius: tokens.radius.lg,
-      borderTopRightRadius: tokens.radius.lg,
-      ...tokens.shadows.lg,
-    },
-    handleContainer: {
-      alignItems: 'center',
-      paddingTop: tokens.spacing[2],
-      paddingBottom: tokens.spacing[1],
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      borderRadius: tokens.radius.full,
-      backgroundColor: tokens.colors.border,
-    },
-    title: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[3],
-    },
-    content: {
-      flex: 1,
-    },
-  })
-}
-
-// ── Gorhom adapter component ────────────────────────────────────────────────────
 
 interface GorhomBottomSheetProps {
   config: BottomSheetConfig
@@ -235,17 +292,24 @@ function GorhomBottomSheet({
 }: GorhomBottomSheetProps) {
   const { BottomSheet: GSheet, BottomSheetView, BottomSheetBackdrop } = gorhom
   const sheetRef = useRef<GorhomSheetRef>(null)
+  const {
+    baseTextStyle,
+    panelSurface,
+    handleSurface,
+    titleSurface,
+    contentSurface,
+  } = resolveBottomSheetPresentation(config, tokens)
 
   useEffect(() => {
     if (isOpen) {
       sheetRef.current?.expand()
-    } else {
-      sheetRef.current?.close()
+      return
     }
+
+    sheetRef.current?.close()
   }, [isOpen])
 
   const renderBackdrop = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (props: Record<string, unknown>) => (
       <BottomSheetBackdrop
         {...props}
@@ -259,54 +323,42 @@ function GorhomBottomSheet({
 
   return (
     <GSheet
-      ref={sheetRef}
+      ref={sheetRef as unknown as React.Ref<Record<string, unknown>>}
       index={-1}
       snapPoints={config.snapPoints}
       enablePanDownToClose
       onClose={onClose}
       handleIndicatorStyle={
-        config.showHandle ? { backgroundColor: tokens.colors.border, width: 40 } : { height: 0 }
+        config.showHandle
+          ? (handleSurface.style as ViewStyle | undefined)
+          : { height: 0 }
       }
-      backgroundStyle={{
-        backgroundColor: tokens.colors.surface,
-        borderRadius: tokens.radius.lg,
-      }}
+      backgroundStyle={panelSurface.style as ViewStyle | undefined}
       backdropComponent={renderBackdrop}
     >
-      <BottomSheetView style={{ flex: 1 }}>
-        {config.title != null && (
+      <BottomSheetView style={contentSurface.style as ViewStyle | undefined}>
+        {config.title != null ? (
           <Text
             style={{
-              fontSize: tokens.typography.fontSizeLg,
-              fontWeight: tokens.typography.fontWeightSemibold,
-              color: tokens.colors.text,
-              paddingHorizontal: tokens.spacing[4],
-              paddingVertical: tokens.spacing[3],
+              ...baseTextStyle,
+              ...(titleSurface.style as TextStyle | undefined),
             }}
             accessibilityRole="header"
           >
             {config.title}
           </Text>
-        )}
+        ) : null}
         {children}
       </BottomSheetView>
     </GSheet>
   )
 }
 
-// ── Public component ───────────────────────────────────────────────────────────
-
 export interface BottomSheetProps {
   config: BottomSheetConfig
   children?: ReactNode
 }
 
-/**
- * Config-driven bottom sheet. Open/close via ScreenContext key `__sheet_{id}`.
- *
- * Uses @gorhom/bottom-sheet when available; falls back to a custom
- * Animated + PanResponder implementation when it is not installed.
- */
 export function BottomSheet({ config, children }: BottomSheetProps) {
   const tokens = useTokens()
   const { getValue, setValue } = useScreenContext()

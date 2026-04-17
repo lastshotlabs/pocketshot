@@ -52,4 +52,18 @@ describe('ImageSchema', () => {
     const result = ImageSchema.parse({ src: 'x', alt: 'X', aspectRatio: 1.5 })
     expect(result.aspectRatio).toBe(1.5)
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = ImageSchema.parse({
+      src: 'x',
+      alt: 'X',
+      slots: {
+        pressable: { borderRadius: 'lg' },
+        image: { borderRadius: 'xl' },
+      },
+    })
+
+    expect(result.slots?.pressable?.borderRadius).toBe('lg')
+    expect(result.slots?.image?.borderRadius).toBe('xl')
+  })
 })

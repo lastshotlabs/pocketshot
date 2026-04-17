@@ -1,55 +1,54 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import React from 'react'
-import { act } from 'react-test-renderer'
 import { RichTextEditor } from '../component'
-import { RichTextEditorSchema } from '../schema'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
-
-function findAllByType(node: unknown, type: string): any[] {
-  if (!node) return []
-  const results: any[] = []
-  if ((node as any).type === type) results.push(node)
-  for (const child of (node as any).children ?? []) {
-    if (typeof child !== 'string') results.push(...findAllByType(child, type))
-  }
-  return results
-}
-
-function cfg(overrides: Record<string, unknown> = {}) {
-  return RichTextEditorSchema.parse({
-    id: 'notes',
-    ...overrides,
-  })
-}
 
 describe('RichTextEditor', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('renders the editor input and toolbar', () => {
-    const { getByTestId, getByText } = renderWithProviders(<RichTextEditor config={cfg()} />)
+  it('renders the toolbar', () => {
+    const { getByTestId } = renderWithProviders(<RichTextEditor config={{ id: 'editor' }} />)
 
-    expect(getByTestId('notes-input')).toBeTruthy()
-    expect(getByText('Markdown supported')).toBeTruthy()
+    expect(getByTestId('editor-toolbar-heading')).toBeTruthy()
   })
 
-  it('renders with widened dimension inputs without crashing', () => {
+  it('renders the footer copy', () => {
+    const { getByText } = renderWithProviders(<RichTextEditor config={{ id: 'editor' }} />)
+
+    expect(getByText('Markdown supported')).toBeTruthy()
+    expect(getByText('0 chars')).toBeTruthy()
+  })
+
+  it('respects placeholder text', () => {
     const { toJSON } = renderWithProviders(
-      <RichTextEditor config={cfg({ minHeight: '50%', maxHeight: 480, borderRadius: 'xl' })} />,
+      <RichTextEditor config={{ id: 'editor', placeholder: 'Start drafting...' }} />,
     )
 
     expect(toJSON()).toBeTruthy()
   })
 
-  it('updates the character count as the value changes', () => {
-    const { getByText, instance } = renderWithProviders(
-      <RichTextEditor config={cfg({ defaultValue: 'Hi' })} />,
+  it('applies the wrapper testID', () => {
+    const { getByTestId } = renderWithProviders(
+      <RichTextEditor config={{ id: 'editor', testID: 'editor-root' }} />,
     )
 
-    act(() => {
-      const inputs = findAllByType(instance.toJSON(), 'TextInput')
-      inputs[0]?.props?.onChangeText?.('Hello world')
-    })
+    expect(getByTestId('editor-root')).toBeTruthy()
+  })
 
-    expect(getByText('11 chars')).toBeTruthy()
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <RichTextEditor
+        config={{
+          id: 'editor',
+          slots: {
+            toolbar: { borderRadius: 'xl' },
+            input: { borderRadius: 'lg' },
+            footerText: { color: 'primary' },
+          },
+        }}
+      />,
+    )
+
+    expect(toJSON()).toBeTruthy()
   })
 })

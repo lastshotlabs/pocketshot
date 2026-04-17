@@ -28,9 +28,7 @@ describe('CartItem', () => {
   })
 
   it('renders the quantity value (defaults to 1)', () => {
-    const { getByText } = renderWithProviders(
-      <CartItem config={{ title: 'Widget', price: 10.0 }} />,
-    )
+    const { getByText } = renderWithProviders(<CartItem config={{ title: 'Widget', price: 10.0 }} />)
     expect(getByText('1')).toBeTruthy()
   })
 
@@ -41,8 +39,7 @@ describe('CartItem', () => {
     expect(getByText('3')).toBeTruthy()
   })
 
-  it('renders the line total (price × quantity)', () => {
-    // price=25, qty=3 → total=75 → $75.00
+  it('renders the line total', () => {
     const { getByText } = renderWithProviders(
       <CartItem config={{ title: 'Candle', price: 25.0, quantity: 3 }} />,
     )
@@ -58,8 +55,7 @@ describe('CartItem', () => {
 
   it('does not render variant when omitted', () => {
     const { toJSON } = renderWithProviders(<CartItem config={{ title: 'T-Shirt', price: 19.99 }} />)
-    const json = JSON.stringify(toJSON())
-    expect(json).not.toContain('Size:')
+    expect(JSON.stringify(toJSON())).not.toContain('Size:')
   })
 
   it('renders a remove button when onRemove is provided', () => {
@@ -82,7 +78,7 @@ describe('CartItem', () => {
     expect(getByTestId('cart-item-widget')).toBeTruthy()
   })
 
-  it('derives testID suffixes for decrement/increment buttons from testID', () => {
+  it('derives testID suffixes for decrement and increment buttons from testID', () => {
     const { getByTestId } = renderWithProviders(
       <CartItem config={{ title: 'Widget', price: 10.0, testID: 'ci' }} />,
     )
@@ -132,7 +128,6 @@ describe('CartItem', () => {
     const { toJSON } = renderWithProviders(
       <CartItem config={{ title: 'Baguette', price: 3.5, currency: 'EUR' }} />,
     )
-    // Intl.NumberFormat with EUR contains the numeric amount regardless of locale
     expect(JSON.stringify(toJSON())).toContain('3.50')
   })
 
@@ -140,7 +135,23 @@ describe('CartItem', () => {
     const { toJSON } = renderWithProviders(
       <CartItem config={{ title: 'Mystery Box', price: 20.0 }} />,
     )
-    // The placeholder emoji character should appear in the tree
-    expect(JSON.stringify(toJSON())).toContain('🛍')
+    expect(JSON.stringify(toJSON())).toContain('Cart')
+  })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <CartItem
+        config={{
+          title: 'Widget',
+          price: 10,
+          slots: {
+            row: { borderRadius: 'lg' },
+            quantityButton: { borderRadius: 'md' },
+            total: { color: 'primary' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
   })
 })

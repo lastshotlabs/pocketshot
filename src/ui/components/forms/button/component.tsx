@@ -1,121 +1,35 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native'
+import { View, Text, TouchableOpacity, Animated, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ButtonConfig } from './types'
 
 type Variant = NonNullable<ButtonConfig['variant']>
 type Size = NonNullable<ButtonConfig['size']>
 
-function resolveVariantStyle(
-  variant: Variant,
-  tokens: DesignTokens,
-): { backgroundColor: string; textColor: string; borderColor?: string; borderWidth?: number } {
+function variantBase(variant: Variant) {
   switch (variant) {
     case 'primary':
-      return {
-        backgroundColor: tokens.colors.primary,
-        textColor: tokens.colors.primaryForeground,
-      }
+      return { bg: 'primary', color: 'primaryForeground' }
     case 'secondary':
-      return {
-        backgroundColor: tokens.colors.surface,
-        textColor: tokens.colors.text,
-        borderColor: tokens.colors.border,
-        borderWidth: 1,
-      }
+      return { bg: 'card', color: 'foreground', border: '1px solid border' }
     case 'ghost':
-      return {
-        backgroundColor: 'transparent',
-        textColor: tokens.colors.primary,
-      }
+      return { bg: 'transparent', color: 'primary' }
     case 'outline':
-      return {
-        backgroundColor: 'transparent',
-        textColor: tokens.colors.primary,
-        borderColor: tokens.colors.primary,
-        borderWidth: 1,
-      }
+      return { bg: 'transparent', color: 'primary', border: '1px solid primary' }
     case 'destructive':
-      return {
-        backgroundColor: tokens.colors.destructive,
-        textColor: tokens.colors.destructiveForeground,
-      }
+      return { bg: 'destructive', color: 'destructiveForeground' }
   }
 }
 
-const SIZE_STYLES: Record<Size, { paddingVertical: number; paddingHorizontal: number }> = {
-  sm: { paddingVertical: 8, paddingHorizontal: 12 },
-  md: { paddingVertical: 12, paddingHorizontal: 16 },
-  lg: { paddingVertical: 16, paddingHorizontal: 20 },
-}
-
-const SIZE_FONT_SIZE: Record<Size, keyof DesignTokens['typography']> = {
-  sm: 'fontSizeSm',
-  md: 'fontSizeMd',
-  lg: 'fontSizeLg',
-}
-
-function makeStyles(
-  tokens: DesignTokens,
-  variantStyle: ReturnType<typeof resolveVariantStyle>,
-  size: Size,
-  fullWidth: boolean,
-  isDisabled: boolean,
-) {
-  const sizeStyle = SIZE_STYLES[size]
-  const fontSize = tokens.typography[SIZE_FONT_SIZE[size]] as number
-
-  return StyleSheet.create({
-    touchable: {
-      alignSelf: fullWidth ? 'stretch' : 'flex-start',
-      opacity: isDisabled ? 0.5 : 1,
-    },
-    container: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: sizeStyle.paddingVertical,
-      paddingHorizontal: sizeStyle.paddingHorizontal,
-      borderRadius: tokens.radius.md,
-      backgroundColor: variantStyle.backgroundColor,
-      ...(variantStyle.borderColor
-        ? { borderColor: variantStyle.borderColor, borderWidth: variantStyle.borderWidth ?? 1 }
-        : {}),
-      ...(variantStyle.backgroundColor !== 'transparent'
-        ? tokens.shadows.sm
-        : {}),
-    },
-    label: {
-      fontSize,
-      color: variantStyle.textColor,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-    iconLeft: {
-      fontSize,
-      color: variantStyle.textColor,
-      marginRight: tokens.spacing[2],
-    },
-    iconRight: {
-      fontSize,
-      color: variantStyle.textColor,
-      marginLeft: tokens.spacing[2],
-    },
-    loadingDot: {
-      width: 8,
-      height: 8,
-      borderRadius: tokens.radius.full,
-      backgroundColor: variantStyle.textColor,
-      marginHorizontal: tokens.spacing[1],
-    },
-    loadingRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-  })
+const SIZE_BASE: Record<Size, { paddingY: 'sm' | 'md' | 'lg'; paddingX: 'sm' | 'md' | 'lg'; fontSize: 'sm' | 'base' | 'lg' }> = {
+  sm: { paddingY: 'sm', paddingX: 'sm', fontSize: 'sm' },
+  md: { paddingY: 'md', paddingX: 'md', fontSize: 'base' },
+  lg: { paddingY: 'lg', paddingX: 'lg', fontSize: 'lg' },
 }
 
 function LoadingIndicator({ color }: { color: string }) {
@@ -124,16 +38,8 @@ function LoadingIndicator({ color }: { color: string }) {
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.4,
-          duration: 500,
-          useNativeDriver: true,
-        }),
+        Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 500, useNativeDriver: true }),
       ]),
     )
     animation.start()
@@ -142,36 +48,19 @@ function LoadingIndicator({ color }: { color: string }) {
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Animated.View
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: color,
-          marginHorizontal: 2,
-          opacity,
-        }}
-      />
-      <Animated.View
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: color,
-          marginHorizontal: 2,
-          opacity,
-        }}
-      />
-      <Animated.View
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: color,
-          marginHorizontal: 2,
-          opacity,
-        }}
-      />
+      {Array.from({ length: 3 }).map((_, index) => (
+        <Animated.View
+          key={index}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: color,
+            marginHorizontal: 2,
+            opacity,
+          }}
+        />
+      ))}
     </View>
   )
 }
@@ -179,15 +68,14 @@ function LoadingIndicator({ color }: { color: string }) {
 export function Button({ config }: { config: ButtonConfig }) {
   const tokens = useTokens()
   const { dispatch, values } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   const resolvedLabel = isFromRef(config.label)
     ? String(resolveFromRef(config.label, values) ?? '')
     : config.label
-
   const resolvedLoading = isFromRef(config.loading)
     ? Boolean(resolveFromRef(config.loading, values))
     : Boolean(config.loading)
-
   const resolvedDisabled = isFromRef(config.disabled)
     ? Boolean(resolveFromRef(config.disabled, values))
     : Boolean(config.disabled)
@@ -195,55 +83,126 @@ export function Button({ config }: { config: ButtonConfig }) {
   const variant = config.variant ?? 'primary'
   const size = config.size ?? 'md'
   const fullWidth = config.fullWidth ?? false
+  const activeStates: RuntimeSurfaceState[] | undefined =
+    resolvedDisabled || resolvedLoading ? ['disabled'] : undefined
 
-  const variantStyle = useMemo(
-    () => resolveVariantStyle(variant, tokens),
-    [variant, tokens],
-  )
+  const variantTokens = useMemo(() => variantBase(variant), [variant])
+  const buttonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 'md',
+      shadow: variantTokens.bg !== 'transparent' ? 'sm' : undefined,
+      alignSelf: fullWidth ? 'stretch' : 'start',
+      opacity: resolvedDisabled || resolvedLoading ? 0.5 : 1,
+      ...SIZE_BASE[size],
+      ...variantTokens,
+    },
+    componentSurface: config.slots?.button as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: SIZE_BASE[size].fontSize,
+      fontWeight: 'semibold',
+      color: variantTokens.color,
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const iconLeftSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: SIZE_BASE[size].fontSize,
+      color: variantTokens.color,
+      marginRight: 'xs',
+    },
+    componentSurface: config.slots?.iconLeft as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const iconRightSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: SIZE_BASE[size].fontSize,
+      color: variantTokens.color,
+      marginLeft: 'xs',
+    },
+    componentSurface: config.slots?.iconRight as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const loadingSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.loading as Record<string, unknown> | undefined,
+    activeStates,
+  })
 
-  const styles = useMemo(
-    () => makeStyles(tokens, variantStyle, size, fullWidth, resolvedDisabled || resolvedLoading),
-    [tokens, variantStyle, size, fullWidth, resolvedDisabled, resolvedLoading],
-  )
+  const textBase: TextStyle = {
+    ...sharedTextStyle,
+  }
 
   const handlePress = useCallback(async () => {
     if (resolvedDisabled || resolvedLoading) return
     await dispatch({ type: 'haptic', style: 'light' })
     await dispatch(config.onPress)
-  }, [resolvedDisabled, resolvedLoading, dispatch, config.onPress])
-
-  const isInteractable = !resolvedDisabled && !resolvedLoading
+  }, [config.onPress, dispatch, resolvedDisabled, resolvedLoading])
 
   return (
     <ComponentWrapper
       id={config.id}
       testID={config.testID}
       config={config}
-      activeStates={resolvedDisabled || resolvedLoading ? ['disabled'] : undefined}
+      activeStates={activeStates}
     >
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.75}
-        disabled={!isInteractable}
-        style={styles.touchable}
+        disabled={resolvedDisabled || resolvedLoading}
         accessibilityRole="button"
         accessibilityLabel={resolvedLabel}
         accessibilityState={{ disabled: resolvedDisabled || resolvedLoading, busy: resolvedLoading }}
         testID={config.testID ? `${config.testID}-button` : undefined}
       >
-        <View style={styles.container}>
+        <View style={buttonSurface.style as ViewStyle | undefined}>
           {resolvedLoading ? (
-            <LoadingIndicator color={variantStyle.textColor} />
+            <View style={loadingSurface.style as ViewStyle | undefined}>
+              <LoadingIndicator color={tokens.colors[variantTokens.color as keyof typeof tokens.colors] ?? tokens.colors.primaryForeground} />
+            </View>
           ) : (
             <>
               {config.iconLeft ? (
-                <Text style={styles.iconLeft} accessibilityElementsHidden>
+                <Text
+                  style={{
+                    ...textBase,
+                    ...(iconLeftSurface.style as TextStyle | undefined),
+                  }}
+                  accessibilityElementsHidden
+                >
                   {config.iconLeft}
                 </Text>
               ) : null}
-              <Text style={styles.label}>{resolvedLabel}</Text>
+              <Text
+                style={{
+                  ...textBase,
+                  ...(labelSurface.style as TextStyle | undefined),
+                }}
+              >
+                {resolvedLabel}
+              </Text>
               {config.iconRight ? (
-                <Text style={styles.iconRight} accessibilityElementsHidden>
+                <Text
+                  style={{
+                    ...textBase,
+                    ...(iconRightSurface.style as TextStyle | undefined),
+                  }}
+                  accessibilityElementsHidden
+                >
                   {config.iconRight}
                 </Text>
               ) : null}

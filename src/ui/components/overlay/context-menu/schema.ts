@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -18,4 +18,13 @@ export const ContextMenuSchema = extendComponentSchema({
     }),
   ),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'backdrop',
+    'panel',
+    'item',
+    'itemIcon',
+    'itemLabel',
+    'separator',
+  ]).optional(),
 })

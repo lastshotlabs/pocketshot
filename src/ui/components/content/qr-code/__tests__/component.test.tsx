@@ -44,4 +44,19 @@ describe('QrCode', () => {
 
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <QrCode
+        config={cfg({
+          slots: {
+            container: { borderRadius: 'xl' },
+            caption: { color: 'primary' },
+          },
+        })}
+      />,
+    )
+
+    expect(toJSON()).toBeTruthy()
+  })
 })

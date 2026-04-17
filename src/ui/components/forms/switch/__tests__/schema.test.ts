@@ -34,4 +34,17 @@ describe('SwitchSchema', () => {
   it('rejects non-boolean disabled', () => {
     expect(SwitchSchema.safeParse({ id: 'x', disabled: 'true' }).success).toBe(false)
   })
+
+  it('accepts slot surfaces', () => {
+    const result = SwitchSchema.parse({
+      id: 'notify',
+      slots: {
+        row: { paddingY: 'sm' },
+        label: { letterSpacing: 'wide' },
+      },
+    })
+
+    expect(result.slots?.row?.paddingY).toBe('sm')
+    expect(result.slots?.label?.letterSpacing).toBe('wide')
+  })
 })

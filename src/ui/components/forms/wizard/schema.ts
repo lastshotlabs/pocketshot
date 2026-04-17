@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -26,16 +26,60 @@ export const WizardStepSchema = z.object({
 export const WizardSchema = extendComponentSchema({
   id: z.string(),
   steps: z.array(WizardStepSchema),
-  title: z.string().optional(),
-  nextLabel: z.string().optional().default('Next'),
-  backLabel: z.string().optional().default('Back'),
-  submitLabel: z.string().optional().default('Submit'),
-  cancelLabel: z.string().optional().default('Cancel'),
+  title: z.union([z.string(), FromRefSchema]).optional(),
+  nextLabel: z.union([z.string(), FromRefSchema]).optional().default('Next'),
+  backLabel: z.union([z.string(), FromRefSchema]).optional().default('Back'),
+  submitLabel: z.union([z.string(), FromRefSchema]).optional().default('Submit'),
+  cancelLabel: z.union([z.string(), FromRefSchema]).optional().default('Cancel'),
   showProgress: z.boolean().optional().default(true),
   onComplete: ActionSchema.optional(),
   onCancel: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'keyboardAvoid',
+    'container',
+    'header',
+    'title',
+    'progressRow',
+    'progressDots',
+    'progressDot',
+    'progressText',
+    'stepContent',
+    'scrollView',
+    'scrollContent',
+    'stepTitle',
+    'stepDescription',
+    'fieldsContainer',
+    'fieldContainer',
+    'fieldLabel',
+    'required',
+    'fieldInput',
+    'fieldError',
+    'fieldHelper',
+    'checkboxRow',
+    'checkboxBox',
+    'checkboxMark',
+    'checkboxLabel',
+    'selectTrigger',
+    'selectTriggerText',
+    'chevron',
+    'buttonRow',
+    'buttonSpacer',
+    'buttonRight',
+    'button',
+    'primaryButton',
+    'outlineButton',
+    'ghostButton',
+    'buttonText',
+    'selectBackdrop',
+    'selectSheet',
+    'selectSheetInner',
+    'selectSheetTitle',
+    'selectOption',
+    'selectOptionText',
+    'checkmark',
+  ]).optional(),
 })
 
-// Re-export for convenience
 export { FromRefSchema }

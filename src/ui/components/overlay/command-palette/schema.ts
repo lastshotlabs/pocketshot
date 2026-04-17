@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -19,5 +19,26 @@ export const CommandPaletteSchema = extendComponentSchema({
     }),
   ),
   maxResults: z.number().optional().default(20),
-  testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'backdrop',
+    'container',
+    'panel',
+    'searchContainer',
+    'searchIcon',
+    'searchInput',
+    'clearButton',
+    'clearText',
+    'groupHeader',
+    'groupLabel',
+    'itemRow',
+    'itemIcon',
+    'itemContent',
+    'itemLabel',
+    'itemDescription',
+    'itemShortcut',
+    'emptyContainer',
+    'emptyText',
+    'separator',
+  ]).optional(),
 })

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -23,5 +23,18 @@ export const TopBarSchema = extendComponentSchema({
   rightActions: z.array(RightActionSchema).max(3).optional(),
   transparent: z.boolean().optional().default(false),
   elevated: z.boolean().optional().default(true),
-  testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'row',
+    'left',
+    'center',
+    'right',
+    'iconButton',
+    'iconText',
+    'title',
+    'subtitle',
+    'badgeContainer',
+    'badge',
+    'badgeText',
+  ]).optional(),
 })

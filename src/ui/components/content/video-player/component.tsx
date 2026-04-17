@@ -1,20 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  View,
+  ActivityIndicator,
+  Animated,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Animated,
-  ActivityIndicator,
+  View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { VideoPlayerConfig } from './types'
-
-// ── Optional peer dep: expo-av ────────────────────────────────────────────────
 
 interface VideoStatus {
   isLoaded: boolean
@@ -59,53 +59,85 @@ try {
   ExpoVideo = mod.Video
   ResizeMode = mod.ResizeMode
 } catch {
-  // expo-av not installed
+  // expo-av is optional
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatTime(millis: number): string {
-  const totalSeconds = Math.floor(millis / 1000)
+function formatTime(milliseconds: number): string {
+  const totalSeconds = Math.floor(milliseconds / 1000)
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
   return `${minutes}:${String(seconds).padStart(2, '0')}`
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+function resolveSlotSurface(
+  config: VideoPlayerConfig,
+  tokens: DesignTokens,
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
+}
+
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
 
 export function VideoPlayer({ config }: { config: VideoPlayerConfig }) {
   const tokens = useTokens()
   const { values } = useScreenContext()
 
-  const source = resolveFromRef(config.source, values) as string
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const source = String(resolveFromRef(config.source, values) ?? '')
+  const poster =
+    config.poster != null ? String(resolveFromRef(config.poster, values) ?? '') : undefined
   const autoPlay = config.autoPlay ?? false
   const loop = config.loop ?? false
   const initialMuted = config.muted ?? false
   const showControls = config.controls ?? true
   const aspectRatio = config.aspectRatio ?? 16 / 9
 
-  const videoRef = useRef<VideoRef>(null)
+  const videoRef = useRef<VideoRef | null>(null)
+  const controlsOpacity = useRef(new Animated.Value(1)).current
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [isPlaying, setIsPlaying] = useState(autoPlay)
   const [isMuted, setIsMuted] = useState(initialMuted)
   const [position, setPosition] = useState(0)
   const [duration, setDuration] = useState(0)
   const [loading, setLoading] = useState(true)
   const [controlsVisible, setControlsVisible] = useState(true)
-  const controlsOpacity = useRef(new Animated.Value(1)).current
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [progressWidth, setProgressWidth] = useState(1)
+
+  const testId = config.testID ?? config.id ?? 'video-player'
+  const progress = duration > 0 ? position / duration : 0
 
   const scheduleHideControls = useCallback(() => {
-    if (hideTimer.current) clearTimeout(hideTimer.current)
-    if (isPlaying) {
-      hideTimer.current = setTimeout(() => {
-        Animated.timing(controlsOpacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }).start(() => setControlsVisible(false))
-      }, 3000)
+    if (hideTimer.current != null) {
+      clearTimeout(hideTimer.current)
     }
-  }, [isPlaying, controlsOpacity])
+
+    if (!isPlaying) {
+      return
+    }
+
+    hideTimer.current = setTimeout(() => {
+      Animated.timing(controlsOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setControlsVisible(false))
+    }, 3000)
+  }, [controlsOpacity, isPlaying])
 
   const showControlsOverlay = useCallback(() => {
     setControlsVisible(true)
@@ -114,68 +146,208 @@ export function VideoPlayer({ config }: { config: VideoPlayerConfig }) {
   }, [controlsOpacity, scheduleHideControls])
 
   useEffect(() => {
-    if (isPlaying) scheduleHideControls()
+    if (isPlaying) {
+      scheduleHideControls()
+    }
+
     return () => {
-      if (hideTimer.current) clearTimeout(hideTimer.current)
+      if (hideTimer.current != null) {
+        clearTimeout(hideTimer.current)
+      }
     }
   }, [isPlaying, scheduleHideControls])
 
+  const handleStatusUpdate = useCallback((status: VideoStatus) => {
+    if (!status.isLoaded) {
+      return
+    }
+
+    setIsPlaying(status.isPlaying ?? false)
+    setPosition(status.positionMillis ?? 0)
+    setIsMuted(status.isMuted ?? false)
+
+    if (status.durationMillis != null && status.durationMillis > 0) {
+      setDuration(status.durationMillis)
+    }
+
+    if (status.didJustFinish && !loop) {
+      setIsPlaying(false)
+      setPosition(0)
+      setControlsVisible(true)
+      controlsOpacity.setValue(1)
+    }
+  }, [controlsOpacity, loop])
+
   const handlePlayPause = useCallback(async () => {
-    if (videoRef.current == null) return
+    if (videoRef.current == null) {
+      return
+    }
+
     if (isPlaying) {
       await videoRef.current.pauseAsync()
-    } else {
-      await videoRef.current.playAsync()
+      return
     }
+
+    await videoRef.current.playAsync()
   }, [isPlaying])
 
   const handleMuteToggle = useCallback(async () => {
-    if (videoRef.current == null) return
+    if (videoRef.current == null) {
+      return
+    }
+
     await videoRef.current.setIsMutedAsync(!isMuted)
-    setIsMuted(!isMuted)
+    setIsMuted((current) => !current)
   }, [isMuted])
 
   const handleFullscreen = useCallback(async () => {
-    if (videoRef.current == null) return
+    if (videoRef.current == null) {
+      return
+    }
+
     await videoRef.current.presentFullscreenPlayer()
   }, [])
 
   const handleSeek = useCallback(
     async (ratio: number) => {
-      if (videoRef.current == null || duration === 0) return
-      const newPos = Math.floor(ratio * duration)
-      await videoRef.current.setPositionAsync(newPos)
+      if (videoRef.current == null || duration <= 0) {
+        return
+      }
+
+      const boundedRatio = Math.max(0, Math.min(1, ratio))
+      await videoRef.current.setPositionAsync(Math.floor(boundedRatio * duration))
     },
     [duration],
   )
 
-  const handleStatusUpdate = useCallback((status: VideoStatus) => {
-    if (!status.isLoaded) return
-    setIsPlaying(status.isPlaying ?? false)
-    setPosition(status.positionMillis ?? 0)
-    if (status.durationMillis != null && status.durationMillis > 0) {
-      setDuration(status.durationMillis)
-    }
-  }, [])
+  const containerSurface = resolveSlotSurface(config, tokens, 'container', {
+    borderRadius: 'lg',
+    overflow: 'hidden',
+    backgroundColor: '#000000',
+  })
+  const videoWrapperSurface = resolveSlotSurface(config, tokens, 'videoWrapper', {
+    width: '100%',
+    aspectRatio,
+  })
+  const loadingOverlaySurface = resolveSlotSurface(config, tokens, 'loadingOverlay', {
+    position: 'absolute',
+    inset: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  })
+  const videoSurface = resolveSlotSurface(config, tokens, 'video', {
+    width: '100%',
+    height: '100%',
+  })
+  const centerPlayButtonSurface = resolveSlotSurface(config, tokens, 'centerPlayButton', {
+    width: 64,
+    height: 64,
+    borderRadius: 'full',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  })
+  const centerPlayIconSurface = resolveSlotSurface(config, tokens, 'centerPlayIcon', {
+    color: '#FFFFFF',
+    fontSize: 'base',
+    fontWeight: 'bold',
+  })
+  const bottomBarSurface = resolveSlotSurface(config, tokens, 'bottomBar', {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingX: 'md',
+    paddingY: 'sm',
+    gap: 'sm',
+  })
+  const timeTextSurface = resolveSlotSurface(config, tokens, 'timeText', {
+    color: '#FFFFFF',
+    fontSize: 'xs',
+    minWidth: 36,
+  })
+  const progressContainerSurface = resolveSlotSurface(config, tokens, 'progressContainer', {
+    flex: 1,
+    height: 24,
+    justifyContent: 'center',
+  })
+  const progressTrackSurface = resolveSlotSurface(config, tokens, 'progressTrack', {
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 2,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  })
+  const progressFillSurface = resolveSlotSurface(config, tokens, 'progressFill', {
+    backgroundColor: tokens.colors.primary,
+  })
+  const controlButtonSurface = resolveSlotSurface(config, tokens, 'controlButton', {
+    padding: 'xs',
+  })
+  const controlIconSurface = resolveSlotSurface(config, tokens, 'controlIcon', {
+    color: '#FFFFFF',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+  })
+  const fallbackContainerSurface = resolveSlotSurface(config, tokens, 'fallbackContainer', {
+    borderRadius: 'lg',
+    overflow: 'hidden',
+  })
+  const fallbackSurface = resolveSlotSurface(config, tokens, 'fallback', {
+    backgroundColor: tokens.colors.surfaceAlt,
+    padding: 'xl',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 'lg',
+    border: '1 border',
+  })
+  const fallbackIconSurface = resolveSlotSurface(config, tokens, 'fallbackIcon', {
+    color: 'muted',
+    fontSize: 'base',
+    fontWeight: 'bold',
+    marginBottom: 'md',
+  })
+  const fallbackTitleSurface = resolveSlotSurface(config, tokens, 'fallbackTitle', {
+    color: 'foreground',
+    fontSize: 'lg',
+    fontWeight: 'semibold',
+    marginBottom: 'sm',
+  })
+  const fallbackMessageSurface = resolveSlotSurface(config, tokens, 'fallbackMessage', {
+    color: 'muted',
+    fontSize: 'sm',
+    textAlign: 'center',
+    marginBottom: 'sm',
+  })
+  const fallbackCommandSurface = resolveSlotSurface(config, tokens, 'fallbackCommand', {
+    color: 'primary',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+    backgroundColor: tokens.colors.surface,
+    paddingX: 'md',
+    paddingY: 'sm',
+    borderRadius: 'md',
+  })
 
-  const progress = duration > 0 ? position / duration : 0
-  const styles = useMemo(() => makeStyles(tokens, aspectRatio), [tokens, aspectRatio])
-  const testId = config.testID ?? config.id
-
-  // Fallback when expo-av is not installed
   if (ExpoVideo == null) {
     return (
       <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <View testID={testId} style={styles.fallbackContainer}>
-          <View style={styles.fallback}>
-            <Text style={styles.fallbackIcon} accessibilityElementsHidden>
-              {'\u25B6'}
+        <View style={fallbackContainerSurface.style as ViewStyle | undefined} testID={testId}>
+          <View style={fallbackSurface.style as ViewStyle | undefined}>
+            <Text style={mergeTextStyle(sharedTextStyle, fallbackIconSurface)}>Video</Text>
+            <Text style={mergeTextStyle(sharedTextStyle, fallbackTitleSurface)}>
+              Video Player
             </Text>
-            <Text style={styles.fallbackTitle}>Video Player</Text>
-            <Text style={styles.fallbackMessage}>
-              expo-av is required for video playback.{'\n'}Install it with:
+            <Text style={mergeTextStyle(sharedTextStyle, fallbackMessageSurface)}>
+              {'expo-av is required for video playback.\nInstall it with:'}
             </Text>
-            <Text style={styles.fallbackCommand}>npx expo install expo-av</Text>
+            <Text style={mergeTextStyle(sharedTextStyle, fallbackCommandSurface)}>
+              npx expo install expo-av
+            </Text>
           </View>
         </View>
       </ComponentWrapper>
@@ -184,11 +356,11 @@ export function VideoPlayer({ config }: { config: VideoPlayerConfig }) {
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View testID={testId} style={styles.container}>
+      <View style={containerSurface.style as ViewStyle | undefined} testID={testId}>
         <TouchableOpacity
           activeOpacity={1}
           onPress={showControlsOverlay}
-          style={styles.videoWrapper}
+          style={videoWrapperSurface.style as ViewStyle | undefined}
           accessibilityRole="button"
           accessibilityLabel="Video player"
           accessibilityHint="Tap to show controls"
@@ -197,225 +369,111 @@ export function VideoPlayer({ config }: { config: VideoPlayerConfig }) {
           <ExpoVideo
             ref={videoRef as React.Ref<VideoRef>}
             source={{ uri: source }}
-            posterSource={config.poster ? { uri: config.poster } : undefined}
-            usePoster={config.poster != null}
+            posterSource={poster != null ? { uri: poster } : undefined}
+            usePoster={poster != null}
             shouldPlay={autoPlay}
             isLooping={loop}
             isMuted={initialMuted}
             resizeMode={ResizeMode?.CONTAIN ?? 'contain'}
-            style={styles.video}
+            style={videoSurface.style}
             onPlaybackStatusUpdate={handleStatusUpdate}
             onLoadStart={() => setLoading(true)}
             onLoad={() => setLoading(false)}
           />
 
-          {loading && (
-            <View style={styles.loadingOverlay}>
+          {loading ? (
+            <View style={loadingOverlaySurface.style as ViewStyle | undefined}>
               <ActivityIndicator color="#ffffff" size="large" testID={`${testId}-loading`} />
             </View>
-          )}
+          ) : null}
 
-          {/* Controls overlay */}
-          {showControls && controlsVisible && (
-            <Animated.View style={[styles.controlsOverlay, { opacity: controlsOpacity }]}>
-              {/* Center play/pause */}
+          {showControls && controlsVisible ? (
+            <Animated.View
+              style={[
+                {
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+                { opacity: controlsOpacity },
+              ]}
+            >
               <TouchableOpacity
                 onPress={() => void handlePlayPause()}
-                style={styles.centerPlayButton}
+                style={centerPlayButtonSurface.style as ViewStyle | undefined}
                 accessibilityRole="button"
                 accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
                 testID={`${testId}-play-pause`}
                 activeOpacity={0.7}
               >
-                <Text style={styles.centerPlayIcon}>
-                  {isPlaying ? '\u23F8' : '\u25B6'}
+                <Text style={mergeTextStyle(sharedTextStyle, centerPlayIconSurface)}>
+                  {isPlaying ? '||' : '>'}
                 </Text>
               </TouchableOpacity>
 
-              {/* Bottom bar */}
-              <View style={styles.bottomBar}>
-                <Text style={styles.timeText}>{formatTime(position)}</Text>
+              <View style={bottomBarSurface.style as ViewStyle | undefined}>
+                <Text style={mergeTextStyle(sharedTextStyle, timeTextSurface)}>
+                  {formatTime(position)}
+                </Text>
 
-                {/* Progress bar */}
                 <TouchableOpacity
-                  style={styles.progressContainer}
+                  style={progressContainerSurface.style as ViewStyle | undefined}
                   activeOpacity={1}
-                  onPress={(e) => {
-                    const { locationX } = e.nativeEvent
-                    const width = styles.progressContainer.flex ?? 1
-                    // Approximate: use the locationX vs container width
-                    void handleSeek(locationX / (typeof width === 'number' ? width : 200))
-                  }}
+                  onLayout={(event) => setProgressWidth(event.nativeEvent.layout.width || 1)}
+                  onPress={(event) => void handleSeek(event.nativeEvent.locationX / progressWidth)}
                   accessibilityRole="adjustable"
-                  accessibilityLabel={`Progress: ${Math.round(progress * 100)}%`}
+                  accessibilityLabel={`Progress ${Math.round(progress * 100)} percent`}
                   testID={`${testId}-progress`}
                 >
-                  <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { flex: progress }]} />
+                  <View style={progressTrackSurface.style as ViewStyle | undefined}>
+                    <View
+                      style={[
+                        progressFillSurface.style as ViewStyle | undefined,
+                        { flex: progress },
+                      ]}
+                    />
                     <View style={{ flex: 1 - progress }} />
                   </View>
                 </TouchableOpacity>
 
-                <Text style={styles.timeText}>{formatTime(duration)}</Text>
+                <Text style={mergeTextStyle(sharedTextStyle, timeTextSurface)}>
+                  {formatTime(duration)}
+                </Text>
 
-                {/* Mute toggle */}
                 <TouchableOpacity
                   onPress={() => void handleMuteToggle()}
-                  style={styles.controlButton}
+                  style={controlButtonSurface.style as ViewStyle | undefined}
                   accessibilityRole="button"
                   accessibilityLabel={isMuted ? 'Unmute' : 'Mute'}
                   testID={`${testId}-mute`}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.controlIcon}>
-                    {isMuted ? '\u{1F507}' : '\u{1F50A}'}
+                  <Text style={mergeTextStyle(sharedTextStyle, controlIconSurface)}>
+                    {isMuted ? 'Mute' : 'Sound'}
                   </Text>
                 </TouchableOpacity>
 
-                {/* Fullscreen */}
                 <TouchableOpacity
                   onPress={() => void handleFullscreen()}
-                  style={styles.controlButton}
+                  style={controlButtonSurface.style as ViewStyle | undefined}
                   accessibilityRole="button"
                   accessibilityLabel="Fullscreen"
                   testID={`${testId}-fullscreen`}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.controlIcon}>{'\u26F6'}</Text>
+                  <Text style={mergeTextStyle(sharedTextStyle, controlIconSurface)}>
+                    Full
+                  </Text>
                 </TouchableOpacity>
               </View>
             </Animated.View>
-          )}
+          ) : null}
         </TouchableOpacity>
       </View>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, aspectRatio: number) {
-  return StyleSheet.create({
-    container: {
-      borderRadius: tokens.radius.lg,
-      overflow: 'hidden',
-      backgroundColor: '#000000',
-    },
-    videoWrapper: {
-      aspectRatio,
-      width: '100%',
-    },
-    video: {
-      width: '100%',
-      height: '100%',
-    },
-    loadingOverlay: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    controlsOverlay: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    centerPlayButton: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    centerPlayIcon: {
-      color: '#ffffff',
-      fontSize: 28,
-    },
-    bottomBar: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-      gap: tokens.spacing[2],
-    },
-    timeText: {
-      color: '#ffffff',
-      fontSize: tokens.typography.fontSizeXs,
-      fontVariant: ['tabular-nums'],
-      minWidth: 36,
-    },
-    progressContainer: {
-      flex: 1,
-      height: 24,
-      justifyContent: 'center',
-    },
-    progressTrack: {
-      height: 3,
-      backgroundColor: 'rgba(255,255,255,0.3)',
-      borderRadius: 2,
-      flexDirection: 'row',
-      overflow: 'hidden',
-    },
-    progressFill: {
-      backgroundColor: tokens.colors.primary,
-    },
-    controlButton: {
-      padding: tokens.spacing[1],
-    },
-    controlIcon: {
-      color: '#ffffff',
-      fontSize: tokens.typography.fontSizeMd,
-    },
-    fallbackContainer: {
-      borderRadius: tokens.radius.lg,
-      overflow: 'hidden',
-    },
-    fallback: {
-      backgroundColor: tokens.colors.surfaceAlt,
-      padding: tokens.spacing[8],
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: tokens.radius.lg,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-    },
-    fallbackIcon: {
-      fontSize: 36,
-      color: tokens.colors.textMuted,
-      marginBottom: tokens.spacing[3],
-    },
-    fallbackTitle: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[2],
-    },
-    fallbackMessage: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      textAlign: 'center',
-      marginBottom: tokens.spacing[2],
-    },
-    fallbackCommand: {
-      fontFamily: 'monospace',
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.primary,
-      backgroundColor: tokens.colors.surface,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-      borderRadius: tokens.radius.md,
-      overflow: 'hidden',
-    },
-  })
-}
-

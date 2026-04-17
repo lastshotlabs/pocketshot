@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, Switch as RNSwitch, StyleSheet } from 'react-native'
+import { View, Text, Switch as RNSwitch, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { SwitchConfig } from './types'
 
 export function Switch({ config }: { config: SwitchConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   const resolvedValue = config.value != null ? resolveFromRef(config.value, values) : undefined
 
@@ -23,7 +25,33 @@ export function Switch({ config }: { config: SwitchConfig }) {
     }
   }, [resolvedValue])
 
-  const styles = makeStyles(tokens)
+  const activeStates: RuntimeSurfaceState[] | undefined = [
+    ...(localValue ? (['selected'] as const) : []),
+    ...(config.disabled ? (['disabled'] as const) : []),
+  ]
+
+  const rowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'between',
+      paddingY: 'xs',
+    },
+    componentSurface: config.slots?.row as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      fontSize: 'base',
+      color: 'foreground',
+      marginRight: 'sm',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+    activeStates,
+  })
 
   function handleChange(next: boolean) {
     setLocalValue(next)
@@ -34,13 +62,19 @@ export function Switch({ config }: { config: SwitchConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.row}>
-        {config.label != null && (
-          <Text style={styles.label} accessibilityRole="text">
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
+      <View style={rowSurface.style as ViewStyle | undefined}>
+        {config.label != null ? (
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(labelSurface.style as TextStyle | undefined),
+            }}
+            accessibilityRole="text"
+          >
             {config.label}
           </Text>
-        )}
+        ) : null}
         <RNSwitch
           value={localValue}
           onValueChange={handleChange}
@@ -60,21 +94,3 @@ export function Switch({ config }: { config: SwitchConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingVertical: tokens.spacing[2],
-    },
-    label: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-      marginRight: tokens.spacing[3],
-    },
-  })
-}
-

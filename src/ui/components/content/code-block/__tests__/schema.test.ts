@@ -32,4 +32,19 @@ describe('CodeBlockSchema', () => {
     expect(result.color).toBe('muted')
     expect(result.fontSize).toBe('lg')
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = CodeBlockSchema.parse({
+      code: 'const x = 1',
+      slots: {
+        container: { borderRadius: 'xl' },
+        header: { paddingY: 'sm' },
+        codeLine: { color: 'primary' },
+      },
+    })
+
+    expect(result.slots?.container?.borderRadius).toBe('xl')
+    expect(result.slots?.header?.paddingY).toBe('sm')
+    expect(result.slots?.codeLine?.color).toBe('primary')
+  })
 })

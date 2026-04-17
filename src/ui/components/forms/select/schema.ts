@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -17,4 +17,19 @@ export const SelectSchema = extendComponentSchema({
   value: z.union([z.string(), FromRefSchema]).optional(),
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'container',
+    'label',
+    'trigger',
+    'triggerText',
+    'chevron',
+    'backdrop',
+    'sheet',
+    'sheetInner',
+    'sheetTitle',
+    'option',
+    'optionText',
+    'checkmark',
+  ]).optional(),
 })

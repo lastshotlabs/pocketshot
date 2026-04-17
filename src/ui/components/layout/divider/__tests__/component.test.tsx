@@ -45,4 +45,19 @@ describe('Divider', () => {
     const { getByRole } = renderWithProviders(<Divider config={{}} />)
     expect(getByRole('none')).toBeTruthy()
   })
+
+  it('renders line slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Divider
+        config={{
+          slots: {
+            line: {
+              bg: 'border',
+            },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

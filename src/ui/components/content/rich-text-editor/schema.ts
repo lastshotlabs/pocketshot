@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { dimensionValueSchema, extendComponentSchema } from '../../_base/schema'
+import { dimensionValueSchema, extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -28,4 +28,15 @@ export const RichTextEditorSchema = extendComponentSchema({
   minHeight: dimensionValueSchema.optional().default(120),
   maxHeight: dimensionValueSchema.optional().default(400),
   onChangeAction: ActionSchema.optional(),
+  slots: slotsSchema([
+    'root',
+    'toolbar',
+    'toolbarContent',
+    'toolbarSeparator',
+    'toolbarButton',
+    'toolbarLabel',
+    'input',
+    'footer',
+    'footerText',
+  ]).optional(),
 })

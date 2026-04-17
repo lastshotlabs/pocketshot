@@ -105,4 +105,24 @@ describe('Link', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Link
+        config={{
+          text: 'Styled link',
+          action: { type: 'open-url', url: 'https://example.com' },
+          slots: {
+            button: {
+              paddingY: 'sm',
+            },
+            text: {
+              letterSpacing: 'wide',
+            },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

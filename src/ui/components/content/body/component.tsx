@@ -1,11 +1,10 @@
 import React from 'react'
-import { Text, StyleSheet } from 'react-native'
+import { Text, type TextStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { BodyConfig } from './types'
 
 export function Body({ config }: { config: BodyConfig }) {
@@ -13,12 +12,28 @@ export function Body({ config }: { config: BodyConfig }) {
   const { values } = useScreenContext()
 
   const text = resolveFromRef(config.text, values) as string
-  const styles = makeStyles(tokens, config)
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const textSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      fontWeight: 'normal',
+      color: 'foreground',
+      textAlign: 'left',
+      lineHeight: 'normal',
+    },
+    componentSurface: config.slots?.text as Record<string, unknown> | undefined,
+  })
+
+  const style: TextStyle = {
+    ...sharedTextStyle,
+    ...(textSurface.style as TextStyle | undefined),
+  }
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <Text
-        style={styles.body}
+        style={style}
         numberOfLines={config.numberOfLines}
         accessibilityRole="text"
         testID={config.testID ?? config.id}
@@ -28,21 +43,3 @@ export function Body({ config }: { config: BodyConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, config: BodyConfig) {
-  const textStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-  const fontSize =
-    typeof textStyle.fontSize === 'number' ? textStyle.fontSize : tokens.typography.fontSizeMd
-
-  return StyleSheet.create({
-    body: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightRegular,
-      color: tokens.colors.text,
-      textAlign: 'left',
-      lineHeight: fontSize * tokens.typography.lineHeightNormal,
-      ...textStyle,
-    },
-  })
-}
-

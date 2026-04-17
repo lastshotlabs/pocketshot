@@ -32,4 +32,19 @@ describe('ModalSchema', () => {
     const result = ModalSchema.parse({ id: 'x', title: 'Confirm Action' })
     expect(result.title).toBe('Confirm Action')
   })
+
+  it('accepts slot surfaces', () => {
+    const result = ModalSchema.parse({
+      id: 'x',
+      slots: {
+        contentWrapper: { bg: 'card' },
+        title: { letterSpacing: 'wide' },
+        body: { paddingY: 'lg' },
+      },
+    })
+
+    expect(result.slots?.contentWrapper?.bg).toBe('card')
+    expect(result.slots?.title?.letterSpacing).toBe('wide')
+    expect(result.slots?.body?.paddingY).toBe('lg')
+  })
 })

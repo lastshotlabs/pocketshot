@@ -31,4 +31,16 @@ describe('DividerSchema', () => {
   it('rejects non-number thickness', () => {
     expect(DividerSchema.safeParse({ thickness: 'thin' }).success).toBe(false)
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = DividerSchema.parse({
+      slots: {
+        line: {
+          bg: 'border',
+        },
+      },
+    })
+
+    expect(result.slots?.line?.bg).toBe('border')
+  })
 })

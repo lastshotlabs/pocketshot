@@ -1,9 +1,10 @@
-import React, { useCallback, useMemo } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
+import React, { useCallback } from 'react'
+import { View, Text, TouchableOpacity, ScrollView, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { PricingTableConfig, PricingTier } from './types'
 
 const CARD_WIDTH = 220
@@ -12,66 +13,282 @@ const BADGE_PADDING_V = 4
 interface TierCardProps {
   tier: PricingTier
   highlightedLabel: string
-  tokens: DesignTokens
-  styles: ReturnType<typeof makeStyles>
   onCtaPress: (tier: PricingTier) => void
   testIDPrefix?: string
+  slots: PricingTableConfig['slots']
+  sharedTextStyle: TextStyle
 }
 
-function TierCard({ tier, highlightedLabel, tokens, styles, onCtaPress, testIDPrefix }: TierCardProps) {
+function TierCard({
+  tier,
+  highlightedLabel,
+  onCtaPress,
+  testIDPrefix,
+  slots,
+  sharedTextStyle,
+}: TierCardProps) {
+  const tokens = useTokens()
   const handleCtaPress = useCallback(() => onCtaPress(tier), [onCtaPress, tier])
+  const tierStates: RuntimeSurfaceState[] | undefined = tier.highlighted ? ['selected'] : undefined
+
+  const cardSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: CARD_WIDTH,
+      bg: 'card',
+      borderRadius: 'xl',
+      border: tier.highlighted ? '2px solid primary' : '1px solid border',
+      padding: 'xl',
+      shadow: tier.highlighted ? 'lg' : 'sm',
+    },
+    componentSurface: slots?.card as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const popularBadgeSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      alignSelf: 'start',
+      bg: 'primary',
+      borderRadius: 'full',
+      paddingX: 'md',
+      paddingY: BADGE_PADDING_V,
+      marginBottom: 'sm',
+    },
+    componentSurface: slots?.popularBadge as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const popularBadgeTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'primary-foreground',
+      fontWeight: 'bold',
+      letterSpacing: 0.3,
+    },
+    componentSurface: slots?.popularBadgeText as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const tierNameSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      color: 'foreground',
+      fontWeight: 'bold',
+      marginBottom: 'xs',
+    },
+    componentSurface: slots?.tierName as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const priceRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'end',
+    },
+    componentSurface: slots?.priceRow as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const tierPriceSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 30,
+      color: 'foreground',
+      fontWeight: 'bold',
+      lineHeight: 33,
+    },
+    componentSurface: slots?.tierPrice as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const tierPeriodSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+      marginTop: 'xs',
+      marginBottom: 'xs',
+    },
+    componentSurface: slots?.tierPeriod as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const dividerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      height: 1,
+      bg: 'border',
+      marginY: 'lg',
+    },
+    componentSurface: slots?.divider as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const tierDescriptionSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+      marginBottom: 'lg',
+    },
+    componentSurface: slots?.tierDescription as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const featureListSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      gap: 'sm',
+      marginBottom: 'xl',
+    },
+    componentSurface: slots?.featureList as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const featureRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'start',
+      gap: 'sm',
+    },
+    componentSurface: slots?.featureRow as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const featureCheckSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'success',
+      fontWeight: 'bold',
+    },
+    componentSurface: slots?.featureCheck as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const featureTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      fontSize: 'sm',
+      color: 'foreground',
+    },
+    componentSurface: slots?.featureText as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const ctaButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      borderRadius: 'md',
+      paddingY: 'sm',
+      paddingX: 'lg',
+      alignItems: 'center',
+      justifyContent: 'center',
+      bg: tier.highlighted ? 'primary' : 'transparent',
+      border: tier.highlighted ? '0px solid transparent' : '1px solid primary',
+    },
+    componentSurface: slots?.ctaButton as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
+  const ctaButtonTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'semibold',
+      color: tier.highlighted ? 'primary-foreground' : 'primary',
+    },
+    componentSurface: slots?.ctaButtonText as Record<string, unknown> | undefined,
+    activeStates: tierStates,
+  })
 
   return (
-    <View
-      style={[styles.card, tier.highlighted && styles.cardHighlighted]}
-      accessibilityRole="none"
-    >
+    <View style={cardSurface.style as ViewStyle | undefined} accessibilityRole="none">
       {tier.highlighted ? (
-        <View style={styles.popularBadge}>
-          <Text style={styles.popularBadgeText}>{highlightedLabel}</Text>
+        <View style={popularBadgeSurface.style as ViewStyle | undefined}>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(popularBadgeTextSurface.style as TextStyle | undefined),
+            }}
+          >
+            {highlightedLabel}
+          </Text>
         </View>
       ) : null}
-
-      <Text style={styles.tierName}>{tier.name}</Text>
-
-      <View style={styles.priceRow}>
-        <Text style={styles.tierPrice}>{tier.price}</Text>
+      <Text
+        style={{
+          ...sharedTextStyle,
+          ...(tierNameSurface.style as TextStyle | undefined),
+        }}
+      >
+        {tier.name}
+      </Text>
+      <View style={priceRowSurface.style as ViewStyle | undefined}>
+        <Text
+          style={{
+            ...sharedTextStyle,
+            ...(tierPriceSurface.style as TextStyle | undefined),
+          }}
+        >
+          {tier.price}
+        </Text>
       </View>
-
       {tier.period ? (
-        <Text style={styles.tierPeriod}>{tier.period}</Text>
+        <Text
+          style={{
+            ...sharedTextStyle,
+            ...(tierPeriodSurface.style as TextStyle | undefined),
+          }}
+        >
+          {tier.period}
+        </Text>
       ) : null}
-
-      <View style={styles.divider} />
-
+      <View style={dividerSurface.style as ViewStyle | undefined} />
       {tier.description ? (
-        <Text style={styles.tierDescription}>{tier.description}</Text>
+        <Text
+          style={{
+            ...sharedTextStyle,
+            ...(tierDescriptionSurface.style as TextStyle | undefined),
+          }}
+        >
+          {tier.description}
+        </Text>
       ) : null}
-
-      <View style={styles.featureList}>
-        {tier.features.map((feature, idx) => (
+      <View style={featureListSurface.style as ViewStyle | undefined}>
+        {tier.features.map((feature, index) => (
           <View
-            key={idx}
-            style={styles.featureRow}
+            key={index}
+            style={featureRowSurface.style as ViewStyle | undefined}
             accessibilityLabel={`Included: ${feature}`}
           >
-            <Text style={styles.featureCheck} accessibilityElementsHidden importantForAccessibility="no">
-              ✓
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(featureCheckSurface.style as TextStyle | undefined),
+              }}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
+              X
             </Text>
-            <Text style={styles.featureText}>{feature}</Text>
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(featureTextSurface.style as TextStyle | undefined),
+              }}
+            >
+              {feature}
+            </Text>
           </View>
         ))}
       </View>
-
       <TouchableOpacity
         onPress={handleCtaPress}
         activeOpacity={0.8}
-        style={[styles.ctaButton, tier.highlighted ? styles.ctaButtonPrimary : styles.ctaButtonOutline]}
+        style={ctaButtonSurface.style as ViewStyle | undefined}
         accessibilityRole="button"
-        accessibilityLabel={`${tier.cta.label} — ${tier.name} plan`}
+        accessibilityLabel={`${tier.cta.label} - ${tier.name} plan`}
         testID={testIDPrefix ? `${testIDPrefix}-cta-${tier.id}` : undefined}
       >
-        <Text style={[styles.ctaButtonText, tier.highlighted ? styles.ctaButtonTextPrimary : styles.ctaButtonTextOutline]}>
+        <Text
+          style={{
+            ...sharedTextStyle,
+            ...(ctaButtonTextSurface.style as TextStyle | undefined),
+          }}
+        >
           {tier.cta.label}
         </Text>
       </TouchableOpacity>
@@ -82,7 +299,48 @@ function TierCard({ tier, highlightedLabel, tokens, styles, onCtaPress, testIDPr
 export function PricingTable({ config }: { config: PricingTableConfig }) {
   const tokens = useTokens()
   const { dispatch } = useScreenContext()
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const highlightedLabel = config.highlightedLabel ?? 'Most Popular'
+
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: '100%',
+    },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 24,
+      color: 'foreground',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginBottom: 'sm',
+    },
+    componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+  })
+  const subtitleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'muted',
+      textAlign: 'center',
+      marginBottom: 'xl',
+    },
+    componentSurface: config.slots?.subtitle as Record<string, unknown> | undefined,
+  })
+  const tiersRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      gap: 'lg',
+      paddingX: 'lg',
+      paddingBottom: 'lg',
+      alignItems: 'start',
+    },
+    componentSurface: config.slots?.tiersRow as Record<string, unknown> | undefined,
+  })
 
   const handleCtaPress = useCallback(
     async (tier: PricingTier) => {
@@ -93,18 +351,31 @@ export function PricingTable({ config }: { config: PricingTableConfig }) {
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
+      <View style={containerSurface.style as ViewStyle | undefined}>
         {config.title ? (
-          <Text style={styles.title}>{config.title}</Text>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(titleSurface.style as TextStyle | undefined),
+            }}
+          >
+            {config.title}
+          </Text>
         ) : null}
         {config.subtitle ? (
-          <Text style={styles.subtitle}>{config.subtitle}</Text>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(subtitleSurface.style as TextStyle | undefined),
+            }}
+          >
+            {config.subtitle}
+          </Text>
         ) : null}
-
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tiersRow}
+          contentContainerStyle={tiersRowSurface.style as ViewStyle | undefined}
           accessibilityRole="scrollbar"
           accessibilityLabel="Pricing tiers"
         >
@@ -112,11 +383,11 @@ export function PricingTable({ config }: { config: PricingTableConfig }) {
             <TierCard
               key={tier.id}
               tier={tier}
-              highlightedLabel={config.highlightedLabel}
-              tokens={tokens}
-              styles={styles}
+              highlightedLabel={highlightedLabel}
               onCtaPress={handleCtaPress}
               testIDPrefix={config.testID}
+              slots={config.slots}
+              sharedTextStyle={sharedTextStyle}
             />
           ))}
         </ScrollView>
@@ -124,140 +395,3 @@ export function PricingTable({ config }: { config: PricingTableConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      width: '100%',
-    },
-    title: {
-      fontSize: tokens.typography.fontSize2xl,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightBold,
-      textAlign: 'center',
-      marginBottom: tokens.spacing[2],
-    },
-    subtitle: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.textMuted,
-      textAlign: 'center',
-      marginBottom: tokens.spacing[6],
-      lineHeight: tokens.typography.fontSizeMd * tokens.typography.lineHeightNormal,
-    },
-    tiersRow: {
-      flexDirection: 'row',
-      gap: tokens.spacing[4],
-      paddingHorizontal: tokens.spacing[4],
-      paddingBottom: tokens.spacing[4],
-      alignItems: 'flex-start',
-    },
-    card: {
-      width: CARD_WIDTH,
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.xl,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      padding: tokens.spacing[5],
-      ...tokens.shadows.sm,
-    },
-    cardHighlighted: {
-      borderWidth: 2,
-      borderColor: tokens.colors.primary,
-      ...tokens.shadows.lg,
-    },
-    popularBadge: {
-      alignSelf: 'flex-start',
-      backgroundColor: tokens.colors.primary,
-      borderRadius: tokens.radius.full,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: BADGE_PADDING_V,
-      marginBottom: tokens.spacing[3],
-    },
-    popularBadgeText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.primaryForeground,
-      fontWeight: tokens.typography.fontWeightBold,
-      letterSpacing: 0.3,
-    },
-    tierName: {
-      fontSize: tokens.typography.fontSizeLg,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightBold,
-      marginBottom: tokens.spacing[2],
-    },
-    priceRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-    },
-    tierPrice: {
-      fontSize: tokens.typography.fontSize3xl,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightBold,
-      lineHeight: tokens.typography.fontSize3xl * 1.1,
-    },
-    tierPeriod: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      marginTop: tokens.spacing[1],
-      marginBottom: tokens.spacing[2],
-    },
-    divider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: tokens.colors.divider,
-      marginVertical: tokens.spacing[4],
-    },
-    tierDescription: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      lineHeight: tokens.typography.fontSizeSm * tokens.typography.lineHeightNormal,
-      marginBottom: tokens.spacing[4],
-    },
-    featureList: {
-      gap: tokens.spacing[2],
-      marginBottom: tokens.spacing[6],
-    },
-    featureRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: tokens.spacing[2],
-    },
-    featureCheck: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.success,
-      fontWeight: tokens.typography.fontWeightBold,
-      lineHeight: tokens.typography.fontSizeSm * tokens.typography.lineHeightNormal,
-    },
-    featureText: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.text,
-      lineHeight: tokens.typography.fontSizeSm * tokens.typography.lineHeightNormal,
-    },
-    ctaButton: {
-      borderRadius: tokens.radius.md,
-      paddingVertical: tokens.spacing[3],
-      paddingHorizontal: tokens.spacing[4],
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    ctaButtonPrimary: {
-      backgroundColor: tokens.colors.primary,
-    },
-    ctaButtonOutline: {
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      borderColor: tokens.colors.primary,
-    },
-    ctaButtonText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-    ctaButtonTextPrimary: {
-      color: tokens.colors.primaryForeground,
-    },
-    ctaButtonTextOutline: {
-      color: tokens.colors.primary,
-    },
-  })
-}
-

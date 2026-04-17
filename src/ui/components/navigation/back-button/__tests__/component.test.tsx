@@ -42,8 +42,24 @@ describe('BackButton', () => {
     expect(getByTestId('back-button')).toBeTruthy()
   })
 
-  it('renders the back arrow character', () => {
+  it('renders the back glyph', () => {
     const { getByText } = renderWithProviders(<BackButton config={{}} />)
-    expect(getByText('←')).toBeTruthy()
+    expect(getByText('<')).toBeTruthy()
+  })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <BackButton
+        config={{
+          label: 'Back',
+          slots: {
+            button: { paddingY: 'sm' },
+            icon: { color: 'primary' },
+            label: { letterSpacing: 'wide' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
   })
 })

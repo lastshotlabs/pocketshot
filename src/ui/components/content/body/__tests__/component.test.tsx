@@ -71,4 +71,21 @@ describe('Body', () => {
     })
     expect(getByText('Resolved body text')).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Body
+        config={{
+          text: 'Styled body',
+          slots: {
+            text: {
+              letterSpacing: 'wide',
+              color: 'muted',
+            },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

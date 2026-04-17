@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 
 export const PriceDisplaySchema = extendComponentSchema({
   id: z.string().optional(),
@@ -11,4 +11,13 @@ export const PriceDisplaySchema = extendComponentSchema({
   originalAmount: z.union([z.number(), FromRefSchema]).optional(),
   badge: z.string().optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'container',
+    'priceRow',
+    'price',
+    'originalPrice',
+    'badge',
+    'badgeText',
+  ]).optional(),
 })

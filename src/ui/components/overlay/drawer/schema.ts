@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 // Action and FromRef are available for future extension
@@ -13,5 +13,17 @@ export const DrawerSchema = extendComponentSchema({
   content: z.string().optional(),
   showHandle: z.boolean().optional().default(true),
   closeOnBackdrop: z.boolean().optional().default(true),
-  testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'backdrop',
+    'panel',
+    'handleContainer',
+    'handle',
+    'header',
+    'title',
+    'divider',
+    'body',
+    'bodyText',
+    'content',
+  ]).optional(),
 })

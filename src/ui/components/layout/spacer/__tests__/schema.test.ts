@@ -25,4 +25,16 @@ describe('SpacerSchema', () => {
   it('rejects non-boolean flex', () => {
     expect(SpacerSchema.safeParse({ flex: 1 }).success).toBe(false)
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = SpacerSchema.parse({
+      slots: {
+        root: {
+          bg: 'muted',
+        },
+      },
+    })
+
+    expect(result.slots?.root?.bg).toBe('muted')
+  })
 })

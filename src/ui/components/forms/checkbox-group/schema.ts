@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -19,4 +19,14 @@ export const CheckboxGroupSchema = extendComponentSchema({
   orientation: z.enum(['vertical', 'horizontal']).optional().default('vertical'),
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'container',
+    'label',
+    'optionsList',
+    'option',
+    'box',
+    'checkmark',
+    'optionLabel',
+  ]).optional(),
 })

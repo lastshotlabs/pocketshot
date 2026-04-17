@@ -1,16 +1,14 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { PriceDisplayConfig } from './types'
 
 type Size = NonNullable<PriceDisplayConfig['size']>
 
-// Tight vertical padding for the discount badge pill; below the 4px grid
 const DISCOUNT_BADGE_PADDING_VERTICAL = 2
 
 const SIZE_FONT: Record<Size, number> = {
@@ -28,12 +26,12 @@ const ORIGINAL_SIZE_FONT: Record<Size, number> = {
 }
 
 function formatPrice(amount: number | string, currency: string, locale: string): string {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount
-  if (isNaN(num)) return String(amount)
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+  if (Number.isNaN(numericAmount)) return String(amount)
   try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(num)
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(numericAmount)
   } catch {
-    return `${currency} ${num.toFixed(2)}`
+    return `${currency} ${numericAmount.toFixed(2)}`
   }
 }
 
@@ -45,7 +43,7 @@ export function PriceDisplay({ config }: { config: PriceDisplayConfig }) {
     ? (resolveFromRef(config.amount, values) as unknown as number | string)
     : config.amount
 
-  const resolvedOriginal: number | null =
+  const resolvedOriginal =
     config.originalAmount != null
       ? isFromRef(config.originalAmount)
         ? (resolveFromRef(config.originalAmount, values) as unknown as number)
@@ -61,16 +59,75 @@ export function PriceDisplay({ config }: { config: PriceDisplayConfig }) {
     resolvedOriginal != null ? formatPrice(resolvedOriginal, currency, locale) : null
 
   const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-  const textColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.text
-  const styles = makeStyles(tokens, size, textColor)
+  const textColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : 'foreground'
+
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      alignSelf: 'start',
+    },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+  })
+  const priceRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 'sm',
+    },
+    componentSurface: config.slots?.priceRow as Record<string, unknown> | undefined,
+  })
+  const priceSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: SIZE_FONT[size],
+      color: textColor,
+      fontWeight: 'bold',
+    },
+    componentSurface: config.slots?.price as Record<string, unknown> | undefined,
+  })
+  const originalPriceSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: ORIGINAL_SIZE_FONT[size],
+      color: 'muted',
+      textDecorationLine: 'line-through',
+      fontWeight: 'regular',
+    },
+    componentSurface: config.slots?.originalPrice as Record<string, unknown> | undefined,
+  })
+  const badgeSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'error',
+      borderRadius: 'sm',
+      paddingX: 'sm',
+      paddingY: DISCOUNT_BADGE_PADDING_VERTICAL,
+    },
+    componentSurface: config.slots?.badge as Record<string, unknown> | undefined,
+  })
+  const badgeTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'error-foreground',
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+    },
+    componentSurface: config.slots?.badgeText as Record<string, unknown> | undefined,
+  })
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        <View style={styles.priceRow}>
+      <View style={containerSurface.style as ViewStyle | undefined}>
+        <View style={priceRowSurface.style as ViewStyle | undefined}>
           {formattedOriginal != null ? (
             <Text
-              style={styles.originalPrice}
+              style={{
+                ...sharedTextStyle,
+                ...(originalPriceSurface.style as TextStyle | undefined),
+              }}
               accessibilityElementsHidden
               importantForAccessibility="no"
             >
@@ -78,18 +135,26 @@ export function PriceDisplay({ config }: { config: PriceDisplayConfig }) {
             </Text>
           ) : null}
           <Text
-            style={styles.price}
+            style={{
+              ...sharedTextStyle,
+              ...(priceSurface.style as TextStyle | undefined),
+            }}
             accessibilityLabel={
-              formattedOriginal != null
-                ? `${formattedPrice}, was ${formattedOriginal}`
-                : formattedPrice
+              formattedOriginal != null ? `${formattedPrice}, was ${formattedOriginal}` : formattedPrice
             }
           >
             {formattedPrice}
           </Text>
           {config.badge != null ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{config.badge}</Text>
+            <View style={badgeSurface.style as ViewStyle | undefined}>
+              <Text
+                style={{
+                  ...sharedTextStyle,
+                  ...(badgeTextSurface.style as TextStyle | undefined),
+                }}
+              >
+                {config.badge}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -97,44 +162,3 @@ export function PriceDisplay({ config }: { config: PriceDisplayConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, size: Size, textColor: string) {
-  const fontSize = SIZE_FONT[size]
-  const originalFontSize = ORIGINAL_SIZE_FONT[size]
-
-  return StyleSheet.create({
-    container: {
-      alignSelf: 'flex-start',
-    },
-    priceRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      gap: tokens.spacing[2],
-    },
-    price: {
-      fontSize,
-      color: textColor,
-      fontWeight: tokens.typography.fontWeightBold,
-    },
-    originalPrice: {
-      fontSize: originalFontSize,
-      color: tokens.colors.textMuted,
-      textDecorationLine: 'line-through',
-      fontWeight: tokens.typography.fontWeightRegular,
-    },
-    badge: {
-      backgroundColor: tokens.colors.error,
-      borderRadius: tokens.radius.sm,
-      paddingHorizontal: tokens.spacing[2],
-      paddingVertical: DISCOUNT_BADGE_PADDING_VERTICAL,
-    },
-    badgeText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.errorForeground,
-      fontWeight: tokens.typography.fontWeightBold,
-      letterSpacing: 0.5,
-    },
-  })
-}
-

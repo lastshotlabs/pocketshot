@@ -1,13 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  View,
+  Animated,
   Text,
   TextInput as RNTextInput,
   TouchableOpacity,
-  StyleSheet,
-  Animated,
+  View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -20,28 +22,60 @@ const KEYBOARD_TYPE_MAP = {
   email: 'email-address',
 } as const
 
+function resolveSlotSurface(
+  config: InlineEditConfig,
+  tokens: DesignTokens,
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
+}
+
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
+
 export function InlineEdit({ config }: { config: InlineEditConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
 
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
   const resolvedValue =
-    config.value != null
-      ? (resolveFromRef(config.value, values) as string | undefined)
-      : undefined
+    config.value != null ? String(resolveFromRef(config.value, values) ?? '') : undefined
+  const placeholder =
+    config.placeholder != null
+      ? String(resolveFromRef(config.placeholder, values) ?? '')
+      : 'Click to edit'
+  const prefix =
+    config.prefix != null ? String(resolveFromRef(config.prefix, values) ?? '') : undefined
+  const suffix =
+    config.suffix != null ? String(resolveFromRef(config.suffix, values) ?? '') : undefined
+  const emptyText =
+    config.emptyText != null ? String(resolveFromRef(config.emptyText, values) ?? '') : '-'
 
-  const committed = resolvedValue ?? config.defaultValue
+  const committed = resolvedValue ?? config.defaultValue ?? ''
   const [editValue, setEditValue] = useState<string>(committed)
   const [isEditing, setIsEditing] = useState(false)
   const [isPressedIn, setIsPressedIn] = useState(false)
   const inputRef = useRef<RNTextInput>(null)
-
   const bgAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     if (resolvedValue != null && !isEditing) {
       setEditValue(resolvedValue)
     }
-  }, [resolvedValue, isEditing])
+  }, [isEditing, resolvedValue])
 
   useEffect(() => {
     Animated.timing(bgAnim, {
@@ -49,46 +83,101 @@ export function InlineEdit({ config }: { config: InlineEditConfig }) {
       duration: 100,
       useNativeDriver: false,
     }).start()
-  }, [isPressedIn, bgAnim])
+  }, [bgAnim, isPressedIn])
+
+  const displayText = committed.length > 0 ? committed : emptyText
+  const isEmpty = committed.length === 0
+  const testId = config.testID ?? config.id
+
+  const displayContainerSurface = resolveSlotSurface(config, tokens, 'displayContainer', {
+    borderRadius: 'sm',
+    paddingX: 'xs',
+    paddingY: 'xs',
+  })
+  const displayRowSurface = resolveSlotSurface(config, tokens, 'displayRow', {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 'xs',
+  })
+  const displayTextSurface = resolveSlotSurface(config, tokens, 'displayText', {
+    color: 'foreground',
+    fontSize: 'base',
+    paddingY: 'xs',
+    flex: 1,
+  })
+  const emptyTextSurface = resolveSlotSurface(config, tokens, 'emptyText', {
+    color: 'muted',
+    fontSize: 'base',
+  })
+  const editIconSurface = resolveSlotSurface(config, tokens, 'editIcon', {
+    color: 'muted',
+    fontSize: 'sm',
+    marginLeft: 'xs',
+  })
+  const affixSurface = resolveSlotSurface(config, tokens, 'affix', {
+    color: 'muted',
+    fontSize: 'base',
+    fontWeight: 'medium',
+  })
+  const editContainerSurface = resolveSlotSurface(config, tokens, 'editContainer', {
+    gap: 'xs',
+  })
+  const editRowSurface = resolveSlotSurface(config, tokens, 'editRow', {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: tokens.colors.inputBackground,
+    borderWidth: 2,
+    borderColor: tokens.colors.borderFocus,
+    borderRadius: 'md',
+    paddingX: 'sm',
+  })
+  const editInputSurface = resolveSlotSurface(config, tokens, 'editInput', {
+    color: tokens.colors.inputText,
+    fontSize: 'base',
+    flex: 1,
+    paddingY: 'sm',
+  })
+  const editActionsSurface = resolveSlotSurface(config, tokens, 'editActions', {
+    flexDirection: 'row',
+    gap: 'sm',
+    justifyContent: 'end',
+  })
+  const actionButtonSurface = resolveSlotSurface(config, tokens, 'actionButton', {
+    paddingX: 'sm',
+    paddingY: 'xs',
+  })
+  const confirmTextSurface = resolveSlotSurface(config, tokens, 'confirmText', {
+    color: 'success',
+    fontSize: 'base',
+    fontWeight: 'bold',
+  })
+  const cancelTextSurface = resolveSlotSurface(config, tokens, 'cancelText', {
+    color: 'error',
+    fontSize: 'base',
+    fontWeight: 'bold',
+  })
 
   const handleStartEdit = useCallback(() => {
     setEditValue(committed)
     setIsEditing(true)
-    // Focus after state update
-    setTimeout(() => {
-      inputRef.current?.focus()
-    }, 50)
+    setTimeout(() => inputRef.current?.focus(), 50)
   }, [committed])
 
   const handleConfirm = useCallback(() => {
     const trimmed = editValue.trim()
     setValue(config.id, trimmed)
     setIsEditing(false)
-    if (config.onSaveAction) {
+    if (config.onSaveAction != null) {
       void dispatch(config.onSaveAction)
     }
-  }, [editValue, config.id, config.onSaveAction, setValue, dispatch])
+  }, [config.id, config.onSaveAction, dispatch, editValue, setValue])
 
   const handleCancel = useCallback(() => {
     setEditValue(committed)
     setIsEditing(false)
   }, [committed])
 
-  const handleBlur = useCallback(() => {
-    // Auto-confirm on blur
-    handleConfirm()
-  }, [handleConfirm])
-
-  const handleSubmitEditing = useCallback(() => {
-    handleConfirm()
-  }, [handleConfirm])
-
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
-
-  const displayText = committed.length > 0 ? committed : config.emptyText
-  const isEmpty = committed.length === 0
-
-  const bgColor = bgAnim.interpolate({
+  const animatedBackground = bgAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['transparent', tokens.colors.surfaceAlt],
   })
@@ -96,53 +185,47 @@ export function InlineEdit({ config }: { config: InlineEditConfig }) {
   if (isEditing) {
     return (
       <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <View style={styles.editContainer}>
-          <View style={styles.editRow}>
-            {config.prefix != null && (
-              <Text style={styles.affix} accessibilityRole="text">
-                {config.prefix}
-              </Text>
-            )}
+        <View style={editContainerSurface.style as ViewStyle | undefined}>
+          <View style={editRowSurface.style as ViewStyle | undefined}>
+            {prefix != null ? <Text style={mergeTextStyle(sharedTextStyle, affixSurface)}>{prefix}</Text> : null}
             <RNTextInput
               ref={inputRef}
-              style={styles.editInput}
+              style={editInputSurface.style as TextStyle | undefined}
               value={editValue}
               onChangeText={setEditValue}
-              onBlur={handleBlur}
-              onSubmitEditing={handleSubmitEditing}
+              onBlur={handleConfirm}
+              onSubmitEditing={handleConfirm}
               keyboardType={KEYBOARD_TYPE_MAP[config.inputType ?? 'text']}
               autoCapitalize={config.inputType === 'email' ? 'none' : 'sentences'}
+              placeholder={placeholder}
+              placeholderTextColor={tokens.colors.inputPlaceholder}
               returnKeyType="done"
               accessibilityLabel={`Edit ${config.id}`}
-              accessibilityRole="none"
               testID={config.testID ? `${config.testID}-input` : `${config.id}-input`}
             />
-            {config.suffix != null && (
-              <Text style={styles.affix} accessibilityRole="text">
-                {config.suffix}
-              </Text>
-            )}
+            {suffix != null ? <Text style={mergeTextStyle(sharedTextStyle, affixSurface)}>{suffix}</Text> : null}
           </View>
-          <View style={styles.editActions}>
+
+          <View style={editActionsSurface.style as ViewStyle | undefined}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={actionButtonSurface.style as ViewStyle | undefined}
               onPress={handleConfirm}
               accessibilityRole="button"
               accessibilityLabel="Confirm edit"
               testID={config.testID ? `${config.testID}-confirm` : `${config.id}-confirm`}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
             >
-              <Text style={styles.confirmText}>✓</Text>
+              <Text style={mergeTextStyle(sharedTextStyle, confirmTextSurface)}>Save</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={actionButtonSurface.style as ViewStyle | undefined}
               onPress={handleCancel}
               accessibilityRole="button"
               accessibilityLabel="Cancel edit"
               testID={config.testID ? `${config.testID}-cancel` : `${config.id}-cancel`}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
             >
-              <Text style={styles.cancelText}>✕</Text>
+              <Text style={mergeTextStyle(sharedTextStyle, cancelTextSurface)}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -159,106 +242,33 @@ export function InlineEdit({ config }: { config: InlineEditConfig }) {
         accessibilityRole="button"
         accessibilityLabel={`${displayText}. Tap to edit.`}
         accessibilityHint="Double tap to enter edit mode"
-        testID={config.testID ?? config.id}
+        testID={testId}
         activeOpacity={1}
       >
-        <Animated.View style={[styles.displayContainer, { backgroundColor: bgColor }]}>
-          <View style={styles.displayRow}>
-            {config.prefix != null && (
-              <Text style={styles.affix} accessibilityRole="text">
-                {config.prefix}
-              </Text>
-            )}
+        <Animated.View
+          style={[
+            displayContainerSurface.style as ViewStyle | undefined,
+            { backgroundColor: animatedBackground },
+          ]}
+        >
+          <View style={displayRowSurface.style as ViewStyle | undefined}>
+            {prefix != null ? <Text style={mergeTextStyle(sharedTextStyle, affixSurface)}>{prefix}</Text> : null}
             <Text
-              style={[styles.displayText, isEmpty && styles.emptyText]}
+              style={[
+                mergeTextStyle(sharedTextStyle, displayTextSurface),
+                isEmpty ? mergeTextStyle(sharedTextStyle, emptyTextSurface) : null,
+              ]}
               numberOfLines={1}
             >
               {displayText}
             </Text>
-            {config.suffix != null && !isEmpty && (
-              <Text style={styles.affix} accessibilityRole="text">
-                {config.suffix}
-              </Text>
-            )}
-            <Text style={styles.editIcon} accessibilityRole="text">
-              ✎
-            </Text>
+            {suffix != null && !isEmpty ? (
+              <Text style={mergeTextStyle(sharedTextStyle, affixSurface)}>{suffix}</Text>
+            ) : null}
+            <Text style={mergeTextStyle(sharedTextStyle, editIconSurface)}>Edit</Text>
           </View>
         </Animated.View>
       </TouchableOpacity>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    displayContainer: {
-      borderRadius: tokens.radius.sm,
-      paddingHorizontal: tokens.spacing[1],
-      paddingVertical: tokens.spacing[1],
-    },
-    displayRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: tokens.spacing[1],
-    },
-    displayText: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-      paddingVertical: tokens.spacing[1],
-    },
-    emptyText: {
-      color: tokens.colors.textMuted,
-      fontStyle: 'italic',
-    },
-    editIcon: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      marginLeft: tokens.spacing[1],
-    },
-    affix: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.textMuted,
-      fontWeight: tokens.typography.fontWeightMedium,
-    },
-    editContainer: {
-      gap: tokens.spacing[1],
-    },
-    editRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: tokens.colors.inputBackground,
-      borderWidth: 2,
-      borderColor: tokens.colors.borderFocus,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[2],
-    },
-    editInput: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputText,
-      paddingVertical: tokens.spacing[2],
-    },
-    editActions: {
-      flexDirection: 'row',
-      gap: tokens.spacing[2],
-      justifyContent: 'flex-end',
-    },
-    actionButton: {
-      paddingVertical: tokens.spacing[1],
-      paddingHorizontal: tokens.spacing[2],
-    },
-    confirmText: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors.success,
-    },
-    cancelText: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors.error,
-    },
-  })
-}
-

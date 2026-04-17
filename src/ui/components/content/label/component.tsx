@@ -1,17 +1,23 @@
 import React from 'react'
-import { Text, StyleSheet } from 'react-native'
+import { Text, type TextStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { LabelConfig } from './types'
 
-const FONT_SIZE_MAP = {
-  xs: 'fontSizeXs',
-  sm: 'fontSizeSm',
-  md: 'fontSizeMd',
+const SIZE_MAP = {
+  xs: 'xs',
+  sm: 'sm',
+  md: 'base',
+} as const
+
+const VARIANT_COLOR = {
+  default: 'foreground',
+  muted: 'muted',
+  error: 'error',
+  success: 'success',
 } as const
 
 export function Label({ config }: { config: LabelConfig }) {
@@ -19,63 +25,29 @@ export function Label({ config }: { config: LabelConfig }) {
   const { values } = useScreenContext()
 
   const text = resolveFromRef(config.text, values) as string
-  const styles = makeStyles(tokens, config)
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const textSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: SIZE_MAP[config.size ?? 'sm'],
+      fontWeight: 'medium',
+      color: VARIANT_COLOR[config.variant ?? 'default'],
+      textAlign: 'left',
+      letterSpacing: config.uppercase ? 'wide' : undefined,
+    },
+    componentSurface: config.slots?.text as Record<string, unknown> | undefined,
+  })
+
+  const style: TextStyle = {
+    ...sharedTextStyle,
+    ...(textSurface.style as TextStyle | undefined),
+  }
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <Text style={styles.label} accessibilityRole="text" testID={config.testID ?? config.id}>
+      <Text style={style} accessibilityRole="text" testID={config.testID ?? config.id}>
         {config.uppercase ? text.toUpperCase() : text}
       </Text>
     </ComponentWrapper>
   )
 }
-
-function resolveColor(tokens: DesignTokens, variant: LabelConfig['variant']): string {
-  switch (variant) {
-    case 'muted':
-      return tokens.colors.textMuted
-    case 'error':
-      return tokens.colors.error
-    case 'success':
-      return tokens.colors.success
-    default:
-      return tokens.colors.text
-  }
-}
-
-function makeStyles(tokens: DesignTokens, config: LabelConfig) {
-  const fontSizeKey = FONT_SIZE_MAP[config.size ?? 'sm']
-  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-
-  return StyleSheet.create({
-    label: {
-      fontSize:
-        typeof sharedTextStyle.fontSize === 'number'
-          ? sharedTextStyle.fontSize
-          : tokens.typography[fontSizeKey],
-      fontWeight:
-        typeof sharedTextStyle.fontWeight === 'string'
-          ? sharedTextStyle.fontWeight
-          : tokens.typography.fontWeightMedium,
-      color:
-        typeof sharedTextStyle.color === 'string'
-          ? sharedTextStyle.color
-          : resolveColor(tokens, config.variant),
-      textAlign:
-        sharedTextStyle.textAlign === 'center' ||
-        sharedTextStyle.textAlign === 'right' ||
-        sharedTextStyle.textAlign === 'justify'
-          ? sharedTextStyle.textAlign
-          : 'left',
-      lineHeight:
-        typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
-      letterSpacing:
-        typeof sharedTextStyle.letterSpacing === 'number'
-          ? sharedTextStyle.letterSpacing
-          : config.uppercase
-            ? 0.5
-            : 0,
-    },
-  })
-}
-

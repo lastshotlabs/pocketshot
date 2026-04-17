@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -11,4 +11,5 @@ export const ImageSchema = extendComponentSchema({
   aspectRatio: z.number().optional(),
   resizeMode: z.enum(['cover', 'contain', 'stretch', 'center']).optional().default('cover'),
   onPress: ActionSchema.optional(),
+  slots: slotsSchema(['root', 'pressable', 'image']).optional(),
 })

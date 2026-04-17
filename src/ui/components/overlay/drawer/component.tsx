@@ -1,91 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   Animated,
   Dimensions,
   Modal,
-  StyleSheet,
   Text,
   TouchableWithoutFeedback,
   View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { DrawerConfig } from './types'
 
 const ANIMATION_DURATION = 280
-
-function makeStyles(
-  tokens: DesignTokens,
-  position: NonNullable<DrawerConfig['position']>,
-  widthPercent: number,
-) {
-  const screenWidth = Dimensions.get('window').width
-  const drawerWidth = (screenWidth * widthPercent) / 100
-
-  return StyleSheet.create({
-    fill: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
-    backdrop: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      backgroundColor: tokens.colors.overlay,
-    },
-    drawer: {
-      position: 'absolute',
-      top: 0,
-      bottom: 0,
-      [position]: 0,
-      width: drawerWidth,
-      backgroundColor: tokens.colors.surface,
-      ...tokens.shadows.xl,
-    },
-    handleContainer: {
-      alignItems: 'center',
-      paddingTop: tokens.spacing[3],
-      paddingBottom: tokens.spacing[1],
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      backgroundColor: tokens.colors.border,
-      borderRadius: tokens.radius.full,
-    },
-    header: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[4],
-      paddingBottom: tokens.spacing[3],
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.divider,
-    },
-    title: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-    },
-    body: {
-      flex: 1,
-      padding: tokens.spacing[4],
-    },
-    bodyText: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      lineHeight: tokens.typography.fontSizeSm * tokens.typography.lineHeightNormal,
-    },
-    slot: {
-      flex: 1,
-    },
-  })
-}
 
 /**
  * Config-driven side drawer. Open/close via ScreenContext key `__drawer_{id}`.
@@ -95,7 +25,7 @@ function makeStyles(
  *
  * Handles Android hardware back button via Modal's `onRequestClose`.
  */
-export function Drawer({ config }: { config: DrawerConfig }) {
+export function Drawer({ config, children }: { config: DrawerConfig; children?: ReactNode }) {
   const tokens = useTokens()
   const { getValue, setValue } = useScreenContext()
 
@@ -110,15 +40,16 @@ export function Drawer({ config }: { config: DrawerConfig }) {
 
   const isOpen = Boolean(getValue(`__drawer_${config.id}`))
 
-  // Once the drawer has been opened once, keep modal mounted so animations
-  // remain smooth and state is preserved on close.
   const [isVisible, setIsVisible] = useState(false)
   useEffect(() => {
-    if (isOpen) setIsVisible(true)
+    if (isOpen) {
+      setIsVisible(true)
+    }
   }, [isOpen])
 
   const translateX = useRef(new Animated.Value(hiddenX)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   useEffect(() => {
     Animated.parallel([
@@ -132,17 +63,135 @@ export function Drawer({ config }: { config: DrawerConfig }) {
         duration: ANIMATION_DURATION,
         useNativeDriver: true,
       }),
-    ]).start()
-  }, [isOpen, translateX, backdropOpacity, hiddenX])
+    ]).start(() => {
+      if (!isOpen) {
+        setIsVisible(false)
+      }
+    })
+  }, [isOpen, translateX, backdropOpacity, hiddenX, setIsVisible])
 
   const handleClose = useCallback(() => {
     setValue(`__drawer_${config.id}`, false)
   }, [setValue, config.id])
 
-  const styles = useMemo(
-    () => makeStyles(tokens, position, widthPercent),
-    [tokens, position, widthPercent],
-  )
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const fillStyle: ViewStyle = {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  }
+
+  const panelPositionStyle: ViewStyle = {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: drawerWidth,
+    ...(position === 'left' ? { left: 0 } : { right: 0 }),
+  }
+
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'rgba(0,0,0,0.55)',
+    },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+  })
+  const panelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      shadow: 'xl',
+      overflow: 'hidden',
+    },
+    componentSurface: config.slots?.panel as Record<string, unknown> | undefined,
+  })
+  const handleContainerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      alignItems: 'center',
+      paddingTop: 'sm',
+      paddingBottom: 'xs',
+    },
+    componentSurface: config.slots?.handleContainer as Record<string, unknown> | undefined,
+  })
+  const handleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: 40,
+      height: 4,
+      bg: 'border',
+      borderRadius: 'full',
+    },
+    componentSurface: config.slots?.handle as Record<string, unknown> | undefined,
+  })
+  const headerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+      paddingTop: 'md',
+      paddingBottom: 'sm',
+    },
+    componentSurface: config.slots?.header as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      fontWeight: 'semibold',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+  })
+  const dividerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'border',
+    },
+    componentSurface: config.slots?.divider as Record<string, unknown> | undefined,
+  })
+  const bodySurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      padding: 'md',
+    },
+    componentSurface: config.slots?.body as Record<string, unknown> | undefined,
+  })
+  const bodyTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+      lineHeight: 'normal',
+    },
+    componentSurface: config.slots?.bodyText as Record<string, unknown> | undefined,
+  })
+  const contentSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+    },
+    componentSurface: config.slots?.content as Record<string, unknown> | undefined,
+  })
 
   return (
     <ComponentWrapper
@@ -159,46 +208,75 @@ export function Drawer({ config }: { config: DrawerConfig }) {
         statusBarTranslucent
         accessibilityViewIsModal
       >
-        <View style={styles.fill}>
-          {/* Backdrop */}
+        <View style={fillStyle}>
           <TouchableWithoutFeedback
             onPress={closeOnBackdrop ? handleClose : undefined}
             accessibilityRole="none"
             accessibilityLabel="Close drawer"
           >
-            <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+            <Animated.View
+              style={[
+                fillStyle,
+                backdropSurface.style as ViewStyle | undefined,
+                { opacity: backdropOpacity },
+              ]}
+            />
           </TouchableWithoutFeedback>
 
-          {/* Drawer panel */}
           <Animated.View
-            style={[styles.drawer, { transform: [{ translateX }] }]}
+            style={[
+              panelPositionStyle,
+              panelSurface.style as ViewStyle | undefined,
+              { transform: [{ translateX }] },
+            ]}
             testID={config.testID ? `${config.testID}-panel` : `drawer-${config.id}-panel`}
           >
             {showHandle && (
-              <View style={styles.handleContainer}>
-                <View style={styles.handle} />
+              <View style={handleContainerSurface.style as ViewStyle | undefined}>
+                <View style={handleSurface.style as ViewStyle | undefined} />
               </View>
             )}
 
             {config.title != null && (
-              <View style={styles.header}>
-                <Text
-                  style={styles.title}
-                  accessibilityRole="header"
-                  testID={config.testID ? `${config.testID}-title` : `drawer-${config.id}-title`}
-                >
-                  {config.title}
-                </Text>
-              </View>
+              <>
+                <View style={headerSurface.style as ViewStyle | undefined}>
+                  <Text
+                    style={{
+                      ...baseTextStyle,
+                      ...(titleSurface.style as TextStyle | undefined),
+                    }}
+                    accessibilityRole="header"
+                    testID={config.testID ? `${config.testID}-title` : `drawer-${config.id}-title`}
+                  >
+                    {config.title}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    { height: 1, marginHorizontal: tokens.spacing[4] },
+                    dividerSurface.style as ViewStyle | undefined,
+                  ]}
+                />
+              </>
             )}
 
-            {config.content != null ? (
-              <View style={styles.body}>
-                <Text style={styles.bodyText}>{config.content}</Text>
-              </View>
-            ) : (
-              <View style={styles.slot} />
-            )}
+            <View style={bodySurface.style as ViewStyle | undefined}>
+              {config.content != null ? (
+                <Text
+                  style={{
+                    ...baseTextStyle,
+                    ...(bodyTextSurface.style as TextStyle | undefined),
+                  }}
+                >
+                  {config.content}
+                </Text>
+              ) : null}
+              {children != null ? (
+                <View style={contentSurface.style as ViewStyle | undefined}>{children}</View>
+              ) : config.content == null ? (
+                <View style={contentSurface.style as ViewStyle | undefined} />
+              ) : null}
+            </View>
           </Animated.View>
         </View>
       </Modal>

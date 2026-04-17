@@ -1,40 +1,34 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Animated, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeStyleProps, resolveNativeTextStyle } from '../../_base'
+import { resolveNativeStyleProps, resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { CodeBlockConfig } from './types'
-
-// ── Clipboard duck-type ────────────────────────────────────────────────────────
 
 function trySetClipboard(text: string): void {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Clipboard = require('@react-native-clipboard/clipboard') as {
-      default: { setString: (s: string) => void }
+      default: { setString: (value: string) => void }
     }
     Clipboard.default.setString(text)
     return
   } catch {
-    // try built-in RN Clipboard
+    // fall through
   }
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { Clipboard } = require('react-native') as {
-      Clipboard: { setString: (s: string) => void }
+      Clipboard: { setString: (value: string) => void }
     }
     Clipboard.setString(text)
   } catch {
-    // no clipboard available
+    // clipboard unavailable
   }
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
-// Intentionally dark regardless of theme — code editors always use a dark surface
 const CODE_BG = '#1a1a2e'
 const HEADER_BG = '#2d2d44'
 const CODE_TEXT = '#e8e8e8'
@@ -62,93 +56,6 @@ export function CodeBlock({ config }: { config: CodeBlockConfig }) {
   const truncated = config.maxLines != null && !expanded && allLines.length > config.maxLines
   const hiddenCount = truncated ? allLines.length - (config.maxLines ?? 0) : 0
 
-  const handleCopy = useCallback(() => {
-    trySetClipboard(code ?? '')
-
-    if (config.onCopy) {
-      void dispatch(config.onCopy)
-    }
-
-    setCopied(true)
-    Animated.sequence([
-      Animated.timing(copyAnim, { toValue: 0.7, duration: 100, useNativeDriver: true }),
-      Animated.timing(copyAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
-    ]).start()
-
-    const timer = setTimeout(() => setCopied(false), 1500)
-    return () => clearTimeout(timer)
-  }, [code, config.onCopy, copyAnim, dispatch])
-
-  const styles = useMemo(() => makeStyles(tokens, config), [tokens, config])
-  const showHeader = config.language != null || config.showCopyButton
-
-  return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container} testID={config.testID ?? config.id}>
-        {showHeader && (
-          <View style={styles.header}>
-            {config.language != null && (
-              <Text style={styles.langLabel} accessibilityRole="text">
-                {config.language}
-              </Text>
-            )}
-            {config.showCopyButton && (
-              <Animated.View style={{ opacity: copyAnim }}>
-                <TouchableOpacity
-                  onPress={handleCopy}
-                  style={styles.copyButton}
-                  accessibilityRole="button"
-                  accessibilityLabel={copied ? 'Copied to clipboard' : 'Copy code'}
-                  testID={`${config.testID ?? config.id ?? 'code-block'}-copy`}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.copyText}>{copied ? 'Copied!' : 'Copy'}</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            )}
-          </View>
-        )}
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator
-          style={styles.scrollArea}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <View>
-            {displayLines.map((line, idx) => (
-              <View key={idx} style={styles.lineRow}>
-                {config.showLineNumbers && (
-                  <Text style={styles.lineNumber} selectable={false}>
-                    {String(idx + 1).padStart(String(allLines.length).length, ' ')}
-                  </Text>
-                )}
-                <Text style={styles.codeLine} selectable>
-                  {line}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-
-        {truncated && (
-          <TouchableOpacity
-            onPress={() => setExpanded(true)}
-            style={styles.showMoreButton}
-            accessibilityRole="button"
-            accessibilityLabel={`Show ${hiddenCount} more lines`}
-            testID={`${config.testID ?? config.id ?? 'code-block'}-show-more`}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.showMoreText}>Show {hiddenCount} more lines</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </ComponentWrapper>
-  )
-}
-
-function makeStyles(tokens: DesignTokens, config: CodeBlockConfig) {
   const resolvedSurfaceStyle = resolveNativeStyleProps(
     {
       bg: config.bg,
@@ -156,95 +63,243 @@ function makeStyles(tokens: DesignTokens, config: CodeBlockConfig) {
     },
     tokens,
   )
-  const resolvedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
   const containerBg =
-    typeof resolvedSurfaceStyle.backgroundColor === 'string'
-      ? resolvedSurfaceStyle.backgroundColor
-      : CODE_BG
+    typeof resolvedSurfaceStyle.backgroundColor === 'string' ? resolvedSurfaceStyle.backgroundColor : CODE_BG
   const containerRadius =
-    typeof resolvedSurfaceStyle.borderRadius === 'number'
-      ? resolvedSurfaceStyle.borderRadius
-      : tokens.radius.lg
-  const textColor =
-    typeof resolvedTextStyle.color === 'string' ? resolvedTextStyle.color : CODE_TEXT
-  const labelColor =
-    typeof resolvedTextStyle.color === 'string' ? resolvedTextStyle.color : LANG_LABEL_COLOR
+    typeof resolvedSurfaceStyle.borderRadius === 'number' ? resolvedSurfaceStyle.borderRadius : tokens.radius.lg
+  const textColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : CODE_TEXT
+  const labelColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : LANG_LABEL_COLOR
   const fontSize =
-    typeof resolvedTextStyle.fontSize === 'number'
-      ? resolvedTextStyle.fontSize
-      : tokens.typography.fontSizeSm
-  const lineHeight =
-    typeof resolvedTextStyle.lineHeight === 'number' ? resolvedTextStyle.lineHeight : LINE_HEIGHT
+    typeof sharedTextStyle.fontSize === 'number' ? sharedTextStyle.fontSize : tokens.typography.fontSizeSm
+  const lineHeight = typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : LINE_HEIGHT
   const letterSpacing =
-    typeof resolvedTextStyle.letterSpacing === 'number'
-      ? resolvedTextStyle.letterSpacing
-      : undefined
+    typeof sharedTextStyle.letterSpacing === 'number' ? sharedTextStyle.letterSpacing : undefined
 
-  return StyleSheet.create({
-    container: {
-      backgroundColor: containerBg,
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: containerBg,
       borderRadius: containerRadius,
       overflow: 'hidden',
     },
-    header: {
-      backgroundColor: containerBg === CODE_BG ? HEADER_BG : containerBg,
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+  })
+  const headerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: containerBg === CODE_BG ? HEADER_BG : containerBg,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[2],
+      justifyContent: 'between',
+      paddingX: 'lg',
+      paddingY: 'sm',
     },
-    langLabel: {
+    componentSurface: config.slots?.header as Record<string, unknown> | undefined,
+  })
+  const langLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
       color: labelColor,
       fontSize: Math.min(fontSize, tokens.typography.fontSizeSm),
-      fontWeight: tokens.typography.fontWeightMedium,
+      fontWeight: 'medium',
     },
-    copyButton: {
-      paddingHorizontal: tokens.spacing[2],
-      paddingVertical: tokens.spacing[1],
+    componentSurface: config.slots?.langLabel as Record<string, unknown> | undefined,
+  })
+  const copyButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'sm',
+      paddingY: 'xs',
     },
-    copyText: {
+    componentSurface: config.slots?.copyButton as Record<string, unknown> | undefined,
+  })
+  const copyTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
       color: labelColor,
       fontSize: Math.min(fontSize, tokens.typography.fontSizeSm),
-      fontWeight: tokens.typography.fontWeightMedium,
+      fontWeight: 'medium',
     },
-    scrollArea: {
+    componentSurface: config.slots?.copyText as Record<string, unknown> | undefined,
+  })
+  const scrollAreaSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
       maxHeight: 400,
     },
-    scrollContent: {
-      padding: tokens.spacing[4],
+    componentSurface: config.slots?.scrollArea as Record<string, unknown> | undefined,
+  })
+  const scrollContentSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      padding: 'lg',
     },
-    lineRow: {
+    componentSurface: config.slots?.scrollContent as Record<string, unknown> | undefined,
+  })
+  const lineRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'start',
       minHeight: LINE_HEIGHT,
     },
-    lineNumber: {
+    componentSurface: config.slots?.lineRow as Record<string, unknown> | undefined,
+  })
+  const lineNumberSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
       color: LINE_NUMBER_COLOR,
-      fontFamily: 'monospace',
       fontSize,
       lineHeight,
       width: 32,
       textAlign: 'right',
-      marginRight: tokens.spacing[3],
+      marginRight: 'md',
     },
-    codeLine: {
+    componentSurface: config.slots?.lineNumber as Record<string, unknown> | undefined,
+  })
+  const codeLineSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
       color: textColor,
-      fontFamily: 'monospace',
       fontSize,
       lineHeight,
       letterSpacing,
     },
-    showMoreButton: {
-      backgroundColor: containerBg === CODE_BG ? HEADER_BG : containerBg,
-      paddingVertical: tokens.spacing[2],
+    componentSurface: config.slots?.codeLine as Record<string, unknown> | undefined,
+  })
+  const showMoreButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: containerBg === CODE_BG ? HEADER_BG : containerBg,
+      paddingY: 'sm',
       alignItems: 'center',
     },
-    showMoreText: {
+    componentSurface: config.slots?.showMoreButton as Record<string, unknown> | undefined,
+  })
+  const showMoreTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
       color: labelColor,
       fontSize,
-      fontWeight: tokens.typography.fontWeightMedium,
+      fontWeight: 'medium',
     },
+    componentSurface: config.slots?.showMoreText as Record<string, unknown> | undefined,
   })
-}
 
+  const handleCopy = useCallback(() => {
+    trySetClipboard(code ?? '')
+    if (config.onCopy) {
+      void dispatch(config.onCopy)
+    }
+    setCopied(true)
+    Animated.sequence([
+      Animated.timing(copyAnim, { toValue: 0.7, duration: 100, useNativeDriver: true }),
+      Animated.timing(copyAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+    ]).start()
+    const timer = setTimeout(() => setCopied(false), 1500)
+    return () => clearTimeout(timer)
+  }, [code, config.onCopy, copyAnim, dispatch])
+
+  const showHeader = config.language != null || config.showCopyButton
+  const testId = config.testID ?? config.id ?? 'code-block'
+
+  return (
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+      <View style={containerSurface.style as ViewStyle | undefined} testID={testId}>
+        {showHeader ? (
+          <View style={headerSurface.style as ViewStyle | undefined}>
+            {config.language != null ? (
+              <Text
+                style={{
+                  ...sharedTextStyle,
+                  ...(langLabelSurface.style as TextStyle | undefined),
+                }}
+                accessibilityRole="text"
+              >
+                {config.language}
+              </Text>
+            ) : null}
+            {config.showCopyButton ? (
+              <Animated.View style={{ opacity: copyAnim }}>
+                <TouchableOpacity
+                  onPress={handleCopy}
+                  style={copyButtonSurface.style as ViewStyle | undefined}
+                  accessibilityRole="button"
+                  accessibilityLabel={copied ? 'Copied to clipboard' : 'Copy code'}
+                  testID={`${testId}-copy`}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      ...sharedTextStyle,
+                      ...(copyTextSurface.style as TextStyle | undefined),
+                    }}
+                  >
+                    {copied ? 'Copied!' : 'Copy'}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            ) : null}
+          </View>
+        ) : null}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator
+          style={scrollAreaSurface.style as ViewStyle | undefined}
+          contentContainerStyle={scrollContentSurface.style as ViewStyle | undefined}
+        >
+          <View>
+            {displayLines.map((line, index) => (
+              <View key={index} style={lineRowSurface.style as ViewStyle | undefined}>
+                {config.showLineNumbers ? (
+                  <Text
+                    style={{
+                      ...sharedTextStyle,
+                      fontFamily: 'monospace',
+                      ...(lineNumberSurface.style as TextStyle | undefined),
+                    }}
+                    selectable={false}
+                  >
+                    {String(index + 1).padStart(String(allLines.length).length, ' ')}
+                  </Text>
+                ) : null}
+                <Text
+                  style={{
+                    ...sharedTextStyle,
+                    fontFamily: 'monospace',
+                    ...(codeLineSurface.style as TextStyle | undefined),
+                  }}
+                  selectable
+                >
+                  {line}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        {truncated ? (
+          <TouchableOpacity
+            onPress={() => setExpanded(true)}
+            style={showMoreButtonSurface.style as ViewStyle | undefined}
+            accessibilityRole="button"
+            accessibilityLabel={`Show ${hiddenCount} more lines`}
+            testID={`${testId}-show-more`}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(showMoreTextSurface.style as TextStyle | undefined),
+              }}
+            >
+              {`Show ${hiddenCount} more lines`}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </ComponentWrapper>
+  )
+}

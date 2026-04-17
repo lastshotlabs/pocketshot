@@ -1,12 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Animated } from 'react-native'
+import {
+  Animated,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
+import { resolveFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { QrScannerConfig } from './types'
-
-// ── Duck-type expo-camera / expo-barcode-scanner ───────────────────────────────
 
 interface BarcodeScanningResult {
   type: string
@@ -37,18 +45,49 @@ try {
   CameraView = mod.CameraView
   useCameraPermissions = mod.useCameraPermissions
 } catch {
-  // not installed
+  // expo-camera is optional
 }
-
-// ── Scanning overlay with animated line ────────────────────────────────────────
 
 const SCAN_AREA_SIZE = 250
 
-function ScanOverlay({ tokens, overlayText }: { tokens: DesignTokens; overlayText?: string }) {
+function resolveSlotSurface(
+  config: QrScannerConfig,
+  tokens: DesignTokens,
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
+}
+
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
+
+function ScanOverlay({
+  config,
+  overlayText,
+  sharedTextStyle,
+}: {
+  config: QrScannerConfig
+  overlayText?: string
+  sharedTextStyle: TextStyle
+}) {
+  const tokens = useTokens()
   const scanLineY = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    const anim = Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(scanLineY, {
           toValue: SCAN_AREA_SIZE - 2,
@@ -62,77 +101,224 @@ function ScanOverlay({ tokens, overlayText }: { tokens: DesignTokens; overlayTex
         }),
       ]),
     )
-    anim.start()
-    return () => anim.stop()
+
+    animation.start()
+    return () => animation.stop()
   }, [scanLineY])
 
-  const styles = useMemo(() => makeOverlayStyles(tokens), [tokens])
+  const overlayContainerSurface = resolveSlotSurface(config, tokens, 'overlayContainer', {
+    position: 'absolute',
+    inset: 0,
+  })
+  const topOverlaySurface = resolveSlotSurface(config, tokens, 'topOverlay', {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  })
+  const middleRowSurface = resolveSlotSurface(config, tokens, 'middleRow', {
+    flexDirection: 'row',
+    height: SCAN_AREA_SIZE,
+  })
+  const sideOverlaySurface = resolveSlotSurface(config, tokens, 'sideOverlay', {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  })
+  const scanAreaSurface = resolveSlotSurface(config, tokens, 'scanArea', {
+    width: SCAN_AREA_SIZE,
+    height: SCAN_AREA_SIZE,
+    overflow: 'hidden',
+  })
+  const cornerSurface = resolveSlotSurface(config, tokens, 'corner', {
+    width: 24,
+    height: 24,
+    borderColor: tokens.colors.primary,
+    borderWidth: 3,
+    position: 'absolute',
+  })
+  const scanLineSurface = resolveSlotSurface(config, tokens, 'scanLine', {
+    width: SCAN_AREA_SIZE,
+    height: 2,
+    backgroundColor: tokens.colors.primary,
+  })
+  const bottomOverlaySurface = resolveSlotSurface(config, tokens, 'bottomOverlay', {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    paddingTop: 'lg',
+  })
+  const overlayTextSurface = resolveSlotSurface(config, tokens, 'overlayText', {
+    color: '#FFFFFF',
+    fontSize: 'base',
+    fontWeight: 'medium',
+  })
 
   return (
-    <View style={styles.overlayContainer} pointerEvents="none">
-      {/* Semi-transparent areas */}
-      <View style={styles.topOverlay} />
-      <View style={styles.middleRow}>
-        <View style={styles.sideOverlay} />
-        <View style={styles.scanArea}>
-          {/* Corner markers */}
-          <View style={[styles.corner, styles.topLeft]} />
-          <View style={[styles.corner, styles.topRight]} />
-          <View style={[styles.corner, styles.bottomLeft]} />
-          <View style={[styles.corner, styles.bottomRight]} />
-          {/* Animated scan line */}
-          <Animated.View style={[styles.scanLine, { transform: [{ translateY: scanLineY }] }]} />
+    <View style={overlayContainerSurface.style as ViewStyle | undefined} pointerEvents="none">
+      <View style={topOverlaySurface.style as ViewStyle | undefined} />
+      <View style={middleRowSurface.style as ViewStyle | undefined}>
+        <View style={sideOverlaySurface.style as ViewStyle | undefined} />
+        <View style={scanAreaSurface.style as ViewStyle | undefined}>
+          <View
+            style={[
+              cornerSurface.style as ViewStyle | undefined,
+              { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
+            ]}
+          />
+          <View
+            style={[
+              cornerSurface.style as ViewStyle | undefined,
+              { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
+            ]}
+          />
+          <View
+            style={[
+              cornerSurface.style as ViewStyle | undefined,
+              { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
+            ]}
+          />
+          <View
+            style={[
+              cornerSurface.style as ViewStyle | undefined,
+              { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
+            ]}
+          />
+          <Animated.View
+            style={[
+              scanLineSurface.style as ViewStyle | undefined,
+              { transform: [{ translateY: scanLineY }] },
+            ]}
+          />
         </View>
-        <View style={styles.sideOverlay} />
+        <View style={sideOverlaySurface.style as ViewStyle | undefined} />
       </View>
-      <View style={styles.bottomOverlay}>
-        {overlayText != null && <Text style={styles.overlayText}>{overlayText}</Text>}
+      <View style={bottomOverlaySurface.style as ViewStyle | undefined}>
+        {overlayText != null ? (
+          <Text style={mergeTextStyle(sharedTextStyle, overlayTextSurface)}>{overlayText}</Text>
+        ) : null}
       </View>
     </View>
   )
 }
 
-// ── Fallback placeholder ───────────────────────────────────────────────────────
-
 function FallbackScanner({
   config,
-  tokens,
   onManualEntry,
+  sharedTextStyle,
 }: {
   config: QrScannerConfig
-  tokens: DesignTokens
   onManualEntry: (value: string) => void
+  sharedTextStyle: TextStyle
 }) {
+  const tokens = useTokens()
   const [manualValue, setManualValue] = useState('')
-  const styles = useMemo(() => makeFallbackStyles(tokens), [tokens])
   const testId = config.testID ?? config.id ?? 'qr-scanner'
 
+  const fallbackSurface = resolveSlotSurface(config, tokens, 'fallback', {
+    padding: 'xl',
+    alignItems: 'center',
+    backgroundColor: tokens.colors.surface,
+    borderRadius: 'lg',
+    border: '1 border',
+  })
+  const iconSurface = resolveSlotSurface(config, tokens, 'icon', {
+    color: 'muted',
+    fontSize: 'lg',
+    fontWeight: 'bold',
+    marginBottom: 'md',
+  })
+  const titleSurface = resolveSlotSurface(config, tokens, 'title', {
+    color: 'foreground',
+    fontSize: 'lg',
+    fontWeight: 'semibold',
+    marginBottom: 'sm',
+  })
+  const messageSurface = resolveSlotSurface(config, tokens, 'message', {
+    color: 'muted',
+    fontSize: 'sm',
+    marginBottom: 'xs',
+  })
+  const installCommandSurface = resolveSlotSurface(config, tokens, 'installCommand', {
+    color: 'primary',
+    fontSize: 'xs',
+    backgroundColor: tokens.colors.surfaceAlt,
+    paddingX: 'md',
+    paddingY: 'xs',
+    borderRadius: 'sm',
+    marginBottom: 'lg',
+  })
+  const dividerRowSurface = resolveSlotSurface(config, tokens, 'dividerRow', {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 'lg',
+  })
+  const dividerLineSurface = resolveSlotSurface(config, tokens, 'dividerLine', {
+    flex: 1,
+    height: 1,
+    backgroundColor: tokens.colors.divider,
+  })
+  const dividerTextSurface = resolveSlotSurface(config, tokens, 'dividerText', {
+    color: 'muted',
+    fontSize: 'xs',
+    marginX: 'md',
+  })
+  const inputSurface = resolveSlotSurface(config, tokens, 'input', {
+    width: '100%',
+    border: '1 border',
+    backgroundColor: tokens.colors.inputBackground,
+    borderRadius: 'md',
+    paddingX: 'md',
+    paddingY: 'md',
+    marginBottom: 'md',
+    color: tokens.colors.inputText,
+  })
+  const submitButtonSurface = resolveSlotSurface(config, tokens, 'submitButton', {
+    backgroundColor: tokens.colors.primary,
+    width: '100%',
+    alignItems: 'center',
+    paddingX: 'lg',
+    paddingY: 'md',
+    borderRadius: 'md',
+    opacity: manualValue.trim().length === 0 ? 0.5 : 1,
+  })
+  const submitTextSurface = resolveSlotSurface(config, tokens, 'submitText', {
+    color: 'primary-foreground',
+    fontSize: 'base',
+    fontWeight: 'semibold',
+  })
+
   const handleSubmit = useCallback(() => {
-    if (manualValue.trim().length > 0) {
-      onManualEntry(manualValue.trim())
-      setManualValue('')
+    const value = manualValue.trim()
+    if (value.length === 0) {
+      return
     }
+
+    onManualEntry(value)
+    setManualValue('')
   }, [manualValue, onManualEntry])
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.icon} accessibilityElementsHidden>
-        {'\uD83D\uDCF7'}
+    <View style={fallbackSurface.style as ViewStyle | undefined}>
+      <Text style={mergeTextStyle(sharedTextStyle, iconSurface)}>QR</Text>
+      <Text style={mergeTextStyle(sharedTextStyle, titleSurface)}>
+        Camera Not Available
       </Text>
-      <Text style={styles.title}>Camera Not Available</Text>
-      <Text style={styles.message}>Install expo-camera for QR scanning</Text>
-      <Text style={styles.installCmd} selectable>
+      <Text style={mergeTextStyle(sharedTextStyle, messageSurface)}>
+        Install expo-camera for QR scanning
+      </Text>
+      <Text style={mergeTextStyle(sharedTextStyle, installCommandSurface)}>
         npx expo install expo-camera
       </Text>
 
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or enter manually</Text>
-        <View style={styles.dividerLine} />
+      <View style={dividerRowSurface.style as ViewStyle | undefined}>
+        <View style={dividerLineSurface.style as ViewStyle | undefined} />
+        <Text style={mergeTextStyle(sharedTextStyle, dividerTextSurface)}>
+          or enter manually
+        </Text>
+        <View style={dividerLineSurface.style as ViewStyle | undefined} />
       </View>
 
       <TextInput
-        style={styles.input}
+        style={inputSurface.style as TextStyle | undefined}
         value={manualValue}
         onChangeText={setManualValue}
         placeholder="Enter code value..."
@@ -143,47 +329,162 @@ function FallbackScanner({
         accessibilityHint="Type a value and submit to simulate a QR scan"
         testID={`${testId}-manual-input`}
       />
+
       <TouchableOpacity
         onPress={handleSubmit}
-        style={[
-          styles.submitButton,
-          manualValue.trim().length === 0 && styles.submitButtonDisabled,
-        ]}
+        style={submitButtonSurface.style as ViewStyle | undefined}
         disabled={manualValue.trim().length === 0}
         accessibilityRole="button"
         accessibilityLabel="Submit manual entry"
         testID={`${testId}-manual-submit`}
         activeOpacity={0.7}
       >
-        <Text style={styles.submitText}>Submit</Text>
+        <Text style={mergeTextStyle(sharedTextStyle, submitTextSurface)}>Submit</Text>
       </TouchableOpacity>
     </View>
   )
 }
 
-// ── Component ──────────────────────────────────────────────────────────────────
+function CameraScannerView({
+  config,
+  testId,
+  onBarcodeScan,
+  overlayText,
+  sharedTextStyle,
+}: {
+  config: QrScannerConfig
+  testId: string
+  onBarcodeScan: (result: BarcodeScanningResult) => void
+  overlayText?: string
+  sharedTextStyle: TextStyle
+}) {
+  const tokens = useTokens()
+  const [permission, requestPermission] = useCameraPermissions!()
+
+  const permissionContainerSurface = resolveSlotSurface(config, tokens, 'permissionContainer', {
+    padding: 'xl',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tokens.colors.surface,
+    borderRadius: 'lg',
+    border: '1 border',
+  })
+  const permissionTextSurface = resolveSlotSurface(config, tokens, 'permissionText', {
+    color: 'foreground',
+    fontSize: 'base',
+    textAlign: 'center',
+    marginBottom: 'lg',
+  })
+  const permissionButtonSurface = resolveSlotSurface(config, tokens, 'permissionButton', {
+    backgroundColor: tokens.colors.primary,
+    paddingX: 'xl',
+    paddingY: 'md',
+    borderRadius: 'md',
+  })
+  const permissionButtonTextSurface = resolveSlotSurface(config, tokens, 'permissionButtonText', {
+    color: 'primary-foreground',
+    fontSize: 'base',
+    fontWeight: 'semibold',
+  })
+  const cameraContainerSurface = resolveSlotSurface(config, tokens, 'cameraContainer', {
+    width: '100%',
+    aspectRatio: 3 / 4,
+    borderRadius: 'lg',
+    overflow: 'hidden',
+  })
+  const cameraSurface = resolveSlotSurface(config, tokens, 'camera', {
+    flex: 1,
+  })
+
+  if (permission == null) {
+    return (
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+        <View style={permissionContainerSurface.style as ViewStyle | undefined}>
+          <Text style={mergeTextStyle(sharedTextStyle, permissionTextSurface)}>
+            Initializing camera...
+          </Text>
+        </View>
+      </ComponentWrapper>
+    )
+  }
+
+  if (!permission.granted) {
+    return (
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+        <View style={permissionContainerSurface.style as ViewStyle | undefined}>
+          <Text style={mergeTextStyle(sharedTextStyle, permissionTextSurface)}>
+            Camera permission is required to scan QR codes
+          </Text>
+          <TouchableOpacity
+            onPress={() => void requestPermission()}
+            style={permissionButtonSurface.style as ViewStyle | undefined}
+            accessibilityRole="button"
+            accessibilityLabel="Grant camera permission"
+            testID={`${testId}-grant-permission`}
+            activeOpacity={0.7}
+          >
+            <Text style={mergeTextStyle(sharedTextStyle, permissionButtonTextSurface)}>
+              Grant Permission
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ComponentWrapper>
+    )
+  }
+
+  return (
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+      <View style={cameraContainerSurface.style as ViewStyle | undefined} testID={testId}>
+        {React.createElement(
+          CameraView!,
+          {
+            style: cameraSurface.style,
+            facing: 'back' as const,
+            enableTorch: config.torchEnabled ?? false,
+            barcodeScannerSettings: { barcodeTypes: ['qr'] },
+            onBarcodeScanned: onBarcodeScan,
+          },
+          (config.showOverlay ?? true) ? (
+            <ScanOverlay
+              config={config}
+              overlayText={overlayText}
+              sharedTextStyle={sharedTextStyle}
+            />
+          ) : null,
+        )}
+      </View>
+    </ComponentWrapper>
+  )
+}
 
 export function QrScanner({ config }: { config: QrScannerConfig }) {
   const tokens = useTokens()
-  const { dispatch } = useScreenContext()
+  const { dispatch, values } = useScreenContext()
   const [hasScanned, setHasScanned] = useState(false)
 
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const overlayText =
+    config.overlayText != null
+      ? String(resolveFromRef(config.overlayText, values) ?? '')
+      : undefined
   const testId = config.testID ?? config.id ?? 'qr-scanner'
 
   const handleScan = useCallback(
-    (data: string) => {
-      if (hasScanned) return
-      setHasScanned(true)
-      // Store the scanned data in ScreenContext under the component id
-      if (config.id != null) {
-        void dispatch({ type: 'set-value', target: config.id, value: data })
+    (value: string) => {
+      if (hasScanned) {
+        return
       }
+
+      setHasScanned(true)
+
+      if (config.id != null) {
+        void dispatch({ type: 'set-value', target: config.id, value })
+      }
+
       void dispatch(config.onScan)
-      // Reset after a brief delay to allow re-scanning
-      const timer = setTimeout(() => setHasScanned(false), 2000)
-      return () => clearTimeout(timer)
+      setTimeout(() => setHasScanned(false), 2000)
     },
-    [hasScanned, config.id, config.onScan, dispatch],
+    [config.id, config.onScan, dispatch, hasScanned],
   )
 
   const handleBarcodeScan = useCallback(
@@ -193,272 +494,25 @@ export function QrScanner({ config }: { config: QrScannerConfig }) {
     [handleScan],
   )
 
-  // Camera-based rendering
   if (CameraView != null && useCameraPermissions != null) {
     return (
       <CameraScannerView
         config={config}
-        tokens={tokens}
         testId={testId}
         onBarcodeScan={handleBarcodeScan}
+        overlayText={overlayText}
+        sharedTextStyle={sharedTextStyle}
       />
     )
   }
 
-  // Fallback
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <FallbackScanner config={config} tokens={tokens} onManualEntry={handleScan} />
+      <FallbackScanner
+        config={config}
+        onManualEntry={handleScan}
+        sharedTextStyle={sharedTextStyle}
+      />
     </ComponentWrapper>
   )
 }
-
-// ── Camera scanner (separate component to use hook conditionally) ──────────────
-
-function CameraScannerView({
-  config,
-  tokens,
-  testId,
-  onBarcodeScan,
-}: {
-  config: QrScannerConfig
-  tokens: DesignTokens
-  testId: string
-  onBarcodeScan: (result: BarcodeScanningResult) => void
-}) {
-  const [permission, requestPermission] = useCameraPermissions!()
-  const styles = useMemo(() => makeCameraStyles(tokens), [tokens])
-
-  if (permission == null) {
-    return (
-      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Initializing camera...</Text>
-        </View>
-      </ComponentWrapper>
-    )
-  }
-
-  if (!permission.granted) {
-    return (
-      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Camera permission is required to scan QR codes</Text>
-          <TouchableOpacity
-            onPress={() => void requestPermission()}
-            style={styles.permissionButton}
-            accessibilityRole="button"
-            accessibilityLabel="Grant camera permission"
-            testID={`${testId}-grant-permission`}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.permissionButtonText}>Grant Permission</Text>
-          </TouchableOpacity>
-        </View>
-      </ComponentWrapper>
-    )
-  }
-
-  return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.cameraContainer} testID={testId}>
-        {React.createElement(
-          CameraView!,
-          {
-            style: styles.camera,
-            facing: 'back' as const,
-            enableTorch: config.torchEnabled ?? false,
-            barcodeScannerSettings: { barcodeTypes: ['qr'] },
-            onBarcodeScanned: onBarcodeScan,
-          },
-          (config.showOverlay ?? true) ? (
-            <ScanOverlay tokens={tokens} overlayText={config.overlayText} />
-          ) : null,
-        )}
-      </View>
-    </ComponentWrapper>
-  )
-}
-
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-function makeOverlayStyles(tokens: DesignTokens) {
-  const overlayBg = 'rgba(0,0,0,0.5)'
-  return StyleSheet.create({
-    overlayContainer: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
-    topOverlay: {
-      flex: 1,
-      backgroundColor: overlayBg,
-    },
-    middleRow: {
-      flexDirection: 'row',
-      height: SCAN_AREA_SIZE,
-    },
-    sideOverlay: {
-      flex: 1,
-      backgroundColor: overlayBg,
-    },
-    scanArea: {
-      width: SCAN_AREA_SIZE,
-      height: SCAN_AREA_SIZE,
-      overflow: 'hidden',
-    },
-    corner: {
-      position: 'absolute',
-      width: 24,
-      height: 24,
-      borderColor: tokens.colors.primary,
-      borderWidth: 3,
-    },
-    topLeft: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
-    topRight: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
-    bottomLeft: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
-    bottomRight: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
-    scanLine: {
-      width: SCAN_AREA_SIZE,
-      height: 2,
-      backgroundColor: tokens.colors.primary,
-    },
-    bottomOverlay: {
-      flex: 1,
-      backgroundColor: overlayBg,
-      alignItems: 'center',
-      paddingTop: tokens.spacing[4],
-    },
-    overlayText: {
-      color: '#ffffff',
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightMedium,
-    },
-  })
-}
-
-function makeCameraStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    cameraContainer: {
-      width: '100%',
-      aspectRatio: 3 / 4,
-      borderRadius: tokens.radius.lg,
-      overflow: 'hidden',
-    },
-    camera: {
-      flex: 1,
-    },
-    permissionContainer: {
-      padding: tokens.spacing[8],
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.lg,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-    },
-    permissionText: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-      textAlign: 'center',
-      marginBottom: tokens.spacing[4],
-    },
-    permissionButton: {
-      backgroundColor: tokens.colors.primary,
-      paddingHorizontal: tokens.spacing[6],
-      paddingVertical: tokens.spacing[3],
-      borderRadius: tokens.radius.md,
-    },
-    permissionButtonText: {
-      color: tokens.colors.primaryForeground,
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-  })
-}
-
-function makeFallbackStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      padding: tokens.spacing[6],
-      alignItems: 'center',
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.lg,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-    },
-    icon: {
-      fontSize: 48,
-      marginBottom: tokens.spacing[3],
-    },
-    title: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[2],
-    },
-    message: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      marginBottom: tokens.spacing[1],
-    },
-    installCmd: {
-      fontFamily: 'monospace',
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.primary,
-      backgroundColor: tokens.colors.surfaceAlt,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[1],
-      borderRadius: tokens.radius.sm,
-      marginBottom: tokens.spacing[4],
-      overflow: 'hidden',
-    },
-    dividerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      width: '100%',
-      marginBottom: tokens.spacing[4],
-    },
-    dividerLine: {
-      flex: 1,
-      height: 1,
-      backgroundColor: tokens.colors.divider,
-    },
-    dividerText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-      marginHorizontal: tokens.spacing[3],
-    },
-    input: {
-      width: '100%',
-      borderWidth: 1,
-      borderColor: tokens.colors.inputBorder,
-      backgroundColor: tokens.colors.inputBackground,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[3],
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputText,
-      marginBottom: tokens.spacing[3],
-    },
-    submitButton: {
-      backgroundColor: tokens.colors.primary,
-      paddingHorizontal: tokens.spacing[6],
-      paddingVertical: tokens.spacing[3],
-      borderRadius: tokens.radius.md,
-      width: '100%',
-      alignItems: 'center',
-    },
-    submitButtonDisabled: {
-      opacity: 0.5,
-    },
-    submitText: {
-      color: tokens.colors.primaryForeground,
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-  })
-}
-

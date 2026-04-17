@@ -57,4 +57,22 @@ describe('LinkSchema', () => {
     expect(result.fontSize).toBe('lg')
     expect(result.textAlign).toBe('center')
   })
+
+  it('accepts slot surfaces', () => {
+    const result = LinkSchema.parse({
+      text: 'X',
+      action,
+      slots: {
+        button: {
+          paddingY: 'sm',
+        },
+        text: {
+          letterSpacing: 'wide',
+        },
+      },
+    })
+
+    expect(result.slots?.button?.paddingY).toBe('sm')
+    expect(result.slots?.text?.letterSpacing).toBe('wide')
+  })
 })

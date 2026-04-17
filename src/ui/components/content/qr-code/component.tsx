@@ -1,20 +1,17 @@
 import React, { useMemo } from 'react'
-import { View, Text, Image, StyleSheet } from 'react-native'
+import { View, Text, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeStyleProps } from '../../_base'
+import { resolveNativeStyleProps, resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { QrCodeConfig } from './types'
 
-// ── Fallback: simple hash-based dot matrix ─────────────────────────────────────
-
-function simpleHash(str: string): number {
+function simpleHash(text: string): number {
   let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const ch = str.charCodeAt(i)
-    hash = ((hash << 5) - hash + ch) | 0
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text.charCodeAt(index)
+    hash = ((hash << 5) - hash + char) | 0
   }
   return hash
 }
@@ -22,30 +19,28 @@ function simpleHash(str: string): number {
 function generateDotMatrix(value: string, gridSize: number): boolean[][] {
   const matrix: boolean[][] = []
   let seed = Math.abs(simpleHash(value))
-  for (let row = 0; row < gridSize; row++) {
+  for (let row = 0; row < gridSize; row += 1) {
     const rowData: boolean[] = []
-    for (let col = 0; col < gridSize; col++) {
-      // Deterministic pseudo-random based on value
+    for (let column = 0; column < gridSize; column += 1) {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff
       const isFinder =
-        (row < 7 && col < 7) ||
-        (row < 7 && col >= gridSize - 7) ||
-        (row >= gridSize - 7 && col < 7)
+        (row < 7 && column < 7) ||
+        (row < 7 && column >= gridSize - 7) ||
+        (row >= gridSize - 7 && column < 7)
       if (isFinder) {
-        // Simulate QR finder patterns
         const inBorder =
           row === 0 ||
-          col === 0 ||
+          column === 0 ||
           row === 6 ||
-          col === 6 ||
+          column === 6 ||
           row === gridSize - 1 ||
-          col === gridSize - 1 ||
+          column === gridSize - 1 ||
           row === gridSize - 7 ||
-          col === gridSize - 7
+          column === gridSize - 7
         const inCenter =
-          (row >= 2 && row <= 4 && col >= 2 && col <= 4) ||
-          (row >= 2 && row <= 4 && col >= gridSize - 5 && col <= gridSize - 3) ||
-          (row >= gridSize - 5 && row <= gridSize - 3 && col >= 2 && col <= 4)
+          (row >= 2 && row <= 4 && column >= 2 && column <= 4) ||
+          (row >= 2 && row <= 4 && column >= gridSize - 5 && column <= gridSize - 3) ||
+          (row >= gridSize - 5 && row <= gridSize - 3 && column >= 2 && column <= 4)
         rowData.push(inBorder || inCenter)
       } else {
         rowData.push(seed % 3 !== 0)
@@ -57,30 +52,53 @@ function generateDotMatrix(value: string, gridSize: number): boolean[][] {
 }
 
 function FallbackQrCode({
+  config,
   value,
   size,
   color,
   bgColor,
-  tokens,
 }: {
+  config: QrCodeConfig
   value: string
   size: number
   color: string
   bgColor: string
-  tokens: DesignTokens
 }) {
+  const tokens = useTokens()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
   const gridSize = 21
   const dotSize = Math.floor(size / gridSize)
   const matrix = useMemo(() => generateDotMatrix(value, gridSize), [value])
 
+  const matrixSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: size,
+      height: size,
+      bg: bgColor,
+      overflow: 'hidden',
+    },
+    componentSurface: config.slots?.matrix as Record<string, unknown> | undefined,
+  })
+  const captionSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'muted',
+      textAlign: 'center',
+      marginTop: 'sm',
+    },
+    componentSurface: config.slots?.caption as Record<string, unknown> | undefined,
+  })
+
   return (
     <View accessibilityRole="image" accessibilityLabel={`QR code for: ${value}`}>
-      <View style={{ width: size, height: size, backgroundColor: bgColor, overflow: 'hidden' }}>
-        {matrix.map((row, rowIdx) => (
-          <View key={rowIdx} style={{ flexDirection: 'row' }}>
-            {row.map((filled, colIdx) => (
+      <View style={matrixSurface.style as ViewStyle | undefined}>
+        {matrix.map((row, rowIndex) => (
+          <View key={rowIndex} style={{ flexDirection: 'row' }}>
+            {row.map((filled, columnIndex) => (
               <View
-                key={colIdx}
+                key={columnIndex}
                 style={{
                   width: dotSize,
                   height: dotSize,
@@ -93,10 +111,8 @@ function FallbackQrCode({
       </View>
       <Text
         style={{
-          fontSize: tokens.typography.fontSizeXs,
-          color: tokens.colors.textMuted,
-          textAlign: 'center',
-          marginTop: tokens.spacing[2],
+          ...sharedTextStyle,
+          ...(captionSurface.style as TextStyle | undefined),
         }}
       >
         Install react-native-qrcode-svg for scannable QR codes
@@ -104,8 +120,6 @@ function FallbackQrCode({
     </View>
   )
 }
-
-// ── Component ──────────────────────────────────────────────────────────────────
 
 export function QrCode({ config }: { config: QrCodeConfig }) {
   const tokens = useTokens()
@@ -122,60 +136,32 @@ export function QrCode({ config }: { config: QrCodeConfig }) {
   )
   const color = typeof resolvedStyle.color === 'string' ? resolvedStyle.color : tokens.colors.text
   const bgColor =
-    typeof resolvedStyle.backgroundColor === 'string'
-      ? resolvedStyle.backgroundColor
-      : tokens.colors.surface
-  const styles = useMemo(() => makeStyles(tokens, bgColor), [tokens, bgColor])
-
+    typeof resolvedStyle.backgroundColor === 'string' ? resolvedStyle.backgroundColor : tokens.colors.surface
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      alignItems: 'center',
+      padding: 'lg',
+      bg: bgColor,
+      borderRadius: 'lg',
+      border: '1px solid border',
+    },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+  })
   const testId = config.testID ?? config.id ?? 'qr-code'
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View
-        style={styles.container}
+        style={containerSurface.style as ViewStyle | undefined}
         testID={testId}
         accessibilityRole="image"
         accessibilityLabel={`QR code containing: ${value ?? ''}`}
       >
         {value != null ? (
-          <FallbackQrCode
-            value={value}
-            size={size}
-            color={color}
-            bgColor={bgColor}
-            tokens={tokens}
-          />
+          <FallbackQrCode config={config} value={value} size={size} color={color} bgColor={bgColor} />
         ) : null}
       </View>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, bgColor: string) {
-  return StyleSheet.create({
-    container: {
-      alignItems: 'center',
-      padding: tokens.spacing[4],
-      backgroundColor: bgColor,
-      borderRadius: tokens.radius.lg,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-    },
-    qrWrapper: {
-      position: 'relative',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    logoOverlay: {
-      position: 'absolute',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    logoImage: {
-      width: 40,
-      height: 40,
-      borderRadius: 4,
-    },
-  })
-}
-

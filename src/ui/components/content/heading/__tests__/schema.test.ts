@@ -42,4 +42,19 @@ describe('HeadingSchema', () => {
   it('rejects invalid textAlign', () => {
     expect(HeadingSchema.safeParse({ text: 'X', textAlign: 'sideways' }).success).toBe(false)
   })
+
+  it('accepts slot surfaces', () => {
+    const result = HeadingSchema.parse({
+      text: 'Heading',
+      slots: {
+        text: {
+          letterSpacing: 'wide',
+          color: 'primary',
+        },
+      },
+    })
+
+    expect(result.slots?.text?.letterSpacing).toBe('wide')
+    expect(result.slots?.text?.color).toBe('primary')
+  })
 })

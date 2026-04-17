@@ -49,4 +49,19 @@ describe('BodySchema', () => {
     const result = BodySchema.parse({ text: 'X', numberOfLines: 2 })
     expect(result.numberOfLines).toBe(2)
   })
+
+  it('accepts slot surfaces', () => {
+    const result = BodySchema.parse({
+      text: 'X',
+      slots: {
+        text: {
+          letterSpacing: 'wide',
+          color: 'muted',
+        },
+      },
+    })
+
+    expect(result.slots?.text?.letterSpacing).toBe('wide')
+    expect(result.slots?.text?.color).toBe('muted')
+  })
 })

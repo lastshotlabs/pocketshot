@@ -153,4 +153,22 @@ describe('ProductCard', () => {
     )
     expect(JSON.stringify(toJSON())).toContain('35.00')
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <ProductCard
+        config={{
+          title: 'Keyboard',
+          price: 99.99,
+          onAddToCart: { type: 'toast', message: 'added' },
+          slots: {
+            card: { borderRadius: 'xl' },
+            title: { letterSpacing: 'wide' },
+            addButton: { borderRadius: 'lg' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

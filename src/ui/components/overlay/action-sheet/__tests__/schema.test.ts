@@ -15,4 +15,19 @@ describe('ActionSheetSchema', () => {
     const result = ActionSheetSchema.parse({})
     expect(result.id).toBeUndefined()
   })
+
+  it('accepts slot surfaces', () => {
+    const result = ActionSheetSchema.parse({
+      id: 'options-sheet',
+      slots: {
+        container: { bg: 'card' },
+        title: { letterSpacing: 'wide' },
+        optionText: { color: 'primary' },
+      },
+    })
+
+    expect(result.slots?.container?.bg).toBe('card')
+    expect(result.slots?.title?.letterSpacing).toBe('wide')
+    expect(result.slots?.optionText?.color).toBe('primary')
+  })
 })

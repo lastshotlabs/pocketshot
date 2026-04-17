@@ -36,4 +36,19 @@ describe('BottomSheetSchema', () => {
   it('rejects non-string-array snapPoints', () => {
     expect(BottomSheetSchema.safeParse({ id: 'x', snapPoints: [50] }).success).toBe(false)
   })
+
+  it('accepts slot surfaces', () => {
+    const result = BottomSheetSchema.parse({
+      id: 'x',
+      slots: {
+        panel: { bg: 'card' },
+        title: { letterSpacing: 'wide' },
+        content: { paddingY: 'lg' },
+      },
+    })
+
+    expect(result.slots?.panel?.bg).toBe('card')
+    expect(result.slots?.title?.letterSpacing).toBe('wide')
+    expect(result.slots?.content?.paddingY).toBe('lg')
+  })
 })

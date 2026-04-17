@@ -1,6 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput as RNTextInput } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput as RNTextInput,
+  TouchableOpacity,
+  View,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -9,21 +19,18 @@ import type { RichInputConfig, ToolbarItem } from './types'
 
 const LINE_HEIGHT = 22
 
-// ── Toolbar config ─────────────────────────────────────────────────────────────
-
 const TOOLBAR_LABELS: Record<ToolbarItem, string> = {
   bold: 'B',
   italic: 'I',
   underline: 'U',
   strikethrough: 'S',
   code: '</>',
-  'list-bullet': '≡',
+  'list-bullet': '-',
   'list-number': '1.',
-  link: '⟁',
-  quote: '❝',
+  link: 'Link',
+  quote: '"',
 }
 
-/** Which items are "inline" (text-style) vs "block" — used for visual grouping */
 const INLINE_ITEMS = new Set<ToolbarItem>(['bold', 'italic', 'underline', 'strikethrough'])
 const BLOCK_ITEMS = new Set<ToolbarItem>(['list-bullet', 'list-number', 'quote'])
 
@@ -39,9 +46,6 @@ const TOOLBAR_A11Y: Record<ToolbarItem, string> = {
   quote: 'Blockquote',
 }
 
-/**
- * Apply markdown formatting to a text value given the current selection.
- */
 function applyFormatting(
   item: ToolbarItem,
   value: string,
@@ -56,184 +60,251 @@ function applyFormatting(
     case 'bold': {
       const placeholder = hasSelection ? selected : 'bold text'
       const insert = `**${placeholder}**`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 2),
-      }
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'italic': {
       const placeholder = hasSelection ? selected : 'italic text'
       const insert = `*${placeholder}*`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 1),
-      }
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'underline': {
       const placeholder = hasSelection ? selected : 'underlined text'
       const insert = `__${placeholder}__`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 2),
-      }
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'strikethrough': {
       const placeholder = hasSelection ? selected : 'struck text'
       const insert = `~~${placeholder}~~`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 2),
-      }
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'code': {
       const placeholder = hasSelection ? selected : 'code'
       const insert = '`' + placeholder + '`'
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 1),
-      }
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'list-bullet': {
-      if (hasSelection) {
-        const lines = selected.split('\n').map((l) => `- ${l}`)
-        const insert = lines.join('\n')
-        return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
-      }
-      return { newValue: before + '- ' + after, newCursorPos: selection.start + 2 }
+      const insert = hasSelection
+        ? selected.split('\n').map((line) => `- ${line}`).join('\n')
+        : '- '
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'list-number': {
-      if (hasSelection) {
-        const lines = selected.split('\n').map((l, i) => `${i + 1}. ${l}`)
-        const insert = lines.join('\n')
-        return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
-      }
-      return { newValue: before + '1. ' + after, newCursorPos: selection.start + 3 }
+      const insert = hasSelection
+        ? selected.split('\n').map((line, index) => `${index + 1}. ${line}`).join('\n')
+        : '1. '
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'quote': {
-      if (hasSelection) {
-        const lines = selected.split('\n').map((l) => `> ${l}`)
-        const insert = lines.join('\n')
-        return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
-      }
-      return { newValue: before + '> ' + after, newCursorPos: selection.start + 2 }
+      const insert = hasSelection
+        ? selected.split('\n').map((line) => `> ${line}`).join('\n')
+        : '> '
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'link': {
       const placeholder = hasSelection ? selected : 'link text'
       const insert = `[${placeholder}](url)`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 1 : 5),
-      }
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     default:
       return { newValue: value, newCursorPos: selection.end }
   }
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+function resolveSlotSurface(
+  config: RichInputConfig,
+  tokens: DesignTokens,
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
+}
+
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
 
 export function RichInput({ config }: { config: RichInputConfig }) {
   const tokens = useTokens()
   const { values, setValue, dispatch } = useScreenContext()
 
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
   const resolvedValue = config.value != null ? resolveFromRef(config.value, values) : undefined
+  const resolvedLabel =
+    config.label != null ? String(resolveFromRef(config.label, values) ?? '') : undefined
+  const resolvedPlaceholder =
+    config.placeholder != null
+      ? String(resolveFromRef(config.placeholder, values) ?? '')
+      : undefined
+
   const [localValue, setLocalValue] = useState<string>(
-    (resolvedValue as string | undefined) ?? config.defaultValue ?? '',
+    String(resolvedValue ?? config.defaultValue ?? ''),
   )
   const [selection, setSelection] = useState({ start: 0, end: 0 })
   const [focused, setFocused] = useState(false)
   const [activeItem, setActiveItem] = useState<ToolbarItem | null>(null)
   const [inputHeight, setInputHeight] = useState((config.minRows ?? 4) * LINE_HEIGHT)
-  const inputRef = useRef<RNTextInput>(null)
 
   useEffect(() => {
     if (resolvedValue != null) {
-      setLocalValue(resolvedValue as string)
+      setLocalValue(String(resolvedValue))
     }
   }, [resolvedValue])
 
   const minHeight = (config.minRows ?? 4) * LINE_HEIGHT
   const maxHeight = (config.maxRows ?? 12) * LINE_HEIGHT
+  const testId = config.testID ?? config.id
+
+  const labelSurface = resolveSlotSurface(config, tokens, 'label', {
+    color: 'foreground',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+    marginBottom: 'xs',
+  })
+  const toolbarSurface = resolveSlotSurface(config, tokens, 'toolbar', {
+    backgroundColor: tokens.colors.surface,
+    border: '1 border',
+    borderTopLeftRadius: tokens.radius.lg,
+    borderTopRightRadius: tokens.radius.lg,
+  })
+  const toolbarContentSurface = resolveSlotSurface(config, tokens, 'toolbarContent', {
+    paddingX: 'sm',
+    paddingY: 'sm',
+    gap: 2,
+    alignItems: 'center',
+  })
+  const toolbarSeparatorSurface = resolveSlotSurface(config, tokens, 'toolbarSeparator', {
+    width: StyleSheet.hairlineWidth,
+    height: 20,
+    backgroundColor: tokens.colors.divider,
+    marginX: 'xs',
+  })
+  const toolbarButtonSurface = resolveSlotSurface(config, tokens, 'toolbarButton', {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 'md',
+    backgroundColor: activeItem != null ? undefined : undefined,
+  })
+  const toolbarLabelSurface = resolveSlotSurface(config, tokens, 'toolbarLabel', {
+    color: 'muted',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+  })
+  const inputSurface = resolveSlotSurface(config, tokens, 'input', {
+    backgroundColor: tokens.colors.inputBackground,
+    border: '1 border',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: tokens.radius.lg,
+    borderBottomRightRadius: tokens.radius.lg,
+    paddingX: 'md',
+    paddingY: 'sm',
+    color: tokens.colors.inputText,
+    fontSize: 'base',
+  })
 
   const handleChange = useCallback(
     (text: string) => {
       setLocalValue(text)
       setValue(config.id, text)
-      if (config.onChangeAction) {
+      if (config.onChangeAction != null) {
         void dispatch(config.onChangeAction)
       }
     },
-    [config.id, config.onChangeAction, setValue, dispatch],
+    [config.id, config.onChangeAction, dispatch, setValue],
   )
 
   const handleToolbarPress = useCallback(
     (item: ToolbarItem) => {
       const { newValue } = applyFormatting(item, localValue, selection)
       handleChange(newValue)
-
-      // Brief active indicator
       setActiveItem(item)
       setTimeout(() => setActiveItem(null), 150)
     },
-    [localValue, selection, handleChange],
+    [handleChange, localValue, selection],
   )
-
-  const handleContentSizeChange = useCallback(
-    (e: { nativeEvent: { contentSize: { height: number } } }) => {
-      const h = Math.min(Math.max(e.nativeEvent.contentSize.height, minHeight), maxHeight)
-      setInputHeight(h)
-    },
-    [minHeight, maxHeight],
-  )
-
-  const styles = useMemo(() => makeStyles(tokens, focused), [tokens, focused])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View testID={config.testID ?? config.id}>
-        {config.label != null && (
-          <Text style={styles.label} accessibilityRole="text">
-            {config.label}
+      <View testID={testId}>
+        {resolvedLabel != null ? (
+          <Text style={mergeTextStyle(sharedTextStyle, labelSurface)} accessibilityRole="text">
+            {resolvedLabel}
           </Text>
-        )}
+        ) : null}
 
-        {/* Toolbar */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.toolbar}
-          contentContainerStyle={styles.toolbarContent}
+          style={toolbarSurface.style as ViewStyle | undefined}
+          contentContainerStyle={toolbarContentSurface.style as ViewStyle | undefined}
           accessibilityRole="toolbar"
         >
-          {(config.toolbar ?? ['bold', 'italic', 'code', 'list-bullet']).map((item, idx, arr) => {
-            const isActive = activeItem === item
+          {(config.toolbar ?? ['bold', 'italic', 'code', 'list-bullet']).map((item, index, all) => {
             const typedItem = item as ToolbarItem
-            const prevItem = idx > 0 ? (arr[idx - 1] as ToolbarItem) : null
+            const previousItem = index > 0 ? (all[index - 1] as ToolbarItem) : null
+            const isActive = activeItem === typedItem
             const needsSeparator =
-              prevItem != null &&
-              ((INLINE_ITEMS.has(prevItem) && !INLINE_ITEMS.has(typedItem)) ||
-               (BLOCK_ITEMS.has(prevItem) && !BLOCK_ITEMS.has(typedItem)))
+              previousItem != null &&
+              ((INLINE_ITEMS.has(previousItem) && !INLINE_ITEMS.has(typedItem)) ||
+                (BLOCK_ITEMS.has(previousItem) && !BLOCK_ITEMS.has(typedItem)))
+
+            const activeButtonSurface = isActive
+              ? resolveSlotSurface(config, tokens, 'toolbarButton', {
+                  width: 34,
+                  height: 34,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 'md',
+                  backgroundColor: tokens.colors.primary,
+                })
+              : toolbarButtonSurface
+            const activeLabelSurface = isActive
+              ? resolveSlotSurface(config, tokens, 'toolbarLabel', {
+                  color: 'primary-foreground',
+                  fontSize: 'sm',
+                  fontWeight: 'medium',
+                })
+              : toolbarLabelSurface
 
             return (
-              <React.Fragment key={item}>
-                {needsSeparator && <View style={styles.toolbarSeparator} />}
+              <React.Fragment key={typedItem}>
+                {needsSeparator ? (
+                  <View style={toolbarSeparatorSurface.style as ViewStyle | undefined} />
+                ) : null}
                 <TouchableOpacity
                   onPress={() => handleToolbarPress(typedItem)}
-                  style={[styles.toolbarButton, isActive && styles.toolbarButtonActive]}
+                  style={activeButtonSurface.style as ViewStyle | undefined}
                   accessibilityRole="button"
                   accessibilityLabel={TOOLBAR_A11Y[typedItem]}
-                  testID={`${config.testID ?? config.id}-toolbar-${item}`}
+                  testID={`${testId}-toolbar-${typedItem}`}
                   activeOpacity={0.7}
                 >
                   <Text
                     style={[
-                      styles.toolbarLabel,
-                      isActive && styles.toolbarLabelActive,
-                      typedItem === 'bold' && { fontWeight: '800' as const },
-                      typedItem === 'italic' && { fontStyle: 'italic' as const },
-                      typedItem === 'underline' && { textDecorationLine: 'underline' as const },
-                      typedItem === 'strikethrough' && { textDecorationLine: 'line-through' as const },
-                      typedItem === 'code' && styles.toolbarLabelMono,
+                      mergeTextStyle(sharedTextStyle, activeLabelSurface),
+                      typedItem === 'bold' ? { fontWeight: '800' as const } : null,
+                      typedItem === 'italic' ? { fontStyle: 'italic' as const } : null,
+                      typedItem === 'underline'
+                        ? { textDecorationLine: 'underline' as const }
+                        : null,
+                      typedItem === 'strikethrough'
+                        ? { textDecorationLine: 'line-through' as const }
+                        : null,
+                      typedItem === 'code'
+                        ? { fontFamily: 'monospace', fontSize: tokens.typography.fontSizeXs }
+                        : null,
                     ]}
                     selectable={false}
                   >
@@ -245,21 +316,29 @@ export function RichInput({ config }: { config: RichInputConfig }) {
           })}
         </ScrollView>
 
-        {/* Input */}
         <RNTextInput
-          ref={inputRef}
           value={localValue}
           onChangeText={handleChange}
-          onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+          onSelectionChange={(event) => setSelection(event.nativeEvent.selection)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          onContentSizeChange={handleContentSizeChange}
+          onContentSizeChange={(event) => {
+            const nextHeight = Math.min(
+              Math.max(event.nativeEvent.contentSize.height, minHeight),
+              maxHeight,
+            )
+            setInputHeight(nextHeight)
+          }}
           multiline
-          placeholder={config.placeholder}
+          placeholder={resolvedPlaceholder}
           placeholderTextColor={tokens.colors.inputPlaceholder}
-          style={[styles.input, { height: inputHeight }]}
-          testID={`${config.testID ?? config.id}-input`}
-          accessibilityLabel={config.label ?? config.placeholder ?? 'Rich text input'}
+          style={[
+            inputSurface.style as TextStyle | undefined,
+            { height: inputHeight, lineHeight: LINE_HEIGHT },
+            focused ? { borderColor: tokens.colors.borderFocus } : null,
+          ]}
+          testID={`${testId}-input`}
+          accessibilityLabel={resolvedLabel ?? resolvedPlaceholder ?? 'Rich text input'}
           accessibilityRole="text"
           textAlignVertical="top"
         />
@@ -267,72 +346,3 @@ export function RichInput({ config }: { config: RichInputConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, focused: boolean) {
-  return StyleSheet.create({
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[1],
-    },
-    toolbar: {
-      borderTopLeftRadius: tokens.radius.lg,
-      borderTopRightRadius: tokens.radius.lg,
-      backgroundColor: tokens.colors.surface,
-      borderWidth: 1,
-      borderColor: focused ? tokens.colors.borderFocus : tokens.colors.inputBorder,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.divider,
-    },
-    toolbarContent: {
-      paddingHorizontal: tokens.spacing[2],
-      paddingVertical: tokens.spacing[2],
-      gap: 2,
-      alignItems: 'center',
-    },
-    toolbarSeparator: {
-      width: StyleSheet.hairlineWidth,
-      height: 20,
-      backgroundColor: tokens.colors.divider,
-      marginHorizontal: tokens.spacing[1],
-    },
-    toolbarButton: {
-      width: 34,
-      height: 34,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: tokens.radius.md,
-    },
-    toolbarButtonActive: {
-      backgroundColor: tokens.colors.primary,
-    },
-    toolbarLabel: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.textMuted,
-    },
-    toolbarLabelActive: {
-      color: tokens.colors.primaryForeground,
-    },
-    toolbarLabelMono: {
-      fontSize: tokens.typography.fontSizeXs,
-      fontFamily: 'monospace',
-      letterSpacing: -0.5,
-    },
-    input: {
-      backgroundColor: tokens.colors.inputBackground,
-      borderWidth: 1,
-      borderColor: focused ? tokens.colors.borderFocus : tokens.colors.inputBorder,
-      borderTopWidth: 0,
-      borderBottomLeftRadius: tokens.radius.lg,
-      borderBottomRightRadius: tokens.radius.lg,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputText,
-      lineHeight: LINE_HEIGHT,
-    },
-  })
-}
-

@@ -41,4 +41,20 @@ describe('CodeBlock', () => {
 
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <CodeBlock
+        config={cfg({
+          slots: {
+            container: { borderRadius: 'xl' },
+            header: { paddingY: 'sm' },
+            codeLine: { color: 'primary' },
+          },
+        })}
+      />,
+    )
+
+    expect(toJSON()).toBeTruthy()
+  })
 })

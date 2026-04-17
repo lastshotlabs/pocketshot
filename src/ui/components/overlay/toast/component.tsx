@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, StyleSheet, Text, View } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
+import { Animated, Text, View, type TextStyle, type ViewStyle } from 'react-native'
+import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import type { DesignTokens } from '../../../tokens/types'
@@ -16,58 +18,12 @@ const VARIANT_COLORS: Record<
 }
 
 const VARIANT_ICON: Record<ToastPayload['variant'], string> = {
-  success: '✓',
-  error: '✕',
-  warning: '⚠',
-  info: 'ℹ',
+  success: 'OK',
+  error: 'X',
+  warning: '!',
+  info: 'i',
 }
 
-function makeStyles(
-  tokens: DesignTokens,
-  position: ToastConfig['position'],
-  payload: ToastPayload,
-) {
-  const variantKey = VARIANT_COLORS[payload.variant]
-  return StyleSheet.create({
-    container: {
-      position: 'absolute',
-      left: tokens.spacing[4],
-      right: tokens.spacing[4],
-      ...(position === 'top'
-        ? { top: tokens.spacing[16] ?? 64 }
-        : { bottom: tokens.spacing[20] ?? 80 }),
-      zIndex: 9999,
-    },
-    toast: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: tokens.colors[variantKey.bg],
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[3],
-      gap: tokens.spacing[2],
-      ...tokens.shadows.md,
-    },
-    icon: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors[variantKey.fg],
-    },
-    message: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors[variantKey.fg],
-    },
-  })
-}
-
-/**
- * Config-driven toast notification. Place once at the root of each screen.
- *
- * Watches `__toast` in ScreenContext. When a toast action fires, this component
- * slides in from the configured position, then auto-dismisses after the duration.
- */
 export function Toast({ config }: { config: ToastConfig }) {
   const tokens = useTokens()
   const { getValue } = useScreenContext()
@@ -79,15 +35,14 @@ export function Toast({ config }: { config: ToastConfig }) {
   const lastIdRef = useRef<number | null>(null)
 
   const toastPayload = getValue('__toast') as ToastPayload | undefined
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   useEffect(() => {
     if (!toastPayload || toastPayload.id === lastIdRef.current) return
     lastIdRef.current = toastPayload.id
 
-    // Clear any pending dismiss
     if (dismissTimer.current) clearTimeout(dismissTimer.current)
 
-    // Reset position
     const startY = config.position === 'top' ? -60 : 60
     translateY.setValue(startY)
     opacity.setValue(0)
@@ -127,33 +82,112 @@ export function Toast({ config }: { config: ToastConfig }) {
     return () => {
       if (dismissTimer.current) clearTimeout(dismissTimer.current)
     }
-  }, [toastPayload, config.position, translateY, opacity])
+  }, [config.position, opacity, toastPayload, translateY])
 
-  const styles = useMemo(
-    () => (activeToast ? makeStyles(tokens, config.position, activeToast) : null),
-    // activeToast changes identity only when a new toast fires — safe to include
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tokens, config.position, activeToast?.variant, activeToast?.id],
-  )
+  if (!activeToast) {
+    return null
+  }
 
-  if (!activeToast || !styles) return null
+  const variantKey = VARIANT_COLORS[activeToast.variant]
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      position: 'absolute',
+      left: 'md',
+      right: 'md',
+      zIndex: 9999,
+      ...(config.position === 'top' ? { top: 64 } : { bottom: 80 }),
+    },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+  })
+  const toastSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      bg: variantKey.bg,
+      borderRadius: 'md',
+      paddingX: 'md',
+      paddingY: 'sm',
+      gap: 'xs',
+      shadow: 'md',
+    },
+    componentSurface: config.slots?.toast as Record<string, unknown> | undefined,
+  })
+  const iconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      fontWeight: 'bold',
+      color: variantKey.fg,
+    },
+    componentSurface: config.slots?.icon as Record<string, unknown> | undefined,
+  })
+  const messageSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: variantKey.fg,
+    },
+    componentSurface: config.slots?.message as Record<string, unknown> | undefined,
+  })
 
   return (
-    <View style={styles.container} pointerEvents="none">
-      <Animated.View style={{ transform: [{ translateY }], opacity }}>
-        <View
-          style={styles.toast}
-          accessibilityLiveRegion="polite"
-          accessibilityRole="alert"
-          accessible
-          accessibilityLabel={`${activeToast.variant}: ${activeToast.message}`}
-        >
-          <Text style={styles.icon} accessibilityElementsHidden>
-            {VARIANT_ICON[activeToast.variant]}
-          </Text>
-          <Text style={styles.message}>{activeToast.message}</Text>
-        </View>
-      </Animated.View>
-    </View>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={['open']}
+    >
+      <View style={containerSurface.style as ViewStyle | undefined} pointerEvents="none">
+        <Animated.View style={{ transform: [{ translateY }], opacity }}>
+          <View
+            style={toastSurface.style as ViewStyle | undefined}
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            accessible
+            accessibilityLabel={`${activeToast.variant}: ${activeToast.message}`}
+          >
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(iconSurface.style as TextStyle | undefined),
+              }}
+              accessibilityElementsHidden
+            >
+              {VARIANT_ICON[activeToast.variant]}
+            </Text>
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(messageSurface.style as TextStyle | undefined),
+              }}
+            >
+              {activeToast.message}
+            </Text>
+          </View>
+        </Animated.View>
+      </View>
+    </ComponentWrapper>
   )
 }

@@ -1,36 +1,40 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  View,
-  Text,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Text,
   TextInput as RNTextInput,
-  Alert,
+  TouchableOpacity,
+  View,
   type DimensionValue,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeStyleProps, toNumericDimensionValue } from '../../_base'
+import {
+  resolveNativeStyleProps,
+  resolveNativeTextStyle,
+  resolveSurfacePresentation,
+  toNumericDimensionValue,
+} from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import type { DesignTokens } from '../../../tokens/types'
-import type { RichTextEditorConfig, EditorToolbarItem } from './types'
+import type { EditorToolbarItem, RichTextEditorConfig } from './types'
 
 const LINE_HEIGHT = 22
-
-// ── Toolbar config ────────────────────────────────────────────────────────────
 
 const TOOLBAR_LABELS: Record<EditorToolbarItem, string> = {
   heading: 'H',
   bold: 'B',
   italic: 'I',
   underline: 'U',
-  'list-bullet': '≡',
+  'list-bullet': '-',
   'list-number': '1.',
-  blockquote: '❝',
+  blockquote: '"',
   code: '</>',
-  link: '⟁',
-  image: '▣',
+  link: 'Link',
+  image: 'Img',
 }
 
 const INLINE_ITEMS = new Set<EditorToolbarItem>(['bold', 'italic', 'underline'])
@@ -49,8 +53,6 @@ const TOOLBAR_A11Y: Record<EditorToolbarItem, string> = {
   image: 'Insert image',
 }
 
-// ── Formatting helpers ────────────────────────────────────────────────────────
-
 function applyFormat(
   item: EditorToolbarItem,
   value: string,
@@ -63,338 +65,60 @@ function applyFormat(
 
   switch (item) {
     case 'heading': {
-      // Insert ## at the start of the current line
-      const lineStart = before.lastIndexOf('\n') + 1
-      const linePrefix = value.slice(lineStart, selection.start)
-      // Cycle through heading levels: none -> ## -> ### -> remove
-      const headingMatch = /^(#{1,6})\s/.exec(linePrefix)
-      if (headingMatch) {
-        const level = headingMatch[1].length
-        if (level >= 3) {
-          // Remove heading
-          const newBefore = before.slice(0, lineStart) + linePrefix.slice(level + 1)
-          return {
-            newValue: newBefore + selected + after,
-            newCursorPos: newBefore.length + selected.length,
-          }
-        }
-        // Increase level
-        const newBefore = before.slice(0, lineStart) + '#' + linePrefix
-        return {
-          newValue: newBefore + selected + after,
-          newCursorPos: newBefore.length + selected.length,
-        }
-      }
-      const newBefore = before.slice(0, lineStart) + '## ' + linePrefix
-      return {
-        newValue: newBefore + selected + after,
-        newCursorPos: newBefore.length + selected.length,
-      }
+      const insert = hasSelection ? `## ${selected}` : '## Heading'
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'bold': {
-      const placeholder = hasSelection ? selected : 'bold text'
-      const insert = `**${placeholder}**`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 2),
-      }
+      const insert = `**${hasSelection ? selected : 'bold text'}**`
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'italic': {
-      const placeholder = hasSelection ? selected : 'italic text'
-      const insert = `*${placeholder}*`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 1),
-      }
+      const insert = `*${hasSelection ? selected : 'italic text'}*`
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'underline': {
-      const placeholder = hasSelection ? selected : 'underlined text'
-      const insert = `__${placeholder}__`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 2),
-      }
+      const insert = `__${hasSelection ? selected : 'underlined text'}__`
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'list-bullet': {
-      if (hasSelection) {
-        const lines = selected.split('\n').map((l) => `- ${l}`)
-        const insert = lines.join('\n')
-        return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
-      }
-      const insert = '\n- '
+      const insert = hasSelection
+        ? selected.split('\n').map((line) => `- ${line}`).join('\n')
+        : '- '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'list-number': {
-      if (hasSelection) {
-        const lines = selected.split('\n').map((l, i) => `${i + 1}. ${l}`)
-        const insert = lines.join('\n')
-        return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
-      }
-      const insert = '\n1. '
+      const insert = hasSelection
+        ? selected.split('\n').map((line, index) => `${index + 1}. ${line}`).join('\n')
+        : '1. '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'blockquote': {
-      if (hasSelection) {
-        const lines = selected.split('\n').map((l) => `> ${l}`)
-        const insert = lines.join('\n')
-        return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
-      }
-      const insert = '\n> '
+      const insert = hasSelection
+        ? selected.split('\n').map((line) => `> ${line}`).join('\n')
+        : '> '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'code': {
-      if (hasSelection && selected.includes('\n')) {
-        const insert = '```\n' + selected + '\n```'
-        return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
-      }
-      const placeholder = hasSelection ? selected : 'code'
-      const insert = '`' + placeholder + '`'
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 0 : 1),
-      }
+      const insert = hasSelection ? `\`\`\`\n${selected}\n\`\`\`` : '`code`'
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'link': {
-      const placeholder = hasSelection ? selected : 'link text'
-      const insert = `[${placeholder}](url)`
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length - (hasSelection ? 1 : 5),
-      }
+      const insert = `[${hasSelection ? selected : 'link text'}](url)`
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'image': {
       const insert = '![alt text](image-url)'
-      return {
-        newValue: before + insert + after,
-        newCursorPos: selection.start + insert.length,
-      }
+      return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     default:
       return { newValue: value, newCursorPos: selection.end }
   }
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
-export function RichTextEditor({ config }: { config: RichTextEditorConfig }) {
-  const tokens = useTokens()
-  const { setValue, dispatch } = useScreenContext()
-
-  const [localValue, setLocalValue] = useState<string>(config.defaultValue ?? '')
-  const [selection, setSelection] = useState({ start: 0, end: 0 })
-  const [focused, setFocused] = useState(false)
-  const [activeItem, setActiveItem] = useState<EditorToolbarItem | null>(null)
-  const inputRef = useRef<RNTextInput>(null)
-
-  const { minHeight, maxHeight } = useMemo(() => resolveEditorHeights(tokens, config), [config, tokens])
-  const [inputHeight, setInputHeight] = useState(minHeight)
-
-  // Publish initial value
-  useEffect(() => {
-    if (config.defaultValue) {
-      setValue(config.id, config.defaultValue)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const handleChange = useCallback(
-    (text: string) => {
-      setLocalValue(text)
-      setValue(config.id, text)
-      if (config.onChangeAction) {
-        void dispatch(config.onChangeAction)
-      }
-    },
-    [config.id, config.onChangeAction, setValue, dispatch],
-  )
-
-  const handleToolbarPress = useCallback(
-    (item: EditorToolbarItem) => {
-      const { newValue } = applyFormat(item, localValue, selection)
-      handleChange(newValue)
-      setActiveItem(item)
-      const timer = setTimeout(() => setActiveItem(null), 150)
-      return () => clearTimeout(timer)
-    },
-    [localValue, selection, handleChange],
-  )
-
-  const handleContentSizeChange = useCallback(
-    (e: { nativeEvent: { contentSize: { height: number } } }) => {
-      const h = Math.min(Math.max(e.nativeEvent.contentSize.height, minHeight), maxHeight)
-      setInputHeight(h)
-    },
-    [minHeight, maxHeight],
-  )
-
-  const styles = useMemo(() => makeStyles(tokens, focused), [tokens, focused])
-
-  const testId = config.testID ?? config.id
-
-  return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View testID={testId}>
-        {/* Toolbar */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.toolbar}
-          contentContainerStyle={styles.toolbarContent}
-          accessibilityRole="toolbar"
-        >
-          {(config.toolbar ?? ['heading', 'bold', 'italic', 'list-bullet', 'blockquote', 'code']).map(
-            (item, idx, arr) => {
-              const isActive = activeItem === item
-              const typedItem = item as EditorToolbarItem
-              const prevItem = idx > 0 ? (arr[idx - 1] as EditorToolbarItem) : null
-              const needsSeparator =
-                prevItem != null &&
-                ((INLINE_ITEMS.has(prevItem) && !INLINE_ITEMS.has(typedItem)) ||
-                 (BLOCK_ITEMS.has(prevItem) && !BLOCK_ITEMS.has(typedItem)) ||
-                 (typedItem === 'heading' && prevItem !== 'heading') ||
-                 (prevItem === 'heading' && typedItem !== 'heading'))
-
-              return (
-                <React.Fragment key={item}>
-                  {needsSeparator && <View style={styles.toolbarSeparator} />}
-                  <TouchableOpacity
-                    onPress={() => handleToolbarPress(typedItem)}
-                    style={[styles.toolbarButton, isActive && styles.toolbarButtonActive]}
-                    accessibilityRole="button"
-                    accessibilityLabel={TOOLBAR_A11Y[typedItem]}
-                    testID={`${testId}-toolbar-${item}`}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.toolbarLabel,
-                        isActive && styles.toolbarLabelActive,
-                        typedItem === 'heading' && styles.toolbarLabelHeading,
-                        typedItem === 'bold' && { fontWeight: '800' as const },
-                        typedItem === 'italic' && { fontStyle: 'italic' as const },
-                        typedItem === 'underline' && { textDecorationLine: 'underline' as const },
-                        typedItem === 'code' && styles.toolbarLabelMono,
-                      ]}
-                      selectable={false}
-                    >
-                      {TOOLBAR_LABELS[typedItem]}
-                    </Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              )
-            },
-          )}
-        </ScrollView>
-
-        {/* Editor input */}
-        <RNTextInput
-          ref={inputRef}
-          value={localValue}
-          onChangeText={handleChange}
-          onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onContentSizeChange={handleContentSizeChange}
-          multiline
-          placeholder={config.placeholder ?? 'Start writing...'}
-          placeholderTextColor={tokens.colors.inputPlaceholder}
-          style={[styles.input, { height: inputHeight as DimensionValue }]}
-          testID={`${testId}-input`}
-          accessibilityLabel={config.placeholder ?? 'Rich text editor'}
-          accessibilityRole="text"
-          textAlignVertical="top"
-        />
-
-        {/* Character count hint */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Markdown supported</Text>
-          <Text style={styles.footerText}>{localValue.length} chars</Text>
-        </View>
-      </View>
-    </ComponentWrapper>
-  )
-}
-
-function makeStyles(tokens: DesignTokens, focused: boolean) {
-  return StyleSheet.create({
-    toolbar: {
-      borderTopLeftRadius: tokens.radius.lg,
-      borderTopRightRadius: tokens.radius.lg,
-      backgroundColor: tokens.colors.surface,
-      borderWidth: 1,
-      borderColor: focused ? tokens.colors.borderFocus : tokens.colors.inputBorder,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.divider,
-    },
-    toolbarContent: {
-      paddingHorizontal: tokens.spacing[2],
-      paddingVertical: tokens.spacing[2],
-      gap: 2,
-      alignItems: 'center',
-    },
-    toolbarSeparator: {
-      width: StyleSheet.hairlineWidth,
-      height: 20,
-      backgroundColor: tokens.colors.divider,
-      marginHorizontal: tokens.spacing[1],
-    },
-    toolbarButton: {
-      width: 34,
-      height: 34,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: tokens.radius.md,
-    },
-    toolbarButtonActive: {
-      backgroundColor: tokens.colors.primary,
-    },
-    toolbarLabel: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.textMuted,
-    },
-    toolbarLabelActive: {
-      color: tokens.colors.primaryForeground,
-    },
-    toolbarLabelHeading: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightBold,
-    },
-    toolbarLabelMono: {
-      fontSize: tokens.typography.fontSizeXs,
-      fontFamily: 'monospace',
-      letterSpacing: -0.5,
-    },
-    input: {
-      backgroundColor: tokens.colors.inputBackground,
-      borderWidth: 1,
-      borderColor: focused ? tokens.colors.borderFocus : tokens.colors.inputBorder,
-      borderTopWidth: 0,
-      borderBottomLeftRadius: tokens.radius.lg,
-      borderBottomRightRadius: tokens.radius.lg,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[3],
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputText,
-      lineHeight: LINE_HEIGHT,
-    },
-    footer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingTop: tokens.spacing[1],
-      paddingHorizontal: tokens.spacing[1],
-    },
-    footerText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-    },
-  })
-}
-
-function resolveEditorHeights(tokens: DesignTokens, config: RichTextEditorConfig): {
-  minHeight: number
-  maxHeight: number
-} {
+function resolveEditorHeights(
+  tokens: DesignTokens,
+  config: RichTextEditorConfig,
+): { minHeight: number; maxHeight: number } {
   const resolvedStyle = resolveNativeStyleProps(
     {
       minHeight: config.minHeight,
@@ -412,3 +136,237 @@ function resolveEditorHeights(tokens: DesignTokens, config: RichTextEditorConfig
   }
 }
 
+function resolveSlotSurface(
+  config: RichTextEditorConfig,
+  tokens: DesignTokens,
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
+}
+
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
+
+export function RichTextEditor({ config }: { config: RichTextEditorConfig }) {
+  const tokens = useTokens()
+  const { setValue, dispatch } = useScreenContext()
+
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const [localValue, setLocalValue] = useState<string>(config.defaultValue ?? '')
+  const [selection, setSelection] = useState({ start: 0, end: 0 })
+  const [focused, setFocused] = useState(false)
+  const [activeItem, setActiveItem] = useState<EditorToolbarItem | null>(null)
+  const { minHeight, maxHeight } = useMemo(() => resolveEditorHeights(tokens, config), [config, tokens])
+  const [inputHeight, setInputHeight] = useState(minHeight)
+  const testId = config.testID ?? config.id
+
+  useEffect(() => {
+    if (config.defaultValue != null) {
+      setValue(config.id, config.defaultValue)
+    }
+  }, [config.defaultValue, config.id, setValue])
+
+  const toolbarSurface = resolveSlotSurface(config, tokens, 'toolbar', {
+    backgroundColor: tokens.colors.surface,
+    border: '1 border',
+    borderTopLeftRadius: tokens.radius.lg,
+    borderTopRightRadius: tokens.radius.lg,
+  })
+  const toolbarContentSurface = resolveSlotSurface(config, tokens, 'toolbarContent', {
+    paddingX: 'sm',
+    paddingY: 'sm',
+    gap: 2,
+    alignItems: 'center',
+  })
+  const toolbarSeparatorSurface = resolveSlotSurface(config, tokens, 'toolbarSeparator', {
+    width: StyleSheet.hairlineWidth,
+    height: 20,
+    backgroundColor: tokens.colors.divider,
+    marginX: 'xs',
+  })
+  const toolbarButtonSurface = resolveSlotSurface(config, tokens, 'toolbarButton', {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 'md',
+  })
+  const toolbarLabelSurface = resolveSlotSurface(config, tokens, 'toolbarLabel', {
+    color: 'muted',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+  })
+  const inputSurface = resolveSlotSurface(config, tokens, 'input', {
+    backgroundColor: tokens.colors.inputBackground,
+    border: '1 border',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: tokens.radius.lg,
+    borderBottomRightRadius: tokens.radius.lg,
+    paddingX: 'md',
+    paddingY: 'md',
+    color: tokens.colors.inputText,
+    fontSize: 'base',
+  })
+  const footerSurface = resolveSlotSurface(config, tokens, 'footer', {
+    flexDirection: 'row',
+    justifyContent: 'between',
+    paddingTop: 'xs',
+    paddingX: 'xs',
+  })
+  const footerTextSurface = resolveSlotSurface(config, tokens, 'footerText', {
+    color: 'muted',
+    fontSize: 'xs',
+  })
+
+  const handleChange = useCallback(
+    (text: string) => {
+      setLocalValue(text)
+      setValue(config.id, text)
+      if (config.onChangeAction != null) {
+        void dispatch(config.onChangeAction)
+      }
+    },
+    [config.id, config.onChangeAction, dispatch, setValue],
+  )
+
+  const handleToolbarPress = useCallback(
+    (item: EditorToolbarItem) => {
+      const { newValue } = applyFormat(item, localValue, selection)
+      handleChange(newValue)
+      setActiveItem(item)
+      setTimeout(() => setActiveItem(null), 150)
+    },
+    [handleChange, localValue, selection],
+  )
+
+  return (
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+      <View testID={testId}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={toolbarSurface.style as ViewStyle | undefined}
+          contentContainerStyle={toolbarContentSurface.style as ViewStyle | undefined}
+          accessibilityRole="toolbar"
+        >
+          {(config.toolbar ?? ['heading', 'bold', 'italic', 'list-bullet', 'blockquote', 'code']).map(
+            (item, index, all) => {
+              const typedItem = item as EditorToolbarItem
+              const previousItem = index > 0 ? (all[index - 1] as EditorToolbarItem) : null
+              const isActive = activeItem === typedItem
+              const needsSeparator =
+                previousItem != null &&
+                ((INLINE_ITEMS.has(previousItem) && !INLINE_ITEMS.has(typedItem)) ||
+                  (BLOCK_ITEMS.has(previousItem) && !BLOCK_ITEMS.has(typedItem)) ||
+                  (typedItem === 'heading' && previousItem !== 'heading') ||
+                  (previousItem === 'heading' && typedItem !== 'heading'))
+
+              const activeButtonSurface = isActive
+                ? resolveSlotSurface(config, tokens, 'toolbarButton', {
+                    width: 34,
+                    height: 34,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 'md',
+                    backgroundColor: tokens.colors.primary,
+                  })
+                : toolbarButtonSurface
+              const activeLabelSurface = isActive
+                ? resolveSlotSurface(config, tokens, 'toolbarLabel', {
+                    color: 'primary-foreground',
+                    fontSize: 'sm',
+                    fontWeight: 'medium',
+                  })
+                : toolbarLabelSurface
+
+              return (
+                <React.Fragment key={typedItem}>
+                  {needsSeparator ? (
+                    <View style={toolbarSeparatorSurface.style as ViewStyle | undefined} />
+                  ) : null}
+                  <TouchableOpacity
+                    onPress={() => handleToolbarPress(typedItem)}
+                    style={activeButtonSurface.style as ViewStyle | undefined}
+                    accessibilityRole="button"
+                    accessibilityLabel={TOOLBAR_A11Y[typedItem]}
+                    testID={`${testId}-toolbar-${typedItem}`}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        mergeTextStyle(sharedTextStyle, activeLabelSurface),
+                        typedItem === 'heading'
+                          ? { fontSize: tokens.typography.fontSizeMd, fontWeight: '700' as const }
+                          : null,
+                        typedItem === 'bold' ? { fontWeight: '800' as const } : null,
+                        typedItem === 'italic' ? { fontStyle: 'italic' as const } : null,
+                        typedItem === 'underline'
+                          ? { textDecorationLine: 'underline' as const }
+                          : null,
+                        typedItem === 'code'
+                          ? { fontFamily: 'monospace', fontSize: tokens.typography.fontSizeXs }
+                          : null,
+                      ]}
+                      selectable={false}
+                    >
+                      {TOOLBAR_LABELS[typedItem]}
+                    </Text>
+                  </TouchableOpacity>
+                </React.Fragment>
+              )
+            },
+          )}
+        </ScrollView>
+
+        <RNTextInput
+          value={localValue}
+          onChangeText={handleChange}
+          onSelectionChange={(event) => setSelection(event.nativeEvent.selection)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onContentSizeChange={(event) => {
+            const nextHeight = Math.min(
+              Math.max(event.nativeEvent.contentSize.height, minHeight),
+              maxHeight,
+            )
+            setInputHeight(nextHeight)
+          }}
+          multiline
+          placeholder={config.placeholder ?? 'Start writing...'}
+          placeholderTextColor={tokens.colors.inputPlaceholder}
+          style={[
+            inputSurface.style as TextStyle | undefined,
+            { height: inputHeight as DimensionValue, lineHeight: LINE_HEIGHT },
+            focused ? { borderColor: tokens.colors.borderFocus } : null,
+          ]}
+          testID={`${testId}-input`}
+          accessibilityLabel={config.placeholder ?? 'Rich text editor'}
+          accessibilityRole="text"
+          textAlignVertical="top"
+        />
+
+        <View style={footerSurface.style as ViewStyle | undefined}>
+          <Text style={mergeTextStyle(sharedTextStyle, footerTextSurface)}>
+            Markdown supported
+          </Text>
+          <Text style={mergeTextStyle(sharedTextStyle, footerTextSurface)}>
+            {`${localValue.length} chars`}
+          </Text>
+        </View>
+      </View>
+    </ComponentWrapper>
+  )
+}

@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { MediaPickerSchema } from './schema'
 
-export type MediaPickerConfig = z.infer<typeof MediaPickerSchema>
+export type MediaPickerConfig = z.input<typeof MediaPickerSchema>
 
 export interface SelectedMediaItem {
   uri: string

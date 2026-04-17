@@ -1,15 +1,14 @@
 import React, { useCallback } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native'
+import { View, Text, TouchableOpacity, Image, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ProductCardConfig } from './types'
 
-const IMAGE_ASPECT_RATIO = 4 / 3
 const IMAGE_HEIGHT_APPROX = 180
-// Sub-spacing values for component-specific micro-layout; below the 4px grid
 const STAR_GAP = 2
 const BADGE_PADDING_VERTICAL = 3
 
@@ -24,52 +23,95 @@ function formatPrice(amount: number, currency: string): string {
 function RatingStars({
   rating,
   count,
-  tokens,
+  slots,
+  sharedTextStyle,
 }: {
   rating: number
   count?: number
-  tokens: DesignTokens
+  slots: ProductCardConfig['slots']
+  sharedTextStyle: TextStyle
 }) {
-  const styles = StyleSheet.create({
-    row: { flexDirection: 'row', alignItems: 'center', gap: STAR_GAP },
-    star: { fontSize: tokens.typography.fontSizeSm, color: tokens.colors.warning },
-    emptyStar: { fontSize: tokens.typography.fontSizeSm, color: tokens.colors.border },
-    count: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-      marginLeft: tokens.spacing[1],
+  const tokens = useTokens()
+
+  const rowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: STAR_GAP,
     },
+    componentSurface: slots?.ratingStarsRow as Record<string, unknown> | undefined,
+  })
+  const starSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'warning',
+    },
+    componentSurface: slots?.ratingStar as Record<string, unknown> | undefined,
+  })
+  const emptyStarSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'border',
+    },
+    componentSurface: slots?.ratingStar as Record<string, unknown> | undefined,
+  })
+  const countSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'muted',
+      marginLeft: 'xs',
+    },
+    componentSurface: slots?.ratingCount as Record<string, unknown> | undefined,
   })
 
   const full = Math.floor(rating)
-  const empty = 5 - full
+  const empty = Math.max(0, 5 - full)
 
   return (
     <View
-      style={styles.row}
+      style={rowSurface.style as ViewStyle | undefined}
       accessibilityLabel={`Rated ${rating} out of 5${count != null ? `, ${count} reviews` : ''}`}
     >
-      {Array.from({ length: full }).map((_, i) => (
+      {Array.from({ length: full }).map((_, index) => (
         <Text
-          key={`full-${i}`}
-          style={styles.star}
+          key={`full-${index}`}
+          style={{
+            ...sharedTextStyle,
+            ...(starSurface.style as TextStyle | undefined),
+          }}
           accessibilityElementsHidden
           importantForAccessibility="no"
         >
-          ★
+          *
         </Text>
       ))}
-      {Array.from({ length: empty }).map((_, i) => (
+      {Array.from({ length: empty }).map((_, index) => (
         <Text
-          key={`empty-${i}`}
-          style={styles.emptyStar}
+          key={`empty-${index}`}
+          style={{
+            ...sharedTextStyle,
+            ...(emptyStarSurface.style as TextStyle | undefined),
+          }}
           accessibilityElementsHidden
           importantForAccessibility="no"
         >
-          ★
+          o
         </Text>
       ))}
-      {count != null ? <Text style={styles.count}>{`(${count})`}</Text> : null}
+      {count != null ? (
+        <Text
+          style={{
+            ...sharedTextStyle,
+            ...(countSurface.style as TextStyle | undefined),
+          }}
+        >
+          {`(${count})`}
+        </Text>
+      ) : null}
     </View>
   )
 }
@@ -78,44 +120,178 @@ export function ProductCard({ config }: { config: ProductCardConfig }) {
   const tokens = useTokens()
   const { values, dispatch } = useScreenContext()
 
-  const resolvedTitle = isFromRef(config.title)
-    ? String(resolveFromRef(config.title, values) ?? '')
-    : config.title
-
+  const resolvedTitle = isFromRef(config.title) ? String(resolveFromRef(config.title, values) ?? '') : config.title
   const resolvedDescription =
     config.description != null
       ? isFromRef(config.description)
         ? String(resolveFromRef(config.description, values) ?? '')
         : config.description
       : null
-
   const resolvedImage =
     config.image != null
       ? isFromRef(config.image)
         ? String(resolveFromRef(config.image, values) ?? '')
         : config.image
       : null
-
   const resolvedPrice =
     config.price != null
       ? isFromRef(config.price)
         ? Number(resolveFromRef(config.price, values) ?? 0)
         : config.price
       : null
-
   const resolvedRating =
     config.rating != null
       ? isFromRef(config.rating)
         ? Number(resolveFromRef(config.rating, values) ?? 0)
         : config.rating
       : null
-
   const resolvedReviewCount =
     config.reviewCount != null
       ? isFromRef(config.reviewCount)
         ? Number(resolveFromRef(config.reviewCount, values) ?? 0)
         : config.reviewCount
       : null
+
+  const currency = config.currency ?? 'USD'
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const pressableStates: RuntimeSurfaceState[] | undefined = config.onPress != null ? ['active'] : undefined
+
+  const pressableSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {},
+    componentSurface: config.slots?.pressable as Record<string, unknown> | undefined,
+    activeStates: pressableStates,
+  })
+  const cardSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      borderRadius: 'lg',
+      overflow: 'hidden',
+      shadow: 'md',
+    },
+    componentSurface: config.slots?.card as Record<string, unknown> | undefined,
+  })
+  const imageSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: '100%',
+      height: IMAGE_HEIGHT_APPROX,
+    },
+    componentSurface: config.slots?.image as Record<string, unknown> | undefined,
+  })
+  const imagePlaceholderSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: '100%',
+      height: IMAGE_HEIGHT_APPROX,
+      bg: 'muted',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.imagePlaceholder as Record<string, unknown> | undefined,
+  })
+  const imagePlaceholderTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.imagePlaceholderText as Record<string, unknown> | undefined,
+  })
+  const badgeContainerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      position: 'absolute',
+      top: 'sm',
+      left: 'sm',
+      bg: 'primary',
+      borderRadius: 'sm',
+      paddingX: 'sm',
+      paddingY: BADGE_PADDING_VERTICAL,
+    },
+    componentSurface: config.slots?.badgeContainer as Record<string, unknown> | undefined,
+  })
+  const badgeTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'primary-foreground',
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+    },
+    componentSurface: config.slots?.badgeText as Record<string, unknown> | undefined,
+  })
+  const bodySurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      padding: 'sm',
+    },
+    componentSurface: config.slots?.body as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+      fontWeight: 'semibold',
+      marginBottom: 'xs',
+    },
+    componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+  })
+  const descriptionSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+      marginBottom: 'sm',
+    },
+    componentSurface: config.slots?.description as Record<string, unknown> | undefined,
+  })
+  const ratingRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      marginBottom: 'sm',
+    },
+    componentSurface: config.slots?.ratingRow as Record<string, unknown> | undefined,
+  })
+  const priceRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'between',
+    },
+    componentSurface: config.slots?.priceRow as Record<string, unknown> | undefined,
+  })
+  const priceSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      color: 'foreground',
+      fontWeight: 'bold',
+    },
+    componentSurface: config.slots?.price as Record<string, unknown> | undefined,
+  })
+  const addButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'primary',
+      borderRadius: 'md',
+      paddingX: 'sm',
+      paddingY: 'xs',
+    },
+    componentSurface: config.slots?.addButton as Record<string, unknown> | undefined,
+  })
+  const addButtonTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'primary-foreground',
+      fontWeight: 'semibold',
+    },
+    componentSurface: config.slots?.addButtonText as Record<string, unknown> | undefined,
+  })
 
   const handlePress = useCallback(async () => {
     if (!config.onPress) return
@@ -127,61 +303,99 @@ export function ProductCard({ config }: { config: ProductCardConfig }) {
     await dispatch(config.onAddToCart)
   }, [config.onAddToCart, dispatch])
 
-  const currency = config.currency ?? 'USD'
-  const styles = makeStyles(tokens)
-
   const cardContent = (
-    <View style={styles.card}>
+    <View style={cardSurface.style as ViewStyle | undefined}>
       {resolvedImage != null ? (
         <Image
           source={{ uri: resolvedImage }}
-          style={styles.image}
+          style={imageSurface.style as ImageStyle | undefined}
           resizeMode="cover"
           accessibilityElementsHidden
           importantForAccessibility="no"
         />
       ) : (
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>No Image</Text>
+        <View style={imagePlaceholderSurface.style as ViewStyle | undefined}>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(imagePlaceholderTextSurface.style as TextStyle | undefined),
+            }}
+          >
+            No Image
+          </Text>
         </View>
       )}
       {config.badge != null ? (
-        <View style={styles.badgeContainer}>
-          <Text style={styles.badgeText}>{config.badge}</Text>
+        <View style={badgeContainerSurface.style as ViewStyle | undefined}>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(badgeTextSurface.style as TextStyle | undefined),
+            }}
+          >
+            {config.badge}
+          </Text>
         </View>
       ) : null}
-      <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={2}>
+      <View style={bodySurface.style as ViewStyle | undefined}>
+        <Text
+          style={{
+            ...sharedTextStyle,
+            ...(titleSurface.style as TextStyle | undefined),
+          }}
+          numberOfLines={2}
+        >
           {resolvedTitle}
         </Text>
         {resolvedDescription != null ? (
-          <Text style={styles.description} numberOfLines={1}>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(descriptionSurface.style as TextStyle | undefined),
+            }}
+            numberOfLines={1}
+          >
             {resolvedDescription}
           </Text>
         ) : null}
         {resolvedRating != null ? (
-          <View style={styles.ratingRow}>
+          <View style={ratingRowSurface.style as ViewStyle | undefined}>
             <RatingStars
               rating={resolvedRating}
               count={resolvedReviewCount ?? undefined}
-              tokens={tokens}
+              slots={config.slots}
+              sharedTextStyle={sharedTextStyle}
             />
           </View>
         ) : null}
-        <View style={styles.priceRow}>
+        <View style={priceRowSurface.style as ViewStyle | undefined}>
           {resolvedPrice != null ? (
-            <Text style={styles.price}>{formatPrice(resolvedPrice, currency)}</Text>
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(priceSurface.style as TextStyle | undefined),
+              }}
+            >
+              {formatPrice(resolvedPrice, currency)}
+            </Text>
           ) : null}
           {config.onAddToCart != null ? (
             <TouchableOpacity
-              style={styles.addButton}
+              style={addButtonSurface.style as ViewStyle | undefined}
               onPress={handleAddToCart}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={`Add ${resolvedTitle} to cart`}
               testID={config.testID ? `${config.testID}-add-to-cart` : undefined}
             >
-              <Text style={styles.addButtonText}>Add</Text>
+              <Text
+                style={{
+                  ...sharedTextStyle,
+                  ...(addButtonTextSurface.style as TextStyle | undefined),
+                }}
+              >
+                Add
+              </Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -198,6 +412,7 @@ export function ProductCard({ config }: { config: ProductCardConfig }) {
           accessibilityRole="button"
           accessibilityLabel={resolvedTitle}
           accessibilityHint="Tap to view product details"
+          style={pressableSurface.style as ViewStyle | undefined}
         >
           {cardContent}
         </TouchableOpacity>
@@ -207,84 +422,3 @@ export function ProductCard({ config }: { config: ProductCardConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    card: {
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.lg,
-      overflow: 'hidden',
-      ...tokens.shadows.md,
-    },
-    image: {
-      width: '100%',
-      height: IMAGE_HEIGHT_APPROX,
-      resizeMode: 'cover',
-    },
-    imagePlaceholder: {
-      width: '100%',
-      height: IMAGE_HEIGHT_APPROX,
-      backgroundColor: tokens.colors.surfaceAlt,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    imagePlaceholderText: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-    },
-    badgeContainer: {
-      position: 'absolute',
-      top: tokens.spacing[2],
-      left: tokens.spacing[2],
-      backgroundColor: tokens.colors.primary,
-      borderRadius: tokens.radius.sm,
-      paddingHorizontal: tokens.spacing[2],
-      paddingVertical: BADGE_PADDING_VERTICAL,
-    },
-    badgeText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.primaryForeground,
-      fontWeight: tokens.typography.fontWeightBold,
-      letterSpacing: 0.5,
-    },
-    body: {
-      padding: tokens.spacing[3],
-    },
-    title: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      marginBottom: tokens.spacing[1],
-    },
-    description: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      marginBottom: tokens.spacing[2],
-    },
-    ratingRow: {
-      marginBottom: tokens.spacing[2],
-    },
-    priceRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    price: {
-      fontSize: tokens.typography.fontSizeLg,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightBold,
-    },
-    addButton: {
-      backgroundColor: tokens.colors.primary,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-    },
-    addButtonText: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.primaryForeground,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-  })
-}
-

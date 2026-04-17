@@ -78,4 +78,21 @@ describe('Label', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Label
+        config={{
+          text: 'Styled',
+          slots: {
+            text: {
+              letterSpacing: 'wide',
+              color: 'primary',
+            },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

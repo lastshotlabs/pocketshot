@@ -31,4 +31,19 @@ describe('MarkdownSchema', () => {
     expect(result.color).toBe('muted')
     expect(result.lineHeight).toBe('relaxed')
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = MarkdownSchema.parse({
+      content: 'Hello',
+      slots: {
+        container: { paddingY: 'sm' },
+        heading: { letterSpacing: 'wide' },
+        paragraph: { color: 'muted' },
+      },
+    })
+
+    expect(result.slots?.container?.paddingY).toBe('sm')
+    expect(result.slots?.heading?.letterSpacing).toBe('wide')
+    expect(result.slots?.paragraph?.color).toBe('muted')
+  })
 })

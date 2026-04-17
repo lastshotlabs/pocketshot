@@ -1,16 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  View,
+  Dimensions,
+  FlatList,
+  Modal,
+  SafeAreaView,
   Text,
   TextInput as RNTextInput,
   TouchableOpacity,
-  StyleSheet,
-  Modal,
-  FlatList,
-  Dimensions,
-  SafeAreaView,
+  View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
@@ -19,18 +21,49 @@ import type { MultiSelectConfig, SelectOption } from './types'
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 
+function resolveSlotSurface(
+  config: MultiSelectConfig,
+  tokens: DesignTokens,
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
+}
+
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
+
 export function MultiSelect({ config }: { config: MultiSelectConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
 
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
   const resolvedValue =
-    config.value != null
-      ? (resolveFromRef(config.value, values) as string[] | undefined)
-      : undefined
+    config.value != null ? (resolveFromRef(config.value, values) as string[] | undefined) : undefined
+  const label =
+    config.label != null ? String(resolveFromRef(config.label, values) ?? '') : undefined
+  const placeholder =
+    config.placeholder != null
+      ? String(resolveFromRef(config.placeholder, values) ?? '')
+      : 'Select options...'
+  const emptyMessage =
+    config.emptyMessage != null
+      ? String(resolveFromRef(config.emptyMessage, values) ?? '')
+      : 'No options'
 
-  const [selected, setSelected] = useState<string[]>(
-    resolvedValue ?? config.defaultValue ?? [],
-  )
+  const [selected, setSelected] = useState<string[]>(resolvedValue ?? config.defaultValue ?? [])
   const [modalVisible, setModalVisible] = useState(false)
   const [searchText, setSearchText] = useState('')
 
@@ -41,164 +74,308 @@ export function MultiSelect({ config }: { config: MultiSelectConfig }) {
   }, [resolvedValue])
 
   const filteredOptions = useMemo(() => {
-    if (!searchText.trim()) return config.options
-    const lower = searchText.toLowerCase()
-    return config.options.filter((o) => o.label.toLowerCase().includes(lower))
+    if (!searchText.trim()) {
+      return config.options
+    }
+    const lowerSearch = searchText.toLowerCase()
+    return config.options.filter((option) => option.label.toLowerCase().includes(lowerSearch))
   }, [config.options, searchText])
 
-  const atLimit =
-    config.maxSelections != null && selected.length >= config.maxSelections
+  const atLimit = config.maxSelections != null && selected.length >= config.maxSelections
+  const selectedOptions = useMemo(
+    () => config.options.filter((option) => selected.includes(option.value)),
+    [config.options, selected],
+  )
+  const testId = config.testID ?? config.id
+
+  const containerSurface = resolveSlotSurface(config, tokens, 'container', {
+    gap: 'xs',
+  })
+  const labelSurface = resolveSlotSurface(config, tokens, 'label', {
+    color: 'foreground',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+    marginBottom: 'xs',
+  })
+  const triggerSurface = resolveSlotSurface(config, tokens, 'trigger', {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: tokens.colors.inputBackground,
+    border: '1 border',
+    borderRadius: 'md',
+    paddingX: 'md',
+    paddingY: 'sm',
+    minHeight: 48,
+  })
+  const triggerContentSurface = resolveSlotSurface(config, tokens, 'triggerContent', {
+    flex: 1,
+  })
+  const chipsContainerSurface = resolveSlotSurface(config, tokens, 'chipsContainer', {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 'xs',
+  })
+  const chipSurface = resolveSlotSurface(config, tokens, 'chip', {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: tokens.colors.primary,
+    borderRadius: 'full',
+    paddingY: 'xs',
+    paddingLeft: 'sm',
+    paddingRight: 'xs',
+    gap: 'xs',
+  })
+  const chipTextSurface = resolveSlotSurface(config, tokens, 'chipText', {
+    color: 'primary-foreground',
+    fontSize: 'xs',
+    fontWeight: 'medium',
+    maxWidth: 120,
+  })
+  const chipRemoveSurface = resolveSlotSurface(config, tokens, 'chipRemove', {
+    width: 16,
+    height: 16,
+    borderRadius: 'full',
+    backgroundColor: tokens.colors.primaryForeground + '30',
+    alignItems: 'center',
+    justifyContent: 'center',
+  })
+  const chipRemoveTextSurface = resolveSlotSurface(config, tokens, 'chipRemoveText', {
+    color: 'primary-foreground',
+    fontSize: 9,
+    fontWeight: 'bold',
+  })
+  const placeholderTextSurface = resolveSlotSurface(config, tokens, 'placeholderText', {
+    color: tokens.colors.inputPlaceholder,
+    fontSize: 'base',
+  })
+  const chevronSurface = resolveSlotSurface(config, tokens, 'chevron', {
+    color: 'muted',
+    fontSize: 'xs',
+    marginLeft: 'sm',
+  })
+  const backdropSurface = resolveSlotSurface(config, tokens, 'backdrop', {
+    flex: 1,
+    backgroundColor: tokens.colors.overlay + 'CC',
+    justifyContent: 'end',
+  })
+  const panelSurface = resolveSlotSurface(config, tokens, 'panel', {
+    backgroundColor: tokens.colors.surface,
+    borderTopLeftRadius: tokens.radius.xl,
+    borderTopRightRadius: tokens.radius.xl,
+    maxHeight: SCREEN_HEIGHT * 0.6,
+  })
+  const panelHeaderSurface = resolveSlotSurface(config, tokens, 'panelHeader', {
+    paddingX: 'lg',
+    paddingTop: 'lg',
+    paddingBottom: 'sm',
+  })
+  const panelTitleSurface = resolveSlotSurface(config, tokens, 'panelTitle', {
+    color: 'foreground',
+    fontSize: 'lg',
+    fontWeight: 'semibold',
+  })
+  const searchContainerSurface = resolveSlotSurface(config, tokens, 'searchContainer', {
+    paddingX: 'lg',
+    paddingBottom: 'sm',
+  })
+  const searchInputSurface = resolveSlotSurface(config, tokens, 'searchInput', {
+    backgroundColor: tokens.colors.surfaceAlt,
+    borderRadius: 'md',
+    paddingX: 'md',
+    paddingY: 'sm',
+    fontSize: 'base',
+    color: tokens.colors.inputText,
+    border: '1 border',
+  })
+  const optionListSurface = resolveSlotSurface(config, tokens, 'optionList')
+  const emptyTextSurface = resolveSlotSurface(config, tokens, 'emptyText', {
+    color: 'muted',
+    fontSize: 'base',
+    textAlign: 'center',
+    paddingY: 'xl',
+  })
+  const panelFooterSurface = resolveSlotSurface(config, tokens, 'panelFooter', {
+    paddingX: 'lg',
+    paddingY: 'md',
+    borderTopWidth: 1,
+    borderTopColor: tokens.colors.divider,
+  })
+  const doneButtonSurface = resolveSlotSurface(config, tokens, 'doneButton', {
+    backgroundColor: tokens.colors.primary,
+    borderRadius: 'md',
+    paddingY: 'md',
+    alignItems: 'center',
+  })
+  const doneButtonTextSurface = resolveSlotSurface(config, tokens, 'doneButtonText', {
+    color: 'primary-foreground',
+    fontSize: 'base',
+    fontWeight: 'semibold',
+  })
+
+  const commitSelected = useCallback(
+    (nextSelected: string[]) => {
+      setSelected(nextSelected)
+      setValue(config.id, nextSelected)
+      if (config.onChangeAction != null) {
+        void dispatch(config.onChangeAction)
+      }
+    },
+    [config.id, config.onChangeAction, dispatch, setValue],
+  )
 
   const handleToggleOption = useCallback(
     (value: string) => {
       const isSelected = selected.includes(value)
-      let newSelected: string[]
       if (isSelected) {
-        newSelected = selected.filter((v) => v !== value)
-      } else {
-        if (atLimit) return
-        newSelected = [...selected, value]
+        commitSelected(selected.filter((current) => current !== value))
+        return
       }
-      setSelected(newSelected)
-      setValue(config.id, newSelected)
-      if (config.onChangeAction) {
-        void dispatch(config.onChangeAction)
+      if (atLimit) {
+        return
       }
+      commitSelected([...selected, value])
     },
-    [selected, atLimit, config.id, config.onChangeAction, setValue, dispatch],
+    [atLimit, commitSelected, selected],
   )
 
   const handleRemoveChip = useCallback(
     (value: string) => {
-      const newSelected = selected.filter((v) => v !== value)
-      setSelected(newSelected)
-      setValue(config.id, newSelected)
-      if (config.onChangeAction) {
-        void dispatch(config.onChangeAction)
-      }
+      commitSelected(selected.filter((current) => current !== value))
     },
-    [selected, config.id, config.onChangeAction, setValue, dispatch],
+    [commitSelected, selected],
   )
-
-  const handleClose = useCallback(() => {
-    setModalVisible(false)
-    setSearchText('')
-  }, [])
-
-  const selectedOptions = useMemo(
-    () => config.options.filter((o) => selected.includes(o.value)),
-    [config.options, selected],
-  )
-
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
 
   const renderChip = useCallback(
     (option: SelectOption) => (
-      <View
-        key={option.value}
-        style={styles.chip}
-        accessibilityRole="none"
-      >
-        <Text style={styles.chipText} numberOfLines={1}>
+      <View key={option.value} style={chipSurface.style as ViewStyle | undefined}>
+        <Text style={mergeTextStyle(sharedTextStyle, chipTextSurface)} numberOfLines={1}>
           {option.label}
         </Text>
         <TouchableOpacity
           onPress={() => handleRemoveChip(option.value)}
-          style={styles.chipRemove}
+          style={chipRemoveSurface.style as ViewStyle | undefined}
           accessibilityRole="button"
           accessibilityLabel={`Remove ${option.label}`}
           testID={`${config.id}-chip-remove-${option.value}`}
-          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+          activeOpacity={0.7}
         >
-          <Text style={styles.chipRemoveText}>✕</Text>
+          <Text style={mergeTextStyle(sharedTextStyle, chipRemoveTextSurface)}>X</Text>
         </TouchableOpacity>
       </View>
     ),
-    [styles, handleRemoveChip, config.id],
+    [chipRemoveSurface, chipRemoveTextSurface, chipSurface, config.id, handleRemoveChip, sharedTextStyle, chipTextSurface],
   )
 
   const renderOption = useCallback(
     ({ item }: { item: SelectOption }) => {
       const isSelected = selected.includes(item.value)
       const isDisabled = !isSelected && atLimit
+      const optionRowSurface = resolveSlotSurface(config, tokens, 'optionRow', {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingY: 'md',
+        paddingX: 'lg',
+        gap: 'md',
+        opacity: isDisabled ? 0.4 : 1,
+      })
+      const checkboxIconSurface = resolveSlotSurface(config, tokens, 'checkboxIcon', {
+        color: isSelected ? tokens.colors.primary : tokens.colors.textMuted,
+        fontSize: 'base',
+        width: 22,
+      })
+      const optionLabelSurface = resolveSlotSurface(config, tokens, 'optionLabel', {
+        color: isSelected ? tokens.colors.primary : tokens.colors.text,
+        fontSize: 'base',
+        flex: 1,
+        fontWeight: isSelected ? 'medium' : undefined,
+      })
+
       return (
         <TouchableOpacity
-          style={[styles.optionRow, isDisabled && styles.optionRowDisabled]}
+          style={optionRowSurface.style as ViewStyle | undefined}
           onPress={() => handleToggleOption(item.value)}
           disabled={isDisabled}
           accessibilityRole="checkbox"
           accessibilityLabel={item.label}
           accessibilityState={{ checked: isSelected, disabled: isDisabled }}
           testID={`${config.id}-option-${item.value}`}
+          activeOpacity={0.7}
         >
-          <Text style={[styles.checkboxIcon, isSelected && styles.checkboxIconSelected]}>
-            {isSelected ? '☑' : '☐'}
+          <Text style={mergeTextStyle(sharedTextStyle, checkboxIconSurface)}>
+            {isSelected ? '[x]' : '[ ]'}
           </Text>
-          <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
-            {item.label}
-          </Text>
+          <Text style={mergeTextStyle(sharedTextStyle, optionLabelSurface)}>{item.label}</Text>
         </TouchableOpacity>
       )
     },
-    [selected, atLimit, handleToggleOption, styles, config.id],
+    [atLimit, config, handleToggleOption, selected, sharedTextStyle, tokens],
   )
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        {config.label != null && (
-          <Text style={styles.label} accessibilityRole="text">
-            {config.label}
+      <View style={containerSurface.style as ViewStyle | undefined}>
+        {label != null ? (
+          <Text style={mergeTextStyle(sharedTextStyle, labelSurface)} accessibilityRole="text">
+            {label}
           </Text>
-        )}
+        ) : null}
         <TouchableOpacity
-          style={styles.trigger}
+          style={triggerSurface.style as ViewStyle | undefined}
           onPress={() => setModalVisible(true)}
           accessibilityRole="combobox"
-          accessibilityLabel={config.label ?? config.id}
+          accessibilityLabel={label ?? config.id}
           accessibilityHint="Opens a list to select multiple options"
           accessibilityState={{ expanded: modalVisible }}
-          testID={config.testID ?? config.id}
+          testID={testId}
+          activeOpacity={0.7}
         >
-          <View style={styles.triggerContent}>
+          <View style={triggerContentSurface.style as ViewStyle | undefined}>
             {selectedOptions.length > 0 ? (
-              <View style={styles.chipsContainer}>
+              <View style={chipsContainerSurface.style as ViewStyle | undefined}>
                 {selectedOptions.map(renderChip)}
               </View>
             ) : (
-              <Text style={styles.placeholderText} numberOfLines={1}>
-                {config.placeholder}
+              <Text style={mergeTextStyle(sharedTextStyle, placeholderTextSurface)} numberOfLines={1}>
+                {placeholder}
               </Text>
             )}
           </View>
-          <Text style={styles.chevron}>▼</Text>
+          <Text style={mergeTextStyle(sharedTextStyle, chevronSurface)}>v</Text>
         </TouchableOpacity>
 
         <Modal
           visible={modalVisible}
           transparent
           animationType="slide"
-          onRequestClose={handleClose}
+          onRequestClose={() => {
+            setModalVisible(false)
+            setSearchText('')
+          }}
           accessibilityViewIsModal
         >
           <TouchableOpacity
-            style={styles.backdrop}
-            onPress={handleClose}
+            style={backdropSurface.style as ViewStyle | undefined}
+            onPress={() => {
+              setModalVisible(false)
+              setSearchText('')
+            }}
             activeOpacity={1}
             accessibilityRole="button"
             accessibilityLabel="Close options panel"
           >
-            <SafeAreaView style={[styles.panel, { maxHeight: SCREEN_HEIGHT * 0.6 }]}>
+            <SafeAreaView style={panelSurface.style as ViewStyle | undefined}>
               <TouchableOpacity activeOpacity={1}>
-                <View style={styles.panelHeader}>
-                  <Text style={styles.panelTitle}>{config.label ?? 'Select options'}</Text>
+                <View style={panelHeaderSurface.style as ViewStyle | undefined}>
+                  <Text style={mergeTextStyle(sharedTextStyle, panelTitleSurface)}>
+                    {label ?? 'Select options'}
+                  </Text>
                 </View>
-                <View style={styles.searchContainer}>
+                <View style={searchContainerSurface.style as ViewStyle | undefined}>
                   <RNTextInput
-                    style={styles.searchInput}
+                    style={searchInputSurface.style as TextStyle | undefined}
                     value={searchText}
                     onChangeText={setSearchText}
-                    placeholder="Search…"
+                    placeholder="Search..."
                     placeholderTextColor={tokens.colors.inputPlaceholder}
                     accessibilityRole="search"
                     accessibilityLabel="Search options"
@@ -210,20 +387,26 @@ export function MultiSelect({ config }: { config: MultiSelectConfig }) {
                   keyExtractor={(item) => item.value}
                   renderItem={renderOption}
                   ListEmptyComponent={
-                    <Text style={styles.emptyText}>{config.emptyMessage}</Text>
+                    <Text style={mergeTextStyle(sharedTextStyle, emptyTextSurface)}>
+                      {emptyMessage}
+                    </Text>
                   }
-                  style={styles.optionList}
+                  style={optionListSurface.style as ViewStyle | undefined}
                   keyboardShouldPersistTaps="handled"
                 />
-                <View style={styles.panelFooter}>
+                <View style={panelFooterSurface.style as ViewStyle | undefined}>
                   <TouchableOpacity
-                    style={styles.doneButton}
-                    onPress={handleClose}
+                    style={doneButtonSurface.style as ViewStyle | undefined}
+                    onPress={() => {
+                      setModalVisible(false)
+                      setSearchText('')
+                    }}
                     accessibilityRole="button"
                     accessibilityLabel="Done"
                     testID={`${config.id}-done`}
+                    activeOpacity={0.7}
                   >
-                    <Text style={styles.doneButtonText}>Done</Text>
+                    <Text style={mergeTextStyle(sharedTextStyle, doneButtonTextSurface)}>Done</Text>
                   </TouchableOpacity>
                 </View>
               </TouchableOpacity>
@@ -234,163 +417,3 @@ export function MultiSelect({ config }: { config: MultiSelectConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      gap: tokens.spacing[1],
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[1],
-    },
-    trigger: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: tokens.colors.inputBackground,
-      borderColor: tokens.colors.inputBorder,
-      borderWidth: 1,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-      minHeight: 48,
-    },
-    triggerContent: {
-      flex: 1,
-    },
-    chipsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: tokens.spacing[1],
-    },
-    chip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: tokens.colors.primary,
-      borderRadius: tokens.radius.full,
-      paddingVertical: tokens.spacing[1],
-      paddingLeft: tokens.spacing[2],
-      paddingRight: tokens.spacing[1],
-      gap: tokens.spacing[1],
-    },
-    chipText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.primaryForeground,
-      fontWeight: tokens.typography.fontWeightMedium,
-      maxWidth: 120,
-    },
-    chipRemove: {
-      width: 16,
-      height: 16,
-      borderRadius: tokens.radius.full,
-      backgroundColor: tokens.colors.primaryForeground + '30',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    chipRemoveText: {
-      fontSize: 9,
-      color: tokens.colors.primaryForeground,
-      fontWeight: tokens.typography.fontWeightBold,
-    },
-    placeholderText: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputPlaceholder,
-    },
-    chevron: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-      marginLeft: tokens.spacing[2],
-    },
-    backdrop: {
-      flex: 1,
-      backgroundColor: tokens.colors.overlay + 'CC',
-      justifyContent: 'flex-end',
-    },
-    panel: {
-      backgroundColor: tokens.colors.surface,
-      borderTopLeftRadius: tokens.radius.xl,
-      borderTopRightRadius: tokens.radius.xl,
-      ...tokens.shadows.lg,
-    },
-    panelHeader: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[4],
-      paddingBottom: tokens.spacing[2],
-    },
-    panelTitle: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-    },
-    searchContainer: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingBottom: tokens.spacing[2],
-    },
-    searchInput: {
-      backgroundColor: tokens.colors.surfaceAlt,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.inputText,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-    },
-    optionList: {
-      flexGrow: 0,
-    },
-    optionRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: tokens.spacing[3],
-      paddingHorizontal: tokens.spacing[4],
-      gap: tokens.spacing[3],
-    },
-    optionRowDisabled: {
-      opacity: 0.4,
-    },
-    checkboxIcon: {
-      fontSize: tokens.typography.fontSizeLg,
-      color: tokens.colors.textMuted,
-      width: 22,
-    },
-    checkboxIconSelected: {
-      color: tokens.colors.primary,
-    },
-    optionLabel: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-    },
-    optionLabelSelected: {
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.primary,
-    },
-    emptyText: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.textMuted,
-      textAlign: 'center',
-      paddingVertical: tokens.spacing[6],
-    },
-    panelFooter: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[3],
-      borderTopWidth: 1,
-      borderTopColor: tokens.colors.divider,
-    },
-    doneButton: {
-      backgroundColor: tokens.colors.primary,
-      borderRadius: tokens.radius.md,
-      paddingVertical: tokens.spacing[3],
-      alignItems: 'center',
-    },
-    doneButtonText: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.primaryForeground,
-    },
-  })
-}
-

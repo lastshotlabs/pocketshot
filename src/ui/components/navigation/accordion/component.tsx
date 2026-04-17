@@ -3,106 +3,31 @@ import {
   Animated,
   LayoutAnimation,
   Platform,
-  StyleSheet,
   Text,
   TouchableOpacity,
   UIManager,
   View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { AccordionConfig } from './types'
 
-// Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true)
-}
-
-function makeStyles(tokens: DesignTokens, variant: AccordionConfig['variant']) {
-  return StyleSheet.create({
-    container: {
-      overflow: 'hidden',
-    },
-    section_default: {
-      backgroundColor: tokens.colors.surface,
-    },
-    section_bordered: {
-      backgroundColor: tokens.colors.surface,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      borderRadius: tokens.radius.md,
-      marginBottom: tokens.spacing[2],
-      overflow: 'hidden',
-    },
-    section_separated: {
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.md,
-      marginBottom: tokens.spacing[3],
-      overflow: 'hidden',
-      ...tokens.shadows.sm,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: tokens.spacing[4],
-      paddingHorizontal: tokens.spacing[4],
-      backgroundColor: tokens.colors.surface,
-    },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
-      gap: tokens.spacing[3],
-    },
-    icon: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.textMuted,
-    },
-    titleBlock: {
-      flex: 1,
-    },
-    title: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-    },
-    subtitle: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      marginTop: tokens.spacing[0],
-    },
-    chevron: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.textMuted,
-      marginLeft: tokens.spacing[2],
-    },
-    divider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: tokens.colors.divider,
-      marginHorizontal: variant === 'default' ? tokens.spacing[4] : 0,
-    },
-    body: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingBottom: tokens.spacing[4],
-      paddingTop: tokens.spacing[1],
-    },
-    bodyText: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      lineHeight: tokens.typography.fontSizeSm * tokens.typography.lineHeightNormal,
-    },
-  })
 }
 
 interface SectionRowProps {
   section: AccordionConfig['sections'][number]
   isOpen: boolean
   isLast: boolean
-  variant: AccordionConfig['variant']
-  styles: ReturnType<typeof makeStyles>
-  tokens: DesignTokens
+  variant: NonNullable<AccordionConfig['variant']>
+  baseTextStyle: TextStyle
+  slots?: AccordionConfig['slots']
   onToggle: (id: string) => void
   testIDPrefix?: string
 }
@@ -112,11 +37,12 @@ function SectionRow({
   isOpen,
   isLast,
   variant,
-  styles,
-  tokens,
+  baseTextStyle,
+  slots,
   onToggle,
   testIDPrefix,
 }: SectionRowProps) {
+  const tokens = useTokens()
   const chevronAnim = useRef(new Animated.Value(isOpen ? 1 : 0)).current
 
   useEffect(() => {
@@ -125,80 +51,251 @@ function SectionRow({
       duration: 200,
       useNativeDriver: true,
     }).start()
-  }, [isOpen, chevronAnim])
+  }, [chevronAnim, isOpen])
 
+  const activeStates: RuntimeSurfaceState[] | undefined = isOpen ? ['open'] : undefined
+
+  const sectionSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase:
+      variant === 'bordered'
+        ? {
+            bg: 'card',
+            border: '1px solid border',
+            borderRadius: 'md',
+            overflow: 'hidden',
+          }
+        : variant === 'separated'
+          ? {
+              bg: 'card',
+              borderRadius: 'md',
+              shadow: 'sm',
+              overflow: 'hidden',
+              marginBottom: 'sm',
+            }
+          : {
+              bg: 'card',
+            },
+    componentSurface: slots?.section as Record<string, unknown> | undefined,
+  })
+  const headerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingY: 'md',
+      paddingX: 'md',
+    },
+    componentSurface: slots?.header as Record<string, unknown> | undefined,
+  })
+  const headerLeftSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      gap: 'sm',
+    },
+    componentSurface: slots?.headerLeft as Record<string, unknown> | undefined,
+  })
+  const iconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'muted',
+    },
+    componentSurface: slots?.icon as Record<string, unknown> | undefined,
+  })
+  const titleBlockSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+    },
+    componentSurface: slots?.titleBlock as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      fontWeight: 'semibold',
+      color: 'foreground',
+    },
+    componentSurface: slots?.title as Record<string, unknown> | undefined,
+  })
+  const subtitleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+      marginTop: 0,
+    },
+    componentSurface: slots?.subtitle as Record<string, unknown> | undefined,
+  })
+  const chevronSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'muted',
+      marginLeft: 'xs',
+    },
+    componentSurface: slots?.chevron as Record<string, unknown> | undefined,
+  })
+  const dividerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'border',
+    },
+    componentSurface: slots?.divider as Record<string, unknown> | undefined,
+  })
+  const bodySurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+      paddingBottom: 'md',
+      paddingTop: 'xs',
+    },
+    componentSurface: slots?.body as Record<string, unknown> | undefined,
+  })
+  const bodyTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+      lineHeight: 'normal',
+    },
+    componentSurface: slots?.bodyText as Record<string, unknown> | undefined,
+  })
+
+  const testID = testIDPrefix ? `${testIDPrefix}-${section.id}` : `accordion-${section.id}`
   const chevronRotation = chevronAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '90deg'],
   })
 
-  const handlePress = useCallback(() => {
-    onToggle(section.id)
-  }, [onToggle, section.id])
-
-  const testID = testIDPrefix ? `${testIDPrefix}-${section.id}` : `accordion-${section.id}`
-
   return (
-    <View style={variant === 'default' ? styles.section_default : undefined}>
+    <View style={sectionSurface.style as ViewStyle | undefined}>
       <TouchableOpacity
-        onPress={handlePress}
-        style={styles.header}
+        onPress={() => onToggle(section.id)}
+        style={headerSurface.style as ViewStyle | undefined}
         accessibilityRole="button"
         accessibilityState={{ expanded: isOpen }}
         accessibilityLabel={`${section.title} section`}
         testID={testID}
         activeOpacity={0.7}
       >
-        <View style={styles.headerLeft}>
-          {section.icon != null && (
-            <Text style={styles.icon} accessibilityElementsHidden>
+        <View style={headerLeftSurface.style as ViewStyle | undefined}>
+          {section.icon != null ? (
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(iconSurface.style as TextStyle | undefined),
+              }}
+              accessibilityElementsHidden
+            >
               {section.icon}
             </Text>
-          )}
-          <View style={styles.titleBlock}>
-            <Text style={styles.title}>{section.title}</Text>
-            {section.subtitle != null && (
-              <Text style={styles.subtitle}>{section.subtitle}</Text>
-            )}
+          ) : null}
+          <View style={titleBlockSurface.style as ViewStyle | undefined}>
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(titleSurface.style as TextStyle | undefined),
+              }}
+            >
+              {section.title}
+            </Text>
+            {section.subtitle != null ? (
+              <Text
+                style={{
+                  ...baseTextStyle,
+                  ...(subtitleSurface.style as TextStyle | undefined),
+                }}
+              >
+                {section.subtitle}
+              </Text>
+            ) : null}
           </View>
         </View>
         <Animated.Text
-          style={[styles.chevron, { transform: [{ rotate: chevronRotation }] }]}
+          style={[
+            {
+              ...baseTextStyle,
+              transform: [{ rotate: chevronRotation }],
+            },
+            chevronSurface.style as TextStyle | undefined,
+          ]}
           accessibilityElementsHidden
         >
-          ›
+          {'>'}
         </Animated.Text>
       </TouchableOpacity>
 
-      {isOpen && section.content != null && (
-        <View style={styles.body}>
-          <Text style={styles.bodyText}>{section.content}</Text>
+      {isOpen && section.content != null ? (
+        <View style={bodySurface.style as ViewStyle | undefined}>
+          <Text
+            style={{
+              ...baseTextStyle,
+              ...(bodyTextSurface.style as TextStyle | undefined),
+            }}
+          >
+            {section.content}
+          </Text>
         </View>
-      )}
+      ) : null}
 
-      {variant === 'default' && !isLast && <View style={styles.divider} />}
+      {variant === 'default' && !isLast ? (
+        <View
+          style={[
+            { height: 1, marginHorizontal: tokens.spacing[4] },
+            dividerSurface.style as ViewStyle | undefined,
+          ]}
+        />
+      ) : null}
     </View>
   )
 }
 
-/**
- * Config-driven accordion component. Renders collapsible sections with
- * animated chevron rotation and LayoutAnimation height transitions.
- *
- * Publishes the toggled section id to ScreenContext under `__pressedSection`
- * before dispatching `onSectionChange`.
- */
 export function Accordion({ config }: { config: AccordionConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch } = useScreenContext()
 
-  const [openIds, setOpenIds] = useState<Set<string>>(
-    () => new Set(config.defaultOpenIds ?? []),
-  )
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(config.defaultOpenIds ?? []))
 
   const variant = config.variant ?? 'default'
   const allowMultiple = config.allowMultiple ?? true
-  const styles = useMemo(() => makeStyles(tokens, variant), [tokens, variant])
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      overflow: 'hidden',
+      ...(variant === 'bordered'
+        ? {
+            border: '1px solid border',
+            borderRadius: 'md',
+          }
+        : {}),
+    },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+  })
 
   const handleToggle = useCallback(
     (sectionId: string) => {
@@ -220,48 +317,26 @@ export function Accordion({ config }: { config: AccordionConfig }) {
         void dispatch(config.onSectionChange)
       }
     },
-    [allowMultiple, setValue, dispatch, config.onSectionChange],
+    [allowMultiple, config.onSectionChange, dispatch, setValue],
   )
-
-  const containerStyle = useMemo(() => {
-    if (variant === 'bordered') {
-      return [styles.container, { borderWidth: 1, borderColor: tokens.colors.border, borderRadius: tokens.radius.md, overflow: 'hidden' as const }]
-    }
-    return styles.container
-  }, [variant, styles, tokens])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={containerStyle}>
-        {config.sections.map((section, index) => {
-          const isLast = index === config.sections.length - 1
-          const sectionStyle =
-            variant === 'bordered'
-              ? undefined
-              : variant === 'separated'
-                ? styles.section_separated
-                : undefined
-
-          return (
-            <View key={section.id} style={sectionStyle}>
-              {variant === 'bordered' && index > 0 && (
-                <View style={styles.divider} />
-              )}
-              <SectionRow
-                section={section}
-                isOpen={openIds.has(section.id)}
-                isLast={isLast}
-                variant={variant}
-                styles={styles}
-                tokens={tokens}
-                onToggle={handleToggle}
-                testIDPrefix={config.testID ?? config.id}
-              />
-            </View>
-          )
-        })}
+      <View style={containerSurface.style as ViewStyle | undefined}>
+        {config.sections.map((section, index) => (
+          <SectionRow
+            key={section.id}
+            section={section}
+            isOpen={openIds.has(section.id)}
+            isLast={index === config.sections.length - 1}
+            variant={variant}
+            baseTextStyle={baseTextStyle}
+            slots={config.slots}
+            onToggle={handleToggle}
+            testIDPrefix={config.testID ?? config.id}
+          />
+        ))}
       </View>
     </ComponentWrapper>
   )
 }
-

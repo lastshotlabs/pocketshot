@@ -1,14 +1,12 @@
-import React, { useCallback, useMemo, useState } from 'react'
-import { View, Text, TouchableOpacity, Linking, StyleSheet } from 'react-native'
+import React, { useMemo, useState } from 'react'
+import { Linking, Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
-import type { RichTextViewerConfig, RichTextNode } from './types'
-
-// ── HTML-like parser ──────────────────────────────────────────────────────────
+import type { RichTextNode, RichTextViewerConfig } from './types'
 
 const SELF_CLOSING = new Set(['br', 'hr', 'img'])
 
@@ -23,45 +21,42 @@ function parseNodes(state: ParseState): RichTextNode[] {
   while (state.pos < state.src.length) {
     const rest = state.src.slice(state.pos)
 
-    // Closing tag ahead — return to parent
-    if (rest.startsWith('</')) break
+    if (rest.startsWith('</')) {
+      break
+    }
 
-    // Opening tag
     const tagMatch = /^<(\w+)(\s[^>]*)?>/.exec(rest)
     if (tagMatch) {
-      const tagName = tagMatch[1].toLowerCase()
+      const tagName = tagMatch[1]!.toLowerCase()
       const attrStr = tagMatch[2] ?? ''
       state.pos += tagMatch[0].length
 
       if (SELF_CLOSING.has(tagName)) {
         if (tagName === 'br') {
           nodes.push({ type: 'text', content: '\n' })
-        } else if (tagName === 'hr') {
-          nodes.push({ type: 'text', content: '' })
         }
         continue
       }
 
       const children = parseNodes(state)
-
-      // Consume closing tag
       const closeMatch = new RegExp(`^</${tagName}\\s*>`).exec(state.src.slice(state.pos))
       if (closeMatch) {
         state.pos += closeMatch[0].length
       }
 
-      const node = mapTagToNode(tagName, attrStr, children)
-      if (node) nodes.push(node)
+      const mappedNode = mapTagToNode(tagName, attrStr, children)
+      if (mappedNode != null) {
+        nodes.push(mappedNode)
+      }
       continue
     }
 
-    // Text content — consume until next tag
-    const nextTag = rest.indexOf('<')
-    const text = nextTag === -1 ? rest : rest.slice(0, nextTag)
+    const nextTagIndex = rest.indexOf('<')
+    const text = nextTagIndex === -1 ? rest : rest.slice(0, nextTagIndex)
     if (text.length > 0) {
       nodes.push({ type: 'text', content: text })
       state.pos += text.length
-    } else if (nextTag === -1) {
+    } else if (nextTagIndex === -1) {
       break
     }
   }
@@ -69,11 +64,7 @@ function parseNodes(state: ParseState): RichTextNode[] {
   return nodes
 }
 
-function mapTagToNode(
-  tag: string,
-  attrStr: string,
-  children: RichTextNode[],
-): RichTextNode | null {
+function mapTagToNode(tag: string, attrStr: string, children: RichTextNode[]): RichTextNode | null {
   switch (tag) {
     case 'b':
     case 'strong':
@@ -88,17 +79,12 @@ function mapTagToNode(
       return { type: 'link', href: hrefMatch?.[1], children }
     }
     case 'h1':
-      return { type: 'heading', level: 1, children }
     case 'h2':
-      return { type: 'heading', level: 2, children }
     case 'h3':
-      return { type: 'heading', level: 3, children }
     case 'h4':
-      return { type: 'heading', level: 4, children }
     case 'h5':
-      return { type: 'heading', level: 5, children }
     case 'h6':
-      return { type: 'heading', level: 6, children }
+      return { type: 'heading', level: Number(tag[1]), children }
     case 'p':
       return { type: 'paragraph', children }
     case 'ul':
@@ -112,39 +98,76 @@ function mapTagToNode(
     case 'code':
       return { type: 'code', children }
     default:
-      // Unknown tag — render children inline
-      return children.length === 1 ? children[0] : { type: 'paragraph', children }
+      return children.length === 1 ? children[0]! : { type: 'paragraph', children }
   }
 }
 
 function parseRichText(html: string): RichTextNode[] {
   const trimmed = html.trim()
-  if (trimmed.length === 0) return []
-  const state: ParseState = { pos: 0, src: trimmed }
-  return parseNodes(state)
+  if (trimmed.length === 0) {
+    return []
+  }
+  return parseNodes({ pos: 0, src: trimmed })
 }
 
-// ── Renderers ─────────────────────────────────────────────────────────────────
-
-function renderNodes(
-  nodes: RichTextNode[],
+function resolveSlotSurface(
+  config: RichTextViewerConfig,
   tokens: DesignTokens,
-  baseTextStyle: ResolvedRichTextStyle,
-  key: string,
-): React.ReactNode[] {
-  return nodes.map((node, idx) => renderNode(node, tokens, baseTextStyle, `${key}-${idx}`))
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
 }
 
-function renderNode(
-  node: RichTextNode,
-  tokens: DesignTokens,
-  baseTextStyle: ResolvedRichTextStyle,
-  key: string,
-): React.ReactNode {
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
+
+function renderNodes(params: {
+  nodes: RichTextNode[]
+  config: RichTextViewerConfig
+  tokens: DesignTokens
+  sharedTextStyle: TextStyle
+  keyPrefix: string
+}): React.ReactNode[] {
+  return params.nodes.map((node, index) =>
+    renderNode({
+      ...params,
+      node,
+      keyValue: `${params.keyPrefix}-${index}`,
+    }),
+  )
+}
+
+function renderNode(params: {
+  node: RichTextNode
+  config: RichTextViewerConfig
+  tokens: DesignTokens
+  sharedTextStyle: TextStyle
+  keyValue: string
+}): React.ReactNode {
+  const { node, config, tokens, sharedTextStyle, keyValue } = params
+  const textSurface = resolveSlotSurface(config, tokens, 'text', {
+    color: 'foreground',
+    fontSize: 'base',
+    lineHeight: 'normal',
+  })
+
   switch (node.type) {
     case 'text':
       return (
-        <Text key={key} style={{ color: baseTextStyle.color }}>
+        <Text key={keyValue} style={mergeTextStyle(sharedTextStyle, textSurface)}>
           {node.content}
         </Text>
       )
@@ -152,151 +175,228 @@ function renderNode(
     case 'bold':
       return (
         <Text
-          key={key}
-          style={{ fontWeight: tokens.typography.fontWeightBold, color: baseTextStyle.color }}
+          key={keyValue}
+          style={{
+            ...mergeTextStyle(sharedTextStyle, textSurface),
+            fontWeight: tokens.typography.fontWeightBold,
+          }}
         >
-          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
+          {node.children
+            ? renderNodes({
+                nodes: node.children,
+                config,
+                tokens,
+                sharedTextStyle,
+                keyPrefix: keyValue,
+              })
+            : node.content}
         </Text>
       )
 
     case 'italic':
       return (
-        <Text key={key} style={{ fontStyle: 'italic', color: baseTextStyle.color }}>
-          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
+        <Text
+          key={keyValue}
+          style={{
+            ...mergeTextStyle(sharedTextStyle, textSurface),
+            fontStyle: 'italic',
+          }}
+        >
+          {node.children
+            ? renderNodes({
+                nodes: node.children,
+                config,
+                tokens,
+                sharedTextStyle,
+                keyPrefix: keyValue,
+              })
+            : node.content}
         </Text>
       )
 
     case 'underline':
       return (
-        <Text key={key} style={{ textDecorationLine: 'underline', color: baseTextStyle.color }}>
-          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
+        <Text
+          key={keyValue}
+          style={{
+            ...mergeTextStyle(sharedTextStyle, textSurface),
+            textDecorationLine: 'underline',
+          }}
+        >
+          {node.children
+            ? renderNodes({
+                nodes: node.children,
+                config,
+                tokens,
+                sharedTextStyle,
+                keyPrefix: keyValue,
+              })
+            : node.content}
         </Text>
       )
 
-    case 'link':
+    case 'link': {
+      const linkSurface = resolveSlotSurface(config, tokens, 'link', {
+        color: 'primary',
+        textDecorationLine: 'underline',
+      })
+
       return (
         <Text
-          key={key}
-          style={{
-            color: typeof baseTextStyle.color === 'string' ? baseTextStyle.color : tokens.colors.primary,
-            textDecorationLine: 'underline',
-          }}
+          key={keyValue}
+          style={mergeTextStyle(sharedTextStyle, linkSurface)}
           accessibilityRole="link"
           accessibilityHint={node.href ? `Opens ${node.href}` : undefined}
           onPress={() => {
-            if (node.href) void Linking.openURL(node.href)
+            if (node.href) {
+              void Linking.openURL(node.href)
+            }
           }}
         >
-          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
-        </Text>
-      )
-
-    case 'code':
-      return (
-        <Text
-          key={key}
-          style={{
-            fontFamily: 'monospace',
-            backgroundColor: tokens.colors.surfaceAlt,
-            color: tokens.colors.primary,
-            paddingHorizontal: 4,
-            paddingVertical: 1,
-            borderRadius: tokens.radius.sm,
-            fontSize: Math.max(baseTextStyle.fontSize - 1, tokens.typography.fontSizeXs),
-          }}
-        >
-          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
-        </Text>
-      )
-
-    case 'heading': {
-      const level = node.level ?? 1
-      const fontSize =
-        level === 1
-          ? tokens.typography.fontSizeXl
-          : level === 2
-            ? tokens.typography.fontSizeLg
-            : level === 3
-              ? tokens.typography.fontSizeMd
-              : tokens.typography.fontSizeSm
-      const fontWeight =
-        level <= 2
-          ? tokens.typography.fontWeightBold
-          : tokens.typography.fontWeightSemibold
-      return (
-        <Text
-          key={key}
-          style={{
-            fontSize: Math.max(fontSize, baseTextStyle.fontSize),
-            fontWeight,
-            color: baseTextStyle.color,
-            textAlign: baseTextStyle.textAlign,
-            marginBottom: tokens.spacing[2],
-            marginTop: tokens.spacing[2],
-          }}
-          accessibilityRole="header"
-        >
-          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
+          {node.children
+            ? renderNodes({
+                nodes: node.children,
+                config,
+                tokens,
+                sharedTextStyle,
+                keyPrefix: keyValue,
+              })
+            : node.content}
         </Text>
       )
     }
 
-    case 'paragraph':
+    case 'code': {
+      const codeSurface = resolveSlotSurface(config, tokens, 'code', {
+        color: 'primary',
+        backgroundColor: tokens.colors.surfaceAlt,
+        borderRadius: 'sm',
+        paddingX: 4,
+        paddingY: 1,
+        fontSize: 'sm',
+      })
+
       return (
         <Text
-          key={key}
+          key={keyValue}
           style={{
-            fontSize: baseTextStyle.fontSize,
-            color: baseTextStyle.color,
-            textAlign: baseTextStyle.textAlign,
-            lineHeight: baseTextStyle.lineHeight,
-            letterSpacing: baseTextStyle.letterSpacing,
-            marginBottom: tokens.spacing[2],
+            ...mergeTextStyle(sharedTextStyle, codeSurface),
+            fontFamily: 'monospace',
           }}
         >
-          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
+          {node.children
+            ? renderNodes({
+                nodes: node.children,
+                config,
+                tokens,
+                sharedTextStyle,
+                keyPrefix: keyValue,
+              })
+            : node.content}
         </Text>
       )
+    }
+
+    case 'heading': {
+      const headingSurface = resolveSlotSurface(config, tokens, 'heading', {
+        color: 'foreground',
+        fontSize:
+          node.level === 1
+            ? 'xl'
+            : node.level === 2
+              ? 'lg'
+              : node.level === 3
+                ? 'base'
+                : 'sm',
+        fontWeight: node.level != null && node.level <= 2 ? 'bold' : 'semibold',
+        marginY: 'sm',
+      })
+
+      return (
+        <Text
+          key={keyValue}
+          style={mergeTextStyle(sharedTextStyle, headingSurface)}
+          accessibilityRole="header"
+        >
+          {node.children
+            ? renderNodes({
+                nodes: node.children,
+                config,
+                tokens,
+                sharedTextStyle,
+                keyPrefix: keyValue,
+              })
+            : node.content}
+        </Text>
+      )
+    }
+
+    case 'paragraph': {
+      const paragraphSurface = resolveSlotSurface(config, tokens, 'paragraph', {
+        color: 'foreground',
+        fontSize: 'base',
+        lineHeight: 'normal',
+        marginBottom: 'sm',
+      })
+
+      return (
+        <Text key={keyValue} style={mergeTextStyle(sharedTextStyle, paragraphSurface)}>
+          {node.children
+            ? renderNodes({
+                nodes: node.children,
+                config,
+                tokens,
+                sharedTextStyle,
+                keyPrefix: keyValue,
+              })
+            : node.content}
+        </Text>
+      )
+    }
 
     case 'unordered-list':
     case 'ordered-list': {
-      const isOrdered = node.type === 'ordered-list'
+      const listSurface = resolveSlotSurface(config, tokens, 'list', {
+        marginBottom: 'sm',
+        paddingLeft: 'md',
+      })
+      const bulletSurface = resolveSlotSurface(config, tokens, 'bullet', {
+        color: 'muted',
+        fontSize: 'base',
+        marginRight: 'sm',
+        minWidth: 16,
+      })
+      const listItemSurface = resolveSlotSurface(config, tokens, 'listItem', {
+        flexDirection: 'row',
+        marginBottom: 'xs',
+      })
+
       return (
-        <View key={key} style={{ marginBottom: tokens.spacing[2], paddingLeft: tokens.spacing[3] }}>
-          {(node.children ?? []).map((child, idx) => (
+        <View key={keyValue} style={listSurface.style as ViewStyle | undefined}>
+          {(node.children ?? []).map((child, index) => (
             <View
-              key={`${key}-li-${idx}`}
-              style={{
-                flexDirection: 'row',
-                marginBottom: tokens.spacing[1],
-              }}
+              key={`${keyValue}-item-${index}`}
+              style={listItemSurface.style as ViewStyle | undefined}
             >
-              <Text
-                style={{
-                  color: tokens.colors.textMuted,
-                  marginRight: tokens.spacing[2],
-                  minWidth: 16,
-                  fontSize: tokens.typography.fontSizeMd,
-                }}
-              >
-                {isOrdered ? `${idx + 1}.` : '\u2022'}
+              <Text style={mergeTextStyle(sharedTextStyle, bulletSurface)}>
+                {node.type === 'ordered-list' ? `${index + 1}.` : '-'}
               </Text>
               <View style={{ flex: 1 }}>
-                {child.type === 'list-item' && child.children ? (
-                  <Text
-                    style={{
-                      fontSize: baseTextStyle.fontSize,
-                      color: baseTextStyle.color,
-                      textAlign: baseTextStyle.textAlign,
-                      lineHeight: baseTextStyle.lineHeight,
-                      letterSpacing: baseTextStyle.letterSpacing,
-                    }}
-                  >
-                    {renderNodes(child.children, tokens, baseTextStyle, `${key}-li-${idx}`)}
-                  </Text>
-                ) : (
-                  renderNode(child, tokens, baseTextStyle, `${key}-li-${idx}`)
-                )}
+                {child.children
+                  ? renderNodes({
+                      nodes: child.children,
+                      config,
+                      tokens,
+                      sharedTextStyle,
+                      keyPrefix: `${keyValue}-item-${index}`,
+                    })
+                  : renderNode({
+                      node: child,
+                      config,
+                      tokens,
+                      sharedTextStyle,
+                      keyValue: `${keyValue}-item-${index}`,
+                    })}
               </View>
             </View>
           ))}
@@ -306,165 +406,112 @@ function renderNode(
 
     case 'list-item':
       return (
-        <Text
-          key={key}
-          style={{
-            fontSize: baseTextStyle.fontSize,
-            color: baseTextStyle.color,
-            textAlign: baseTextStyle.textAlign,
-            lineHeight: baseTextStyle.lineHeight,
-            letterSpacing: baseTextStyle.letterSpacing,
-          }}
-        >
-          {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
+        <Text key={keyValue} style={mergeTextStyle(sharedTextStyle, textSurface)}>
+          {node.children
+            ? renderNodes({
+                nodes: node.children,
+                config,
+                tokens,
+                sharedTextStyle,
+                keyPrefix: keyValue,
+              })
+            : node.content}
         </Text>
       )
 
-    case 'blockquote':
+    case 'blockquote': {
+      const blockquoteSurface = resolveSlotSurface(config, tokens, 'blockquote', {
+        borderLeftWidth: 3,
+        borderLeftColor: tokens.colors.primary,
+        paddingLeft: 'md',
+        marginBottom: 'sm',
+      })
+
       return (
-        <View
-          key={key}
-          style={{
-            borderLeftWidth: 3,
-            borderLeftColor: tokens.colors.primary,
-            paddingLeft: tokens.spacing[3],
-            marginBottom: tokens.spacing[2],
-          }}
-        >
+        <View key={keyValue} style={blockquoteSurface.style as ViewStyle | undefined}>
           <Text
             style={{
-              color: baseTextStyle.color,
+              ...mergeTextStyle(sharedTextStyle, textSurface),
               fontStyle: 'italic',
-              fontSize: baseTextStyle.fontSize,
-              textAlign: baseTextStyle.textAlign,
-              lineHeight: baseTextStyle.lineHeight,
-              letterSpacing: baseTextStyle.letterSpacing,
             }}
           >
-            {node.children ? renderNodes(node.children, tokens, baseTextStyle, key) : node.content}
+            {node.children
+              ? renderNodes({
+                  nodes: node.children,
+                  config,
+                  tokens,
+                  sharedTextStyle,
+                  keyPrefix: keyValue,
+                })
+              : node.content}
           </Text>
         </View>
       )
+    }
 
     default:
       return null
   }
 }
 
-interface ResolvedRichTextStyle {
-  color: string
-  fontSize: number
-  lineHeight: number
-  letterSpacing?: number
-  textAlign: 'left' | 'center' | 'right' | 'justify'
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-
 export function RichTextViewer({ config }: { config: RichTextViewerConfig }) {
   const tokens = useTokens()
   const { values } = useScreenContext()
 
-  const content = resolveFromRef(config.content, values) as string
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const content = String(resolveFromRef(config.content, values) ?? '')
   const [expanded, setExpanded] = useState(false)
-
-  const nodes = useMemo(() => parseRichText(content ?? ''), [content])
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
-  const baseTextStyle = useMemo(() => resolveViewerTextStyle(tokens, config), [config, tokens])
-
-  const showExpandButton = config.showExpandButton ?? true
-  const isTruncated = config.maxLines != null && !expanded
-
-  const handleExpand = useCallback(() => {
-    setExpanded(true)
-  }, [])
-
-  const handleCollapse = useCallback(() => {
-    setExpanded(false)
-  }, [])
-
   const testId = config.testID ?? config.id
+
+  const containerSurface = resolveSlotSurface(config, tokens, 'container')
+  const expandButtonSurface = resolveSlotSurface(config, tokens, 'expandButton', {
+    paddingY: 'sm',
+    alignItems: 'center',
+  })
+  const expandTextSurface = resolveSlotSurface(config, tokens, 'expandText', {
+    color: 'primary',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+  })
+  const nodes = useMemo(() => parseRichText(content), [content])
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View testID={testId}>
+      <View testID={testId} style={containerSurface.style as ViewStyle | undefined}>
         <View
-          style={isTruncated ? { maxHeight: (config.maxLines ?? 5) * 22, overflow: 'hidden' } : undefined}
+          style={
+            config.maxLines != null && !expanded
+              ? {
+                  maxHeight: (config.maxLines ?? 5) * 22,
+                  overflow: 'hidden',
+                }
+              : undefined
+          }
         >
-          {renderNodes(nodes, tokens, baseTextStyle, 'rtv')}
+          {renderNodes({
+            nodes,
+            config,
+            tokens,
+            sharedTextStyle,
+            keyPrefix: 'rtv',
+          })}
         </View>
 
-        {config.maxLines != null && showExpandButton && !expanded && (
+        {config.maxLines != null && (config.showExpandButton ?? true) ? (
           <TouchableOpacity
-            onPress={handleExpand}
-            style={styles.expandButton}
+            onPress={() => setExpanded((current) => !current)}
+            style={expandButtonSurface.style as ViewStyle | undefined}
             accessibilityRole="button"
-            accessibilityLabel="Show more content"
-            testID={`${testId}-expand`}
+            accessibilityLabel={expanded ? 'Show less content' : 'Show more content'}
+            testID={`${testId}-${expanded ? 'collapse' : 'expand'}`}
             activeOpacity={0.7}
           >
-            <Text style={styles.expandText}>Show more</Text>
+            <Text style={mergeTextStyle(sharedTextStyle, expandTextSurface)}>
+              {expanded ? 'Show less' : 'Show more'}
+            </Text>
           </TouchableOpacity>
-        )}
-
-        {config.maxLines != null && showExpandButton && expanded && (
-          <TouchableOpacity
-            onPress={handleCollapse}
-            style={styles.expandButton}
-            accessibilityRole="button"
-            accessibilityLabel="Show less content"
-            testID={`${testId}-collapse`}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.expandText}>Show less</Text>
-          </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    expandButton: {
-      paddingVertical: tokens.spacing[2],
-      alignItems: 'center',
-    },
-    expandText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.primary,
-    },
-  })
-}
-
-function resolveViewerTextStyle(
-  tokens: DesignTokens,
-  config: RichTextViewerConfig,
-): ResolvedRichTextStyle {
-  const resolvedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-
-  return {
-    color:
-      typeof resolvedTextStyle.color === 'string' ? resolvedTextStyle.color : tokens.colors.text,
-    fontSize:
-      typeof resolvedTextStyle.fontSize === 'number'
-        ? resolvedTextStyle.fontSize
-        : tokens.typography.fontSizeMd,
-    lineHeight:
-      typeof resolvedTextStyle.lineHeight === 'number'
-        ? resolvedTextStyle.lineHeight
-        : tokens.typography.fontSizeMd * tokens.typography.lineHeightNormal,
-    letterSpacing:
-      typeof resolvedTextStyle.letterSpacing === 'number'
-        ? resolvedTextStyle.letterSpacing
-        : undefined,
-    textAlign:
-      resolvedTextStyle.textAlign === 'center' ||
-      resolvedTextStyle.textAlign === 'right' ||
-      resolvedTextStyle.textAlign === 'justify'
-        ? resolvedTextStyle.textAlign
-        : 'left',
-  }
-}
-

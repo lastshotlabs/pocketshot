@@ -42,4 +42,17 @@ describe('ImageViewerSchema', () => {
     expect(result.height).toBe(240)
     expect(result.borderRadius).toBe('xl')
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = ImageViewerSchema.parse({
+      source: 'https://example.com/photo.jpg',
+      slots: {
+        thumbnailContainer: { borderRadius: 'xl' },
+        captionText: { color: 'primary' },
+      },
+    })
+
+    expect(result.slots?.thumbnailContainer?.borderRadius).toBe('xl')
+    expect(result.slots?.captionText?.color).toBe('primary')
+  })
 })

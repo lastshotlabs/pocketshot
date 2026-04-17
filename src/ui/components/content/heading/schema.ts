@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { componentTextAlignSchema, extendComponentSchema } from '../../_base/schema'
+import { componentTextAlignSchema, extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 export const HeadingSchema = extendComponentSchema({
@@ -9,4 +9,5 @@ export const HeadingSchema = extendComponentSchema({
     .optional()
     .default(2),
   textAlign: componentTextAlignSchema.optional().default('left'),
+  slots: slotsSchema(['root', 'text']).optional(),
 })

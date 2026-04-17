@@ -85,4 +85,20 @@ describe('Switch', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Switch
+        config={{
+          id: 'notify',
+          label: 'Notify',
+          slots: {
+            row: { paddingY: 'sm' },
+            label: { letterSpacing: 'wide' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

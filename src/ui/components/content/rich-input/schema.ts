@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -9,8 +9,8 @@ export const RichInputSchema = extendComponentSchema({
   id: z.string(),
   value: z.union([z.string(), FromRefSchema]).optional(),
   defaultValue: z.string().optional(),
-  placeholder: z.string().optional(),
-  label: z.string().optional(),
+  placeholder: z.union([z.string(), FromRefSchema]).optional(),
+  label: z.union([z.string(), FromRefSchema]).optional(),
   toolbar: z
     .array(
       z.enum([
@@ -31,4 +31,14 @@ export const RichInputSchema = extendComponentSchema({
   maxRows: z.number().optional().default(12),
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'label',
+    'toolbar',
+    'toolbarContent',
+    'toolbarSeparator',
+    'toolbarButton',
+    'toolbarLabel',
+    'input',
+  ]).optional(),
 })

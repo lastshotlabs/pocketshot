@@ -1,29 +1,19 @@
 import React from 'react'
-import { Text, StyleSheet } from 'react-native'
+import { Text, type TextStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { HeadingConfig } from './types'
 
-const FONT_SIZE_MAP = {
-  1: 'fontSize4xl',
-  2: 'fontSize3xl',
-  3: 'fontSize2xl',
-  4: 'fontSizeXl',
-  5: 'fontSizeLg',
-  6: 'fontSizeMd',
-} as const
-
-const FONT_WEIGHT_MAP = {
-  1: 'fontWeightBold',
-  2: 'fontWeightBold',
-  3: 'fontWeightSemibold',
-  4: 'fontWeightSemibold',
-  5: 'fontWeightMedium',
-  6: 'fontWeightMedium',
+const LEVEL_SURFACES = {
+  1: { fontSize: '4xl', fontWeight: 'bold' },
+  2: { fontSize: '3xl', fontWeight: 'bold' },
+  3: { fontSize: '2xl', fontWeight: 'semibold' },
+  4: { fontSize: 'xl', fontWeight: 'semibold' },
+  5: { fontSize: 'lg', fontWeight: 'medium' },
+  6: { fontSize: 'base', fontWeight: 'medium' },
 } as const
 
 export function Heading({ config }: { config: HeadingConfig }) {
@@ -31,34 +21,29 @@ export function Heading({ config }: { config: HeadingConfig }) {
   const { values } = useScreenContext()
 
   const text = resolveFromRef(config.text, values) as string
-  const styles = makeStyles(tokens, config)
+  const level = config.level ?? 2
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const textSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      ...LEVEL_SURFACES[level],
+      color: 'foreground',
+      textAlign: 'left',
+      lineHeight: 'tight',
+    },
+    componentSurface: config.slots?.text as Record<string, unknown> | undefined,
+  })
+
+  const style: TextStyle = {
+    ...sharedTextStyle,
+    ...(textSurface.style as TextStyle | undefined),
+  }
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <Text style={styles.heading} accessibilityRole="header" testID={config.testID ?? config.id}>
+      <Text style={style} accessibilityRole="header" testID={config.testID ?? config.id}>
         {text}
       </Text>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, config: HeadingConfig) {
-  const level = config.level ?? 2
-  const fontSizeKey = FONT_SIZE_MAP[level]
-  const fontWeightKey = FONT_WEIGHT_MAP[level]
-  const textStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-  const fontSize =
-    typeof textStyle.fontSize === 'number' ? textStyle.fontSize : tokens.typography[fontSizeKey]
-
-  return StyleSheet.create({
-    heading: {
-      fontSize: tokens.typography[fontSizeKey],
-      fontWeight: tokens.typography[fontWeightKey],
-      color: tokens.colors.text,
-      textAlign: 'left',
-      lineHeight: fontSize * tokens.typography.lineHeightTight,
-      ...textStyle,
-    },
-  })
-}
-

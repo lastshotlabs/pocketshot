@@ -110,4 +110,20 @@ describe('ConfigImage', () => {
     )
     expect(getByRole('imagebutton')).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <ConfigImage
+        config={{
+          src: 'https://example.com/photo.jpg',
+          alt: 'Styled image',
+          slots: {
+            pressable: { borderRadius: 'lg' },
+            image: { borderRadius: 'xl' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

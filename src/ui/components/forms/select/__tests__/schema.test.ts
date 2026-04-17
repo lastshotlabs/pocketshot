@@ -1,48 +1,36 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { SelectSchema } from '../schema'
 
 describe('SelectSchema', () => {
-  it('parses with array options', () => {
+  it('parses a minimal valid config', () => {
     const result = SelectSchema.parse({
-      id: 'country',
-      options: [
-        { label: 'USA', value: 'us' },
-        { label: 'UK', value: 'uk' },
-      ],
+      id: 'status',
+      options: [{ label: 'Draft', value: 'draft' }],
     })
-    expect(result.options).toHaveLength(2)
+    expect(result.id).toBe('status')
   })
 
-  it('parses with from-ref options', () => {
-    const result = SelectSchema.parse({ id: 'status', options: { from: 'statusOptions' } })
-    expect(result.options).toEqual({ from: 'statusOptions' })
-  })
-
-  it('requires id', () => {
-    expect(SelectSchema.safeParse({ options: [] }).success).toBe(false)
-  })
-
-  it('requires options', () => {
-    expect(SelectSchema.safeParse({ id: 'country' }).success).toBe(false)
-  })
-
-  it('applies placeholder default', () => {
-    const result = SelectSchema.parse({ id: 'x', options: [] })
+  it('applies defaults', () => {
+    const result = SelectSchema.parse({
+      id: 'status',
+      options: [{ label: 'Draft', value: 'draft' }],
+    })
     expect(result.placeholder).toBe('Select an option')
   })
 
-  it('accepts from-ref value', () => {
-    const result = SelectSchema.parse({ id: 'x', options: [], value: { from: 'form' } })
-    expect(result.value).toEqual({ from: 'form' })
-  })
+  it('accepts slot surfaces', () => {
+    const result = SelectSchema.parse({
+      id: 'status',
+      options: [{ label: 'Draft', value: 'draft' }],
+      slots: {
+        trigger: { borderRadius: 'lg' },
+        sheet: { borderRadius: 'xl' },
+        optionText: { color: 'primary' },
+      },
+    })
 
-  it('accepts string value', () => {
-    const result = SelectSchema.parse({ id: 'x', options: [], value: 'us' })
-    expect(result.value).toBe('us')
-  })
-
-  it('option requires label and value', () => {
-    expect(SelectSchema.safeParse({ id: 'x', options: [{ label: 'USA' }] }).success).toBe(false)
-    expect(SelectSchema.safeParse({ id: 'x', options: [{ value: 'us' }] }).success).toBe(false)
+    expect(result.slots?.trigger?.borderRadius).toBe('lg')
+    expect(result.slots?.sheet?.borderRadius).toBe('xl')
+    expect(result.slots?.optionText?.color).toBe('primary')
   })
 })

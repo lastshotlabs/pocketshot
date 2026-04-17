@@ -25,4 +25,18 @@ describe('BackButtonSchema', () => {
     const result = BackButtonSchema.parse({ id: 'back-btn', testID: 'back-btn' })
     expect(result.id).toBe('back-btn')
   })
+
+  it('accepts slot surfaces', () => {
+    const result = BackButtonSchema.parse({
+      slots: {
+        button: { paddingY: 'sm' },
+        icon: { color: 'primary' },
+        label: { letterSpacing: 'wide' },
+      },
+    })
+
+    expect(result.slots?.button?.paddingY).toBe('sm')
+    expect(result.slots?.icon?.color).toBe('primary')
+    expect(result.slots?.label?.letterSpacing).toBe('wide')
+  })
 })

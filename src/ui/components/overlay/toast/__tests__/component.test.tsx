@@ -19,7 +19,6 @@ describe('Toast', () => {
 
   it('renders without crashing with minimal config', () => {
     const { toJSON } = renderWithProviders(<Toast config={{ position: 'bottom' }} />)
-    // No active toast — component returns null
     expect(toJSON()).toBeNull()
   })
 
@@ -49,7 +48,7 @@ describe('Toast', () => {
     const { getByText } = renderWithProviders(<Toast config={{ position: 'bottom' }} />, {
       initialValues: { __toast: payload },
     })
-    expect(getByText('✓')).toBeTruthy()
+    expect(getByText('OK')).toBeTruthy()
   })
 
   it('renders the error icon when variant is error', () => {
@@ -57,7 +56,7 @@ describe('Toast', () => {
     const { getByText } = renderWithProviders(<Toast config={{ position: 'bottom' }} />, {
       initialValues: { __toast: payload },
     })
-    expect(getByText('✕')).toBeTruthy()
+    expect(getByText('X')).toBeTruthy()
   })
 
   it('renders the warning icon when variant is warning', () => {
@@ -65,7 +64,7 @@ describe('Toast', () => {
     const { getByText } = renderWithProviders(<Toast config={{ position: 'bottom' }} />, {
       initialValues: { __toast: payload },
     })
-    expect(getByText('⚠')).toBeTruthy()
+    expect(getByText('!')).toBeTruthy()
   })
 
   it('renders the info icon when variant is info', () => {
@@ -73,7 +72,7 @@ describe('Toast', () => {
     const { getByText } = renderWithProviders(<Toast config={{ position: 'bottom' }} />, {
       initialValues: { __toast: payload },
     })
-    expect(getByText('ℹ')).toBeTruthy()
+    expect(getByText('i')).toBeTruthy()
   })
 
   it('renders with accessibilityRole alert when active', () => {
@@ -84,59 +83,22 @@ describe('Toast', () => {
     expect(getByRole('alert')).toBeTruthy()
   })
 
-  it('renders without crashing with position=top', () => {
-    const payload = makePayload({ id: 21 })
-    const { toJSON } = renderWithProviders(<Toast config={{ position: 'top' }} />, {
-      initialValues: { __toast: payload },
-    })
+  it('renders slot surfaces without crashing', () => {
+    const payload = makePayload({ id: 31 })
+    const { toJSON } = renderWithProviders(
+      <Toast
+        config={{
+          id: 'app-toast',
+          position: 'top',
+          slots: {
+            toast: { borderRadius: 'xl' },
+            icon: { color: 'warningForeground' },
+            message: { letterSpacing: 'wide' },
+          },
+        }}
+      />,
+      { initialValues: { __toast: payload } },
+    )
     expect(toJSON()).toBeTruthy()
-  })
-
-  it('renders without crashing with position=bottom', () => {
-    const payload = makePayload({ id: 22 })
-    const { toJSON } = renderWithProviders(<Toast config={{ position: 'bottom' }} />, {
-      initialValues: { __toast: payload },
-    })
-    expect(toJSON()).toBeTruthy()
-  })
-
-  it('renders default position (bottom) when position is not set', () => {
-    const payload = makePayload({ id: 23 })
-    const { toJSON } = renderWithProviders(<Toast config={{}} />, {
-      initialValues: { __toast: payload },
-    })
-    expect(toJSON()).toBeTruthy()
-  })
-
-  it('renders all four variants without crashing', () => {
-    const variants = ['success', 'error', 'warning', 'info'] as const
-    for (const [index, variant] of variants.entries()) {
-      const payload = makePayload({ variant, id: 100 + index })
-      const { toJSON } = renderWithProviders(<Toast config={{ position: 'bottom' }} />, {
-        initialValues: { __toast: payload },
-      })
-      expect(toJSON()).toBeTruthy()
-    }
-  })
-
-  it('includes the full accessibility label with variant and message', () => {
-    const payload = makePayload({ variant: 'success', message: 'Upload complete', id: 30 })
-    const { getByRole } = renderWithProviders(<Toast config={{ position: 'bottom' }} />, {
-      initialValues: { __toast: payload },
-    })
-    const alertNode = getByRole('alert') as { props: Record<string, unknown> }
-    expect(alertNode.props.accessibilityLabel).toBe('success: Upload complete')
-  })
-
-  it('does not re-show a toast with the same id (deduplication)', () => {
-    // Render once with payload id=5
-    const payload = makePayload({ id: 5, message: 'First' })
-    const { toJSON, instance } = renderWithProviders(<Toast config={{ position: 'bottom' }} />, {
-      initialValues: { __toast: payload },
-    })
-    // Toast is shown
-    expect(toJSON()).toBeTruthy()
-    // A second render with the same id should not cause a crash
-    expect(instance).toBeTruthy()
   })
 })

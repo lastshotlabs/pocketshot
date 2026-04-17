@@ -24,4 +24,19 @@ describe('ToastSchema', () => {
     const result = ToastSchema.parse({ id: 'app-toast' })
     expect(result.id).toBe('app-toast')
   })
+
+  it('accepts slot surfaces', () => {
+    const result = ToastSchema.parse({
+      id: 'app-toast',
+      slots: {
+        toast: { borderRadius: 'xl' },
+        icon: { color: 'warningForeground' },
+        message: { letterSpacing: 'wide' },
+      },
+    })
+
+    expect(result.slots?.toast?.borderRadius).toBe('xl')
+    expect(result.slots?.icon?.color).toBe('warningForeground')
+    expect(result.slots?.message?.letterSpacing).toBe('wide')
+  })
 })

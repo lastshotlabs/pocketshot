@@ -1,41 +1,19 @@
-import React, { useMemo } from 'react'
-import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import React from 'react'
+import { View, Text, ScrollView, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { MarkdownConfig, MarkdownNode } from './types'
 
-// ── Optional peer dep: react-native-markdown-display ──────────────────────────
-
-let RNMarkdownDisplay: React.ComponentType<{ style?: object; children: string }> | null = null
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mod = require('react-native-markdown-display') as {
-    default: React.ComponentType<{ style?: object; children: string }>
-  }
-  RNMarkdownDisplay = mod.default
-} catch {
-  // not installed — use custom parser
-}
-
-// ── Markdown parser ────────────────────────────────────────────────────────────
-
-/**
- * Parse inline spans within a line of text.
- * Handles **bold**, *italic*, _italic_, and `code`.
- */
 function parseInline(text: string): MarkdownNode[] {
   const nodes: MarkdownNode[] = []
-  // Combined regex: **bold**, *italic*, _italic_, `code`
   const pattern = /(\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_|`(.+?)`)/g
   let lastIndex = 0
   let match: RegExpExecArray | null
 
   while ((match = pattern.exec(text)) !== null) {
-    // Text before this match
     if (match.index > lastIndex) {
       nodes.push({ type: 'text', content: text.slice(lastIndex, match.index) })
     }
@@ -53,7 +31,6 @@ function parseInline(text: string): MarkdownNode[] {
     lastIndex = match.index + match[0].length
   }
 
-  // Remaining text
   if (lastIndex < text.length) {
     nodes.push({ type: 'text', content: text.slice(lastIndex) })
   }
@@ -64,32 +41,29 @@ function parseInline(text: string): MarkdownNode[] {
 export function parseMarkdown(text: string): MarkdownNode[] {
   const nodes: MarkdownNode[] = []
   const lines = text.split('\n')
-  let i = 0
+  let index = 0
 
-  while (i < lines.length) {
-    const line = lines[i]
+  while (index < lines.length) {
+    const line = lines[index]
 
-    // Code block
     if (line.trim() === '```' || line.trim().startsWith('```')) {
       const codeLines: string[] = []
-      i++
-      while (i < lines.length && lines[i].trim() !== '```') {
-        codeLines.push(lines[i])
-        i++
+      index += 1
+      while (index < lines.length && lines[index].trim() !== '```') {
+        codeLines.push(lines[index] ?? '')
+        index += 1
       }
       nodes.push({ type: 'code_block', content: codeLines.join('\n') })
-      i++
+      index += 1
       continue
     }
 
-    // Horizontal rule
     if (/^---+$/.test(line.trim()) || /^\*\*\*+$/.test(line.trim())) {
       nodes.push({ type: 'hr', content: '' })
-      i++
+      index += 1
       continue
     }
 
-    // Heading
     const headingMatch = /^(#{1,6})\s+(.+)$/.exec(line)
     if (headingMatch) {
       nodes.push({
@@ -98,233 +72,318 @@ export function parseMarkdown(text: string): MarkdownNode[] {
         content: headingMatch[2],
         children: parseInline(headingMatch[2]),
       })
-      i++
+      index += 1
       continue
     }
 
-    // Blockquote
     if (line.startsWith('> ')) {
       nodes.push({
         type: 'blockquote',
         content: line.slice(2),
         children: parseInline(line.slice(2)),
       })
-      i++
+      index += 1
       continue
     }
 
-    // Unordered list item
-    const ulMatch = /^(\s*)[-*]\s+(.+)$/.exec(line)
-    if (ulMatch) {
+    const unorderedMatch = /^(\s*)[-*]\s+(.+)$/.exec(line)
+    if (unorderedMatch) {
       nodes.push({
         type: 'list_item',
         ordered: false,
-        content: ulMatch[2],
-        children: parseInline(ulMatch[2]),
+        content: unorderedMatch[2],
+        children: parseInline(unorderedMatch[2]),
       })
-      i++
+      index += 1
       continue
     }
 
-    // Ordered list item
-    const olMatch = /^(\s*)\d+\.\s+(.+)$/.exec(line)
-    if (olMatch) {
+    const orderedMatch = /^(\s*)\d+\.\s+(.+)$/.exec(line)
+    if (orderedMatch) {
       nodes.push({
         type: 'list_item',
         ordered: true,
-        content: olMatch[2],
-        children: parseInline(olMatch[2]),
+        content: orderedMatch[2],
+        children: parseInline(orderedMatch[2]),
       })
-      i++
+      index += 1
       continue
     }
 
-    // Empty line — skip
     if (line.trim() === '') {
-      i++
+      index += 1
       continue
     }
 
-    // Paragraph with inline formatting
     nodes.push({
       type: 'paragraph',
       content: line,
       children: parseInline(line),
     })
-    i++
+    index += 1
   }
 
   return nodes
 }
 
-// ── Inline renderer ────────────────────────────────────────────────────────────
-
 function renderInlineNodes(
   nodes: MarkdownNode[],
-  tokens: DesignTokens,
+  baseTextStyle: TextStyle,
   baseFontSize: number,
   baseTextColor: string,
-): React.ReactNode[] {
-  return nodes.map((node, idx) => {
+) {
+  return nodes.map((node, index) => {
     switch (node.type) {
       case 'bold':
         return (
-          <Text key={idx} style={{ fontWeight: tokens.typography.fontWeightBold, color: baseTextColor }}>
+          <Text key={index} style={{ fontWeight: '700', color: baseTextColor }}>
             {node.content}
           </Text>
         )
       case 'italic':
         return (
-          <Text key={idx} style={{ fontStyle: 'italic', color: baseTextColor }}>
+          <Text key={index} style={{ fontStyle: 'italic', color: baseTextColor }}>
             {node.content}
           </Text>
         )
       case 'code_inline':
         return (
           <Text
-            key={idx}
+            key={index}
             style={{
+              ...baseTextStyle,
               fontFamily: 'monospace',
-              backgroundColor: tokens.colors.surfaceAlt,
-              color: tokens.colors.primary,
+              backgroundColor: '#f4f4f5',
+              color: '#2563eb',
               fontSize: baseFontSize - 1,
               paddingHorizontal: 4,
               paddingVertical: 1,
-              borderRadius: tokens.radius.sm,
+              borderRadius: 4,
             }}
           >
             {node.content}
           </Text>
         )
       default:
-        return <Text key={idx} style={{ color: baseTextColor }}>{node.content}</Text>
+        return (
+          <Text key={index} style={{ color: baseTextColor }}>
+            {node.content}
+          </Text>
+        )
     }
   })
 }
 
-// ── Block renderer ─────────────────────────────────────────────────────────────
-
-interface BlockProps {
-  node: MarkdownNode
-  tokens: DesignTokens
-  baseFontSize: number
-  baseTextAlign: 'left' | 'center' | 'right' | 'justify'
-  baseTextColor: string
-  baseLineHeight: number
-  index: number
-  orderedCounter?: number
-}
-
 function MarkdownBlock({
   node,
-  tokens,
-  baseFontSize,
-  baseTextAlign,
-  baseTextColor,
-  baseLineHeight,
+  config,
   index,
   orderedCounter,
-}: BlockProps) {
-  const styles = useMemo(() => makeBlockStyles(tokens), [tokens])
+  baseTextStyle,
+  baseFontSize,
+  baseTextColor,
+  baseTextAlign,
+  baseLineHeight,
+}: {
+  node: MarkdownNode
+  config: MarkdownConfig
+  index: number
+  orderedCounter?: number
+  baseTextStyle: TextStyle
+  baseFontSize: number
+  baseTextColor: string
+  baseTextAlign: 'left' | 'center' | 'right' | 'justify'
+  baseLineHeight: number
+}) {
+  const tokens = useTokens()
 
   switch (node.type) {
     case 'heading': {
       const level = node.level ?? 1
-      const headingStyle = [
-        styles.heading,
-        level === 1 && styles.h1,
-        level === 2 && styles.h2,
-        level === 3 && styles.h3,
-        level >= 4 && styles.h4,
-      ]
+      const headingSurface = resolveSurfacePresentation({
+        tokens,
+        implementationBase: {
+          fontSize: level === 1 ? 28 : level === 2 ? 24 : level === 3 ? 20 : 18,
+          fontWeight: 'bold',
+          color: baseTextColor,
+          textAlign: baseTextAlign,
+          marginBottom: 'sm',
+        },
+        componentSurface: config.slots?.heading as Record<string, unknown> | undefined,
+      })
       return (
         <Text
           key={index}
-          style={[headingStyle, { color: baseTextColor, textAlign: baseTextAlign }]}
+          style={{
+            ...baseTextStyle,
+            ...(headingSurface.style as TextStyle | undefined),
+          }}
           accessibilityRole="header"
         >
           {node.children
-            ? renderInlineNodes(node.children, tokens, baseFontSize, baseTextColor)
+            ? renderInlineNodes(node.children, baseTextStyle, baseFontSize, baseTextColor)
             : node.content}
         </Text>
       )
     }
 
-    case 'paragraph':
+    case 'paragraph': {
+      const paragraphSurface = resolveSurfacePresentation({
+        tokens,
+        implementationBase: {
+          fontSize: baseFontSize,
+          color: baseTextColor,
+          textAlign: baseTextAlign,
+          lineHeight: baseLineHeight,
+          marginBottom: 'sm',
+        },
+        componentSurface: config.slots?.paragraph as Record<string, unknown> | undefined,
+      })
       return (
         <Text
           key={index}
-          style={[
-            styles.paragraph,
-            {
-              fontSize: baseFontSize,
-              color: baseTextColor,
-              textAlign: baseTextAlign,
-              lineHeight: baseLineHeight,
-            },
-          ]}
+          style={{
+            ...baseTextStyle,
+            ...(paragraphSurface.style as TextStyle | undefined),
+          }}
         >
           {node.children
-            ? renderInlineNodes(node.children, tokens, baseFontSize, baseTextColor)
+            ? renderInlineNodes(node.children, baseTextStyle, baseFontSize, baseTextColor)
             : node.content}
         </Text>
       )
+    }
 
-    case 'code_block':
+    case 'code_block': {
+      const codeBlockSurface = resolveSurfacePresentation({
+        tokens,
+        implementationBase: {
+          bg: 'muted',
+          borderRadius: 'md',
+          padding: 'md',
+          marginBottom: 'sm',
+        },
+        componentSurface: config.slots?.codeBlock as Record<string, unknown> | undefined,
+      })
       return (
         <ScrollView key={index} horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.codeBlock}>
-            <Text style={[styles.codeBlockText, { fontSize: tokens.typography.fontSizeSm }]}>
+          <View style={codeBlockSurface.style as ViewStyle | undefined}>
+            <Text
+              style={{
+                ...baseTextStyle,
+                fontFamily: 'monospace',
+                fontSize: 13,
+                color: baseTextColor,
+              }}
+            >
               {node.content}
             </Text>
           </View>
         </ScrollView>
       )
+    }
 
-    case 'blockquote':
+    case 'blockquote': {
+      const blockquoteSurface = resolveSurfacePresentation({
+        tokens,
+        implementationBase: {
+          borderLeftWidth: 3,
+          borderLeftColor: '#d4d4d8',
+          paddingLeft: 'md',
+          marginBottom: 'sm',
+        },
+        componentSurface: config.slots?.blockquote as Record<string, unknown> | undefined,
+      })
       return (
-        <View key={index} style={styles.blockquote}>
-          <Text style={[styles.blockquoteText, { textAlign: baseTextAlign }]}>
-            {node.children
-              ? renderInlineNodes(node.children, tokens, baseFontSize, baseTextColor)
-              : node.content}
-          </Text>
-        </View>
-      )
-
-    case 'list_item': {
-      const bullet = node.ordered ? `${orderedCounter ?? 1}.` : '•'
-      return (
-        <View key={index} style={styles.listItem}>
-          <Text style={[styles.listBullet, { fontSize: baseFontSize }]}>{bullet}</Text>
+        <View key={index} style={blockquoteSurface.style as ViewStyle | undefined}>
           <Text
-            style={[
-              styles.listContent,
-              {
-                fontSize: baseFontSize,
-                color: baseTextColor,
-                textAlign: baseTextAlign,
-                lineHeight: baseLineHeight,
-              },
-            ]}
+            style={{
+              ...baseTextStyle,
+              color: baseTextColor,
+              textAlign: baseTextAlign,
+              fontStyle: 'italic',
+            }}
           >
             {node.children
-              ? renderInlineNodes(node.children, tokens, baseFontSize, baseTextColor)
+              ? renderInlineNodes(node.children, baseTextStyle, baseFontSize, baseTextColor)
               : node.content}
           </Text>
         </View>
       )
     }
 
-    case 'hr':
-      return <View key={index} style={styles.hr} />
+    case 'list_item': {
+      const listItemSurface = resolveSurfacePresentation({
+        tokens,
+        implementationBase: {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          marginBottom: 'xs',
+        },
+        componentSurface: config.slots?.listItem as Record<string, unknown> | undefined,
+      })
+      const listBulletSurface = resolveSurfacePresentation({
+        tokens,
+        implementationBase: {
+          width: 20,
+          fontSize: baseFontSize,
+          color: baseTextColor,
+        },
+        componentSurface: config.slots?.listBullet as Record<string, unknown> | undefined,
+      })
+      const listContentSurface = resolveSurfacePresentation({
+        tokens,
+        implementationBase: {
+          flex: 1,
+          fontSize: baseFontSize,
+          color: baseTextColor,
+          textAlign: baseTextAlign,
+          lineHeight: baseLineHeight,
+        },
+        componentSurface: config.slots?.listContent as Record<string, unknown> | undefined,
+      })
+      const bullet = node.ordered ? `${orderedCounter ?? 1}.` : '-'
+      return (
+        <View key={index} style={listItemSurface.style as ViewStyle | undefined}>
+          <Text
+            style={{
+              ...baseTextStyle,
+              ...(listBulletSurface.style as TextStyle | undefined),
+            }}
+          >
+            {bullet}
+          </Text>
+          <Text
+            style={{
+              ...baseTextStyle,
+              ...(listContentSurface.style as TextStyle | undefined),
+            }}
+          >
+            {node.children
+              ? renderInlineNodes(node.children, baseTextStyle, baseFontSize, baseTextColor)
+              : node.content}
+          </Text>
+        </View>
+      )
+    }
+
+    case 'hr': {
+      const hrSurface = resolveSurfacePresentation({
+        tokens,
+        implementationBase: {
+          height: 1,
+          bg: 'border',
+          marginY: 'md',
+        },
+        componentSurface: config.slots?.hr as Record<string, unknown> | undefined,
+      })
+      return <View key={index} style={hrSurface.style as ViewStyle | undefined} />
+    }
 
     default:
       return null
   }
 }
-
-// ── Main component ─────────────────────────────────────────────────────────────
 
 export function Markdown({ config }: { config: MarkdownConfig }) {
   const tokens = useTokens()
@@ -347,73 +406,37 @@ export function Markdown({ config }: { config: MarkdownConfig }) {
       ? baseTextStyle.lineHeight
       : baseFontSize * tokens.typography.lineHeightNormal
 
-  // If react-native-markdown-display is available, delegate to it
-  if (RNMarkdownDisplay != null) {
-    return (
-      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <RNMarkdownDisplay
-          style={{
-            body: {
-              fontSize: baseFontSize,
-              color: baseTextColor,
-              textAlign: baseTextAlign,
-              lineHeight: baseLineHeight,
-            },
-            heading1: {
-              fontSize: tokens.typography.fontSizeXl,
-              fontWeight: tokens.typography.fontWeightBold,
-              color: baseTextColor,
-              textAlign: baseTextAlign,
-            },
-            heading2: {
-              fontSize: tokens.typography.fontSizeLg,
-              fontWeight: tokens.typography.fontWeightBold,
-              color: baseTextColor,
-              textAlign: baseTextAlign,
-            },
-            code_inline: {
-              fontFamily: 'monospace',
-              backgroundColor: tokens.colors.surfaceAlt,
-              color: tokens.colors.primary,
-            },
-            fence: {
-              backgroundColor: tokens.colors.surfaceAlt,
-              borderRadius: tokens.radius.md,
-              fontFamily: 'monospace',
-            },
-          }}
-        >
-          {content}
-        </RNMarkdownDisplay>
-      </ComponentWrapper>
-    )
-  }
+  const nodes = React.useMemo(() => parseMarkdown(content ?? ''), [content])
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {},
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+  })
 
-  const nodes = useMemo(() => parseMarkdown(content ?? ''), [content])
-
-  // Track ordered list counters
   let orderedCounter = 0
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View testID={config.testID ?? config.id}>
-        {nodes.map((node, idx) => {
+      <View style={containerSurface.style as ViewStyle | undefined} testID={config.testID ?? config.id}>
+        {nodes.map((node, index) => {
           if (node.type === 'list_item' && node.ordered) {
-            orderedCounter++
+            orderedCounter += 1
           } else {
             orderedCounter = 0
           }
+
           return (
             <MarkdownBlock
-              key={idx}
+              key={index}
               node={node}
-              tokens={tokens}
-              baseFontSize={baseFontSize}
-              baseTextAlign={baseTextAlign}
-              baseTextColor={baseTextColor}
-              baseLineHeight={baseLineHeight}
-              index={idx}
+              config={config}
+              index={index}
               orderedCounter={orderedCounter}
+              baseTextStyle={baseTextStyle}
+              baseFontSize={baseFontSize}
+              baseTextColor={baseTextColor}
+              baseTextAlign={baseTextAlign}
+              baseLineHeight={baseLineHeight}
             />
           )
         })}
@@ -421,76 +444,3 @@ export function Markdown({ config }: { config: MarkdownConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeBlockStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    heading: {
-      color: tokens.colors.text,
-    },
-    h1: {
-      fontSize: tokens.typography.fontSizeXl,
-      fontWeight: tokens.typography.fontWeightBold,
-      marginBottom: tokens.spacing[3],
-    },
-    h2: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightBold,
-      marginBottom: tokens.spacing[2],
-    },
-    h3: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      marginBottom: tokens.spacing[2],
-    },
-    h4: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      marginBottom: tokens.spacing[1],
-    },
-    paragraph: {
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[2],
-      lineHeight: tokens.typography.fontSizeMd * 1.5,
-    },
-    codeBlock: {
-      backgroundColor: tokens.colors.surfaceAlt,
-      padding: tokens.spacing[3],
-      borderRadius: tokens.radius.md,
-      marginBottom: tokens.spacing[2],
-    },
-    codeBlockText: {
-      fontFamily: 'monospace',
-      color: tokens.colors.text,
-    },
-    blockquote: {
-      borderLeftWidth: 3,
-      borderLeftColor: tokens.colors.primary,
-      paddingLeft: tokens.spacing[3],
-      marginBottom: tokens.spacing[2],
-    },
-    blockquoteText: {
-      color: tokens.colors.textMuted,
-      fontStyle: 'italic',
-    },
-    listItem: {
-      flexDirection: 'row',
-      marginBottom: tokens.spacing[1],
-      paddingLeft: tokens.spacing[2],
-    },
-    listBullet: {
-      color: tokens.colors.textMuted,
-      marginRight: tokens.spacing[2],
-      minWidth: 16,
-    },
-    listContent: {
-      flex: 1,
-      color: tokens.colors.text,
-    },
-    hr: {
-      height: 1,
-      backgroundColor: tokens.colors.border,
-      marginVertical: tokens.spacing[4],
-    },
-  })
-}
-

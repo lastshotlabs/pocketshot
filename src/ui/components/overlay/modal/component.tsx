@@ -3,16 +3,17 @@ import {
   Animated,
   Dimensions,
   Modal as RNModal,
-  StyleSheet,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ModalConfig } from './types'
 
 const WINDOW_WIDTH = Dimensions.get('window').width
@@ -24,72 +25,11 @@ const SIZE_MAP: Record<NonNullable<ModalConfig['size']>, number | 'full'> = {
   full: 'full',
 }
 
-function makeStyles(tokens: DesignTokens, size: NonNullable<ModalConfig['size']>) {
-  const width = SIZE_MAP[size]
-  const contentWidth = width === 'full' ? WINDOW_WIDTH - tokens.spacing[8] : (width as number)
-
-  return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: tokens.colors.overlay,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    contentWrapper: {
-      width: contentWidth,
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.lg,
-      ...tokens.shadows.xl,
-      overflow: 'hidden',
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[4],
-      paddingBottom: tokens.spacing[2],
-    },
-    title: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-      flex: 1,
-    },
-    closeButton: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: tokens.radius.full,
-      marginLeft: tokens.spacing[2],
-    },
-    closeButtonText: {
-      fontSize: tokens.typography.fontSizeLg,
-      color: tokens.colors.textMuted,
-      lineHeight: 22,
-    },
-    divider: {
-      height: 1,
-      backgroundColor: tokens.colors.divider,
-      marginHorizontal: tokens.spacing[4],
-    },
-    body: {
-      padding: tokens.spacing[4],
-    },
-  })
-}
-
 export interface ModalProps {
   config: ModalConfig
   children?: ReactNode
 }
 
-/**
- * Config-driven modal dialog. Open/close via ScreenContext key `__modal_{id}`.
- *
- * Uses React Native's built-in Modal with an animated fade-in/out.
- */
 export function Modal({ config, children }: ModalProps) {
   const tokens = useTokens()
   const { getValue, setValue } = useScreenContext()
@@ -97,6 +37,7 @@ export function Modal({ config, children }: ModalProps) {
   const isOpen = Boolean(getValue(`__modal_${config.id}`))
   const opacity = useRef(new Animated.Value(0)).current
   const scale = useRef(new Animated.Value(0.95)).current
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   useEffect(() => {
     if (isOpen) {
@@ -113,20 +54,21 @@ export function Modal({ config, children }: ModalProps) {
           useNativeDriver: true,
         }),
       ]).start()
-    } else {
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 0.95,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start()
+      return
     }
+
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 0.95,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start()
   }, [isOpen, opacity, scale])
 
   function handleClose() {
@@ -135,7 +77,97 @@ export function Modal({ config, children }: ModalProps) {
 
   const size = config.size ?? 'md'
   const showCloseButton = config.showCloseButton ?? true
-  const styles = useMemo(() => makeStyles(tokens, size), [tokens, size])
+  const width = SIZE_MAP[size]
+  const contentWidth = width === 'full' ? WINDOW_WIDTH - tokens.spacing[8] : (width as number)
+
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      bg: 'rgba(0,0,0,0.55)',
+    },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+  })
+  const contentWrapperSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      borderRadius: 'lg',
+      shadow: 'xl',
+      overflow: 'hidden',
+      width: contentWidth,
+    },
+    componentSurface: config.slots?.contentWrapper as Record<string, unknown> | undefined,
+  })
+  const headerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'between',
+      paddingX: 'md',
+      paddingY: 'md',
+    },
+    componentSurface: config.slots?.header as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      fontWeight: 'semibold',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+  })
+  const closeButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      borderRadius: 'full',
+      padding: 'xs',
+    },
+    componentSurface: config.slots?.closeButton as Record<string, unknown> | undefined,
+  })
+  const closeButtonTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.closeButtonText as Record<string, unknown> | undefined,
+  })
+  const dividerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'border',
+    },
+    componentSurface: config.slots?.divider as Record<string, unknown> | undefined,
+  })
+  const bodySurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      padding: 'md',
+    },
+    componentSurface: config.slots?.body as Record<string, unknown> | undefined,
+  })
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
   return (
     <ComponentWrapper
@@ -156,35 +188,67 @@ export function Modal({ config, children }: ModalProps) {
           onPress={config.closeOnBackdrop ? handleClose : undefined}
           accessibilityLabel="Close modal"
         >
-          <Animated.View style={[styles.backdrop, { opacity }]}>
+          <Animated.View
+            style={[
+              {
+                flex: 1,
+                opacity,
+              },
+              backdropSurface.style as ViewStyle | undefined,
+            ]}
+          >
             <TouchableWithoutFeedback>
-              <Animated.View style={[styles.contentWrapper, { transform: [{ scale }] }]}>
-                {(config.title != null || showCloseButton) && (
+              <Animated.View
+                style={[
+                  contentWrapperSurface.style as ViewStyle | undefined,
+                  { transform: [{ scale }] },
+                ]}
+              >
+                {(config.title != null || showCloseButton) ? (
                   <>
-                    <View style={styles.header}>
+                    <View style={headerSurface.style as ViewStyle | undefined}>
                       {config.title != null ? (
-                        <Text style={styles.title} accessibilityRole="header">
+                        <Text
+                          style={{
+                            ...baseTextStyle,
+                            flex: 1,
+                            ...(titleSurface.style as TextStyle | undefined),
+                          }}
+                          accessibilityRole="header"
+                        >
                           {config.title}
                         </Text>
                       ) : (
                         <View style={{ flex: 1 }} />
                       )}
-                      {showCloseButton && (
+                      {showCloseButton ? (
                         <TouchableOpacity
                           onPress={handleClose}
-                          style={styles.closeButton}
+                          style={closeButtonSurface.style as ViewStyle | undefined}
                           accessibilityLabel="Close"
                           accessibilityRole="button"
                           testID={config.testID ? `${config.testID}-close` : `${config.id}-close`}
                         >
-                          <Text style={styles.closeButtonText}>✕</Text>
+                          <Text
+                            style={{
+                              ...baseTextStyle,
+                              ...(closeButtonTextSurface.style as TextStyle | undefined),
+                            }}
+                          >
+                            X
+                          </Text>
                         </TouchableOpacity>
-                      )}
+                      ) : null}
                     </View>
-                    <View style={styles.divider} />
+                    <View
+                      style={[
+                        { height: 1, marginHorizontal: tokens.spacing[4] },
+                        dividerSurface.style as ViewStyle | undefined,
+                      ]}
+                    />
                   </>
-                )}
-                <View style={styles.body}>{children}</View>
+                ) : null}
+                <View style={bodySurface.style as ViewStyle | undefined}>{children}</View>
               </Animated.View>
             </TouchableWithoutFeedback>
           </Animated.View>

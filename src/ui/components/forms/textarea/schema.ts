@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -18,5 +18,16 @@ export const TextareaSchema = extendComponentSchema({
   maxLength: z.number().optional(),
   showCharCount: z.boolean().optional().default(false),
   onChangeAction: ActionSchema.optional(),
-  testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'container',
+    'label',
+    'inputWrapper',
+    'input',
+    'footer',
+    'footerLeft',
+    'helperText',
+    'errorText',
+    'charCount',
+  ]).optional(),
 })

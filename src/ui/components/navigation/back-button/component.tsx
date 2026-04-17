@@ -1,43 +1,63 @@
 import React from 'react'
-import { StyleSheet, Text, TouchableOpacity } from 'react-native'
+import { Text, TouchableOpacity, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { BackButtonConfig } from './types'
 
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    button: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: tokens.spacing[1],
-      paddingVertical: tokens.spacing[2],
-      paddingHorizontal: tokens.spacing[2],
-      alignSelf: 'flex-start',
-    },
-    arrow: {
-      fontSize: tokens.typography.fontSizeLg,
-      color: tokens.colors.primary,
-      lineHeight: tokens.typography.fontSizeLg * 1.3,
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.primary,
-    },
-  })
-}
-
-/**
- * Config-driven back button. Dispatches `config.action` if provided,
- * otherwise navigates back via `{ type: 'navigate', to: '..' }`.
- */
 export function BackButton({ config }: { config: BackButtonConfig }) {
   const tokens = useTokens()
   const { dispatch } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
-  const styles = makeStyles(tokens)
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const buttonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'xs',
+      paddingY: 'xs',
+      paddingX: 'xs',
+      alignSelf: 'start',
+    },
+    componentSurface: config.slots?.button as Record<string, unknown> | undefined,
+  })
+  const iconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      color: 'primary',
+    },
+    componentSurface: config.slots?.icon as Record<string, unknown> | undefined,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      fontWeight: 'medium',
+      color: 'primary',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+  })
 
   function handlePress() {
     const action = config.action ?? { type: 'navigate' as const, to: '..' }
@@ -48,16 +68,29 @@ export function BackButton({ config }: { config: BackButtonConfig }) {
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <TouchableOpacity
         onPress={handlePress}
-        style={styles.button}
+        style={buttonSurface.style as ViewStyle | undefined}
         accessibilityLabel={config.label}
         accessibilityRole="button"
         accessibilityHint="Navigate to the previous screen"
         testID={config.testID ?? config.id ?? 'back-button'}
       >
-        <Text style={styles.arrow} accessibilityElementsHidden>
-          ←
+        <Text
+          style={{
+            ...baseTextStyle,
+            ...(iconSurface.style as TextStyle | undefined),
+          }}
+          accessibilityElementsHidden
+        >
+          {'<'}
         </Text>
-        <Text style={styles.label}>{config.label}</Text>
+        <Text
+          style={{
+            ...baseTextStyle,
+            ...(labelSurface.style as TextStyle | undefined),
+          }}
+        >
+          {config.label}
+        </Text>
       </TouchableOpacity>
     </ComponentWrapper>
   )

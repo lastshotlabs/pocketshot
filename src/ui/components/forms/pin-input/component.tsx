@@ -1,16 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Animated,
-  Platform,
-} from 'react-native'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { View, Text, TextInput, Animated, Platform, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { PinInputConfig } from './types'
 
 export function PinInput({ config }: { config: PinInputConfig }) {
@@ -19,19 +13,16 @@ export function PinInput({ config }: { config: PinInputConfig }) {
   const length = config.length ?? 6
 
   const [digits, setDigits] = useState<string[]>(() => Array(length).fill(''))
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(
-    config.autoFocus ? 0 : null,
-  )
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(config.autoFocus ? 0 : null)
   const [hasError, setHasError] = useState(false)
 
   const inputRefs = useRef<Array<TextInput | null>>(Array(length).fill(null))
   const shakeAnim = useRef(new Animated.Value(0)).current
-
-  const styles = useMemo(() => makeStyles(tokens, length), [tokens, length])
-
   const fullValue = digits.join('')
+  const boxSize = length > 6 ? 40 : 48
+  const activeStates: RuntimeSurfaceState[] | undefined = hasError ? ['invalid'] : undefined
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
-  // Publish value changes to screen context
   useEffect(() => {
     setValue(config.id, fullValue)
   }, [config.id, fullValue, setValue])
@@ -69,62 +60,83 @@ export function PinInput({ config }: { config: PinInputConfig }) {
     })
   }, [shakeAnim])
 
-  // Expose shake method via screen context for external error triggering
   useEffect(() => {
     setValue(`${config.id}_shake`, triggerShake)
   }, [config.id, triggerShake, setValue])
 
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      gap: 'sm',
+    },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+      marginBottom: 'xs',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const boxRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 'sm',
+    },
+    componentSurface: config.slots?.boxRow as Record<string, unknown> | undefined,
+    activeStates,
+  })
+
   const handleDigitChange = useCallback(
     (index: number, text: string) => {
-      // Handle paste: multi-char input distributes across boxes
       if (text.length > 1) {
         const pastedDigits = text.replace(/\D/g, '').slice(0, length).split('')
-        const newDigits = [...digits]
-        for (let i = 0; i < pastedDigits.length && index + i < length; i++) {
-          newDigits[index + i] = pastedDigits[i]
+        const nextDigits = [...digits]
+        for (let offset = 0; offset < pastedDigits.length && index + offset < length; offset += 1) {
+          nextDigits[index + offset] = pastedDigits[offset] ?? ''
         }
-        setDigits(newDigits)
+        setDigits(nextDigits)
 
         const nextFocus = Math.min(index + pastedDigits.length, length - 1)
         inputRefs.current[nextFocus]?.focus()
 
-        // Check completion
-        if (newDigits.every((d) => d !== '')) {
-          if (config.onComplete) {
-            void dispatch(config.onComplete)
-          }
+        if (nextDigits.every((digit) => digit !== '') && config.onComplete) {
+          void dispatch(config.onComplete)
         }
         return
       }
 
-      // Single character
       const digit = text.replace(/\D/g, '')
-      if (text !== '' && digit === '') return // Non-numeric rejected
+      if (text !== '' && digit === '') return
 
-      const newDigits = [...digits]
-      newDigits[index] = digit
-      setDigits(newDigits)
+      const nextDigits = [...digits]
+      nextDigits[index] = digit
+      setDigits(nextDigits)
 
       if (digit !== '' && index < length - 1) {
         inputRefs.current[index + 1]?.focus()
       }
 
-      // Check completion
-      if (digit !== '' && newDigits.every((d) => d !== '')) {
-        if (config.onComplete) {
-          void dispatch(config.onComplete)
-        }
+      if (digit !== '' && nextDigits.every((value) => value !== '') && config.onComplete) {
+        void dispatch(config.onComplete)
       }
     },
-    [digits, length, config.onComplete, dispatch],
+    [config.onComplete, digits, dispatch, length],
   )
 
   const handleKeyPress = useCallback(
     (index: number, key: string) => {
       if (key === 'Backspace' && digits[index] === '' && index > 0) {
-        const newDigits = [...digits]
-        newDigits[index - 1] = ''
-        setDigits(newDigits)
+        const nextDigits = [...digits]
+        nextDigits[index - 1] = ''
+        setDigits(nextDigits)
         inputRefs.current[index - 1]?.focus()
       }
     },
@@ -132,91 +144,88 @@ export function PinInput({ config }: { config: PinInputConfig }) {
   )
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        {config.label != null && (
-          <Text style={styles.label} accessibilityRole="text">
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
+      <View style={containerSurface.style as ViewStyle | undefined}>
+        {config.label != null ? (
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(labelSurface.style as TextStyle | undefined),
+            }}
+            accessibilityRole="text"
+          >
             {config.label}
           </Text>
-        )}
+        ) : null}
         <Animated.View
           style={[
-            styles.boxRow,
+            boxRowSurface.style as ViewStyle | undefined,
             { transform: [{ translateX: shakeAnim }] },
           ]}
         >
-          {Array.from({ length }).map((_, index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => {
-                inputRefs.current[index] = ref
-              }}
-              style={[
-                styles.box,
-                focusedIndex === index && styles.boxFocused,
-                hasError && styles.boxError,
-                digits[index] !== '' && styles.boxFilled,
-              ]}
-              value={config.secureEntry && digits[index] !== '' ? '\u2022' : digits[index]}
-              onChangeText={(text) => handleDigitChange(index, text)}
-              onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
-              onFocus={() => setFocusedIndex(index)}
-              onBlur={() => setFocusedIndex(null)}
-              keyboardType="number-pad"
-              maxLength={Platform.OS === 'android' ? 1 : undefined}
-              selectTextOnFocus
-              caretHidden
-              autoFocus={config.autoFocus && index === 0}
-              accessibilityLabel={`${config.label ?? 'PIN'} digit ${index + 1} of ${length}`}
-              accessibilityRole="text"
-              testID={`${config.testID ?? config.id}-digit-${index}`}
-            />
-          ))}
+          {Array.from({ length }).map((_, index) => {
+            const boxStates: RuntimeSurfaceState[] | undefined = [
+              ...(focusedIndex === index ? (['focus'] as const) : []),
+              ...(hasError ? (['invalid'] as const) : []),
+              ...(digits[index] !== '' ? (['selected'] as const) : []),
+            ]
+            const boxSurface = resolveSurfacePresentation({
+              tokens,
+              implementationBase: {
+                width: boxSize,
+                height: boxSize,
+                border: '2px solid inputBorder',
+                borderRadius: 'md',
+                bg: 'inputBackground',
+                textAlign: 'center',
+                fontSize: 'xl',
+                fontWeight: 'semibold',
+                color: 'inputText',
+                states: {
+                  focus: {
+                    border: '2px solid borderFocus',
+                  },
+                  invalid: {
+                    border: '2px solid error',
+                  },
+                  selected: {
+                    border: '2px solid primary',
+                    bg: 'card',
+                  },
+                },
+              },
+              componentSurface: config.slots?.box as Record<string, unknown> | undefined,
+              activeStates: boxStates,
+            })
+
+            return (
+              <TextInput
+                key={index}
+                ref={(ref) => {
+                  inputRefs.current[index] = ref
+                }}
+                style={{
+                  ...sharedTextStyle,
+                  ...(boxSurface.style as TextStyle | undefined),
+                }}
+                value={config.secureEntry && digits[index] !== '' ? '\u2022' : digits[index]}
+                onChangeText={(text) => handleDigitChange(index, text)}
+                onKeyPress={({ nativeEvent }) => handleKeyPress(index, nativeEvent.key)}
+                onFocus={() => setFocusedIndex(index)}
+                onBlur={() => setFocusedIndex(null)}
+                keyboardType="number-pad"
+                maxLength={Platform.OS === 'android' ? 1 : undefined}
+                selectTextOnFocus
+                caretHidden
+                autoFocus={config.autoFocus && index === 0}
+                accessibilityLabel={`${config.label ?? 'PIN'} digit ${index + 1} of ${length}`}
+                accessibilityRole="text"
+                testID={`${config.testID ?? config.id}-digit-${index}`}
+              />
+            )
+          })}
         </Animated.View>
       </View>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, length: number) {
-  const boxSize = length > 6 ? 40 : 48
-  return StyleSheet.create({
-    container: {
-      gap: tokens.spacing[2],
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[1],
-    },
-    boxRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: tokens.spacing[2],
-    },
-    box: {
-      width: boxSize,
-      height: boxSize,
-      borderWidth: 2,
-      borderColor: tokens.colors.inputBorder,
-      borderRadius: tokens.radius.md,
-      backgroundColor: tokens.colors.inputBackground,
-      textAlign: 'center',
-      fontSize: tokens.typography.fontSizeXl,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.inputText,
-    },
-    boxFocused: {
-      borderColor: tokens.colors.borderFocus,
-    },
-    boxError: {
-      borderColor: tokens.colors.error,
-    },
-    boxFilled: {
-      borderColor: tokens.colors.primary,
-      backgroundColor: tokens.colors.surface,
-    },
-  })
-}
-

@@ -1,26 +1,19 @@
 import React from 'react'
-import {
-  Image as RNImage,
-  TouchableOpacity,
-  StyleSheet,
-  type ImageStyle,
-} from 'react-native'
+import { Image as RNImage, TouchableOpacity, type ImageStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeStyleProps, toNativeDimensionValue } from '../../_base'
+import { resolveNativeStyleProps, resolveSurfacePresentation, toNativeDimensionValue } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ImageConfig } from './types'
 
-// Try to use expo-image for better caching, fall back to RN Image.
 let ExpoImage: typeof RNImage | null = null
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const expoImageModule = require('expo-image') as { Image: typeof RNImage }
   ExpoImage = expoImageModule.Image
 } catch {
-  // expo-image not installed, use RN Image
+  ExpoImage = null
 }
 
 const ImageComponent = ExpoImage ?? RNImage
@@ -30,41 +23,6 @@ export function ConfigImage({ config }: { config: ImageConfig }) {
   const { values, dispatch } = useScreenContext()
 
   const src = resolveFromRef(config.src, values) as string
-  const styles = makeStyles(tokens, config)
-
-  const content = (
-    <ImageComponent
-      source={{ uri: src }}
-      accessibilityLabel={config.alt}
-      resizeMode={config.resizeMode}
-      style={styles.image}
-      testID={config.testID ?? config.id}
-    />
-  )
-
-  if (config.onPress) {
-    return (
-      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-        <TouchableOpacity
-          onPress={() => void dispatch(config.onPress!)}
-          accessibilityRole="imagebutton"
-          accessibilityLabel={config.alt}
-          activeOpacity={0.8}
-        >
-          {content}
-        </TouchableOpacity>
-      </ComponentWrapper>
-    )
-  }
-
-  return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      {content}
-    </ComponentWrapper>
-  )
-}
-
-function makeStyles(tokens: DesignTokens, config: ImageConfig) {
   const resolvedStyle = resolveNativeStyleProps(
     {
       width: config.width,
@@ -85,16 +43,53 @@ function makeStyles(tokens: DesignTokens, config: ImageConfig) {
         ? width / config.aspectRatio
         : undefined
 
-  const imageStyle: ImageStyle = {
-    width: width ?? 200,
-    height: computedHeight ?? 200,
-    ...(config.aspectRatio != null && height == null && typeof width !== 'number'
-      ? { aspectRatio: config.aspectRatio }
-      : undefined),
-    ...(borderRadius != null ? { borderRadius } : undefined),
+  const imageSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: width ?? 200,
+      height: computedHeight ?? 200,
+      ...(config.aspectRatio != null && height == null && typeof width !== 'number'
+        ? { aspectRatio: config.aspectRatio }
+        : undefined),
+      ...(borderRadius != null ? { borderRadius } : undefined),
+    },
+    componentSurface: config.slots?.image as Record<string, unknown> | undefined,
+  })
+  const pressableSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {},
+    componentSurface: config.slots?.pressable as Record<string, unknown> | undefined,
+  })
+
+  const content = (
+    <ImageComponent
+      source={{ uri: src }}
+      accessibilityLabel={config.alt}
+      resizeMode={config.resizeMode}
+      style={imageSurface.style as ImageStyle | undefined}
+      testID={config.testID ?? config.id}
+    />
+  )
+
+  if (config.onPress) {
+    return (
+      <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+        <TouchableOpacity
+          onPress={() => void dispatch(config.onPress!)}
+          accessibilityRole="imagebutton"
+          accessibilityLabel={config.alt}
+          activeOpacity={0.8}
+          style={pressableSurface.style as ViewStyle | undefined}
+        >
+          {content}
+        </TouchableOpacity>
+      </ComponentWrapper>
+    )
   }
 
-  return StyleSheet.create({
-    image: imageStyle,
-  })
+  return (
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+      {content}
+    </ComponentWrapper>
+  )
 }

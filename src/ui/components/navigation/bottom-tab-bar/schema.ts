@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -19,5 +19,15 @@ export const BottomTabBarSchema = extendComponentSchema({
   position: z.literal('bottom').optional().default('bottom'),
   elevated: z.boolean().optional().default(true),
   showLabels: z.boolean().optional().default(true),
-  testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'tab',
+    'iconContainer',
+    'icon',
+    'label',
+    'badge',
+    'badgeDot',
+    'badgeText',
+    'indicator',
+  ]).optional(),
 })

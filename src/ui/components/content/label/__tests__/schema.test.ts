@@ -57,4 +57,19 @@ describe('LabelSchema', () => {
     expect(result.textAlign).toBe('center')
     expect(result.lineHeight).toBe('relaxed')
   })
+
+  it('accepts slot surfaces', () => {
+    const result = LabelSchema.parse({
+      text: 'X',
+      slots: {
+        text: {
+          letterSpacing: 'wide',
+          color: 'primary',
+        },
+      },
+    })
+
+    expect(result.slots?.text?.letterSpacing).toBe('wide')
+    expect(result.slots?.text?.color).toBe('primary')
+  })
 })

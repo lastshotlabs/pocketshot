@@ -50,4 +50,19 @@ describe('ImageViewer', () => {
 
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <ImageViewer
+        config={cfg({
+          slots: {
+            thumbnailContainer: { borderRadius: 'xl' },
+            captionText: { color: 'primary' },
+          },
+        })}
+      />,
+    )
+
+    expect(toJSON()).toBeTruthy()
+  })
 })

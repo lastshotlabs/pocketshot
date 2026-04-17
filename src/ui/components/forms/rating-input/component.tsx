@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { View, Text, TouchableOpacity, Animated, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { RatingInputConfig } from './types'
 
 const SIZE_MAP = {
-  sm: { star: 20, gap: 4 },
-  md: { star: 28, gap: 6 },
-  lg: { star: 36, gap: 8 },
-} as const
+  sm: { star: 20, gap: 'xs' as const },
+  md: { star: 28, gap: 'sm' as const },
+  lg: { star: 36, gap: 'md' as const },
+}
 
 export function RatingInput({ config }: { config: RatingInputConfig }) {
   const tokens = useTokens()
@@ -24,13 +25,11 @@ export function RatingInput({ config }: { config: RatingInputConfig }) {
   const size = config.size ?? 'md'
   const allowHalf = config.allowHalf ?? false
   const readOnly = config.readOnly ?? false
-
   const [rating, setRating] = useState<number>(resolvedValue ?? config.defaultValue ?? 0)
-
-  // One scale animation per star
   const scaleAnims = useRef<Animated.Value[]>(
     Array.from({ length: maxStars }, () => new Animated.Value(1)),
   ).current
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   useEffect(() => {
     if (resolvedValue != null) {
@@ -38,17 +37,45 @@ export function RatingInput({ config }: { config: RatingInputConfig }) {
     }
   }, [resolvedValue])
 
-  const styles = useMemo(() => makeStyles(tokens, size), [tokens, size])
+  const activeStates: RuntimeSurfaceState[] | undefined = [
+    ...(rating > 0 ? (['selected'] as const) : []),
+    ...(readOnly ? (['disabled'] as const) : []),
+  ]
+
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: { gap: 'sm' },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const starsRowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SIZE_MAP[size].gap,
+    },
+    componentSurface: config.slots?.starsRow as Record<string, unknown> | undefined,
+    activeStates,
+  })
 
   const handlePress = useCallback(
     (starIndex: number) => {
       if (readOnly) return
 
-      const newValue = allowHalf ? starIndex + 0.5 : starIndex + 1
-      // If tapping the same star, toggle it off
-      const finalValue = newValue === rating ? 0 : newValue
+      const nextValue = allowHalf ? starIndex + 0.5 : starIndex + 1
+      const finalValue = nextValue === rating ? 0 : nextValue
 
-      // Animate the tapped star
       Animated.sequence([
         Animated.spring(scaleAnims[starIndex]!, {
           toValue: 1.3,
@@ -70,53 +97,70 @@ export function RatingInput({ config }: { config: RatingInputConfig }) {
         void dispatch(config.onChangeAction)
       }
     },
-    [readOnly, allowHalf, rating, scaleAnims, config.id, config.onChangeAction, setValue, dispatch],
+    [allowHalf, config.id, config.onChangeAction, dispatch, rating, readOnly, scaleAnims, setValue],
   )
 
   const sizeConfig = SIZE_MAP[size]
   const testIDBase = config.testID ?? config.id
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        {config.label != null && (
-          <Text style={styles.label} accessibilityRole="text">
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
+      <View style={containerSurface.style as ViewStyle | undefined}>
+        {config.label != null ? (
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(labelSurface.style as TextStyle | undefined),
+            }}
+            accessibilityRole="text"
+          >
             {config.label}
           </Text>
-        )}
-        <View style={styles.starsRow}>
-          {Array.from({ length: maxStars }, (_, i) => {
-            const filled = rating >= i + 1
-            const halfFilled = allowHalf && !filled && rating >= i + 0.5
+        ) : null}
+        <View style={starsRowSurface.style as ViewStyle | undefined}>
+          {Array.from({ length: maxStars }, (_, index) => {
+            const filled = rating >= index + 1
+            const halfFilled = allowHalf && !filled && rating >= index + 0.5
+            const starStates: RuntimeSurfaceState[] | undefined = [
+              ...((filled || halfFilled) ? (['selected'] as const) : []),
+              ...(readOnly ? (['disabled'] as const) : []),
+            ]
+            const starSurface = resolveSurfacePresentation({
+              tokens,
+              implementationBase: {
+                fontSize: sizeConfig.star,
+                color: filled || halfFilled ? 'warning' : 'inputBorder',
+                lineHeight: sizeConfig.star + 4,
+                states: {
+                  disabled: {
+                    opacity: 0.6,
+                  },
+                },
+              },
+              componentSurface: config.slots?.star as Record<string, unknown> | undefined,
+              activeStates: starStates,
+            })
 
             return (
-              <Animated.View
-                key={i}
-                style={{ transform: [{ scale: scaleAnims[i]! }] }}
-              >
+              <Animated.View key={index} style={{ transform: [{ scale: scaleAnims[index]! }] }}>
                 <TouchableOpacity
-                  onPress={() => handlePress(i)}
+                  onPress={() => handlePress(index)}
                   disabled={readOnly}
                   activeOpacity={readOnly ? 1 : 0.7}
                   hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
                   accessibilityRole="button"
-                  accessibilityLabel={`${i + 1} star${i === 0 ? '' : 's'}`}
+                  accessibilityLabel={`${index + 1} star${index === 0 ? '' : 's'}`}
                   accessibilityState={{ selected: filled || halfFilled }}
                   accessibilityHint={readOnly ? undefined : 'Tap to rate'}
-                  testID={`${testIDBase}-star-${i}`}
+                  testID={`${testIDBase}-star-${index}`}
                 >
                   <Text
-                    style={[
-                      styles.star,
-                      {
-                        fontSize: sizeConfig.star,
-                        color: filled || halfFilled
-                          ? tokens.colors.warning
-                          : tokens.colors.inputBorder,
-                      },
-                    ]}
+                    style={{
+                      ...sharedTextStyle,
+                      ...(starSurface.style as TextStyle | undefined),
+                    }}
                   >
-                    {filled ? '★' : halfFilled ? '⯨' : '☆'}
+                    {filled ? '\u2605' : halfFilled ? '\u2BE8' : '\u2606'}
                   </Text>
                 </TouchableOpacity>
               </Animated.View>
@@ -127,27 +171,3 @@ export function RatingInput({ config }: { config: RatingInputConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, size: 'sm' | 'md' | 'lg') {
-  const sizeConfig = SIZE_MAP[size]
-
-  return StyleSheet.create({
-    container: {
-      gap: tokens.spacing[2],
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-    },
-    starsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: sizeConfig.gap,
-    },
-    star: {
-      lineHeight: sizeConfig.star + 4,
-    },
-  })
-}
-

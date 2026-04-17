@@ -96,4 +96,20 @@ describe('PriceDisplay', () => {
     const { getByText } = renderWithProviders(<PriceDisplay config={{ amount: 'N/A' }} />)
     expect(getByText('N/A')).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <PriceDisplay
+        config={{
+          amount: 19.99,
+          badge: 'SALE',
+          slots: {
+            price: { color: 'primary' },
+            badge: { borderRadius: 'md' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

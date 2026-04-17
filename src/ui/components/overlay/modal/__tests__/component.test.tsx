@@ -12,8 +12,6 @@ import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 describe('Modal', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  // ── Crash-safety ────────────────────────────────────────────────────────────
-
   it('renders without crashing with minimal config', () => {
     const { toJSON } = renderWithProviders(<Modal config={{ id: 'modal-a' }} />)
     expect(toJSON()).toBeTruthy()
@@ -21,7 +19,6 @@ describe('Modal', () => {
 
   it('renders ComponentWrapper even when the modal is closed', () => {
     const { toJSON } = renderWithProviders(<Modal config={{ id: 'closed-modal' }} />)
-    // ComponentWrapper always renders a View container
     expect(toJSON()).toBeTruthy()
   })
 
@@ -41,8 +38,6 @@ describe('Modal', () => {
     }
   })
 
-  // ── testID via ComponentWrapper ─────────────────────────────────────────────
-
   it('applies testID to the ComponentWrapper root when testID is provided', () => {
     const { getByTestId } = renderWithProviders(
       <Modal config={{ id: 'wrapper-modal', testID: 'modal-wrapper' }} />,
@@ -55,24 +50,19 @@ describe('Modal', () => {
     expect(getByTestId('auto-testid-modal')).toBeTruthy()
   })
 
-  // ── Visibility (open state) ─────────────────────────────────────────────────
-
-  it('renders with visible=false (closed) — Modal stub is present but not visible', () => {
+  it('renders with visible=false when closed', () => {
     const { toJSON } = renderWithProviders(<Modal config={{ id: 'vis-modal' }} />)
     const json = JSON.stringify(toJSON())
-    // RN Modal stub renders with visible=false
     expect(json).toContain('"visible":false')
   })
 
-  it('renders with visible=true (open) when context flag is set', () => {
+  it('renders with visible=true when context flag is set', () => {
     const { toJSON } = renderWithProviders(<Modal config={{ id: 'open-vis-modal' }} />, {
       initialValues: { '__modal_open-vis-modal': true },
     })
     const json = JSON.stringify(toJSON())
     expect(json).toContain('"visible":true')
   })
-
-  // ── Title rendering ─────────────────────────────────────────────────────────
 
   it('renders the title when open and config.title is provided', () => {
     const { getByText } = renderWithProviders(
@@ -98,8 +88,6 @@ describe('Modal', () => {
     const json = JSON.stringify(toJSON())
     expect(json).not.toContain('"header"')
   })
-
-  // ── Close button ────────────────────────────────────────────────────────────
 
   it('renders the close button when showCloseButton=true and title is set', () => {
     const { getByRole } = renderWithProviders(
@@ -127,12 +115,12 @@ describe('Modal', () => {
     expect(getByTestId('dialog-1-close')).toBeTruthy()
   })
 
-  it('renders the close button symbol ✕ when showCloseButton=true', () => {
+  it('renders the close button text when showCloseButton=true', () => {
     const { getByText } = renderWithProviders(
       <Modal config={{ id: 'symbol-modal', title: 'With X', showCloseButton: true }} />,
       { initialValues: { '__modal_symbol-modal': true } },
     )
-    expect(getByText('✕')).toBeTruthy()
+    expect(getByText('X')).toBeTruthy()
   })
 
   it('does not render close button when showCloseButton=false and title is absent', () => {
@@ -141,11 +129,8 @@ describe('Modal', () => {
       { initialValues: { '__modal_no-close-modal': true } },
     )
     const json = JSON.stringify(toJSON())
-    // No TouchableOpacity close button, so no "button" accessibilityRole
     expect(json).not.toContain('"button"')
   })
-
-  // ── Children ────────────────────────────────────────────────────────────────
 
   it('renders children inside the modal body when open', () => {
     const { getByText } = renderWithProviders(
@@ -155,5 +140,24 @@ describe('Modal', () => {
       { initialValues: { '__modal_children-modal': true } },
     )
     expect(getByText('Inner Content')).toBeTruthy()
+  })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Modal
+        config={{
+          id: 'slot-modal',
+          title: 'Styled',
+          slots: {
+            contentWrapper: { bg: 'card' },
+            title: { letterSpacing: 'wide' },
+            body: { paddingY: 'lg' },
+          },
+        }}
+      />,
+      { initialValues: { '__modal_slot-modal': true } },
+    )
+
+    expect(toJSON()).toBeTruthy()
   })
 })

@@ -61,4 +61,19 @@ describe('ProductCardSchema', () => {
     const result = ProductCardSchema.parse({ title: 'X', badge: 'New Arrival' })
     expect(result.badge).toBe('New Arrival')
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = ProductCardSchema.parse({
+      title: 'X',
+      slots: {
+        card: { borderRadius: 'xl' },
+        title: { letterSpacing: 'wide' },
+        addButton: { borderRadius: 'lg' },
+      },
+    })
+
+    expect(result.slots?.card?.borderRadius).toBe('xl')
+    expect(result.slots?.title?.letterSpacing).toBe('wide')
+    expect(result.slots?.addButton?.borderRadius).toBe('lg')
+  })
 })

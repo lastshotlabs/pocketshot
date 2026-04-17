@@ -58,4 +58,17 @@ describe('PriceDisplaySchema', () => {
     expect(result.currency).toBe('EUR')
     expect(result.locale).toBe('de-DE')
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = PriceDisplaySchema.parse({
+      amount: 10,
+      slots: {
+        price: { color: 'primary' },
+        badge: { borderRadius: 'md' },
+      },
+    })
+
+    expect(result.slots?.price?.color).toBe('primary')
+    expect(result.slots?.badge?.borderRadius).toBe('md')
+  })
 })

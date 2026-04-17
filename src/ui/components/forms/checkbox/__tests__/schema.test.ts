@@ -35,4 +35,20 @@ describe('CheckboxSchema', () => {
   it('rejects non-boolean disabled', () => {
     expect(CheckboxSchema.safeParse({ id: 'x', label: 'X', disabled: 'yes' }).success).toBe(false)
   })
+
+  it('accepts slot surfaces', () => {
+    const result = CheckboxSchema.parse({
+      id: 'agree',
+      label: 'Accept',
+      slots: {
+        row: { paddingY: 'sm' },
+        box: { borderRadius: 'md' },
+        label: { letterSpacing: 'wide' },
+      },
+    })
+
+    expect(result.slots?.row?.paddingY).toBe('sm')
+    expect(result.slots?.box?.borderRadius).toBe('md')
+    expect(result.slots?.label?.letterSpacing).toBe('wide')
+  })
 })

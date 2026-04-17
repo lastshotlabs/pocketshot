@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -14,4 +14,19 @@ export const CodeBlockSchema = extendComponentSchema({
   maxLines: z.number().optional(),
   onCopy: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'container',
+    'header',
+    'langLabel',
+    'copyButton',
+    'copyText',
+    'scrollArea',
+    'scrollContent',
+    'lineRow',
+    'lineNumber',
+    'codeLine',
+    'showMoreButton',
+    'showMoreText',
+  ]).optional(),
 })

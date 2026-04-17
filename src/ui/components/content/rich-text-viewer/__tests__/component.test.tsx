@@ -1,45 +1,60 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import React from 'react'
 import { RichTextViewer } from '../component'
-import { RichTextViewerSchema } from '../schema'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
-
-function cfg(overrides: Record<string, unknown> = {}) {
-  return RichTextViewerSchema.parse({
-    id: 'viewer',
-    content: '<p>Hello <strong>world</strong></p>',
-    ...overrides,
-  })
-}
 
 describe('RichTextViewer', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('renders without crashing', () => {
-    const { toJSON } = renderWithProviders(<RichTextViewer config={cfg()} />)
-    expect(toJSON()).toBeTruthy()
-  })
+  it('renders headings and paragraphs', () => {
+    const { getByText } = renderWithProviders(
+      <RichTextViewer config={{ content: '<h1>Title</h1><p>Hello world</p>' }} />,
+    )
 
-  it('renders parsed rich text content', () => {
-    const { getByText } = renderWithProviders(<RichTextViewer config={cfg()} />)
+    expect(getByText('Title')).toBeTruthy()
     expect(getByText('Hello world')).toBeTruthy()
   })
 
   it('resolves content from screen context', () => {
     const { getByText } = renderWithProviders(
-      <RichTextViewer config={cfg({ content: { from: 'article.html' } })} />,
-      { initialValues: { article: { html: '<h2>Intro</h2><p>Body</p>' } } },
+      <RichTextViewer config={{ content: { from: 'article.body' } }} />,
+      { initialValues: { article: { body: '<p>Resolved body</p>' } } },
     )
 
-    expect(getByText('Intro')).toBeTruthy()
-    expect(getByText('Body')).toBeTruthy()
+    expect(getByText('Resolved body')).toBeTruthy()
   })
 
-  it('shows the expand button when truncated', () => {
-    const { getByTestId } = renderWithProviders(
-      <RichTextViewer config={cfg({ content: '<p>Line 1</p><p>Line 2</p><p>Line 3</p>', maxLines: 1 })} />,
+  it('renders an expand button when maxLines is provided', () => {
+    const { getByText } = renderWithProviders(
+      <RichTextViewer config={{ content: '<p>Hello</p>', maxLines: 2 }} />,
     )
 
-    expect(getByTestId('viewer-expand')).toBeTruthy()
+    expect(getByText('Show more')).toBeTruthy()
+  })
+
+  it('applies the wrapper testID', () => {
+    const { getByTestId } = renderWithProviders(
+      <RichTextViewer config={{ content: '<p>Hello</p>', testID: 'rtv-root' }} />,
+    )
+
+    expect(getByTestId('rtv-root')).toBeTruthy()
+  })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <RichTextViewer
+        config={{
+          content: '<h2>Section</h2><p>Body copy</p>',
+          slots: {
+            heading: { letterSpacing: 'wide' },
+            paragraph: { color: 'muted' },
+            expandText: { color: 'primary' },
+          },
+          maxLines: 2,
+        }}
+      />,
+    )
+
+    expect(toJSON()).toBeTruthy()
   })
 })

@@ -30,4 +30,19 @@ describe('Spacer', () => {
     const { toJSON } = renderWithProviders(<Spacer config={{ size: 0 }} />)
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders with root slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Spacer
+        config={{
+          slots: {
+            root: {
+              bg: 'muted',
+            },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

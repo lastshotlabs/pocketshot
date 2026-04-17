@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -11,5 +11,5 @@ export const CheckboxSchema = extendComponentSchema({
   checked: z.union([z.boolean(), FromRefSchema]).optional(),
   onChangeAction: ActionSchema.optional(),
   disabled: z.boolean().optional().default(false),
-  testID: z.string().optional(),
+  slots: slotsSchema(['root', 'row', 'box', 'checkmark', 'label']).optional(),
 })

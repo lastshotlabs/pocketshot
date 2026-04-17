@@ -233,4 +233,20 @@ describe('TextInput', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <TextInput
+        config={{
+          id: 'email',
+          slots: {
+            input: { borderRadius: 'lg' },
+            label: { letterSpacing: 'wide' },
+            errorText: { color: 'error' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

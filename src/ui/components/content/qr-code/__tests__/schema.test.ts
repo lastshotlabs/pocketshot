@@ -28,4 +28,17 @@ describe('QrCodeSchema', () => {
     expect(result.color).toBe('primary')
     expect(result.bg).toBe('card')
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = QrCodeSchema.parse({
+      value: 'https://example.com',
+      slots: {
+        container: { borderRadius: 'xl' },
+        caption: { color: 'primary' },
+      },
+    })
+
+    expect(result.slots?.container?.borderRadius).toBe('xl')
+    expect(result.slots?.caption?.color).toBe('primary')
+  })
 })

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 
 export const BottomSheetSchema = extendComponentSchema({
   id: z.string(),
@@ -7,5 +7,13 @@ export const BottomSheetSchema = extendComponentSchema({
   title: z.string().optional(),
   showHandle: z.boolean().optional().default(true),
   closeOnBackdrop: z.boolean().optional().default(true),
-  testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'backdrop',
+    'panel',
+    'handleContainer',
+    'handle',
+    'title',
+    'content',
+  ]).optional(),
 })

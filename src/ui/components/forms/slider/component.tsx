@@ -1,48 +1,21 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { View, Text, PanResponder, StyleSheet, LayoutChangeEvent } from 'react-native'
+import {
+  View,
+  Text,
+  PanResponder,
+  type LayoutChangeEvent,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { SliderConfig } from './types'
 
-// Try to load the community slider; fall back to our custom implementation
-let NativeSlider: React.ComponentType<{
-  value: number
-  minimumValue: number
-  maximumValue: number
-  step: number
-  minimumTrackTintColor: string
-  maximumTrackTintColor: string
-  thumbTintColor: string
-  onValueChange: (v: number) => void
-  onSlidingComplete: (v: number) => void
-  disabled?: boolean
-  testID?: string
-  accessibilityLabel?: string
-}> | null = null
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  NativeSlider = require('@react-native-community/slider').default
-} catch {
-  NativeSlider = null
-}
-
-// ── Custom PanResponder slider ──────────────────────────────────────────────
-
-interface CustomSliderProps {
-  value: number
-  min: number
-  max: number
-  step: number
-  onValueChange: (v: number) => void
-  onSlidingComplete: (v: number) => void
-  tokens: DesignTokens
-  testID?: string
-  accessibilityLabel?: string
-}
+const THUMB_RADIUS = 12
 
 function snapToStep(raw: number, min: number, step: number): number {
   return Math.round((raw - min) / step) * step + min
@@ -52,34 +25,96 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
 
+interface CustomSliderProps {
+  config: SliderConfig
+  value: number
+  min: number
+  max: number
+  step: number
+  onValueChange: (value: number) => void
+  onSlidingComplete: (value: number) => void
+}
+
 function CustomSlider({
+  config,
   value,
   min,
   max,
   step,
   onValueChange,
   onSlidingComplete,
-  tokens,
-  testID,
-  accessibilityLabel,
 }: CustomSliderProps) {
+  const tokens = useTokens()
   const [trackWidth, setTrackWidth] = useState(0)
+  const [dragging, setDragging] = useState(false)
   const currentValueRef = useRef(value)
+  const startValueRef = useRef(value)
   currentValueRef.current = value
 
   const computeValue = useCallback(
     (dx: number, startValue: number): number => {
       if (trackWidth === 0) return startValue
       const range = max - min
+      if (range <= 0) return min
       const delta = (dx / trackWidth) * range
       const raw = startValue + delta
       const stepped = snapToStep(raw, min, step)
       return clamp(stepped, min, max)
     },
-    [trackWidth, min, max, step],
+    [max, min, step, trackWidth],
   )
 
-  const startValueRef = useRef(value)
+  const activeStates: RuntimeSurfaceState[] | undefined = dragging ? ['active'] : undefined
+
+  const trackContainerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      height: THUMB_RADIUS * 2 + 8,
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.trackContainer as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const trackSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      height: 4,
+      bg: 'border',
+      borderRadius: 'full',
+      overflow: 'hidden',
+    },
+    componentSurface: config.slots?.track as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const fillSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      height: 4,
+      bg: 'primary',
+      borderRadius: 'full',
+    },
+    componentSurface: config.slots?.fill as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const thumbSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      position: 'absolute',
+      width: THUMB_RADIUS * 2,
+      height: THUMB_RADIUS * 2,
+      borderRadius: 'full',
+      bg: 'primary-foreground',
+      border: '2px solid primary',
+      shadow: 'md',
+      states: {
+        active: {
+          shadow: 'lg',
+        },
+      },
+    },
+    componentSurface: config.slots?.thumb as Record<string, unknown> | undefined,
+    activeStates,
+  })
 
   const panResponder = useRef(
     PanResponder.create({
@@ -87,99 +122,70 @@ function CustomSlider({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
         startValueRef.current = currentValueRef.current
+        setDragging(true)
       },
       onPanResponderMove: (_, gestureState) => {
-        const next = computeValue(gestureState.dx, startValueRef.current)
-        onValueChange(next)
+        const nextValue = computeValue(gestureState.dx, startValueRef.current)
+        onValueChange(nextValue)
       },
       onPanResponderRelease: (_, gestureState) => {
-        const next = computeValue(gestureState.dx, startValueRef.current)
-        onSlidingComplete(next)
+        const nextValue = computeValue(gestureState.dx, startValueRef.current)
+        setDragging(false)
+        onSlidingComplete(nextValue)
       },
       onPanResponderTerminate: (_, gestureState) => {
-        const next = computeValue(gestureState.dx, startValueRef.current)
-        onSlidingComplete(next)
+        const nextValue = computeValue(gestureState.dx, startValueRef.current)
+        setDragging(false)
+        onSlidingComplete(nextValue)
       },
     }),
   ).current
 
-  function handleTrackLayout(e: LayoutChangeEvent) {
-    setTrackWidth(e.nativeEvent.layout.width)
+  function handleTrackLayout(event: LayoutChangeEvent) {
+    setTrackWidth(event.nativeEvent.layout.width)
   }
 
-  const ratio = trackWidth > 0 ? (value - min) / (max - min) : 0
+  const ratio = trackWidth > 0 && max > min ? (value - min) / (max - min) : 0
   const thumbPosition = ratio * trackWidth
-
-  const styles = makeCustomStyles(tokens)
 
   return (
     <View
-      style={styles.trackContainer}
+      style={trackContainerSurface.style as ViewStyle | undefined}
       onLayout={handleTrackLayout}
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={config.label ?? config.id}
       accessibilityValue={{ min, max, now: value }}
-      testID={testID}
+      testID={config.testID ?? config.id}
       {...panResponder.panHandlers}
     >
-      {/* Track */}
-      <View style={styles.track}>
-        <View style={[styles.fill, { width: thumbPosition }]} />
+      <View style={trackSurface.style as ViewStyle | undefined}>
+        <View
+          style={{
+            ...(fillSurface.style as ViewStyle | undefined),
+            width: thumbPosition,
+          }}
+        />
       </View>
-      {/* Thumb */}
-      <View style={[styles.thumb, { left: thumbPosition - THUMB_RADIUS }]} />
+      <View
+        style={{
+          ...(thumbSurface.style as ViewStyle | undefined),
+          left: thumbPosition - THUMB_RADIUS,
+        }}
+      />
     </View>
   )
 }
-
-const THUMB_RADIUS = 12
-
-function makeCustomStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    trackContainer: {
-      height: THUMB_RADIUS * 2 + 8,
-      justifyContent: 'center',
-    },
-    track: {
-      height: 4,
-      backgroundColor: tokens.colors.border,
-      borderRadius: tokens.radius.full,
-      overflow: 'hidden',
-    },
-    fill: {
-      height: '100%',
-      backgroundColor: tokens.colors.primary,
-      borderRadius: tokens.radius.full,
-    },
-    thumb: {
-      position: 'absolute',
-      width: THUMB_RADIUS * 2,
-      height: THUMB_RADIUS * 2,
-      borderRadius: THUMB_RADIUS,
-      backgroundColor: tokens.colors.primaryForeground,
-      borderWidth: 2,
-      borderColor: tokens.colors.primary,
-      shadowColor: tokens.colors.primary,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-  })
-}
-
-// ── Main Slider component ───────────────────────────────────────────────────
 
 export function Slider({ config }: { config: SliderConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedValue = config.value != null ? resolveFromRef(config.value, values) : undefined
-
-  const initial = (resolvedValue as number | undefined) ?? config.defaultValue ?? config.min ?? 0
-
-  const [localValue, setLocalValue] = useState<number>(initial)
+  const initialValue = (resolvedValue as number | undefined) ?? config.defaultValue ?? config.min ?? 0
+  const [localValue, setLocalValue] = useState<number>(initialValue)
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const showValue = config.showValue ?? true
 
   useEffect(() => {
     if (resolvedValue != null) {
@@ -187,16 +193,54 @@ export function Slider({ config }: { config: SliderConfig }) {
     }
   }, [resolvedValue])
 
-  const styles = makeStyles(tokens)
+  const activeStates: RuntimeSurfaceState[] | undefined =
+    showValue ? ['selected'] : undefined
 
-  function handleValueChange(v: number) {
-    setLocalValue(v)
-    setValue(config.id, v)
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: { gap: 'sm' },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const headerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'between',
+    },
+    componentSurface: config.slots?.header as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const valueTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'primary',
+    },
+    componentSurface: config.slots?.valueText as Record<string, unknown> | undefined,
+    activeStates,
+  })
+
+  function handleValueChange(nextValue: number) {
+    setLocalValue(nextValue)
+    setValue(config.id, nextValue)
   }
 
-  function handleSlidingComplete(v: number) {
-    setLocalValue(v)
-    setValue(config.id, v)
+  function handleSlidingComplete(nextValue: number) {
+    setLocalValue(nextValue)
+    setValue(config.id, nextValue)
     if (config.onChangeAction) {
       void dispatch(config.onChangeAction)
     }
@@ -205,69 +249,42 @@ export function Slider({ config }: { config: SliderConfig }) {
   const displayValue = Math.round(localValue * 100) / 100
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          {config.label != null && <Text style={styles.label}>{config.label}</Text>}
-          {config.showValue && (
-            <Text style={styles.valueText} accessibilityRole="text">
-              {displayValue}
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
+      <View style={containerSurface.style as ViewStyle | undefined}>
+        <View style={headerSurface.style as ViewStyle | undefined}>
+          {config.label != null ? (
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(labelSurface.style as TextStyle | undefined),
+              }}
+            >
+              {config.label}
             </Text>
-          )}
+          ) : null}
+          {showValue ? (
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(valueTextSurface.style as TextStyle | undefined),
+              }}
+              accessibilityRole="text"
+            >
+              {String(displayValue)}
+            </Text>
+          ) : null}
         </View>
 
-        {NativeSlider != null ? (
-          <NativeSlider
-            value={localValue}
-            minimumValue={config.min ?? 0}
-            maximumValue={config.max ?? 100}
-            step={config.step ?? 1}
-            minimumTrackTintColor={tokens.colors.primary}
-            maximumTrackTintColor={tokens.colors.border}
-            thumbTintColor={tokens.colors.primaryForeground}
-            onValueChange={handleValueChange}
-            onSlidingComplete={handleSlidingComplete}
-            testID={config.testID ?? config.id}
-            accessibilityLabel={config.label ?? config.id}
-          />
-        ) : (
-          <CustomSlider
-            value={localValue}
-            min={config.min ?? 0}
-            max={config.max ?? 100}
-            step={config.step ?? 1}
-            onValueChange={handleValueChange}
-            onSlidingComplete={handleSlidingComplete}
-            tokens={tokens}
-            testID={config.testID ?? config.id}
-            accessibilityLabel={config.label ?? config.id}
-          />
-        )}
+        <CustomSlider
+          config={config}
+          value={localValue}
+          min={config.min ?? 0}
+          max={config.max ?? 100}
+          step={config.step ?? 1}
+          onValueChange={handleValueChange}
+          onSlidingComplete={handleSlidingComplete}
+        />
       </View>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    container: {
-      gap: tokens.spacing[2],
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-    },
-    valueText: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.primary,
-    },
-  })
-}
-

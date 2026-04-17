@@ -1,4 +1,4 @@
 import type { z } from 'zod'
 import type { PinInputSchema } from './schema'
 
-export type PinInputConfig = z.infer<typeof PinInputSchema>
+export type PinInputConfig = z.input<typeof PinInputSchema>

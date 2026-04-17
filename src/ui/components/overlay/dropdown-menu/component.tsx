@@ -4,16 +4,18 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  StyleSheet,
   Animated,
   Modal,
   FlatList,
   Dimensions,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { DropdownMenuConfig } from './types'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
@@ -26,144 +28,6 @@ interface TriggerLayout {
   height: number
 }
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(tokens: DesignTokens) {
-  return StyleSheet.create({
-    trigger: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      alignSelf: 'flex-start',
-      backgroundColor: tokens.colors.surface,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[2],
-      gap: tokens.spacing[2],
-    },
-    triggerIcon: {
-      fontSize: tokens.typography.fontSizeMd,
-    },
-    triggerLabel: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-      flex: 1,
-    },
-    chevron: {
-      fontSize: 10,
-      color: tokens.colors.textMuted,
-      marginLeft: tokens.spacing[1],
-    },
-    backdrop: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: SCREEN_WIDTH,
-      height: SCREEN_HEIGHT,
-    },
-    panel: {
-      position: 'absolute',
-      backgroundColor: tokens.colors.surface,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      borderRadius: tokens.radius.md,
-      minWidth: 160,
-      ...tokens.shadows.xl,
-      overflow: 'hidden',
-    },
-    itemRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[3],
-      gap: tokens.spacing[2],
-    },
-    itemIcon: {
-      fontSize: 16,
-      width: 20,
-      textAlign: 'center',
-    },
-    itemLabel: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.text,
-    },
-    itemLabelDestructive: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.destructive,
-    },
-    separator: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: tokens.colors.divider,
-      marginHorizontal: tokens.spacing[3],
-    },
-  })
-}
-
-// ---------------------------------------------------------------------------
-// Item row
-// ---------------------------------------------------------------------------
-
-interface DropdownItemRowProps {
-  item: DropdownMenuConfig['items'][number]
-  onPress: (item: DropdownMenuConfig['items'][number]) => void
-  tokens: DesignTokens
-  styles: ReturnType<typeof makeStyles>
-  isLast: boolean
-}
-
-function DropdownItemRow({ item, onPress, tokens, styles, isLast }: DropdownItemRowProps) {
-  const handlePress = useCallback(() => {
-    if (!item.disabled) {
-      onPress(item)
-    }
-  }, [item, onPress])
-
-  return (
-    <>
-      <TouchableOpacity
-        onPress={handlePress}
-        style={[styles.itemRow, item.disabled ? { opacity: 0.4 } : undefined]}
-        disabled={item.disabled}
-        accessibilityRole="menuitem"
-        accessibilityLabel={item.label}
-        accessibilityState={{ disabled: item.disabled }}
-        testID={`dropdown-item-${item.id}`}
-        activeOpacity={0.7}
-      >
-        {item.icon != null && (
-          <Text
-            style={[
-              styles.itemIcon,
-              item.destructive ? { color: tokens.colors.destructive } : undefined,
-            ]}
-            accessibilityElementsHidden
-          >
-            {item.icon}
-          </Text>
-        )}
-        <Text style={item.destructive ? styles.itemLabelDestructive : styles.itemLabel}>
-          {item.label}
-        </Text>
-      </TouchableOpacity>
-      {!isLast && <View style={styles.separator} />}
-    </>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// DropdownMenu
-// ---------------------------------------------------------------------------
-
-/**
- * A list of actions that drops below its trigger button. Uses measureInWindow
- * to position the panel near the trigger. Animates in with fade + translateY.
- */
 export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
   const tokens = useTokens()
   const { dispatch } = useScreenContext()
@@ -173,7 +37,124 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
   const opacity = useRef(new Animated.Value(0)).current
   const translateY = useRef(new Animated.Value(-4)).current
   const chevronRotation = useRef(new Animated.Value(0)).current
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const triggerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      bg: 'card',
+      border: '1px solid border',
+      borderRadius: 'md',
+      paddingX: 'md',
+      paddingY: 'sm',
+      gap: 'sm',
+    },
+    componentSurface: config.slots?.trigger as Record<string, unknown> | undefined,
+  })
+  const triggerIconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.triggerIcon as Record<string, unknown> | undefined,
+  })
+  const triggerLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.triggerLabel as Record<string, unknown> | undefined,
+  })
+  const chevronSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.chevron as Record<string, unknown> | undefined,
+  })
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: SCREEN_WIDTH,
+      height: SCREEN_HEIGHT,
+    },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+  })
+  const panelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      border: '1px solid border',
+      borderRadius: 'md',
+      minWidth: 160,
+      shadow: 'xl',
+      overflow: 'hidden',
+    },
+    componentSurface: config.slots?.panel as Record<string, unknown> | undefined,
+  })
+  const itemSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingX: 'md',
+      paddingY: 'md',
+      gap: 'sm',
+      states: {
+        disabled: {
+          opacity: 0.4,
+        },
+      },
+    },
+    componentSurface: config.slots?.item as Record<string, unknown> | undefined,
+  })
+  const itemIconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.itemIcon as Record<string, unknown> | undefined,
+  })
+  const itemLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.itemLabel as Record<string, unknown> | undefined,
+  })
+  const separatorSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'border',
+    },
+    componentSurface: config.slots?.separator as Record<string, unknown> | undefined,
+  })
 
   const animateOpen = useCallback(() => {
     Animated.parallel([
@@ -181,7 +162,7 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
       Animated.timing(translateY, { toValue: 0, duration: 150, useNativeDriver: true }),
       Animated.timing(chevronRotation, { toValue: 1, duration: 200, useNativeDriver: true }),
     ]).start()
-  }, [opacity, translateY, chevronRotation])
+  }, [chevronRotation, opacity, translateY])
 
   const animateClose = useCallback(
     (onDone?: () => void) => {
@@ -191,12 +172,21 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
         Animated.timing(chevronRotation, { toValue: 0, duration: 150, useNativeDriver: true }),
       ]).start(onDone)
     },
-    [opacity, translateY, chevronRotation],
+    [chevronRotation, opacity, translateY],
   )
 
   const openDropdown = useCallback(() => {
-    if (!triggerRef.current) return
-    triggerRef.current.measureInWindow((x, y, width, height) => {
+    const node = triggerRef.current as View & {
+      measureInWindow?: (callback: (x: number, y: number, width: number, height: number) => void) => void
+    }
+
+    if (!node?.measureInWindow) {
+      setTriggerLayout({ x: 8, y: 8, width: 160, height: 32 })
+      setVisible(true)
+      return
+    }
+
+    node.measureInWindow((x, y, width, height) => {
       setTriggerLayout({ x, y, width, height })
       setVisible(true)
     })
@@ -206,7 +196,7 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
     if (visible) {
       animateOpen()
     }
-  }, [visible, animateOpen])
+  }, [animateOpen, visible])
 
   const closeDropdown = useCallback(() => {
     animateClose(() => setVisible(false))
@@ -225,35 +215,89 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
     outputRange: ['0deg', '180deg'],
   })
 
-  // Position the panel below the trigger, aligned to start or end
-  const panelStyle = useMemo(() => {
+  const panelPositionStyle = useMemo(() => {
     if (!triggerLayout) return {}
     const align = config.align ?? 'start'
     const panelLeft =
-      align === 'start' ? triggerLayout.x : triggerLayout.x + triggerLayout.width - 160 // approximate minWidth
+      align === 'start' ? triggerLayout.x : triggerLayout.x + triggerLayout.width - 160
     const panelTop = triggerLayout.y + triggerLayout.height + 4
 
     return {
       top: panelTop,
       left: Math.max(8, Math.min(panelLeft, SCREEN_WIDTH - 168)),
     }
-  }, [triggerLayout, config.align])
+  }, [config.align, triggerLayout])
 
-  const triggerTestID = config.testID
-    ? `${config.testID}-trigger`
-    : `${config.id ?? 'dropdown'}-trigger`
+  const triggerTestID = config.testID ? `${config.testID}-trigger` : `${config.id ?? 'dropdown'}-trigger`
 
   const renderItem = useCallback(
-    ({ item, index }: { item: DropdownMenuConfig['items'][number]; index: number }) => (
-      <DropdownItemRow
-        item={item}
-        onPress={handleItemPress}
-        tokens={tokens}
-        styles={styles}
-        isLast={index === config.items.length - 1}
-      />
-    ),
-    [handleItemPress, tokens, styles, config.items.length],
+    ({ item, index }: { item: DropdownMenuConfig['items'][number]; index: number }) => {
+      const activeStates: RuntimeSurfaceState[] | undefined = item.disabled ? ['disabled'] : undefined
+      const destructiveColor = item.destructive ? tokens.colors.destructive : undefined
+      const rowStyle = resolveSurfacePresentation({
+        tokens,
+        implementationBase: itemSurface.resolvedConfigForWrapper,
+        activeStates,
+      }).style as ViewStyle | undefined
+
+      return (
+        <View key={item.id}>
+          <TouchableOpacity
+            onPress={() => void (!item.disabled && handleItemPress(item))}
+            style={rowStyle}
+            disabled={item.disabled}
+            accessibilityRole="menuitem"
+            accessibilityLabel={item.label}
+            accessibilityState={{ disabled: item.disabled }}
+            testID={`dropdown-item-${item.id}`}
+            activeOpacity={0.7}
+          >
+            {item.icon != null ? (
+              <Text
+                style={{
+                  ...baseTextStyle,
+                  width: 20,
+                  textAlign: 'center',
+                  color: destructiveColor ?? undefined,
+                  ...(itemIconSurface.style as TextStyle | undefined),
+                }}
+                accessibilityElementsHidden
+              >
+                {item.icon}
+              </Text>
+            ) : null}
+            <Text
+              style={{
+                ...baseTextStyle,
+                flex: 1,
+                color: destructiveColor ?? undefined,
+                ...(itemLabelSurface.style as TextStyle | undefined),
+              }}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+          {index < config.items.length - 1 ? (
+            <View
+              style={[
+                { height: 1, marginHorizontal: tokens.spacing[3] },
+                separatorSurface.style as ViewStyle | undefined,
+              ]}
+            />
+          ) : null}
+        </View>
+      )
+    },
+    [
+      baseTextStyle,
+      config.items.length,
+      handleItemPress,
+      itemIconSurface.style,
+      itemLabelSurface.style,
+      itemSurface.resolvedConfigForWrapper,
+      separatorSurface.style,
+      tokens,
+    ],
   )
 
   const keyExtractor = useCallback((item: DropdownMenuConfig['items'][number]) => item.id, [])
@@ -265,34 +309,52 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
       config={config}
       activeStates={visible ? ['open'] : undefined}
     >
-      {/* Trigger */}
       <View ref={triggerRef} collapsable={false}>
         <TouchableOpacity
           onPress={openDropdown}
-          style={styles.trigger}
+          style={triggerSurface.style as ViewStyle | undefined}
           accessibilityRole="button"
           accessibilityState={{ expanded: visible }}
           accessibilityLabel={`${config.trigger.label} menu`}
           testID={triggerTestID}
           activeOpacity={0.75}
         >
-          {config.trigger.icon != null && (
-            <Text style={styles.triggerIcon} accessibilityElementsHidden>
+          {config.trigger.icon != null ? (
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(triggerIconSurface.style as TextStyle | undefined),
+              }}
+              accessibilityElementsHidden
+            >
               {config.trigger.icon}
             </Text>
-          )}
-          <Text style={styles.triggerLabel}>{config.trigger.label}</Text>
+          ) : null}
+          <Text
+            style={{
+              ...baseTextStyle,
+              flex: 1,
+              ...(triggerLabelSurface.style as TextStyle | undefined),
+            }}
+          >
+            {config.trigger.label}
+          </Text>
           <Animated.Text
-            style={[styles.chevron, { transform: [{ rotate: chevronRotationInterpolated }] }]}
+            style={[
+              {
+                ...baseTextStyle,
+                transform: [{ rotate: chevronRotationInterpolated }],
+              },
+              chevronSurface.style as TextStyle | undefined,
+            ]}
             accessibilityElementsHidden
           >
-            ▼
+            Open
           </Animated.Text>
         </TouchableOpacity>
       </View>
 
-      {/* Dropdown Modal */}
-      {visible && (
+      {visible ? (
         <Modal
           visible={visible}
           transparent
@@ -300,14 +362,20 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
           onRequestClose={closeDropdown}
           statusBarTranslucent
         >
-          {/* Backdrop */}
           <TouchableWithoutFeedback onPress={closeDropdown} accessibilityLabel="Close menu">
-            <View style={styles.backdrop} />
+            <View style={backdropSurface.style as ViewStyle | undefined} />
           </TouchableWithoutFeedback>
 
-          {/* Panel */}
           <Animated.View
-            style={[styles.panel, panelStyle, { opacity, transform: [{ translateY }] }]}
+            style={[
+              {
+                position: 'absolute',
+                opacity,
+                transform: [{ translateY }],
+              },
+              panelSurface.style as ViewStyle | undefined,
+              panelPositionStyle,
+            ]}
             accessibilityRole="menu"
             accessibilityLabel={`${config.trigger.label} menu`}
           >
@@ -319,7 +387,7 @@ export function DropdownMenu({ config }: { config: DropdownMenuConfig }) {
             />
           </Animated.View>
         </Modal>
-      )}
+      ) : null}
     </ComponentWrapper>
   )
 }

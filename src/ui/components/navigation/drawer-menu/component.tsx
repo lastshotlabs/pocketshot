@@ -5,22 +5,23 @@ import {
   FlatList,
   Image,
   Modal,
-  StyleSheet,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  type ImageStyle,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { Action } from '../../../actions/types'
 import type { DrawerMenuConfig } from './types'
 
 const ANIMATION_DURATION = 280
-
-// ── Types ──────────────────────────────────────────────────────────────────────
 
 interface DrawerMenuItem {
   id: string
@@ -36,213 +37,43 @@ interface SectionGroup {
   items: DrawerMenuItem[]
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
 function groupBySection(items: DrawerMenuItem[]): SectionGroup[] {
   const groups: SectionGroup[] = []
   const seen = new Map<string | undefined, SectionGroup>()
 
   for (const item of items) {
-    const key = item.section
-    const existing = seen.get(key)
+    const existing = seen.get(item.section)
     if (existing) {
       existing.items.push(item)
-    } else {
-      const group: SectionGroup = { section: key, items: [item] }
-      groups.push(group)
-      seen.set(key, group)
+      continue
     }
+
+    const group: SectionGroup = { section: item.section, items: [item] }
+    groups.push(group)
+    seen.set(item.section, group)
   }
 
   return groups
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-function makeStyles(
-  tokens: DesignTokens,
-  position: 'left' | 'right',
-  widthPercent: number,
-) {
-  const screenWidth = Dimensions.get('window').width
-  const drawerWidth = (screenWidth * widthPercent) / 100
-
-  return StyleSheet.create({
-    fill: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
-    backdrop: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      backgroundColor: tokens.colors.overlay,
-    },
-    drawer: {
-      position: 'absolute',
-      top: 0,
-      bottom: 0,
-      [position]: 0,
-      width: drawerWidth,
-      backgroundColor: tokens.colors.surface,
-      ...tokens.shadows.xl,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[8],
-      paddingBottom: tokens.spacing[4],
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.divider,
-      gap: tokens.spacing[3],
-    },
-    avatar: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: tokens.colors.muted,
-    },
-    avatarPlaceholder: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: tokens.colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    avatarPlaceholderText: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors.primaryForeground,
-    },
-    headerText: {
-      flex: 1,
-    },
-    headerTitle: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-    },
-    headerSubtitle: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-      marginTop: 2,
-    },
-    sectionHeader: {
-      paddingHorizontal: tokens.spacing[4],
-      paddingTop: tokens.spacing[4],
-      paddingBottom: tokens.spacing[1],
-    },
-    sectionTitle: {
-      fontSize: tokens.typography.fontSizeXs,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-    },
-    menuItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[3],
-      gap: tokens.spacing[3],
-    },
-    menuItemActive: {
-      backgroundColor: tokens.colors.muted,
-    },
-    menuItemIcon: {
-      fontSize: tokens.typography.fontSizeLg,
-      color: tokens.colors.textMuted,
-      width: 24,
-      textAlign: 'center',
-    },
-    menuItemIconActive: {
-      color: tokens.colors.primary,
-    },
-    menuItemLabel: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-    },
-    menuItemLabelActive: {
-      color: tokens.colors.primary,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-    badgeContainer: {
-      minWidth: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: tokens.colors.error,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 5,
-    },
-    badgeText: {
-      fontSize: 10,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors.errorForeground,
-    },
-    footer: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: tokens.colors.divider,
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[4],
-    },
-    footerButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: tokens.spacing[2],
-    },
-    footerLabel: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.textMuted,
-    },
-    content: {
-      flex: 1,
-    },
-  })
-}
-
-// ── Public component ───────────────────────────────────────────────────────────
-
-/**
- * Config-driven side drawer navigation menu. Opens via ScreenContext key
- * `__drawerMenu_{id}`. Slides in from the configured side with an animated
- * translateX transition and a fade-in backdrop.
- *
- * Features:
- * - Header with avatar, title, subtitle
- * - Items grouped by section with section headers
- * - Active item highlight (publishes active item id to ScreenContext)
- * - Badge counts on items
- * - Footer action (e.g., logout)
- * - Backdrop tap and Android back button close
- */
 export function DrawerMenu({ config }: { config: DrawerMenuConfig }) {
   const tokens = useTokens()
   const { getValue, setValue, dispatch } = useScreenContext()
-
   const position = config.position ?? 'left'
   const widthPercent = config.widthPercent ?? 80
+  const contextKey = `__drawerMenu_${config.id}`
+  const isOpen = Boolean(getValue(contextKey))
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   const screenWidth = Dimensions.get('window').width
   const drawerWidth = (screenWidth * widthPercent) / 100
   const hiddenX = position === 'left' ? -drawerWidth : drawerWidth
 
-  const contextKey = `__drawerMenu_${config.id}`
-  const isOpen = Boolean(getValue(contextKey))
-
   const [isVisible, setIsVisible] = useState(false)
   useEffect(() => {
-    if (isOpen) setIsVisible(true)
+    if (isOpen) {
+      setIsVisible(true)
+    }
   }, [isOpen])
 
   const translateX = useRef(new Animated.Value(hiddenX)).current
@@ -261,13 +92,248 @@ export function DrawerMenu({ config }: { config: DrawerMenuConfig }) {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      if (!isOpen) setIsVisible(false)
+      if (!isOpen) {
+        setIsVisible(false)
+      }
     })
-  }, [isOpen, translateX, backdropOpacity, hiddenX])
+  }, [backdropOpacity, hiddenX, isOpen, translateX])
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const fillStyle: ViewStyle = {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  }
+  const panelPositionStyle: ViewStyle = {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: drawerWidth,
+    ...(position === 'left' ? { left: 0 } : { right: 0 }),
+  }
+
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: { bg: 'rgba(0,0,0,0.55)' },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+  })
+  const panelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: { bg: 'card', shadow: 'xl' },
+    componentSurface: config.slots?.panel as Record<string, unknown> | undefined,
+  })
+  const headerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingX: 'md',
+      paddingTop: '2xl',
+      paddingBottom: 'md',
+      gap: 'sm',
+    },
+    componentSurface: config.slots?.header as Record<string, unknown> | undefined,
+  })
+  const avatarSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: 48,
+      height: 48,
+      borderRadius: 'full',
+      bg: 'muted',
+    },
+    componentSurface: config.slots?.avatar as Record<string, unknown> | undefined,
+  })
+  const avatarPlaceholderSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: 48,
+      height: 48,
+      borderRadius: 'full',
+      bg: 'primary',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.avatarPlaceholder as Record<string, unknown> | undefined,
+  })
+  const avatarPlaceholderTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      fontWeight: 'bold',
+      color: 'primaryForeground',
+    },
+    componentSurface: config.slots?.avatarPlaceholderText as Record<string, unknown> | undefined,
+  })
+  const headerTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+    },
+    componentSurface: config.slots?.headerText as Record<string, unknown> | undefined,
+  })
+  const headerTitleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      fontWeight: 'semibold',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.headerTitle as Record<string, unknown> | undefined,
+  })
+  const headerSubtitleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+      marginTop: 2,
+    },
+    componentSurface: config.slots?.headerSubtitle as Record<string, unknown> | undefined,
+  })
+  const sectionHeaderSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+      paddingTop: 'md',
+      paddingBottom: 'xs',
+    },
+    componentSurface: config.slots?.sectionHeader as Record<string, unknown> | undefined,
+  })
+  const sectionTitleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      fontWeight: 'semibold',
+      color: 'muted',
+      letterSpacing: 'wide',
+    },
+    componentSurface: config.slots?.sectionTitle as Record<string, unknown> | undefined,
+  })
+  const contentSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+    },
+    componentSurface: config.slots?.content as Record<string, unknown> | undefined,
+  })
+  const menuItemSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingX: 'md',
+      paddingY: 'sm',
+      gap: 'sm',
+      states: {
+        selected: {
+          bg: 'muted',
+        },
+      },
+    },
+    componentSurface: config.slots?.menuItem as Record<string, unknown> | undefined,
+  })
+  const menuItemIconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      color: 'muted',
+      width: 24,
+      textAlign: 'center',
+      states: {
+        selected: {
+          color: 'primary',
+        },
+      },
+    },
+    componentSurface: config.slots?.menuItemIcon as Record<string, unknown> | undefined,
+  })
+  const menuItemLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+      states: {
+        selected: {
+          color: 'primary',
+          fontWeight: 'semibold',
+        },
+      },
+    },
+    componentSurface: config.slots?.menuItemLabel as Record<string, unknown> | undefined,
+  })
+  const badgeContainerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      minWidth: 20,
+      height: 20,
+      borderRadius: 'full',
+      bg: 'error',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingX: 'xs',
+    },
+    componentSurface: config.slots?.badgeContainer as Record<string, unknown> | undefined,
+  })
+  const badgeTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      fontWeight: 'bold',
+      color: 'errorForeground',
+    },
+    componentSurface: config.slots?.badgeText as Record<string, unknown> | undefined,
+  })
+  const footerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      paddingX: 'md',
+      paddingY: 'md',
+    },
+    componentSurface: config.slots?.footer as Record<string, unknown> | undefined,
+  })
+  const footerButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingY: 'xs',
+    },
+    componentSurface: config.slots?.footerButton as Record<string, unknown> | undefined,
+  })
+  const footerLabelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.footerLabel as Record<string, unknown> | undefined,
+  })
 
   const handleClose = useCallback(() => {
     setValue(contextKey, false)
-  }, [setValue, contextKey])
+  }, [contextKey, setValue])
 
   const handleItemPress = useCallback(
     (item: DrawerMenuItem) => {
@@ -280,17 +346,10 @@ export function DrawerMenu({ config }: { config: DrawerMenuConfig }) {
     [config.id, dispatch, handleClose, setValue],
   )
 
-  const styles = useMemo(
-    () => makeStyles(tokens, position, widthPercent),
-    [tokens, position, widthPercent],
-  )
-
   const idPrefix = config.testID ?? `drawer-menu-${config.id}`
   const activeItemId = getValue(`${config.id}_activeItem`) as string | undefined
 
   const sectionGroups = useMemo(() => groupBySection(config.items), [config.items])
-
-  // Build flat list data with section headers
   const flatData = useMemo(() => {
     const result: Array<
       | { type: 'section'; section: string; key: string }
@@ -310,7 +369,7 @@ export function DrawerMenu({ config }: { config: DrawerMenuConfig }) {
   }, [sectionGroups])
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={isOpen ? ['open'] : undefined}>
       <Modal
         transparent
         animationType="none"
@@ -319,71 +378,117 @@ export function DrawerMenu({ config }: { config: DrawerMenuConfig }) {
         statusBarTranslucent
         accessibilityViewIsModal
       >
-        <View style={styles.fill}>
-          {/* Backdrop */}
+        <View style={fillStyle}>
           <TouchableWithoutFeedback
             onPress={handleClose}
             accessibilityRole="none"
             accessibilityLabel="Close drawer menu"
           >
-            <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+            <Animated.View
+              style={[
+                fillStyle,
+                backdropSurface.style as ViewStyle | undefined,
+                { opacity: backdropOpacity },
+              ]}
+            />
           </TouchableWithoutFeedback>
 
-          {/* Drawer panel */}
           <Animated.View
-            style={[styles.drawer, { transform: [{ translateX }] }]}
+            style={[
+              panelPositionStyle,
+              panelSurface.style as ViewStyle | undefined,
+              { transform: [{ translateX }] },
+            ]}
             testID={`${idPrefix}-panel`}
           >
-            {/* Header */}
-            {config.header != null && (
-              <View style={styles.header} testID={`${idPrefix}-header`}>
+            {config.header != null ? (
+              <View style={headerSurface.style as ViewStyle | undefined} testID={`${idPrefix}-header`}>
                 {config.header.avatar != null ? (
                   <Image
                     source={{ uri: config.header.avatar }}
-                    style={styles.avatar}
+                    style={avatarSurface.style as ImageStyle | undefined}
                     accessibilityLabel={`${config.header.title} avatar`}
                     resizeMode="cover"
                   />
                 ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.avatarPlaceholderText}>
+                  <View style={avatarPlaceholderSurface.style as ViewStyle | undefined}>
+                    <Text
+                      style={{
+                        ...baseTextStyle,
+                        ...(avatarPlaceholderTextSurface.style as TextStyle | undefined),
+                      }}
+                    >
                       {config.header.title.charAt(0).toUpperCase()}
                     </Text>
                   </View>
                 )}
-                <View style={styles.headerText}>
-                  <Text style={styles.headerTitle} numberOfLines={1}>
+                <View style={headerTextSurface.style as ViewStyle | undefined}>
+                  <Text
+                    style={{
+                      ...baseTextStyle,
+                      ...(headerTitleSurface.style as TextStyle | undefined),
+                    }}
+                    numberOfLines={1}
+                  >
                     {config.header.title}
                   </Text>
-                  {config.header.subtitle != null && (
-                    <Text style={styles.headerSubtitle} numberOfLines={1}>
+                  {config.header.subtitle != null ? (
+                    <Text
+                      style={{
+                        ...baseTextStyle,
+                        ...(headerSubtitleSurface.style as TextStyle | undefined),
+                      }}
+                      numberOfLines={1}
+                    >
                       {config.header.subtitle}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
               </View>
-            )}
+            ) : null}
 
-            {/* Items */}
             <FlatList
-              style={styles.content}
+              style={contentSurface.style as ViewStyle | undefined}
               data={flatData}
               keyExtractor={(row) => row.key}
               renderItem={({ item: row }) => {
                 if (row.type === 'section') {
                   return (
-                    <View style={styles.sectionHeader}>
-                      <Text style={styles.sectionTitle}>{row.section}</Text>
+                    <View style={sectionHeaderSurface.style as ViewStyle | undefined}>
+                      <Text
+                        style={{
+                          ...baseTextStyle,
+                          ...(sectionTitleSurface.style as TextStyle | undefined),
+                        }}
+                      >
+                        {row.section}
+                      </Text>
                     </View>
                   )
                 }
 
                 const item = row.item
                 const isActive = item.id === activeItemId
+                const activeStates: RuntimeSurfaceState[] | undefined = isActive ? ['selected'] : undefined
+                const resolvedItemStyle = resolveSurfacePresentation({
+                  tokens,
+                  implementationBase: menuItemSurface.resolvedConfigForWrapper,
+                  activeStates,
+                }).style as ViewStyle | undefined
+                const resolvedIconStyle = resolveSurfacePresentation({
+                  tokens,
+                  implementationBase: menuItemIconSurface.resolvedConfigForWrapper,
+                  activeStates,
+                }).style as TextStyle | undefined
+                const resolvedLabelStyle = resolveSurfacePresentation({
+                  tokens,
+                  implementationBase: menuItemLabelSurface.resolvedConfigForWrapper,
+                  activeStates,
+                }).style as TextStyle | undefined
 
                 return (
                   <TouchableOpacity
-                    style={[styles.menuItem, isActive && styles.menuItemActive]}
+                    style={resolvedItemStyle}
                     onPress={() => handleItemPress(item)}
                     accessibilityRole="menuitem"
                     accessibilityState={{ selected: isActive }}
@@ -391,56 +496,66 @@ export function DrawerMenu({ config }: { config: DrawerMenuConfig }) {
                     accessibilityHint={item.badge ? `${item.badge} notifications` : undefined}
                     testID={`${idPrefix}-item-${item.id}`}
                   >
-                    {item.icon != null && (
+                    {item.icon != null ? (
                       <Text
-                        style={[
-                          styles.menuItemIcon,
-                          isActive && styles.menuItemIconActive,
-                        ]}
+                        style={{
+                          ...baseTextStyle,
+                          ...(resolvedIconStyle ?? {}),
+                        }}
                         accessibilityElementsHidden
                       >
                         {item.icon}
                       </Text>
-                    )}
+                    ) : null}
                     <Text
-                      style={[
-                        styles.menuItemLabel,
-                        isActive && styles.menuItemLabelActive,
-                      ]}
+                      style={{
+                        ...baseTextStyle,
+                        ...(resolvedLabelStyle ?? {}),
+                      }}
                       numberOfLines={1}
                     >
                       {item.label}
                     </Text>
-                    {item.badge != null && item.badge > 0 && (
-                      <View style={styles.badgeContainer}>
-                        <Text style={styles.badgeText}>
+                    {item.badge != null && item.badge > 0 ? (
+                      <View style={badgeContainerSurface.style as ViewStyle | undefined}>
+                        <Text
+                          style={{
+                            ...baseTextStyle,
+                            ...(badgeTextSurface.style as TextStyle | undefined),
+                          }}
+                        >
                           {item.badge > 99 ? '99+' : item.badge}
                         </Text>
                       </View>
-                    )}
+                    ) : null}
                   </TouchableOpacity>
                 )
               }}
             />
 
-            {/* Footer */}
-            {config.footer != null && (
-              <View style={styles.footer} testID={`${idPrefix}-footer`}>
+            {config.footer != null ? (
+              <View style={footerSurface.style as ViewStyle | undefined} testID={`${idPrefix}-footer`}>
                 <TouchableOpacity
-                  style={styles.footerButton}
+                  style={footerButtonSurface.style as ViewStyle | undefined}
                   onPress={() => void dispatch(config.footer!.onPress)}
                   accessibilityRole="button"
                   accessibilityLabel={config.footer.label}
                   testID={`${idPrefix}-footer-action`}
                 >
-                  <Text style={styles.footerLabel}>{config.footer.label}</Text>
+                  <Text
+                    style={{
+                      ...baseTextStyle,
+                      ...(footerLabelSurface.style as TextStyle | undefined),
+                    }}
+                  >
+                    {config.footer.label}
+                  </Text>
                 </TouchableOpacity>
               </View>
-            )}
+            ) : null}
           </Animated.View>
         </View>
       </Modal>
     </ComponentWrapper>
   )
 }
-

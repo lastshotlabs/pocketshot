@@ -62,4 +62,20 @@ describe('CartItemSchema', () => {
     expect(result.onQuantityChange).toBeDefined()
     expect(result.onRemove).toBeDefined()
   })
+
+  it('accepts slot styling surfaces', () => {
+    const result = CartItemSchema.parse({
+      title: 'X',
+      price: 10,
+      slots: {
+        row: { borderRadius: 'lg' },
+        quantityButton: { borderRadius: 'md' },
+        total: { color: 'primary' },
+      },
+    })
+
+    expect(result.slots?.row?.borderRadius).toBe('lg')
+    expect(result.slots?.quantityButton?.borderRadius).toBe('md')
+    expect(result.slots?.total?.color).toBe('primary')
+  })
 })

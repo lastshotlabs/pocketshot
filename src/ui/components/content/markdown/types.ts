@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { MarkdownSchema } from './schema'
 
-export type MarkdownConfig = z.infer<typeof MarkdownSchema>
+export type MarkdownConfig = z.input<typeof MarkdownSchema>
 
 export type MarkdownNodeType =
   | 'paragraph'

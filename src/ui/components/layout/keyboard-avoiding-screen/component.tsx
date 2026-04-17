@@ -1,21 +1,11 @@
-import React, { useMemo } from 'react'
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native'
+import React from 'react'
+import { KeyboardAvoidingView, Platform, ScrollView, View, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { KeyboardAvoidingScreenConfig } from './types'
 
-// ── Platform default ───────────────────────────────────────────────────────────
-
 const DEFAULT_BEHAVIOR = Platform.OS === 'ios' ? 'padding' : 'height'
-
-// ── Safe area ──────────────────────────────────────────────────────────────────
 
 function useSafeAreaInsets(): { top: number; bottom: number } {
   try {
@@ -30,40 +20,6 @@ function useSafeAreaInsets(): { top: number; bottom: number } {
   }
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-function makeStyles(
-  tokens: DesignTokens,
-  insets: { top: number; bottom: number },
-) {
-  return StyleSheet.create({
-    safeContainer: {
-      flex: 1,
-      backgroundColor: tokens.colors.background,
-      paddingTop: insets.top,
-      paddingBottom: insets.bottom,
-    },
-    keyboardAvoiding: {
-      flex: 1,
-    },
-    content: {
-      flex: 1,
-    },
-    scrollContent: {
-      flexGrow: 1,
-    },
-  })
-}
-
-// ── Public component ───────────────────────────────────────────────────────────
-
-/**
- * Config-driven screen with keyboard avoidance. Wraps content in
- * KeyboardAvoidingView with platform-appropriate behavior defaults.
- *
- * Auto-detects platform: defaults to 'padding' on iOS, 'height' on Android.
- * Includes safe area insets and optional scrollability.
- */
 export function KeyboardAvoidingScreen({
   config,
   children,
@@ -75,36 +31,57 @@ export function KeyboardAvoidingScreen({
   const scrollable = config.scrollable ?? true
   const behavior = config.behavior ?? DEFAULT_BEHAVIOR
   const insets = useSafeAreaInsets()
-
-  const styles = useMemo(() => makeStyles(tokens, insets), [tokens, insets])
-
   const idPrefix = config.testID ?? config.id ?? 'kb-screen'
 
+  const keyboardAvoidingSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      bg: 'background',
+      paddingTop: insets.top,
+      paddingBottom: insets.bottom,
+    },
+    componentSurface: config.slots?.keyboardAvoiding as Record<string, unknown> | undefined,
+  })
+  const viewportSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+    },
+    componentSurface: config.slots?.viewport as Record<string, unknown> | undefined,
+  })
+  const contentSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      flexGrow: 1,
+      padding: config.padding ?? 'lg',
+    },
+    componentSurface: config.slots?.content as Record<string, unknown> | undefined,
+  })
+
   return (
-    <ComponentWrapper
-      id={config.id}
-      testID={config.testID}
-      config={config}
-      style={styles.safeContainer}
-    >
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} style={{ flex: 1 }}>
       <KeyboardAvoidingView
-        style={styles.keyboardAvoiding}
+        style={keyboardAvoidingSurface.style as ViewStyle | undefined}
         behavior={behavior}
         testID={`${idPrefix}-keyboard-avoiding`}
       >
         {scrollable ? (
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            style={viewportSurface.style as ViewStyle | undefined}
+            contentContainerStyle={contentSurface.style as ViewStyle | undefined}
             keyboardShouldPersistTaps="handled"
             testID={`${idPrefix}-scroll`}
           >
             {children}
           </ScrollView>
         ) : (
-          <View style={styles.content}>{children}</View>
+          <View style={viewportSurface.style as ViewStyle | undefined}>
+            <View style={contentSurface.style as ViewStyle | undefined}>{children}</View>
+          </View>
         )}
       </KeyboardAvoidingView>
     </ComponentWrapper>
   )
 }
-

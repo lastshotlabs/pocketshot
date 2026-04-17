@@ -1,15 +1,29 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { View, Text, TouchableOpacity, Animated, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ToggleConfig } from './types'
+
+function sizeSurface(size: ToggleConfig['size']) {
+  switch (size) {
+    case 'sm':
+      return { paddingY: 'xs', paddingX: 'sm', fontSize: 'sm' }
+    case 'lg':
+      return { paddingY: 'md', paddingX: 'lg', fontSize: 'lg' }
+    case 'md':
+    default:
+      return { paddingY: 'sm', paddingX: 'md', fontSize: 'base' }
+  }
+}
 
 export function Toggle({ config }: { config: ToggleConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   const resolvedValue =
     config.value != null ? (resolveFromRef(config.value, values) as boolean | undefined) : undefined
@@ -24,8 +38,7 @@ export function Toggle({ config }: { config: ToggleConfig }) {
         : config.label
       : undefined
 
-  const [active, setActive] = useState<boolean>(resolvedValue ?? config.defaultValue)
-
+  const [active, setActive] = useState<boolean>(resolvedValue ?? config.defaultValue ?? false)
   const scaleAnim = useRef(new Animated.Value(1)).current
 
   useEffect(() => {
@@ -35,6 +48,86 @@ export function Toggle({ config }: { config: ToggleConfig }) {
   }, [resolvedValue])
 
   const disabled = resolvedDisabled ?? false
+  const activeStates: RuntimeSurfaceState[] | undefined = disabled
+    ? ['disabled']
+    : active
+      ? ['selected']
+      : undefined
+
+  const variantSurface =
+    active
+      ? config.variant === 'primary'
+        ? { bg: 'primary', color: 'primary-foreground', border: '0px solid transparent' }
+        : config.variant === 'outline'
+          ? { bg: 'transparent', color: 'primary', border: '1px solid primary' }
+          : { bg: 'card', color: 'foreground', border: '2px solid primary' }
+      : { bg: 'popover', color: 'muted', border: '1px solid border' }
+
+  const buttonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'xs',
+      borderRadius: 'md',
+      opacity: disabled ? 0.4 : 1,
+      ...sizeSurface(config.size),
+      ...variantSurface,
+    },
+    componentSurface: config.slots?.button as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const iconSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: sizeSurface(config.size).fontSize,
+      color:
+        active && config.variant === 'primary'
+          ? 'primary-foreground'
+          : active && config.variant === 'outline'
+            ? 'primary'
+            : active
+              ? 'foreground'
+              : 'muted',
+    },
+    componentSurface: config.slots?.icon as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: sizeSurface(config.size).fontSize,
+      fontWeight: 'medium',
+      color:
+        active && config.variant === 'primary'
+          ? 'primary-foreground'
+          : active && config.variant === 'outline'
+            ? 'primary'
+            : active
+              ? 'foreground'
+              : 'muted',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+    activeStates,
+  })
+
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
 
   const handlePress = useCallback(() => {
     if (disabled) return
@@ -44,7 +137,7 @@ export function Toggle({ config }: { config: ToggleConfig }) {
     if (config.onChangeAction) {
       void dispatch(config.onChangeAction)
     }
-  }, [active, disabled, config.id, config.onChangeAction, setValue, dispatch])
+  }, [active, config.id, config.onChangeAction, disabled, dispatch, setValue])
 
   const handlePressIn = useCallback(() => {
     Animated.spring(scaleAnim, {
@@ -64,19 +157,14 @@ export function Toggle({ config }: { config: ToggleConfig }) {
     }).start()
   }, [scaleAnim])
 
-  const styles = useMemo(
-    () => makeStyles(tokens, config.variant, config.size, active, disabled),
-    [tokens, config.variant, config.size, active, disabled],
-  )
-
   const accessibilityLabel =
     resolvedLabel ?? config.icon ?? (active ? 'Active toggle' : 'Inactive toggle')
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
       <Animated.View style={{ transform: [{ scale: scaleAnim }], alignSelf: 'flex-start' }}>
         <TouchableOpacity
-          style={styles.button}
+          style={buttonSurface.style as ViewStyle | undefined}
           onPress={handlePress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -87,96 +175,28 @@ export function Toggle({ config }: { config: ToggleConfig }) {
           accessibilityHint={active ? 'Tap to deactivate' : 'Tap to activate'}
           testID={config.testID ?? config.id}
         >
-          {config.icon != null && <Text style={styles.icon}>{config.icon}</Text>}
-          {resolvedLabel != null && <Text style={styles.label}>{resolvedLabel}</Text>}
+          {config.icon != null ? (
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(iconSurface.style as TextStyle | undefined),
+              }}
+            >
+              {config.icon}
+            </Text>
+          ) : null}
+          {resolvedLabel != null ? (
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(labelSurface.style as TextStyle | undefined),
+              }}
+            >
+              {resolvedLabel}
+            </Text>
+          ) : null}
         </TouchableOpacity>
       </Animated.View>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(
-  tokens: DesignTokens,
-  variant: ToggleConfig['variant'],
-  size: ToggleConfig['size'],
-  active: boolean,
-  disabled: boolean,
-) {
-  const sizeStyles = {
-    sm: {
-      paddingVertical: 6,
-      paddingHorizontal: 10,
-      fontSize: tokens.typography.fontSizeSm,
-    },
-    md: {
-      paddingVertical: 8,
-      paddingHorizontal: 14,
-      fontSize: tokens.typography.fontSizeMd,
-    },
-    lg: {
-      paddingVertical: 10,
-      paddingHorizontal: 18,
-      fontSize: tokens.typography.fontSizeLg,
-    },
-  }[size ?? 'md']
-
-  let backgroundColor: string
-  let textColor: string
-  let borderColor: string
-  let borderWidth: number
-
-  if (!active) {
-    // All variants share the same inactive appearance
-    backgroundColor = tokens.colors.surfaceAlt
-    textColor = tokens.colors.textMuted
-    borderColor = tokens.colors.border
-    borderWidth = 1
-  } else {
-    switch (variant) {
-      case 'primary':
-        backgroundColor = tokens.colors.primary
-        textColor = tokens.colors.primaryForeground
-        borderColor = tokens.colors.primary
-        borderWidth = 0
-        break
-      case 'outline':
-        backgroundColor = 'transparent'
-        textColor = tokens.colors.primary
-        borderColor = tokens.colors.primary
-        borderWidth = 1
-        break
-      default:
-        // 'default'
-        backgroundColor = tokens.colors.surface
-        textColor = tokens.colors.text
-        borderColor = tokens.colors.primary
-        borderWidth = 2
-        break
-    }
-  }
-
-  return StyleSheet.create({
-    button: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: tokens.spacing[1],
-      paddingVertical: sizeStyles.paddingVertical,
-      paddingHorizontal: sizeStyles.paddingHorizontal,
-      backgroundColor,
-      borderColor,
-      borderWidth,
-      borderRadius: tokens.radius.md,
-      opacity: disabled ? 0.4 : 1,
-    },
-    icon: {
-      fontSize: sizeStyles.fontSize,
-      color: textColor,
-    },
-    label: {
-      fontSize: sizeStyles.fontSize,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: textColor,
-    },
-  })
-}
-

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -19,5 +19,19 @@ export const AccordionSchema = extendComponentSchema({
   allowMultiple: z.boolean().optional().default(true),
   variant: z.enum(['default', 'bordered', 'separated']).optional().default('default'),
   onSectionChange: ActionSchema.optional(),
-  testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'container',
+    'section',
+    'header',
+    'headerLeft',
+    'icon',
+    'titleBlock',
+    'title',
+    'subtitle',
+    'chevron',
+    'divider',
+    'body',
+    'bodyText',
+  ]).optional(),
 })

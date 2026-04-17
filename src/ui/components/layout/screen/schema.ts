@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, spacingValueSchema } from '../../_base/schema'
+import { extendComponentSchema, spacingValueSchema, slotsSchema } from '../../_base/schema'
 
 export const ScreenSchema = extendComponentSchema({
   scrollable: z.boolean().optional().default(true),
@@ -8,4 +8,5 @@ export const ScreenSchema = extendComponentSchema({
     .array(z.enum(['top', 'bottom', 'left', 'right']))
     .optional()
     .default(['top', 'bottom', 'left', 'right']),
+  slots: slotsSchema(['root', 'viewport', 'content']).optional(),
 })

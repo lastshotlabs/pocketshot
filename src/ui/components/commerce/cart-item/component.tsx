@@ -1,15 +1,16 @@
 import React, { useCallback } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native'
+import { View, Text, TouchableOpacity, Image, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { CartItemConfig } from './types'
 
 const THUMBNAIL_SIZE = 56
-// Sub-spacing gap between title and variant; below the 4px grid
 const TITLE_MARGIN_BOTTOM = 2
+const BUTTON_SIZE = 28
 
 function formatPrice(amount: number, currency: string): string {
   try {
@@ -23,113 +24,294 @@ export function CartItem({ config }: { config: CartItemConfig }) {
   const tokens = useTokens()
   const { values, setValue, dispatch } = useScreenContext()
 
-  const resolvedTitle = isFromRef(config.title)
-    ? String(resolveFromRef(config.title, values) ?? '')
-    : config.title
-
+  const resolvedTitle = isFromRef(config.title) ? String(resolveFromRef(config.title, values) ?? '') : config.title
   const resolvedVariant =
     config.variant != null
       ? isFromRef(config.variant)
         ? String(resolveFromRef(config.variant, values) ?? '')
         : config.variant
       : null
-
   const resolvedImage =
     config.image != null
       ? isFromRef(config.image)
         ? String(resolveFromRef(config.image, values) ?? '')
         : config.image
       : null
-
-  const resolvedPrice = isFromRef(config.price)
-    ? Number(resolveFromRef(config.price, values) ?? 0)
-    : config.price
-
+  const resolvedPrice = isFromRef(config.price) ? Number(resolveFromRef(config.price, values) ?? 0) : config.price
   const resolvedQuantity = isFromRef(config.quantity)
     ? Number(resolveFromRef(config.quantity, values) ?? 1)
     : (config.quantity ?? 1)
 
-  const currency = config.currency ?? 'USD'
   const total = resolvedPrice * resolvedQuantity
+  const currency = config.currency ?? 'USD'
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const actionEnabled = config.onQuantityChange != null
+
+  const rowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingY: 'sm',
+      paddingX: 'xs',
+      bg: 'card',
+      borderRadius: 'md',
+      shadow: 'sm',
+    },
+    componentSurface: config.slots?.row as Record<string, unknown> | undefined,
+  })
+  const thumbnailSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: THUMBNAIL_SIZE,
+      height: THUMBNAIL_SIZE,
+      borderRadius: 'sm',
+    },
+    componentSurface: config.slots?.thumbnail as Record<string, unknown> | undefined,
+  })
+  const thumbnailPlaceholderSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: THUMBNAIL_SIZE,
+      height: THUMBNAIL_SIZE,
+      borderRadius: 'sm',
+      bg: 'muted',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.thumbnailPlaceholder as Record<string, unknown> | undefined,
+  })
+  const thumbnailPlaceholderTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'muted',
+      fontWeight: 'medium',
+    },
+    componentSurface: config.slots?.thumbnailPlaceholderText as Record<string, unknown> | undefined,
+  })
+  const contentSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      marginX: 'sm',
+    },
+    componentSurface: config.slots?.content as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'foreground',
+      fontWeight: 'semibold',
+      marginBottom: TITLE_MARGIN_BOTTOM,
+    },
+    componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+  })
+  const variantSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'muted',
+      marginBottom: 'xs',
+    },
+    componentSurface: config.slots?.variant as Record<string, unknown> | undefined,
+  })
+  const priceSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.price as Record<string, unknown> | undefined,
+  })
+  const rightColumnSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      alignItems: 'end',
+      gap: 'sm',
+    },
+    componentSurface: config.slots?.rightColumn as Record<string, unknown> | undefined,
+  })
+  const removeButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      padding: 'xs',
+    },
+    componentSurface: config.slots?.removeButton as Record<string, unknown> | undefined,
+  })
+  const removeButtonTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      color: 'muted',
+    },
+    componentSurface: config.slots?.removeButtonText as Record<string, unknown> | undefined,
+  })
+  const quantityControlsSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 'md',
+      border: '1px solid border',
+      overflow: 'hidden',
+    },
+    componentSurface: config.slots?.quantityControls as Record<string, unknown> | undefined,
+  })
+  const quantityButtonStates: RuntimeSurfaceState[] | undefined = actionEnabled ? undefined : ['disabled']
+  const quantityButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: BUTTON_SIZE,
+      height: BUTTON_SIZE,
+      alignItems: 'center',
+      justifyContent: 'center',
+      bg: 'muted',
+      opacity: actionEnabled ? 1 : 0.5,
+      states: {
+        disabled: {
+          opacity: 0.5,
+        },
+      },
+    },
+    componentSurface: config.slots?.quantityButton as Record<string, unknown> | undefined,
+    activeStates: quantityButtonStates,
+  })
+  const quantityButtonTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+      fontWeight: 'medium',
+      lineHeight: 19,
+    },
+    componentSurface: config.slots?.quantityButtonText as Record<string, unknown> | undefined,
+    activeStates: quantityButtonStates,
+  })
+  const quantityValueSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      minWidth: 28,
+      textAlign: 'center',
+      fontSize: 'sm',
+      color: 'foreground',
+      fontWeight: 'semibold',
+    },
+    componentSurface: config.slots?.quantityValue as Record<string, unknown> | undefined,
+  })
+  const totalSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      color: 'foreground',
+      fontWeight: 'bold',
+    },
+    componentSurface: config.slots?.total as Record<string, unknown> | undefined,
+  })
 
   const handleDecrement = useCallback(async () => {
     if (!config.onQuantityChange) return
-    const newQty = Math.max(1, resolvedQuantity - 1)
+    const newQuantity = Math.max(1, resolvedQuantity - 1)
     setValue('__cartItemId', config.id ?? '')
-    setValue('__newQuantity', newQty)
+    setValue('__newQuantity', newQuantity)
     await dispatch(config.onQuantityChange)
-  }, [config.onQuantityChange, config.id, resolvedQuantity, setValue, dispatch])
+  }, [config.id, config.onQuantityChange, dispatch, resolvedQuantity, setValue])
 
   const handleIncrement = useCallback(async () => {
     if (!config.onQuantityChange) return
-    const newQty = resolvedQuantity + 1
+    const newQuantity = resolvedQuantity + 1
     setValue('__cartItemId', config.id ?? '')
-    setValue('__newQuantity', newQty)
+    setValue('__newQuantity', newQuantity)
     await dispatch(config.onQuantityChange)
-  }, [config.onQuantityChange, config.id, resolvedQuantity, setValue, dispatch])
+  }, [config.id, config.onQuantityChange, dispatch, resolvedQuantity, setValue])
 
   const handleRemove = useCallback(async () => {
     if (!config.onRemove) return
     await dispatch(config.onRemove)
   }, [config.onRemove, dispatch])
 
-  const styles = makeStyles(tokens)
-
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.row}>
-        {/* Thumbnail */}
+      <View style={rowSurface.style as ViewStyle | undefined}>
         {resolvedImage != null ? (
           <Image
             source={{ uri: resolvedImage }}
-            style={styles.thumbnail}
+            style={thumbnailSurface.style as ImageStyle | undefined}
             resizeMode="cover"
             accessibilityElementsHidden
             importantForAccessibility="no"
           />
         ) : (
-          <View style={styles.thumbnailPlaceholder}>
+          <View style={thumbnailPlaceholderSurface.style as ViewStyle | undefined}>
             <Text
-              style={styles.thumbnailPlaceholderText}
+              style={{
+                ...sharedTextStyle,
+                ...(thumbnailPlaceholderTextSurface.style as TextStyle | undefined),
+              }}
               accessibilityElementsHidden
               importantForAccessibility="no"
             >
-              🛍
+              Cart
             </Text>
           </View>
         )}
 
-        {/* Content */}
-        <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={2}>
+        <View style={contentSurface.style as ViewStyle | undefined}>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(titleSurface.style as TextStyle | undefined),
+            }}
+            numberOfLines={2}
+          >
             {resolvedTitle}
           </Text>
           {resolvedVariant != null ? (
-            <Text style={styles.variant} numberOfLines={1}>
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(variantSurface.style as TextStyle | undefined),
+              }}
+              numberOfLines={1}
+            >
               {resolvedVariant}
             </Text>
           ) : null}
-          <Text style={styles.price}>{formatPrice(resolvedPrice, currency)}</Text>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(priceSurface.style as TextStyle | undefined),
+            }}
+          >
+            {formatPrice(resolvedPrice, currency)}
+          </Text>
         </View>
 
-        {/* Right column: quantity + remove */}
-        <View style={styles.rightColumn}>
+        <View style={rightColumnSurface.style as ViewStyle | undefined}>
           {config.onRemove != null ? (
             <TouchableOpacity
-              style={styles.removeButton}
+              style={removeButtonSurface.style as ViewStyle | undefined}
               onPress={handleRemove}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel={`Remove ${resolvedTitle} from cart`}
               testID={config.testID ? `${config.testID}-remove` : undefined}
             >
-              <Text style={styles.removeButtonText}>✕</Text>
+              <Text
+                style={{
+                  ...sharedTextStyle,
+                  ...(removeButtonTextSurface.style as TextStyle | undefined),
+                }}
+              >
+                X
+              </Text>
             </TouchableOpacity>
           ) : null}
 
-          <View style={styles.quantityControls}>
+          <View style={quantityControlsSurface.style as ViewStyle | undefined}>
             <TouchableOpacity
-              style={styles.quantityButton}
+              style={quantityButtonSurface.style as ViewStyle | undefined}
               onPress={handleDecrement}
               activeOpacity={0.7}
               disabled={!config.onQuantityChange}
@@ -137,13 +319,26 @@ export function CartItem({ config }: { config: CartItemConfig }) {
               accessibilityLabel="Decrease quantity"
               testID={config.testID ? `${config.testID}-decrement` : undefined}
             >
-              <Text style={styles.quantityButtonText}>−</Text>
+              <Text
+                style={{
+                  ...sharedTextStyle,
+                  ...(quantityButtonTextSurface.style as TextStyle | undefined),
+                }}
+              >
+                -
+              </Text>
             </TouchableOpacity>
-            <Text style={styles.quantityValue} accessibilityLabel={`Quantity: ${resolvedQuantity}`}>
-              {resolvedQuantity}
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(quantityValueSurface.style as TextStyle | undefined),
+              }}
+              accessibilityLabel={`Quantity: ${resolvedQuantity}`}
+            >
+              {String(resolvedQuantity)}
             </Text>
             <TouchableOpacity
-              style={styles.quantityButton}
+              style={quantityButtonSurface.style as ViewStyle | undefined}
               onPress={handleIncrement}
               activeOpacity={0.7}
               disabled={!config.onQuantityChange}
@@ -151,11 +346,24 @@ export function CartItem({ config }: { config: CartItemConfig }) {
               accessibilityLabel="Increase quantity"
               testID={config.testID ? `${config.testID}-increment` : undefined}
             >
-              <Text style={styles.quantityButtonText}>+</Text>
+              <Text
+                style={{
+                  ...sharedTextStyle,
+                  ...(quantityButtonTextSurface.style as TextStyle | undefined),
+                }}
+              >
+                +
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.total} accessibilityLabel={`Total: ${formatPrice(total, currency)}`}>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(totalSurface.style as TextStyle | undefined),
+            }}
+            accessibilityLabel={`Total: ${formatPrice(total, currency)}`}
+          >
             {formatPrice(total, currency)}
           </Text>
         </View>
@@ -163,100 +371,3 @@ export function CartItem({ config }: { config: CartItemConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens) {
-  const BUTTON_SIZE = 28
-
-  return StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: tokens.spacing[3],
-      paddingHorizontal: tokens.spacing[2],
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.md,
-      ...tokens.shadows.sm,
-    },
-    thumbnail: {
-      width: THUMBNAIL_SIZE,
-      height: THUMBNAIL_SIZE,
-      borderRadius: tokens.radius.sm,
-      resizeMode: 'cover',
-    },
-    thumbnailPlaceholder: {
-      width: THUMBNAIL_SIZE,
-      height: THUMBNAIL_SIZE,
-      borderRadius: tokens.radius.sm,
-      backgroundColor: tokens.colors.surfaceAlt,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    thumbnailPlaceholderText: {
-      fontSize: tokens.typography.fontSize2xl,
-    },
-    content: {
-      flex: 1,
-      marginHorizontal: tokens.spacing[3],
-    },
-    title: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      marginBottom: TITLE_MARGIN_BOTTOM,
-    },
-    variant: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-      marginBottom: tokens.spacing[1],
-    },
-    price: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-    },
-    rightColumn: {
-      alignItems: 'flex-end',
-      gap: tokens.spacing[2],
-    },
-    removeButton: {
-      padding: tokens.spacing[1],
-    },
-    removeButtonText: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.textMuted,
-    },
-    quantityControls: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderRadius: tokens.radius.md,
-      borderWidth: 1,
-      borderColor: tokens.colors.border,
-      overflow: 'hidden',
-    },
-    quantityButton: {
-      width: BUTTON_SIZE,
-      height: BUTTON_SIZE,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: tokens.colors.surfaceAlt,
-    },
-    quantityButtonText: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightMedium,
-      lineHeight: tokens.typography.fontSizeMd * 1.2,
-    },
-    quantityValue: {
-      minWidth: 28,
-      textAlign: 'center',
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-    total: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightBold,
-    },
-  })
-}
-

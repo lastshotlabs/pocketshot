@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -13,4 +13,33 @@ export const PhoneInputSchema = extendComponentSchema({
   errorText: z.string().optional(),
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'container',
+    'label',
+    'inputRow',
+    'countryButton',
+    'countryFlag',
+    'countryDialCode',
+    'chevron',
+    'divider',
+    'phoneInput',
+    'helperText',
+    'errorText',
+    'backdrop',
+    'pickerPanel',
+    'pickerHeader',
+    'pickerTitle',
+    'pickerCloseButton',
+    'pickerClose',
+    'searchContainer',
+    'searchInput',
+    'countryList',
+    'countryRow',
+    'countryRowFlag',
+    'countryRowName',
+    'countryRowDial',
+    'checkmark',
+    'emptyText',
+  ]).optional(),
 })

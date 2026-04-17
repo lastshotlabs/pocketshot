@@ -1,11 +1,9 @@
-import React, { useMemo } from 'react'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import React from 'react'
+import { ScrollView, View, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { ScreenConfig } from './types'
-
-// ── Safe area ──────────────────────────────────────────────────────────────────
 
 type Edge = 'top' | 'bottom' | 'left' | 'right'
 
@@ -37,36 +35,6 @@ function useSafeAreaEdges(edges: Edge[]): {
   }
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-function makeStyles(
-  tokens: DesignTokens,
-  insets: { top: number; bottom: number; left: number; right: number },
-) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: tokens.colors.background,
-      paddingTop: insets.top,
-      paddingBottom: insets.bottom,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-    },
-    content: {
-      flex: 1,
-    },
-    scrollContent: {
-      flexGrow: 1,
-    },
-  })
-}
-
-// ── Public component ───────────────────────────────────────────────────────────
-
-/**
- * Config-driven safe-area-aware screen wrapper. Wraps children in SafeAreaView
- * with configurable edges, and optionally in a ScrollView when scrollable is true.
- */
 export function Screen({
   config,
   children,
@@ -79,27 +47,44 @@ export function Screen({
   const scrollable = config.scrollable ?? true
   const insets = useSafeAreaEdges(edges)
 
-  const styles = useMemo(() => makeStyles(tokens, insets), [tokens, insets])
+  const viewportSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      bg: 'background',
+      paddingTop: insets.top,
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right,
+    },
+    componentSurface: config.slots?.viewport as Record<string, unknown> | undefined,
+  })
+  const contentSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      flexGrow: 1,
+      padding: config.padding ?? 'lg',
+    },
+    componentSurface: config.slots?.content as Record<string, unknown> | undefined,
+  })
 
   return (
-    <ComponentWrapper
-      id={config.id}
-      testID={config.testID}
-      config={config}
-      style={styles.container}
-    >
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} style={{ flex: 1 }}>
       {scrollable ? (
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          style={viewportSurface.style as ViewStyle | undefined}
+          contentContainerStyle={contentSurface.style as ViewStyle | undefined}
           keyboardShouldPersistTaps="handled"
           testID={config.testID ? `${config.testID}-scroll` : `${config.id ?? 'screen'}-scroll`}
         >
           {children}
         </ScrollView>
       ) : (
-        <View style={styles.content}>{children}</View>
+        <View style={viewportSurface.style as ViewStyle | undefined}>
+          <View style={contentSurface.style as ViewStyle | undefined}>{children}</View>
+        </View>
       )}
     </ComponentWrapper>
   )
 }
-

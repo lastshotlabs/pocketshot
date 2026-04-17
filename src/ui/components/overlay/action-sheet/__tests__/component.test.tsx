@@ -8,7 +8,6 @@ describe('ActionSheet', () => {
 
   it('renders without crashing with minimal config', () => {
     const { toJSON } = renderWithProviders(<ActionSheet config={{}} />)
-    // ActionSheet renders a Modal — mocked Modal is always present in tree
     expect(toJSON()).toBeTruthy()
   })
 
@@ -20,7 +19,6 @@ describe('ActionSheet', () => {
   it('does not show sheet content when no __actionSheet payload is in context', () => {
     const { toJSON } = renderWithProviders(<ActionSheet config={{}} />)
     const json = JSON.stringify(toJSON())
-    // No options should be present when there is no active sheet
     expect(json).not.toContain('action-sheet-option-0')
   })
 
@@ -110,7 +108,6 @@ describe('ActionSheet', () => {
       initialValues: { __actionSheet: payload },
     })
     const json = JSON.stringify(toJSON())
-    // header role only appears when there is a title
     expect(json).not.toContain('"header"')
   })
 
@@ -128,5 +125,28 @@ describe('ActionSheet', () => {
     const json = JSON.stringify(toJSON())
     expect(json).toContain('Option A')
     expect(json).toContain('Option B')
+  })
+
+  it('renders slot surfaces without crashing', () => {
+    const payload = {
+      type: 'action-sheet',
+      title: 'Styled',
+      options: [{ label: 'Edit', action: { type: 'toast', message: 'edited' } }],
+    }
+    const { toJSON } = renderWithProviders(
+      <ActionSheet
+        config={{
+          id: 'options-sheet',
+          slots: {
+            container: { bg: 'card' },
+            title: { letterSpacing: 'wide' },
+            optionText: { color: 'primary' },
+          },
+        }}
+      />,
+      { initialValues: { __actionSheet: payload } },
+    )
+
+    expect(toJSON()).toBeTruthy()
   })
 })

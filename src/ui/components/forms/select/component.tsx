@@ -5,15 +5,17 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
-  StyleSheet,
   SafeAreaView,
   Platform,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { SelectConfig, SelectOption } from './types'
 
 export function Select({ config }: { config: SelectConfig }) {
@@ -23,11 +25,114 @@ export function Select({ config }: { config: SelectConfig }) {
 
   const resolvedOptions = resolveFromRef<SelectOption[]>(config.options, values) ?? []
   const resolvedValue = config.value != null ? resolveFromRef(config.value, values) : undefined
-
-  const selectedOption = resolvedOptions.find((o) => o.value === resolvedValue)
+  const selectedOption = resolvedOptions.find((option) => option.value === resolvedValue)
   const displayText = selectedOption?.label ?? config.placeholder
+  const isPlaceholder = selectedOption == null
+  const activeStates: RuntimeSurfaceState[] | undefined = [
+    ...(modalVisible ? (['open'] as const) : []),
+    ...(selectedOption != null ? (['selected'] as const) : []),
+  ]
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
-  const styles = makeStyles(tokens, selectedOption == null)
+  const containerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: { gap: 'xs' },
+    componentSurface: config.slots?.container as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+      marginBottom: 'xs',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const triggerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      bg: 'inputBackground',
+      border: '1px solid inputBorder',
+      borderRadius: 'md',
+      paddingX: 'sm',
+      paddingY: 'sm',
+      minHeight: 48,
+      states: {
+        open: {
+          border: '1px solid borderFocus',
+        },
+      },
+    },
+    componentSurface: config.slots?.trigger as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const triggerTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      fontSize: 'base',
+      color: isPlaceholder ? 'inputPlaceholder' : 'inputText',
+    },
+    componentSurface: config.slots?.triggerText as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const chevronSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'muted',
+      marginLeft: 'sm',
+    },
+    componentSurface: config.slots?.chevron as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const backdropSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      bg: 'overlay',
+      justifyContent: 'end',
+      opacity: 0.8,
+    },
+    componentSurface: config.slots?.backdrop as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const sheetSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: 'card',
+      borderTopLeftRadius: 'xl',
+      borderTopRightRadius: 'xl',
+      maxHeight: '60%',
+      paddingBottom: Platform.OS === 'android' ? tokens.spacing[4] : 0,
+    },
+    componentSurface: config.slots?.sheet as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const sheetInnerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      padding: 'lg',
+    },
+    componentSurface: config.slots?.sheetInner as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const sheetTitleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      fontWeight: 'semibold',
+      color: 'foreground',
+      marginBottom: 'md',
+    },
+    componentSurface: config.slots?.sheetTitle as Record<string, unknown> | undefined,
+    activeStates,
+  })
 
   function handleSelect(option: SelectOption) {
     setValue(config.id, option.value)
@@ -38,25 +143,44 @@ export function Select({ config }: { config: SelectConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        {config.label != null && (
-          <Text style={styles.label} accessibilityRole="text">
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
+      <View style={containerSurface.style as ViewStyle | undefined}>
+        {config.label != null ? (
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(labelSurface.style as TextStyle | undefined),
+            }}
+            accessibilityRole="text"
+          >
             {config.label}
           </Text>
-        )}
+        ) : null}
         <TouchableOpacity
-          style={styles.trigger}
+          style={triggerSurface.style as ViewStyle | undefined}
           onPress={() => setModalVisible(true)}
           accessibilityRole="button"
           accessibilityLabel={config.label ?? config.id}
           accessibilityHint="Opens a list of options to choose from"
           testID={config.testID ?? config.id}
         >
-          <Text style={styles.triggerText} numberOfLines={1}>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(triggerTextSurface.style as TextStyle | undefined),
+            }}
+            numberOfLines={1}
+          >
             {displayText}
           </Text>
-          <Text style={styles.chevron}>▼</Text>
+          <Text
+            style={{
+              ...sharedTextStyle,
+              ...(chevronSurface.style as TextStyle | undefined),
+            }}
+          >
+            {'\u25BE'}
+          </Text>
         </TouchableOpacity>
 
         <Modal
@@ -67,33 +191,96 @@ export function Select({ config }: { config: SelectConfig }) {
           accessibilityViewIsModal
         >
           <TouchableOpacity
-            style={styles.backdrop}
+            style={backdropSurface.style as ViewStyle | undefined}
             onPress={() => setModalVisible(false)}
             activeOpacity={1}
             accessibilityRole="button"
             accessibilityLabel="Close options"
           >
-            <SafeAreaView style={styles.sheet}>
-              <View style={styles.sheetInner}>
-                <Text style={styles.sheetTitle}>{config.label ?? 'Select an option'}</Text>
+            <SafeAreaView style={sheetSurface.style as ViewStyle | undefined}>
+              <View style={sheetInnerSurface.style as ViewStyle | undefined}>
+                <Text
+                  style={{
+                    ...sharedTextStyle,
+                    ...(sheetTitleSurface.style as TextStyle | undefined),
+                  }}
+                >
+                  {config.label ?? 'Select an option'}
+                </Text>
                 <FlatList<SelectOption>
                   data={resolvedOptions}
                   keyExtractor={(item) => item.value}
                   renderItem={({ item }) => {
-                    const isSelected = item.value === resolvedValue
+                    const selected = item.value === resolvedValue
+                    const optionStates: RuntimeSurfaceState[] | undefined = [
+                      ...(selected ? (['selected'] as const) : []),
+                    ]
+                    const optionSurface = resolveSurfacePresentation({
+                      tokens,
+                      implementationBase: {
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingY: 'sm',
+                        paddingX: 'xs',
+                        borderRadius: 'md',
+                        states: {
+                          selected: {
+                            bg: 'muted',
+                          },
+                        },
+                      },
+                      componentSurface: config.slots?.option as Record<string, unknown> | undefined,
+                      activeStates: optionStates,
+                    })
+                    const optionTextSurface = resolveSurfacePresentation({
+                      tokens,
+                      implementationBase: {
+                        flex: 1,
+                        fontSize: 'base',
+                        color: selected ? 'primary' : 'foreground',
+                        fontWeight: selected ? 'semibold' : 'regular',
+                      },
+                      componentSurface: config.slots?.optionText as Record<string, unknown> | undefined,
+                      activeStates: optionStates,
+                    })
+                    const checkmarkSurface = resolveSurfacePresentation({
+                      tokens,
+                      implementationBase: {
+                        fontSize: 'base',
+                        color: 'primary',
+                        marginLeft: 'sm',
+                      },
+                      componentSurface: config.slots?.checkmark as Record<string, unknown> | undefined,
+                      activeStates: optionStates,
+                    })
+
                     return (
                       <TouchableOpacity
-                        style={[styles.option, isSelected && styles.optionSelected]}
+                        style={optionSurface.style as ViewStyle | undefined}
                         onPress={() => handleSelect(item)}
                         accessibilityRole="button"
                         accessibilityLabel={item.label}
-                        accessibilityState={{ selected: isSelected }}
+                        accessibilityState={{ selected }}
                         testID={`${config.id}-option-${item.value}`}
                       >
-                        <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                        <Text
+                          style={{
+                            ...sharedTextStyle,
+                            ...(optionTextSurface.style as TextStyle | undefined),
+                          }}
+                        >
                           {item.label}
                         </Text>
-                        {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                        {selected ? (
+                          <Text
+                            style={{
+                              ...sharedTextStyle,
+                              ...(checkmarkSurface.style as TextStyle | undefined),
+                            }}
+                          >
+                            {'\u2713'}
+                          </Text>
+                        ) : null}
                       </TouchableOpacity>
                     )
                   }}
@@ -106,86 +293,3 @@ export function Select({ config }: { config: SelectConfig }) {
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, isPlaceholder: boolean) {
-  return StyleSheet.create({
-    container: {
-      gap: tokens.spacing[1],
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[1],
-    },
-    trigger: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: tokens.colors.inputBackground,
-      borderColor: tokens.colors.inputBorder,
-      borderWidth: 1,
-      borderRadius: tokens.radius.md,
-      paddingHorizontal: tokens.spacing[3],
-      paddingVertical: tokens.spacing[3],
-      minHeight: 48,
-    },
-    triggerText: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: isPlaceholder ? tokens.colors.inputPlaceholder : tokens.colors.inputText,
-    },
-    chevron: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-      marginLeft: tokens.spacing[2],
-    },
-    backdrop: {
-      flex: 1,
-      backgroundColor: tokens.colors.overlay + 'CC',
-      justifyContent: 'flex-end',
-    },
-    sheet: {
-      backgroundColor: tokens.colors.surface,
-      borderTopLeftRadius: tokens.radius.xl,
-      borderTopRightRadius: tokens.radius.xl,
-      maxHeight: '60%',
-      ...Platform.select({
-        android: { paddingBottom: tokens.spacing[4] },
-      }),
-    },
-    sheetInner: {
-      padding: tokens.spacing[4],
-    },
-    sheetTitle: {
-      fontSize: tokens.typography.fontSizeLg,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing[3],
-    },
-    option: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: tokens.spacing[3],
-      paddingHorizontal: tokens.spacing[2],
-      borderRadius: tokens.radius.md,
-    },
-    optionSelected: {
-      backgroundColor: tokens.colors.surfaceAlt,
-    },
-    optionText: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-    },
-    optionTextSelected: {
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: tokens.colors.primary,
-    },
-    checkmark: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.primary,
-      marginLeft: tokens.spacing[2],
-    },
-  })
-}
-

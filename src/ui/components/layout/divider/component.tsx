@@ -1,39 +1,37 @@
 import React from 'react'
-import { View, StyleSheet } from 'react-native'
+import { View, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveNativeTextStyle } from '../../_base'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
-import type { DesignTokens } from '../../../tokens/types'
 import type { DividerConfig } from './types'
 
 export function Divider({ config }: { config: DividerConfig }) {
   const tokens = useTokens()
-  const styles = makeStyles(tokens, config)
-
-  return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.divider} accessibilityRole="none" />
-    </ComponentWrapper>
-  )
-}
-
-function makeStyles(tokens: DesignTokens, config: DividerConfig) {
   const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-  const color = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : tokens.colors.divider
   const isVertical = config.orientation === 'vertical'
+  const dividerColor =
+    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : 'border'
 
-  return StyleSheet.create({
-    divider: {
-      backgroundColor: color,
+  const lineSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      bg: dividerColor,
       ...(isVertical
         ? {
-            width: config.thickness,
+            width: config.thickness ?? 1,
             alignSelf: 'stretch',
           }
         : {
-            height: config.thickness,
+            height: config.thickness ?? 1,
             alignSelf: 'stretch',
           }),
     },
+    componentSurface: config.slots?.line as Record<string, unknown> | undefined,
   })
+
+  return (
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+      <View style={lineSurface.style as ViewStyle | undefined} accessibilityRole="none" />
+    </ComponentWrapper>
+  )
 }

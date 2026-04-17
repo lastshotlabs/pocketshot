@@ -1,10 +1,36 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { Text, View, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
+import { resolveFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { FormFieldConfig } from './types'
+
+function resolveSlotSurface(
+  config: FormFieldConfig,
+  tokens: DesignTokens,
+  slot: string,
+  implementationBase?: Record<string, unknown>,
+) {
+  return resolveSurfacePresentation({
+    tokens,
+    implementationBase,
+    componentSurface:
+      (config.slots as Record<string, Record<string, unknown> | undefined> | undefined)?.[slot],
+  })
+}
+
+function mergeTextStyle(
+  sharedTextStyle: TextStyle,
+  surface: ReturnType<typeof resolveSurfacePresentation>,
+): TextStyle {
+  return {
+    ...sharedTextStyle,
+    ...(surface.style as TextStyle | undefined),
+  }
+}
 
 export function FormField({
   config,
@@ -14,66 +40,69 @@ export function FormField({
   children?: React.ReactNode
 }) {
   const tokens = useTokens()
-  const { getValue } = useScreenContext()
+  const { getValue, values } = useScreenContext()
 
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
+  const label =
+    config.label != null ? String(resolveFromRef(config.label, values) ?? '') : undefined
+  const helperText =
+    config.helperText != null
+      ? String(resolveFromRef(config.helperText, values) ?? '')
+      : undefined
   const errorText =
     config.errorKey != null ? (getValue(config.errorKey) as string | undefined) : undefined
-
   const hasError = Boolean(errorText)
-  const styles = makeStyles(tokens, hasError)
+
+  const containerSurface = resolveSlotSurface(config, tokens, 'container', {
+    gap: 'xs',
+  })
+  const labelSurface = resolveSlotSurface(config, tokens, 'label', {
+    color: 'foreground',
+    fontSize: 'sm',
+    fontWeight: 'medium',
+  })
+  const requiredSurface = resolveSlotSurface(config, tokens, 'required', {
+    color: 'error',
+  })
+  const helperTextSurface = resolveSlotSurface(config, tokens, 'helperText', {
+    color: 'muted',
+    fontSize: 'xs',
+  })
+  const errorTextSurface = resolveSlotSurface(config, tokens, 'errorText', {
+    color: 'error',
+    fontSize: 'xs',
+  })
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        {config.label != null && (
-          <Text style={styles.label} accessibilityRole="text">
-            {config.label}
-            {config.required && (
-              <Text style={styles.required} accessibilityLabel="required">
-                {' '}
-                *
+      <View style={containerSurface.style as ViewStyle | undefined}>
+        {label != null ? (
+          <Text style={mergeTextStyle(sharedTextStyle, labelSurface)} accessibilityRole="text">
+            {label}
+            {config.required ? (
+              <Text style={mergeTextStyle(sharedTextStyle, requiredSurface)} accessibilityLabel="required">
+                {' *'}
               </Text>
-            )}
+            ) : null}
           </Text>
-        )}
+        ) : null}
 
         {children}
 
         {hasError && errorText ? (
-          <Text style={styles.errorText} accessibilityRole="text" accessibilityLiveRegion="polite">
+          <Text
+            style={mergeTextStyle(sharedTextStyle, errorTextSurface)}
+            accessibilityRole="text"
+            accessibilityLiveRegion="polite"
+          >
             {errorText}
           </Text>
-        ) : config.helperText != null ? (
-          <Text style={styles.helperText} accessibilityRole="text">
-            {config.helperText}
+        ) : helperText != null ? (
+          <Text style={mergeTextStyle(sharedTextStyle, helperTextSurface)} accessibilityRole="text">
+            {helperText}
           </Text>
         ) : null}
       </View>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, hasError: boolean) {
-  return StyleSheet.create({
-    container: {
-      gap: tokens.spacing[1],
-    },
-    label: {
-      fontSize: tokens.typography.fontSizeSm,
-      fontWeight: tokens.typography.fontWeightMedium,
-      color: tokens.colors.text,
-    },
-    required: {
-      color: tokens.colors.error,
-    },
-    helperText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-    },
-    errorText: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.error,
-    },
-  })
-}
-

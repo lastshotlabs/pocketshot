@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
@@ -27,5 +27,5 @@ export const TextInputSchema = extendComponentSchema({
   maxLength: z.number().optional(),
   onChangeAction: ActionSchema.optional(),
   onSubmitAction: ActionSchema.optional(),
-  testID: z.string().optional(),
+  slots: slotsSchema(['root', 'container', 'label', 'input', 'helperText', 'errorText']).optional(),
 })

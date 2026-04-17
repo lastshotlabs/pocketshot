@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { RichTextEditorSchema } from './schema'
 
-export type RichTextEditorConfig = z.infer<typeof RichTextEditorSchema>
+export type RichTextEditorConfig = z.input<typeof RichTextEditorSchema>
 
 export type EditorToolbarItem =
   | 'heading'

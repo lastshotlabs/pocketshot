@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
+import type { RuntimeSurfaceState } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { CheckboxConfig } from './types'
 
 export function Checkbox({ config }: { config: CheckboxConfig }) {
   const tokens = useTokens()
   const { setValue, dispatch, values } = useScreenContext()
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
   const resolvedChecked =
     config.checked != null ? resolveFromRef(config.checked, values) : undefined
@@ -24,7 +26,56 @@ export function Checkbox({ config }: { config: CheckboxConfig }) {
     }
   }, [resolvedChecked])
 
-  const styles = makeStyles(tokens, localChecked, config.disabled)
+  const activeStates: RuntimeSurfaceState[] | undefined = [
+    ...(localChecked ? (['selected'] as const) : []),
+    ...(config.disabled ? (['disabled'] as const) : []),
+  ]
+
+  const rowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'sm',
+      opacity: config.disabled ? 0.5 : 1,
+    },
+    componentSurface: config.slots?.row as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const boxSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      width: 22,
+      height: 22,
+      borderRadius: 'sm',
+      border: localChecked ? '2px solid primary' : '2px solid inputBorder',
+      bg: localChecked ? 'primary' : 'inputBackground',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.box as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const checkmarkSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: 'primaryForeground',
+      fontWeight: 'bold',
+    },
+    componentSurface: config.slots?.checkmark as Record<string, unknown> | undefined,
+    activeStates,
+  })
+  const labelSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      fontSize: 'base',
+      color: 'foreground',
+    },
+    componentSurface: config.slots?.label as Record<string, unknown> | undefined,
+    activeStates,
+  })
 
   function handlePress() {
     if (config.disabled) return
@@ -37,9 +88,9 @@ export function Checkbox({ config }: { config: CheckboxConfig }) {
   }
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
       <TouchableOpacity
-        style={styles.row}
+        style={rowSurface.style as ViewStyle | undefined}
         onPress={handlePress}
         activeOpacity={config.disabled ? 1 : 0.7}
         accessibilityRole="checkbox"
@@ -47,42 +98,27 @@ export function Checkbox({ config }: { config: CheckboxConfig }) {
         accessibilityState={{ checked: localChecked, disabled: config.disabled }}
         testID={config.testID ?? config.id}
       >
-        <View style={styles.box}>{localChecked && <Text style={styles.checkmark}>✓</Text>}</View>
-        <Text style={styles.label}>{config.label}</Text>
+        <View style={boxSurface.style as ViewStyle | undefined}>
+          {localChecked ? (
+            <Text
+              style={{
+                ...sharedTextStyle,
+                ...(checkmarkSurface.style as TextStyle | undefined),
+              }}
+            >
+              X
+            </Text>
+          ) : null}
+        </View>
+        <Text
+          style={{
+            ...sharedTextStyle,
+            ...(labelSurface.style as TextStyle | undefined),
+          }}
+        >
+          {config.label}
+        </Text>
       </TouchableOpacity>
     </ComponentWrapper>
   )
 }
-
-function makeStyles(tokens: DesignTokens, checked: boolean, disabled: boolean | undefined) {
-  return StyleSheet.create({
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: tokens.spacing[3],
-      opacity: disabled ? 0.5 : 1,
-    },
-    box: {
-      width: 22,
-      height: 22,
-      borderRadius: tokens.radius.sm,
-      borderWidth: 2,
-      borderColor: checked ? tokens.colors.primary : tokens.colors.inputBorder,
-      backgroundColor: checked ? tokens.colors.primary : tokens.colors.inputBackground,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    checkmark: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.primaryForeground,
-      fontWeight: tokens.typography.fontWeightBold,
-      lineHeight: 16,
-    },
-    label: {
-      flex: 1,
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-    },
-  })
-}
-

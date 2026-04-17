@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { RichTextViewerSchema } from './schema'
 
-export type RichTextViewerConfig = z.infer<typeof RichTextViewerSchema>
+export type RichTextViewerConfig = z.input<typeof RichTextViewerSchema>
 
 export type RichTextNodeType =
   | 'text'

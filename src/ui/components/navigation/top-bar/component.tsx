@@ -1,14 +1,12 @@
-import React, { useMemo } from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React from 'react'
+import { Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
+import { resolveNativeTextStyle, resolveSurfacePresentation } from '../../_base'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
 import type { Action } from '../../../actions/types'
 import type { TopBarConfig } from './types'
-
-// ── Safe area ──────────────────────────────────────────────────────────────────
 
 function useTopInset(): number {
   try {
@@ -22,105 +20,11 @@ function useTopInset(): number {
   }
 }
 
-// ── Icon map ──────────────────────────────────────────────────────────────────
-
 const PRESET_ICONS: Record<string, { icon: string; label: string }> = {
-  back: { icon: '←', label: 'Go back' },
-  menu: { icon: '☰', label: 'Open menu' },
-  close: { icon: '✕', label: 'Close' },
+  back: { icon: '<', label: 'Go back' },
+  menu: { icon: '=', label: 'Open menu' },
+  close: { icon: 'X', label: 'Close' },
 }
-
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-function makeStyles(
-  tokens: DesignTokens,
-  topInset: number,
-  transparent: boolean,
-  elevated: boolean,
-) {
-  return StyleSheet.create({
-    wrapper: {
-      backgroundColor: transparent ? 'transparent' : tokens.colors.surface,
-      borderBottomWidth: transparent ? 0 : StyleSheet.hairlineWidth,
-      borderBottomColor: tokens.colors.border,
-      paddingTop: topInset,
-      ...(transparent && {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: tokens.zIndex.sticky,
-      }),
-      ...(elevated && !transparent && tokens.shadows.md),
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: tokens.spacing[4],
-      paddingVertical: tokens.spacing[3],
-      minHeight: 48,
-    },
-    left: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      minWidth: 48,
-    },
-    center: {
-      flex: 1,
-      alignItems: 'center',
-    },
-    right: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      minWidth: 48,
-      gap: tokens.spacing[1],
-    },
-    iconButton: {
-      padding: tokens.spacing[2],
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    iconText: {
-      fontSize: tokens.typography.fontSizeLg,
-      color: transparent ? tokens.colors.textInverse : tokens.colors.primary,
-    },
-    title: {
-      fontSize: tokens.typography.fontSizeMd,
-      fontWeight: tokens.typography.fontWeightSemibold,
-      color: transparent ? tokens.colors.textInverse : tokens.colors.text,
-      textAlign: 'center',
-    },
-    subtitle: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: transparent ? tokens.colors.textInverse : tokens.colors.textMuted,
-      textAlign: 'center',
-      marginTop: 1,
-    },
-    badgeContainer: {
-      position: 'relative',
-    },
-    badge: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      minWidth: 16,
-      height: 16,
-      borderRadius: 8,
-      backgroundColor: tokens.colors.error,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 3,
-    },
-    badgeText: {
-      fontSize: 10,
-      fontWeight: tokens.typography.fontWeightBold,
-      color: tokens.colors.errorForeground,
-    },
-  })
-}
-
-// ── Sub-components ─────────────────────────────────────────────────────────────
 
 interface ActionButtonProps {
   icon: string
@@ -128,59 +32,196 @@ interface ActionButtonProps {
   onPress: () => void
   badge?: number
   testID: string
-  styles: ReturnType<typeof makeStyles>
+  baseTextStyle: TextStyle
+  iconButtonStyle?: ViewStyle
+  iconTextStyle?: TextStyle
+  badgeContainerStyle?: ViewStyle
+  badgeStyle?: ViewStyle
+  badgeTextStyle?: TextStyle
 }
 
-function ActionButton({ icon, label, onPress, badge, testID, styles }: ActionButtonProps) {
+function ActionButton({
+  icon,
+  label,
+  onPress,
+  badge,
+  testID,
+  baseTextStyle,
+  iconButtonStyle,
+  iconTextStyle,
+  badgeContainerStyle,
+  badgeStyle,
+  badgeTextStyle,
+}: ActionButtonProps) {
   return (
-    <View style={styles.badgeContainer}>
+    <View style={badgeContainerStyle}>
       <TouchableOpacity
         onPress={onPress}
-        style={styles.iconButton}
+        style={iconButtonStyle}
         accessibilityLabel={label}
         accessibilityRole="button"
         testID={testID}
       >
-        <Text style={styles.iconText}>{icon}</Text>
+        <Text
+          style={{
+            ...baseTextStyle,
+            ...(iconTextStyle ?? {}),
+          }}
+        >
+          {icon}
+        </Text>
       </TouchableOpacity>
-      {badge != null && badge > 0 && (
-        <View style={styles.badge} accessibilityLabel={`${badge} notifications`}>
-          <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+      {badge != null && badge > 0 ? (
+        <View style={badgeStyle} accessibilityLabel={`${badge} notifications`}>
+          <Text
+            style={{
+              ...baseTextStyle,
+              ...(badgeTextStyle ?? {}),
+            }}
+          >
+            {badge > 99 ? '99+' : badge}
+          </Text>
         </View>
-      )}
+      ) : null}
     </View>
   )
 }
 
-// ── Public component ───────────────────────────────────────────────────────────
-
-/**
- * Config-driven navigation header bar. Handles safe area top inset automatically.
- *
- * Left area: back / menu / close preset or custom icon with action
- * Center: title (supports from-ref) + optional subtitle
- * Right area: up to 3 action icons with optional badge counts
- *
- * Supports transparent mode (absolute positioned, no background) and
- * elevated mode (shadow/elevation).
- */
 export function TopBar({ config }: { config: TopBarConfig }) {
   const tokens = useTokens()
   const { dispatch, values } = useScreenContext()
   const topInset = useTopInset()
-
   const transparent = config.transparent ?? false
   const elevated = config.elevated ?? true
+  const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
 
-  const styles = useMemo(
-    () => makeStyles(tokens, topInset, transparent, elevated),
-    [tokens, topInset, transparent, elevated],
-  )
+  const baseTextStyle: TextStyle = {
+    fontSize:
+      typeof sharedTextStyle.fontSize === 'number'
+        ? sharedTextStyle.fontSize
+        : undefined,
+    fontWeight:
+      typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
+    lineHeight:
+      typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
+    letterSpacing:
+      typeof sharedTextStyle.letterSpacing === 'number'
+        ? sharedTextStyle.letterSpacing
+        : undefined,
+    textAlign:
+      typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+  }
+
+  const rowSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingX: 'md',
+      paddingY: 'sm',
+      minHeight: 48,
+    },
+    componentSurface: config.slots?.row as Record<string, unknown> | undefined,
+  })
+  const leftSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minWidth: 48,
+    },
+    componentSurface: config.slots?.left as Record<string, unknown> | undefined,
+  })
+  const centerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    componentSurface: config.slots?.center as Record<string, unknown> | undefined,
+  })
+  const rightSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'end',
+      minWidth: 48,
+      gap: 'xs',
+    },
+    componentSurface: config.slots?.right as Record<string, unknown> | undefined,
+  })
+  const iconButtonSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      padding: 'xs',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.iconButton as Record<string, unknown> | undefined,
+  })
+  const iconTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'lg',
+      color: transparent ? 'background' : 'primary',
+    },
+    componentSurface: config.slots?.iconText as Record<string, unknown> | undefined,
+  })
+  const titleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'base',
+      fontWeight: 'semibold',
+      color: transparent ? 'background' : 'foreground',
+      textAlign: 'center',
+    },
+    componentSurface: config.slots?.title as Record<string, unknown> | undefined,
+  })
+  const subtitleSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      color: transparent ? 'background' : 'muted',
+      textAlign: 'center',
+      marginTop: 2,
+    },
+    componentSurface: config.slots?.subtitle as Record<string, unknown> | undefined,
+  })
+  const badgeContainerSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      position: 'relative',
+    },
+    componentSurface: config.slots?.badgeContainer as Record<string, unknown> | undefined,
+  })
+  const badgeSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      position: 'absolute',
+      minWidth: 16,
+      height: 16,
+      borderRadius: 'full',
+      bg: 'error',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    componentSurface: config.slots?.badge as Record<string, unknown> | undefined,
+  })
+  const badgeTextSurface = resolveSurfacePresentation({
+    tokens,
+    implementationBase: {
+      fontSize: 'xs',
+      fontWeight: 'bold',
+      color: 'errorForeground',
+    },
+    componentSurface: config.slots?.badgeText as Record<string, unknown> | undefined,
+  })
 
   const resolvedTitle = resolveFromRef(config.title, values) as string | undefined
   const idPrefix = config.testID ?? config.id ?? 'top-bar'
 
-  // ── Left action handler ──────────────────────────────────────────────────
   function renderLeftAction() {
     if (config.leftAction == null) return null
 
@@ -189,13 +230,12 @@ export function TopBar({ config }: { config: TopBarConfig }) {
       if (!preset) return null
 
       const handlePress = () => {
-        if (config.leftAction === 'back') {
+        if (config.leftAction === 'back' || config.leftAction === 'close') {
           void dispatch({ type: 'navigate', to: '..' })
-        } else if (config.leftAction === 'menu') {
-          void dispatch({ type: 'set-value', target: '__drawerMenu', value: true })
-        } else if (config.leftAction === 'close') {
-          void dispatch({ type: 'navigate', to: '..' })
+          return
         }
+
+        void dispatch({ type: 'set-value', target: '__drawerMenu', value: true })
       }
 
       return (
@@ -204,12 +244,16 @@ export function TopBar({ config }: { config: TopBarConfig }) {
           label={preset.label}
           onPress={handlePress}
           testID={`${idPrefix}-left-${config.leftAction}`}
-          styles={styles}
+          baseTextStyle={baseTextStyle}
+          iconButtonStyle={iconButtonSurface.style as ViewStyle | undefined}
+          iconTextStyle={iconTextSurface.style as TextStyle | undefined}
+          badgeContainerStyle={badgeContainerSurface.style as ViewStyle | undefined}
+          badgeStyle={badgeSurface.style as ViewStyle | undefined}
+          badgeTextStyle={badgeTextSurface.style as TextStyle | undefined}
         />
       )
     }
 
-    // Custom left action
     const customAction = config.leftAction as { icon: string; onPress: Action }
     return (
       <ActionButton
@@ -217,47 +261,85 @@ export function TopBar({ config }: { config: TopBarConfig }) {
         label="Action"
         onPress={() => void dispatch(customAction.onPress)}
         testID={`${idPrefix}-left-custom`}
-        styles={styles}
+        baseTextStyle={baseTextStyle}
+        iconButtonStyle={iconButtonSurface.style as ViewStyle | undefined}
+        iconTextStyle={iconTextSurface.style as TextStyle | undefined}
+        badgeContainerStyle={badgeContainerSurface.style as ViewStyle | undefined}
+        badgeStyle={badgeSurface.style as ViewStyle | undefined}
+        badgeTextStyle={badgeTextSurface.style as TextStyle | undefined}
       />
     )
   }
 
+  const wrapperStyle: ViewStyle = {
+    paddingTop: topInset,
+    backgroundColor: transparent ? 'transparent' : tokens.colors.surface,
+    borderBottomWidth: transparent ? 0 : 1,
+    borderBottomColor: tokens.colors.border,
+    ...(transparent
+      ? {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: tokens.zIndex.sticky,
+        }
+      : {}),
+    ...(elevated && !transparent ? tokens.shadows.md : {}),
+  }
+
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.wrapper} accessibilityRole="header">
-        <View style={styles.row}>
-          {/* Left */}
-          <View style={styles.left}>{renderLeftAction()}</View>
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} style={wrapperStyle}>
+      <View style={rowSurface.style as ViewStyle | undefined} accessibilityRole="header">
+        <View style={leftSurface.style as ViewStyle | undefined}>{renderLeftAction()}</View>
 
-          {/* Center */}
-          <View style={styles.center}>
-            <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
-              {resolvedTitle ?? ''}
+        <View style={centerSurface.style as ViewStyle | undefined}>
+          <Text
+            style={{
+              ...baseTextStyle,
+              ...(titleSurface.style as TextStyle | undefined),
+            }}
+            numberOfLines={1}
+            accessibilityRole="header"
+          >
+            {resolvedTitle ?? ''}
+          </Text>
+          {config.subtitle != null ? (
+            <Text
+              style={{
+                ...baseTextStyle,
+                ...(subtitleSurface.style as TextStyle | undefined),
+              }}
+              numberOfLines={1}
+            >
+              {config.subtitle}
             </Text>
-            {config.subtitle != null && (
-              <Text style={styles.subtitle} numberOfLines={1}>
-                {config.subtitle}
-              </Text>
-            )}
-          </View>
+          ) : null}
+        </View>
 
-          {/* Right */}
-          <View style={styles.right}>
-            {(config.rightActions ?? []).map((ra, index) => (
-              <ActionButton
-                key={index}
-                icon={ra.icon}
-                label={`Action ${index + 1}`}
-                onPress={() => void dispatch(ra.onPress)}
-                badge={ra.badge}
-                testID={`${idPrefix}-right-action-${index}`}
-                styles={styles}
-              />
-            ))}
-          </View>
+        <View style={rightSurface.style as ViewStyle | undefined}>
+          {(config.rightActions ?? []).map((ra, index) => (
+            <ActionButton
+              key={index}
+              icon={ra.icon}
+              label={`Action ${index + 1}`}
+              onPress={() => void dispatch(ra.onPress)}
+              badge={ra.badge}
+              testID={`${idPrefix}-right-action-${index}`}
+              baseTextStyle={baseTextStyle}
+              iconButtonStyle={iconButtonSurface.style as ViewStyle | undefined}
+              iconTextStyle={iconTextSurface.style as TextStyle | undefined}
+              badgeContainerStyle={badgeContainerSurface.style as ViewStyle | undefined}
+              badgeStyle={{
+                right: 0,
+                top: 0,
+                ...(badgeSurface.style as ViewStyle | undefined),
+              }}
+              badgeTextStyle={badgeTextSurface.style as TextStyle | undefined}
+            />
+          ))}
         </View>
       </View>
     </ComponentWrapper>
   )
 }
-

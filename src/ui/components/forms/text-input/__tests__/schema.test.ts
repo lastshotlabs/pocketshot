@@ -54,4 +54,19 @@ describe('TextInputSchema', () => {
     const result = TextInputSchema.parse({ id: 'password', secureTextEntry: true })
     expect(result.secureTextEntry).toBe(true)
   })
+
+  it('accepts slot surfaces', () => {
+    const result = TextInputSchema.parse({
+      id: 'email',
+      slots: {
+        input: { borderRadius: 'lg' },
+        label: { letterSpacing: 'wide' },
+        errorText: { color: 'error' },
+      },
+    })
+
+    expect(result.slots?.input?.borderRadius).toBe('lg')
+    expect(result.slots?.label?.letterSpacing).toBe('wide')
+    expect(result.slots?.errorText?.color).toBe('error')
+  })
 })

@@ -87,4 +87,21 @@ describe('Checkbox', () => {
     )
     expect(toJSON()).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Checkbox
+        config={{
+          id: 'agree',
+          label: 'Accept',
+          slots: {
+            row: { paddingY: 'sm' },
+            box: { borderRadius: 'md' },
+            label: { letterSpacing: 'wide' },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

@@ -58,4 +58,21 @@ describe('Heading', () => {
     )
     expect(getByText('Dynamic Heading')).toBeTruthy()
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Heading
+        config={{
+          text: 'Styled heading',
+          slots: {
+            text: {
+              letterSpacing: 'wide',
+              color: 'primary',
+            },
+          },
+        }}
+      />,
+    )
+    expect(toJSON()).toBeTruthy()
+  })
 })

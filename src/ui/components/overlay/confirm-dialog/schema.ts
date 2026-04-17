@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -14,4 +14,17 @@ export const ConfirmDialogSchema = extendComponentSchema({
   onConfirm: ActionSchema,
   onCancel: ActionSchema.optional(),
   testID: z.string().optional(),
+  slots: slotsSchema([
+    'root',
+    'backdrop',
+    'panel',
+    'body',
+    'title',
+    'message',
+    'buttonRow',
+    'cancelButton',
+    'cancelText',
+    'confirmButton',
+    'confirmText',
+  ]).optional(),
 })

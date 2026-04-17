@@ -41,4 +41,20 @@ describe('Markdown', () => {
       'code_block',
     ])
   })
+
+  it('renders slot surfaces without crashing', () => {
+    const { toJSON } = renderWithProviders(
+      <Markdown
+        config={cfg({
+          slots: {
+            container: { paddingY: 'sm' },
+            heading: { letterSpacing: 'wide' },
+            paragraph: { color: 'muted' },
+          },
+        })}
+      />,
+    )
+
+    expect(toJSON()).toBeTruthy()
+  })
 })
