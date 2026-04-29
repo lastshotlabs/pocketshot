@@ -16,6 +16,7 @@ import {
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
+import { resolveFromRef } from '../../_base/fromRef'
 import type { DesignTokens } from '../../../tokens/types'
 import type { WizardConfig, WizardField, WizardFieldValues, WizardErrors, TransitionDirection } from './types'
 
@@ -288,7 +289,18 @@ function ProgressIndicator({ totalSteps, currentIndex, styles }: ProgressProps) 
 
 export function Wizard({ config }: { config: WizardConfig }) {
   const tokens = useTokens()
-  const { setValue, dispatch } = useScreenContext()
+  const { setValue, dispatch, values } = useScreenContext()
+
+  const resolvedTitle =
+    config.title != null ? resolveFromRef<string>(config.title, values) : undefined
+  const resolvedNextLabel =
+    config.nextLabel != null ? resolveFromRef<string>(config.nextLabel, values) : undefined
+  const resolvedBackLabel =
+    config.backLabel != null ? resolveFromRef<string>(config.backLabel, values) : undefined
+  const resolvedSubmitLabel =
+    config.submitLabel != null ? resolveFromRef<string>(config.submitLabel, values) : undefined
+  const resolvedCancelLabel =
+    config.cancelLabel != null ? resolveFromRef<string>(config.cancelLabel, values) : undefined
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [fieldValues, setFieldValues] = useState<WizardFieldValues>(() => {
@@ -449,10 +461,10 @@ export function Wizard({ config }: { config: WizardConfig }) {
       >
         <View style={styles.container}>
           {/* Header */}
-          {config.title ? (
+          {resolvedTitle ? (
             <View style={styles.header}>
               <Text style={styles.wizardTitle} accessibilityRole="header">
-                {config.title}
+                {resolvedTitle}
               </Text>
             </View>
           ) : null}
@@ -515,11 +527,11 @@ export function Wizard({ config }: { config: WizardConfig }) {
                 style={[styles.button, styles.buttonGhost]}
                 onPress={handleCancel}
                 accessibilityRole="button"
-                accessibilityLabel={config.cancelLabel ?? 'Cancel'}
+                accessibilityLabel={resolvedCancelLabel ?? 'Cancel'}
                 testID={`wizard-${config.id}-cancel`}
               >
                 <Text style={[styles.buttonText, styles.buttonTextGhost]}>
-                  {config.cancelLabel ?? 'Cancel'}
+                  {resolvedCancelLabel ?? 'Cancel'}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -534,11 +546,11 @@ export function Wizard({ config }: { config: WizardConfig }) {
                   style={[styles.button, styles.buttonOutline]}
                   onPress={handleBack}
                   accessibilityRole="button"
-                  accessibilityLabel={config.backLabel ?? 'Back'}
+                  accessibilityLabel={resolvedBackLabel ?? 'Back'}
                   testID={`wizard-${config.id}-back`}
                 >
                   <Text style={[styles.buttonText, styles.buttonTextOutline]}>
-                    {config.backLabel ?? 'Back'}
+                    {resolvedBackLabel ?? 'Back'}
                   </Text>
                 </TouchableOpacity>
               ) : null}
@@ -550,13 +562,13 @@ export function Wizard({ config }: { config: WizardConfig }) {
                 disabled={submitting}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  isLastStep ? (config.submitLabel ?? 'Submit') : (config.nextLabel ?? 'Next')
+                  isLastStep ? (resolvedSubmitLabel ?? 'Submit') : (resolvedNextLabel ?? 'Next')
                 }
                 accessibilityState={{ busy: submitting }}
                 testID={`wizard-${config.id}-${isLastStep ? 'submit' : 'next'}`}
               >
                 <Text style={[styles.buttonText, styles.buttonTextPrimary]}>
-                  {isLastStep ? (config.submitLabel ?? 'Submit') : (config.nextLabel ?? 'Next')}
+                  {isLastStep ? (resolvedSubmitLabel ?? 'Submit') : (resolvedNextLabel ?? 'Next')}
                 </Text>
               </TouchableOpacity>
             </View>

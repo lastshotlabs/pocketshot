@@ -193,6 +193,12 @@ export function DatePicker({ config }: { config: DatePickerConfig }) {
     config.defaultValue != null
       ? resolveFromRef<string>(config.defaultValue, values)
       : undefined
+  const resolvedLabel =
+    config.label != null ? resolveFromRef<string>(config.label, values) : undefined
+  const resolvedPlaceholder =
+    config.placeholder != null
+      ? resolveFromRef<string>(config.placeholder, values)
+      : undefined
 
   const [selectedDate, setSelectedDate] = useState<string | null>(resolvedDefault ?? null)
   const [pickerVisible, setPickerVisible] = useState(false)
@@ -258,14 +264,14 @@ export function DatePicker({ config }: { config: DatePickerConfig }) {
 
   const displayText = selectedDate
     ? formatDate(selectedDate, config.format ?? 'MM/DD/YYYY')
-    : config.placeholder
+    : resolvedPlaceholder
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
-            {config.label}
+            {resolvedLabel}
           </Text>
         )}
 
@@ -273,7 +279,7 @@ export function DatePicker({ config }: { config: DatePickerConfig }) {
           style={styles.trigger}
           onPress={handleOpen}
           accessibilityRole="button"
-          accessibilityLabel={config.label ?? 'Date picker'}
+          accessibilityLabel={resolvedLabel ?? 'Date picker'}
           accessibilityHint="Opens a date picker"
           testID={config.testID ?? config.id}
         >

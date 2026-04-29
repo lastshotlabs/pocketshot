@@ -1,40 +1,19 @@
 import React from 'react'
-import { StyleSheet, View, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveSurfacePresentation } from '../../_base'
-import { useTokens } from '../../../context/AppContext'
+import { StackBase } from './standalone'
 import type { StackConfig } from './types'
 
 export function Stack({ config, children }: { config: StackConfig; children?: React.ReactNode }) {
-  const tokens = useTokens()
-  const itemSurface = resolveSurfacePresentation({
-    tokens,
-    componentSurface: config.slots?.item as Record<string, unknown> | undefined,
-  })
-  const items = React.Children.toArray(children)
-
   return (
-    <ComponentWrapper
-      id={config.id}
-      testID={config.testID}
-      config={config}
-      style={styles.container}
-    >
-      {items.map((child, index) => (
-        <View
-          key={React.isValidElement(child) && child.key != null ? child.key : index}
-          style={itemSurface.style as ViewStyle | undefined}
-        >
-          {child}
-        </View>
-      ))}
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+      <StackBase
+        gap={config.gap as string | number | undefined}
+        alignItems={config.alignItems as StackConfig['alignItems'] extends infer A ? A & ('start' | 'center' | 'end' | 'stretch' | 'baseline') : never}
+        justifyContent={config.justifyContent as 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly' | undefined}
+        slots={config.slots as Record<string, Record<string, unknown>> | undefined}
+      >
+        {children}
+      </StackBase>
     </ComponentWrapper>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'column',
-  },
-})
-

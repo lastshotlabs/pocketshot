@@ -157,6 +157,12 @@ export function TimePicker({ config }: { config: TimePickerConfig }) {
     config.defaultValue != null
       ? resolveFromRef<string>(config.defaultValue, values)
       : undefined
+  const resolvedLabel =
+    config.label != null ? resolveFromRef<string>(config.label, values) : undefined
+  const resolvedPlaceholder =
+    config.placeholder != null
+      ? resolveFromRef<string>(config.placeholder, values)
+      : undefined
 
   const parsedDefault = resolvedDefault ? parseTime(resolvedDefault) : null
 
@@ -207,14 +213,14 @@ export function TimePicker({ config }: { config: TimePickerConfig }) {
 
   const displayText = hasValue
     ? formatTimeDisplay(actual24Hour, selectedMinute, is24Hour)
-    : config.placeholder
+    : resolvedPlaceholder
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
       <View style={styles.container}>
         {config.label != null && (
           <Text style={styles.label} accessibilityRole="text">
-            {config.label}
+            {resolvedLabel}
           </Text>
         )}
 
@@ -222,7 +228,7 @@ export function TimePicker({ config }: { config: TimePickerConfig }) {
           style={styles.trigger}
           onPress={() => setPickerVisible(true)}
           accessibilityRole="button"
-          accessibilityLabel={config.label ?? 'Time picker'}
+          accessibilityLabel={resolvedLabel ?? 'Time picker'}
           accessibilityHint="Opens a time picker"
           testID={config.testID ?? config.id}
         >
@@ -252,7 +258,7 @@ export function TimePicker({ config }: { config: TimePickerConfig }) {
             <SafeAreaView style={styles.pickerPanel}>
               <TouchableOpacity activeOpacity={1}>
                 <Text style={styles.pickerTitle}>
-                  {config.label ?? 'Select Time'}
+                  {resolvedLabel ?? 'Select Time'}
                 </Text>
 
                 <View style={styles.columnsRow}>

@@ -1,40 +1,20 @@
 import React from 'react'
-import { StyleSheet, View, type ViewStyle } from 'react-native'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { resolveSurfacePresentation } from '../../_base'
-import { useTokens } from '../../../context/AppContext'
+import { RowBase } from './standalone'
 import type { RowConfig } from './types'
 
 export function Row({ config, children }: { config: RowConfig; children?: React.ReactNode }) {
-  const tokens = useTokens()
-  const itemSurface = resolveSurfacePresentation({
-    tokens,
-    componentSurface: config.slots?.item as Record<string, unknown> | undefined,
-  })
-  const items = React.Children.toArray(children)
-
   return (
-    <ComponentWrapper
-      id={config.id}
-      testID={config.testID}
-      config={config}
-      style={styles.container}
-    >
-      {items.map((child, index) => (
-        <View
-          key={React.isValidElement(child) && child.key != null ? child.key : index}
-          style={itemSurface.style as ViewStyle | undefined}
-        >
-          {child}
-        </View>
-      ))}
+    <ComponentWrapper id={config.id} testID={config.testID} config={config}>
+      <RowBase
+        gap={config.gap as string | number | undefined}
+        alignItems={config.alignItems as 'start' | 'center' | 'end' | 'stretch' | 'baseline' | undefined}
+        justifyContent={config.justifyContent as 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly' | undefined}
+        flexWrap={config.flexWrap as 'nowrap' | 'wrap' | 'wrap-reverse' | undefined}
+        slots={config.slots as Record<string, Record<string, unknown>> | undefined}
+      >
+        {children}
+      </RowBase>
     </ComponentWrapper>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-  },
-})
-
