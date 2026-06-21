@@ -1,359 +1,45 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native'
+import React, { useCallback, useMemo } from 'react'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
-import { useTokens } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
-import type { DesignTokens } from '../../../tokens/types'
-import type { CalendarConfig, CalendarDay, CalendarEvent } from './types'
-
-const WEEKDAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-const EVENT_DOT_SIZE = 4
-const MAX_EVENT_DOTS = 3
-
-function formatDateStr(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
-}
-
-function getMonthDays(
-  year: number,
-  month: number,
-  selectedDate: string | null,
-  today: Date,
-  events: CalendarEvent[],
-): CalendarDay[] {
-  const firstDay = new Date(year, month, 1)
-  const startOffset = firstDay.getDay() // 0=Sun
-
-  const days: CalendarDay[] = []
-  for (let i = 0; i < 42; i++) {
-    const dayOffset = i - startOffset
-    const date = new Date(year, month, 1 + dayOffset)
-    const dateStr = formatDateStr(date)
-    const isCurrentMonth = date.getMonth() === month
-    const isToday = isSameDay(date, today)
-    const isSelected = selectedDate === dateStr
-    const dayEvents = events.filter((e) => e.date === dateStr)
-
-    days.push({ date, dateStr, isCurrentMonth, isToday, isSelected, events: dayEvents })
-  }
-  return days
-}
+import { CalendarBase, type CalendarBaseEvent } from './standalone'
+import type { CalendarConfig, CalendarEvent } from './types'
 
 export function Calendar({ config }: { config: CalendarConfig }) {
-  const tokens = useTokens()
   const { values, setValue, dispatch } = useScreenContext()
-  const fadeAnim = useRef(new Animated.Value(1)).current
 
   const resolvedValue = isFromRef(config.value)
     ? (resolveFromRef(config.value as { from: string }, values) as unknown as string | null)
-    : (config.value as string | undefined ?? null)
+    : ((config.value as string | undefined) ?? null)
 
-  const resolvedEvents: CalendarEvent[] = useMemo(() => {
+  const resolvedEvents: CalendarBaseEvent[] = useMemo(() => {
     if (!config.events) return []
     if (isFromRef(config.events)) {
       const ref = resolveFromRef(config.events, values)
-      return Array.isArray(ref) ? (ref as CalendarEvent[]) : []
+      return Array.isArray(ref) ? (ref as CalendarBaseEvent[]) : []
     }
-    return config.events as CalendarEvent[]
+    return config.events as CalendarEvent[] as CalendarBaseEvent[]
   }, [config.events, values])
 
-  const today = useMemo(() => new Date(), [])
-
-  const initialDate = useMemo(() => {
-    const src = resolvedValue ?? config.defaultValue ?? null
-    if (src) {
-      const d = new Date(src)
-      if (!isNaN(d.getTime())) return { year: d.getFullYear(), month: d.getMonth() }
-    }
-    return { year: today.getFullYear(), month: today.getMonth() }
-  }, []) // intentionally only on mount
-
-  const [displayMonth, setDisplayMonth] = useState(initialDate)
-  const [selectedDate, setSelectedDate] = useState<string | null>(
-    resolvedValue ?? config.defaultValue ?? null,
-  )
-
-  const styles = useMemo(() => makeStyles(tokens), [tokens])
-
-  const days = useMemo(
-    () => getMonthDays(displayMonth.year, displayMonth.month, selectedDate, today, resolvedEvents),
-    [displayMonth.year, displayMonth.month, selectedDate, today, resolvedEvents],
-  )
-
-  const animateTransition = useCallback(
-    (fn: () => void) => {
-      Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
-        Animated.timing(fadeAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
-      ]).start()
-      fn()
-    },
-    [fadeAnim],
-  )
-
-  const handlePrevMonth = useCallback(() => {
-    animateTransition(() => {
-      setDisplayMonth((prev) => {
-        if (prev.month === 0) return { year: prev.year - 1, month: 11 }
-        return { year: prev.year, month: prev.month - 1 }
-      })
-    })
-  }, [animateTransition])
-
-  const handleNextMonth = useCallback(() => {
-    animateTransition(() => {
-      setDisplayMonth((prev) => {
-        if (prev.month === 11) return { year: prev.year + 1, month: 0 }
-        return { year: prev.year, month: prev.month + 1 }
-      })
-    })
-  }, [animateTransition])
-
-  const handleDayPress = useCallback(
-    async (day: CalendarDay) => {
-      setSelectedDate(day.dateStr)
-      if (config.id) setValue(config.id, day.dateStr)
+  const handleDateChange = useCallback(
+    async (dateStr: string) => {
+      if (config.id) setValue(config.id, dateStr)
       if (config.onDatePress) await dispatch(config.onDatePress)
     },
     [config.id, config.onDatePress, dispatch, setValue],
   )
 
-  const monthLabel = `${MONTH_NAMES[displayMonth.month]} ${displayMonth.year}`
-
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>
-      <View style={styles.container}>
-        {config.showNavigation ? (
-          <View style={styles.navRow}>
-            <TouchableOpacity
-              onPress={handlePrevMonth}
-              style={styles.navButton}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Previous month"
-              testID={config.testID ? `${config.testID}-prev-month` : undefined}
-            >
-              <Text style={styles.navChevron}>‹</Text>
-            </TouchableOpacity>
-            <Text style={styles.monthLabel} accessibilityRole="header">
-              {monthLabel}
-            </Text>
-            <TouchableOpacity
-              onPress={handleNextMonth}
-              style={styles.navButton}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Next month"
-              testID={config.testID ? `${config.testID}-next-month` : undefined}
-            >
-              <Text style={styles.navChevron}>›</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        <View style={styles.weekdayRow}>
-          {WEEKDAY_LABELS.map((label) => (
-            <View key={label} style={styles.weekdayCell}>
-              <Text style={styles.weekdayLabel}>{label}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Animated.View style={{ opacity: fadeAnim }}>
-          {Array.from({ length: 6 }).map((_, rowIdx) => (
-            <View key={rowIdx} style={styles.weekRow}>
-              {Array.from({ length: 7 }).map((_, colIdx) => {
-                const day = days[rowIdx * 7 + colIdx]
-                return (
-                  <DayCell
-                    key={day.dateStr}
-                    day={day}
-                    tokens={tokens}
-                    styles={styles}
-                    onPress={handleDayPress}
-                    testIDPrefix={config.testID}
-                  />
-                )
-              })}
-            </View>
-          ))}
-        </Animated.View>
-      </View>
+      <CalendarBase
+        id={config.id}
+        testID={config.testID}
+        selectedDate={resolvedValue}
+        defaultDate={config.defaultValue}
+        events={resolvedEvents}
+        showNavigation={config.showNavigation}
+        onDateChange={handleDateChange}
+      />
     </ComponentWrapper>
   )
 }
-
-interface DayCellProps {
-  day: CalendarDay
-  tokens: DesignTokens
-  styles: ReturnType<typeof makeStyles>
-  onPress: (day: CalendarDay) => void
-  testIDPrefix?: string
-}
-
-function DayCell({ day, tokens, styles, onPress, testIDPrefix }: DayCellProps) {
-  const handlePress = useCallback(() => onPress(day), [onPress, day])
-  const dots = day.events.slice(0, MAX_EVENT_DOTS)
-
-  return (
-    <TouchableOpacity
-      style={styles.dayCell}
-      onPress={handlePress}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel={`${day.dateStr}${day.isToday ? ', today' : ''}${day.isSelected ? ', selected' : ''}${day.events.length > 0 ? `, ${day.events.length} event${day.events.length > 1 ? 's' : ''}` : ''}`}
-      testID={testIDPrefix ? `${testIDPrefix}-day-${day.dateStr}` : undefined}
-    >
-      <View
-        style={[
-          styles.dayInner,
-          day.isToday && styles.dayToday,
-          day.isSelected && !day.isToday && styles.daySelected,
-        ]}
-      >
-        <Text
-          style={[
-            styles.dayNumber,
-            !day.isCurrentMonth && styles.dayOutsideMonth,
-            day.isToday && styles.dayTodayText,
-            day.isSelected && !day.isToday && styles.daySelectedText,
-          ]}
-        >
-          {day.date.getDate()}
-        </Text>
-      </View>
-      {dots.length > 0 ? (
-        <View style={styles.dotsRow}>
-          {dots.map((evt, i) => (
-            <View
-              key={i}
-              style={[
-                styles.eventDot,
-                { backgroundColor: evt.color ?? tokens.colors.primary },
-              ]}
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-            />
-          ))}
-        </View>
-      ) : null}
-    </TouchableOpacity>
-  )
-}
-
-function makeStyles(tokens: DesignTokens) {
-  const CELL_SIZE = 40
-
-  return StyleSheet.create({
-    container: {
-      backgroundColor: tokens.colors.surface,
-      borderRadius: tokens.radius.lg,
-      padding: tokens.spacing[3],
-      ...tokens.shadows.sm,
-    },
-    navRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: tokens.spacing[3],
-    },
-    navButton: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: tokens.radius.md,
-    },
-    navChevron: {
-      fontSize: tokens.typography.fontSizeXl,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightBold,
-      lineHeight: 28,
-    },
-    monthLabel: {
-      fontSize: tokens.typography.fontSizeMd,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-    weekdayRow: {
-      flexDirection: 'row',
-      marginBottom: tokens.spacing[1],
-    },
-    weekdayCell: {
-      flex: 1,
-      alignItems: 'center',
-      paddingVertical: tokens.spacing[1],
-    },
-    weekdayLabel: {
-      fontSize: tokens.typography.fontSizeXs,
-      color: tokens.colors.textMuted,
-      fontWeight: tokens.typography.fontWeightMedium,
-    },
-    weekRow: {
-      flexDirection: 'row',
-    },
-    dayCell: {
-      flex: 1,
-      alignItems: 'center',
-      paddingVertical: tokens.spacing[1],
-    },
-    dayInner: {
-      width: CELL_SIZE,
-      height: CELL_SIZE,
-      borderRadius: CELL_SIZE / 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    dayToday: {
-      backgroundColor: tokens.colors.primary,
-    },
-    daySelected: {
-      borderWidth: 2,
-      borderColor: tokens.colors.primary,
-    },
-    dayNumber: {
-      fontSize: tokens.typography.fontSizeSm,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeightMedium,
-    },
-    dayOutsideMonth: {
-      opacity: 0.35,
-    },
-    dayTodayText: {
-      color: tokens.colors.primaryForeground,
-      fontWeight: tokens.typography.fontWeightBold,
-    },
-    daySelectedText: {
-      color: tokens.colors.primary,
-      fontWeight: tokens.typography.fontWeightSemibold,
-    },
-    dotsRow: {
-      flexDirection: 'row',
-      gap: 2,
-      marginTop: 2,
-      height: EVENT_DOT_SIZE,
-    },
-    eventDot: {
-      width: EVENT_DOT_SIZE,
-      height: EVENT_DOT_SIZE,
-      borderRadius: EVENT_DOT_SIZE / 2,
-    },
-  })
-}
-
