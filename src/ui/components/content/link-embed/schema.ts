@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, slotsSchema } from '../../_base/schema'
+import { extendComponentSchema, looseSlots } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -57,7 +57,7 @@ export const LinkEmbedSchema = extendComponentSchema({
   fileName: z.string().optional(),
   lastModified: z.string().optional(),
   thumbnailUrl: z.string().optional(),
-  slots: slotsSchema([
+  slots: looseSlots([
     'root',
     'card',
     'body',

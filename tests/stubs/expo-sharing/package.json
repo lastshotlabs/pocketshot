@@ -1,0 +1,7 @@
+{
+  "name": "expo-sharing",
+  "version": "12.0.0",
+  "private": true,
+  "description": "Local test stub for the optional peer expo-sharing. Not published; only satisfies require('expo-sharing') in the SDK test env.",
+  "main": "index.cjs"
+}

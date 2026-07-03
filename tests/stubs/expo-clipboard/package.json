@@ -1,0 +1,7 @@
+{
+  "name": "expo-clipboard",
+  "version": "7.0.0",
+  "private": true,
+  "description": "Local test stub for the optional peer expo-clipboard. Not published; only satisfies require('expo-clipboard') in the SDK test env.",
+  "main": "index.cjs"
+}
