@@ -1,6 +1,19 @@
 {
   "name": "@lastshotlabs/pocketshot",
   "version": "0.1.0",
+  "description": "React Native / Expo SDK for Slingshot-powered apps.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lastshotlabs/pocketshot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lastshotlabs/pocketshot/issues"
+  },
+  "homepage": "https://github.com/lastshotlabs/pocketshot#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "bin": {
     "pocketshot": "./dist/cli.cjs"
@@ -20,13 +33,17 @@
       "require": "./dist/ui.cjs"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "NODE_OPTIONS=--max-old-space-size=8192 tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\"",
+    "release:check": "npm run typecheck && npm test && npm run build && node scripts/check-publishable.mjs"
   },
   "peerDependencies": {
     "@react-native-community/netinfo": ">=11.0.0",
