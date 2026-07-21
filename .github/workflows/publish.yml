@@ -1,0 +1,62 @@
+name: Publish to GitHub Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout pocketshot
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Use npm 11
+        run: npm install -g npm@^11.10.0
+
+      # Must precede `npm ci`: @lastshotlabs/frontend-contract resolves from
+      # GitHub Packages, so installing needs auth, not just publishing. Only the
+      # @lastshotlabs scope is mapped; the default registry stays npmjs.org.
+      #
+      # NOTE: the package is private, and cross-repo access is not automatic
+      # within the org. This repo needs read access granted on the
+      # frontend-contract package (Manage Actions access), or `npm ci` fails
+      # with `403 permission_denied: read_package`.
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > $HOME/.npmrc
+          echo "@lastshotlabs:registry=https://npm.pkg.github.com" >> $HOME/.npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # This repo has a genuine pre-existing Expo peer conflict (expo-router
+      # peer-requires expo-constants@^55 while Expo 57 ships 57.x), so npm
+      # cannot install without this flag.
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Verify tag matches package version
+        if: github.event_name == 'release'
+        run: |
+          node -e 'const pkg = require("./package.json"); const expected = "v" + pkg.version; const actual = process.env.GITHUB_REF_NAME; if (actual !== expected) { console.error("Tag " + actual + " does not match package version " + expected); process.exit(1); }'
+
+      - name: Check release
+        run: npm run release:check
+
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
