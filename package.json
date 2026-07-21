@@ -92,7 +92,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.1.0",
-    "@lastshotlabs/frontend-contract": "file:../frontend-contract"
+    "@lastshotlabs/frontend-contract": "^0.2.2"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.99.0",

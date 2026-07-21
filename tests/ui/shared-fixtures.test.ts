@@ -1,5 +1,6 @@
+import { createRequire } from 'node:module'
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('react-native', () => ({
@@ -11,12 +12,12 @@ vi.mock('react-native', () => ({
 import { executeAction, type ActionExecutorDeps } from '../../src/ui/actions/executor'
 
 function readSharedFixture<T>(relativePath: string): T {
-  return JSON.parse(
-    readFileSync(
-      fileURLToPath(new URL(`../../../frontend-contract/fixtures/${relativePath}`, import.meta.url).href),
-      'utf8',
-    ),
-  ) as T
+  // Resolve from the installed package rather than a sibling checkout, so the
+  // suite runs anywhere @lastshotlabs/frontend-contract is installed.
+  const require = createRequire(import.meta.url)
+  const packageRoot = dirname(require.resolve('@lastshotlabs/frontend-contract/package.json'))
+
+  return JSON.parse(readFileSync(join(packageRoot, 'fixtures', relativePath), 'utf8')) as T
 }
 
 function createDeps() {
