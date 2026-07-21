@@ -14,7 +14,7 @@ Change anything freely — no deprecation cycles, no migration guides, no backwa
 
 ## What Pocketshot Is
 
-Pocketshot is the React Native/Expo client SDK for bunshot-powered backends. It is the mobile counterpart to Snapshot (web). Every Bunshot backend feature should be accessible from a native iOS and Android app built entirely with Pocketshot primitives.
+Pocketshot is the React Native/Expo client SDK for Slingshot-powered backends. It is the mobile counterpart to Snapshot (web). Every Slingshot backend feature should be accessible from a native iOS and Android app built entirely with Pocketshot primitives.
 
 **Three surfaces:**
 1. **SDK** — TypeScript library. `createPocketshot(config)` factory returns all hooks. Targets iOS and Android via Expo.
@@ -27,7 +27,7 @@ The SDK and CLI are different execution contexts. React Native APIs (`AppState`,
 
 ## Shared Rules (inherited from the LastShot Labs engineering standards)
 
-These apply equally to Bunshot, Snapshot, and Pocketshot. They are documented here for completeness.
+These apply equally to Slingshot, Snapshot, and Pocketshot. They are documented here for completeness.
 
 ### 1. Factory Pattern — No Singletons
 
@@ -129,7 +129,7 @@ Generated files include `// --- section:name ---` / `// --- end:name ---` marker
 | UI components | vitest + RNTL |
 | E2E critical paths | Maestro |
 
-No live network in unit or integration tests. Mock the API client. E2E runs against a local bunshot instance.
+No live network in unit or integration tests. Mock the API client. E2E runs against a local Slingshot instance.
 
 ### 15. JSDoc on Public API
 
@@ -599,7 +599,7 @@ it("shows skeleton when loading", () => {
 
 ### E2E Tests (Maestro)
 
-Maestro YAML files in `e2e/`. Run against local bunshot + pocketshot dev build.
+Maestro YAML files in `e2e/`. Run against local Slingshot + Pocketshot dev build.
 
 Critical paths that must have E2E coverage:
 - Email/password auth flow (register → verify email → login → logout)

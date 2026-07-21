@@ -13,7 +13,7 @@
 
 1. [Vision](#1-vision)
 2. [Architecture Principles](#2-architecture-principles)
-3. [Bunshot Backend Requirements](#3-bunshot-backend-requirements)
+3. [Slingshot Backend Requirements](#3-slingshot-backend-requirements)
 4. [Phase 1 — SDK Core Parity](#4-phase-1--sdk-core-parity)
 5. [Phase 2 — Native Mobile Modules](#5-phase-2--native-mobile-modules)
 6. [Phase 3 — Organizations & Permissions](#6-phase-3--organizations--permissions)
@@ -31,11 +31,11 @@
 
 ## 1. Vision
 
-Pocketshot is the React Native/Expo counterpart to Snapshot. Every app built on Bunshot should be shippable as a native iOS and Android app using Pocketshot — with zero compromise on capability.
+Pocketshot is the React Native/Expo counterpart to Snapshot. Every app built on Slingshot should be shippable as a native iOS and Android app using Pocketshot — with zero compromise on capability.
 
 **What this means in practice:**
 
-- Every Bunshot backend feature has a Pocketshot hook or module.
+- Every Slingshot backend feature has a Pocketshot hook or module.
 - An enterprise mobile app — auth with biometrics, real-time collaboration, file uploads, push notifications, offline capability, deep linking, organization management — can be built entirely with Pocketshot primitives.
 - Config-driven development works on mobile the same way it works on web. A manifest file describes screens, navigation, data bindings, and actions. The runtime renders it.
 - The component library covers every interaction pattern a mobile app needs — not wrapped web components, but purpose-built React Native components that follow platform conventions.
@@ -64,27 +64,27 @@ Key principles for quick reference:
 
 ---
 
-## 3. Bunshot Backend Requirements
+## 3. Slingshot Backend Requirements
 
-The following new Bunshot plugins are required to support the Pocketshot 2.0 feature set.
+The following new Slingshot plugins are required to support the Pocketshot 2.0 feature set.
 
 **Timing note:** Pocketshot SDK code for both features can be written before these plugins exist — the hooks just need the endpoint contract defined, and can be tested against mock endpoints. However:
 
-- **`bunshot-native-push`** — must be deployed before end-to-end push delivery can be tested on a real device. Build in parallel with Phase B push work.
-- **`bunshot-deep-links`** — must be deployed before Universal Links or App Links can be tested at all. Apple and Google resolve `.well-known/` files at the OS level before the app ever opens. Build this early — ideally before Phase B deep-link work starts.
+- **`slingshot-native-push`** — must be deployed before end-to-end push delivery can be tested on a real device. Build in parallel with Phase B push work.
+- **`slingshot-deep-links`** — must be deployed before Universal Links or App Links can be tested at all. Apple and Google resolve `.well-known/` files at the OS level before the app ever opens. Build this early — ideally before Phase B deep-link work starts.
 
-Both plugins should be tracked as parallel workstreams in Bunshot, not as blockers gating Pocketshot Phase B.
+Both plugins should be tracked as parallel workstreams in Slingshot, not as blockers gating Pocketshot Phase B.
 
-### 3.1 `bunshot-native-push` (NEW PLUGIN)
+### 3.1 `slingshot-native-push` (NEW PLUGIN)
 
-**Purpose:** Native push notification delivery via Firebase Cloud Messaging (Android) and Apple Push Notification Service (iOS). Replaces or extends `bunshot-push` which only supports Web Push (VAPID).
+**Purpose:** Native push notification delivery via Firebase Cloud Messaging (Android) and Apple Push Notification Service (iOS). Replaces or extends `slingshot-push` which only supports Web Push (VAPID).
 
 **What it does:**
 - Accepts device token registration from mobile clients (Expo push tokens or raw FCM/APN tokens)
 - Sends push notifications to registered devices on configurable events
 - Manages device token lifecycle (register, update, expire, unregister)
 - Supports notification payload: title, body, data, badge count, sound, channel (Android)
-- Integrates with Bunshot event bus — same pattern as `bunshot-push`
+- Integrates with Slingshot event bus — same pattern as `slingshot-push`
 
 **New Routes:**
 - `POST /push/native/register` — Register device token
@@ -104,17 +104,17 @@ nativePush: {
 }
 ```
 
-**Adapters Required:** Same interface as `bunshot-push`:
+**Adapters Required:** Same interface as `slingshot-push`:
 - `savePushToken(userId, token, platform, metadata)`
 - `listPushTokensByUserId(userId)`
 - `deletePushTokenByValue(token)`
 - Adapters: SQLite, PostgreSQL, MongoDB, Memory
 
-**Dependency:** None (can coexist with `bunshot-push`)
+**Dependency:** None (can coexist with `slingshot-push`)
 
 ---
 
-### 3.2 `bunshot-deep-links` (NEW PLUGIN)
+### 3.2 `slingshot-deep-links` (NEW PLUGIN)
 
 **Purpose:** Serve the platform-specific association files that enable iOS Universal Links and Android App Links. Handle deferred deep links (user lands on web → installs app → opens at original destination). Provide fallback web views for links opened without the app installed.
 
@@ -159,9 +159,9 @@ deepLinks: {
 
 ---
 
-### 3.3 `bunshot-organizations` Extension: Mobile Profile
+### 3.3 `slingshot-organizations` Extension: Mobile Profile
 
-`bunshot-organizations` already exists. It needs the following additions for mobile use:
+`slingshot-organizations` already exists. It needs the following additions for mobile use:
 
 - `GET /organizations/current` — User's active org context
 - `POST /organizations/:orgId/switch` — Switch active org (updates session claims)
@@ -221,15 +221,15 @@ The distinction is critical: **passkeys on mobile are the primary auth method**,
 ```ts
 // Registration — called during sign-up or from security settings
 usePasskeyRegister(): UseMutationResult<void, ApiError, PasskeyRegisterVars>
-// 1. GET /auth/passkey/register/options → gets challenge from bunshot
+// 1. GET /auth/passkey/register/options → gets challenge from Slingshot
 // 2. Calls platform authenticator (react-native-passkeys)
-// 3. POST /auth/passkey/register/verify → confirms with bunshot
+// 3. POST /auth/passkey/register/verify → confirms with Slingshot
 
 // Login — called instead of email/password
 usePasskeyLogin(): UseMutationResult<LoginResult, ApiError, PasskeyLoginVars>
 // 1. GET /auth/passkey/login/options → gets challenge
 // 2. Calls platform authenticator
-// 3. POST /auth/passkey/login/verify → bunshot validates, returns token
+// 3. POST /auth/passkey/login/verify → Slingshot validates, returns token
 
 // List credentials
 useListPasskeys(): UseQueryResult<PasskeyCredential[]>
@@ -338,7 +338,7 @@ Snapshot has `usePushNotifications()` for Web Push. Pocketshot needs the native 
 **What it does:**
 1. Requests notification permissions from the OS
 2. Gets the Expo push token (or raw FCM/APN token)
-3. Registers the token with the Bunshot backend (`bunshot-native-push`)
+3. Registers the token with the Slingshot backend (`slingshot-native-push`)
 4. Sets up foreground notification handler
 5. Sets up notification tap handler (deep link resolution)
 6. Handles token refresh (tokens can rotate)
@@ -479,7 +479,7 @@ createBiometricStorage(key: string): {
 
 ### 5.2 Deep Linking Module
 
-**Purpose:** Register and handle deep links in the app. Works with `bunshot-deep-links` backend plugin and `expo-router` for routing.
+**Purpose:** Register and handle deep links in the app. Works with `slingshot-deep-links` backend plugin and `expo-router` for routing.
 
 **New file:** `src/deep-links/hook.ts`
 
@@ -641,7 +641,7 @@ device: {
 }
 ```
 
-**Backend requirement:** `bunshot-native-push` device registration endpoint or a lightweight `bunshot-device` plugin (TBD — may be part of `bunshot-native-push`).
+**Backend requirement:** `slingshot-native-push` device registration endpoint or a lightweight `slingshot-device` plugin (TBD — may be part of `slingshot-native-push`).
 
 ### 5.6 App State Module
 
@@ -754,7 +754,7 @@ useClipboard(): {
 
 ## 6. Phase 3 — Organizations & Permissions
 
-Bunshot has `bunshot-organizations` and `bunshot-permissions`. Pocketshot has neither.
+Slingshot has `slingshot-organizations` and `slingshot-permissions`. Pocketshot has neither.
 
 ### 6.1 Organizations Module
 
@@ -933,7 +933,7 @@ src/upload/
 
 **Two upload strategies:**
 1. **Direct upload** — POST file to backend. Simple, no presigning required.
-2. **Presigned URL upload** — Backend provides S3 presigned URL, client uploads directly to S3. Efficient for large files, reduces backend load. Matches bunshot's `upload.presignedUrls` config.
+2. **Presigned URL upload** — Backend provides S3 presigned URL, client uploads directly to S3. Efficient for large files, reduces backend load. Matches Slingshot's `upload.presignedUrls` config.
 
 **Peer dependencies:** `expo-image-picker`, `expo-document-picker`, `expo-file-system`
 
@@ -1590,7 +1590,7 @@ Generates a minimal manifest-driven app:
 
 Add:
 - `--manifest` flag: regenerate `pocketshot.manifest.json` screen list from OpenAPI operations
-- `--push-config` flag: generate native push configuration from bunshot config endpoint
+- `--push-config` flag: generate native push configuration from Slingshot config endpoint
 
 ### 10.4 New `pocketshot eas` Command
 
@@ -1783,9 +1783,9 @@ Work must be sequenced because later phases depend on earlier ones. Within a pha
 **Can run in parallel after Phase A.**
 
 7. SSE module
-8. Push notifications module (requires `bunshot-native-push` backend)
+8. Push notifications module (requires `slingshot-native-push` backend)
 9. Biometrics module
-10. Deep linking module (requires `bunshot-deep-links` backend)
+10. Deep linking module (requires `slingshot-deep-links` backend)
 11. Offline sync module
 12. Network-aware API client
 13. Device module
@@ -1797,11 +1797,11 @@ Work must be sequenced because later phases depend on earlier ones. Within a pha
 19. File upload module
 20. WebAuthn / Passkey module (mobile)
 
-### Phase C: Bunshot Plugins (Parallel with Phase B)
+### Phase C: Slingshot Plugins (Parallel with Phase B)
 
-21. `bunshot-native-push` plugin
-22. `bunshot-deep-links` plugin
-23. `bunshot-organizations` extensions
+21. `slingshot-native-push` plugin
+22. `slingshot-deep-links` plugin
+23. `slingshot-organizations` extensions
 
 ### Phase D: Core UI Components (Requires Phase A tokens)
 
@@ -1886,9 +1886,9 @@ Work must be sequenced because later phases depend on earlier ones. Within a pha
 
 ---
 
-## Appendix B: Missing Bunshot Auth Endpoints
+## Appendix B: Missing Slingshot Auth Endpoints
 
-The following endpoints are needed by Pocketshot 2.0 and should be verified as present in `bunshot-auth`:
+The following endpoints are needed by Pocketshot 2.0 and should be verified as present in `slingshot-auth`:
 
 | Endpoint | Module | Notes |
 |----------|--------|-------|
@@ -1905,27 +1905,27 @@ The following endpoints are needed by Pocketshot 2.0 and should be verified as p
 
 ---
 
-## Appendix C: Bunshot Plugin → Pocketshot Module Mapping
+## Appendix C: Slingshot Plugin → Pocketshot Module Mapping
 
-| Bunshot Plugin | Pocketshot Module |
+| Slingshot Plugin | Pocketshot Module |
 |----------------|-------------------|
-| `bunshot-auth` | `src/auth/*` |
-| `bunshot-push` | (Web Push — not needed on mobile) |
-| `bunshot-native-push` *(new)* | `src/push/hook.ts` |
-| `bunshot-deep-links` *(new)* | `src/deep-links/hook.ts` |
-| `bunshot-community` | `src/community/*` |
-| `bunshot-webhooks` | `src/webhooks/*` |
-| `bunshot-organizations` | `src/organizations/*` |
-| `bunshot-permissions` | `src/permissions/*` |
-| `bunshot-search` | `src/search/*` |
-| `bunshot-websockets` | `src/ws/*` |
-| `bunshot-sse` | `src/sse/*` |
-| `bunshot-embeds` | `src/ui/components/content/link-embed/` |
-| `bunshot-emoji` | `src/ui/components/communication/emoji-picker/` |
-| `bunshot-gifs` | `src/ui/components/communication/gif-picker/` |
-| `bunshot-entity` | `pocketshot sync` (generates hooks from OpenAPI) |
-| `bunshot-admin` | `pocketshot init --template admin` |
-| `bunshot-m2m` | Not needed (mobile clients are user-facing) |
-| `bunshot-saml` | Not in scope (enterprise SSO typically handled by IdP app) |
-| `bunshot-scim` | Not in scope (user provisioning is backend-only) |
-| `bunshot-oidc` | Not in scope |
+| `slingshot-auth` | `src/auth/*` |
+| `slingshot-push` | (Web Push — not needed on mobile) |
+| `slingshot-native-push` *(new)* | `src/push/hook.ts` |
+| `slingshot-deep-links` *(new)* | `src/deep-links/hook.ts` |
+| `slingshot-community` | `src/community/*` |
+| `slingshot-webhooks` | `src/webhooks/*` |
+| `slingshot-organizations` | `src/organizations/*` |
+| `slingshot-permissions` | `src/permissions/*` |
+| `slingshot-search` | `src/search/*` |
+| `slingshot-websockets` | `src/ws/*` |
+| `slingshot-sse` | `src/sse/*` |
+| `slingshot-embeds` | `src/ui/components/content/link-embed/` |
+| `slingshot-emoji` | `src/ui/components/communication/emoji-picker/` |
+| `slingshot-gifs` | `src/ui/components/communication/gif-picker/` |
+| `slingshot-entity` | `pocketshot sync` (generates hooks from OpenAPI) |
+| `slingshot-admin` | `pocketshot init --template admin` |
+| `slingshot-m2m` | Not needed (mobile clients are user-facing) |
+| `slingshot-saml` | Not in scope (enterprise SSO typically handled by IdP app) |
+| `slingshot-scim` | Not in scope (user provisioning is backend-only) |
+| `slingshot-oidc` | Not in scope |

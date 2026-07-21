@@ -1,6 +1,6 @@
 # @lastshotlabs/pocketshot
 
-Expo / React Native framework library for bunshot backends — scaffold a new app with `pocketshot init` or drop the runtime into an existing project.
+Expo / React Native framework library for Slingshot backends — scaffold a new app with `pocketshot init` or drop the runtime into an existing project.
 
 ## Install
 
@@ -69,7 +69,7 @@ After scaffolding, run `expo start` then `npx pocketshot sync` to generate typed
 
 ## `pocketshot sync`
 
-Generates `lib/api/` and `lib/hooks/` from your bunshot OpenAPI spec.
+Generates `lib/api/` and `lib/hooks/` from your Slingshot OpenAPI spec.
 
 ```bash
 npx pocketshot sync --file openapi.json       # from a local spec file
@@ -95,7 +95,7 @@ Project-level defaults live in `pocketshot.config.json` at your project root.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `apiUrl` | `string` | required | bunshot backend base URL |
+| `apiUrl` | `string` | required | Slingshot backend base URL |
 | `wsEndpoint` | `string` | — | Full WebSocket endpoint URL including path (e.g. `ws://host/chat`). Optional — omit to disable WebSocket. |
 | `tokenKey` | `string` | `"pocketshot_token"` | Key name in `expo-secure-store` |
 | `loginPath` | `string` | `"/(auth)/login"` | Route to redirect to on logout / unauthenticated |
@@ -155,7 +155,7 @@ Project-level defaults live in `pocketshot.config.json` at your project root.
 | `useRoom(room)` | Subscribe to a room, returns latest message |
 | `useRoomEvent(room, event, handler)` | Subscribe to a specific event type in a room |
 
-> **SSE (Server-Sent Events):** The Bunshot backend supports server-push streams for browser clients via `/__sse/*` endpoints. Pocketshot uses WebSockets for real-time in v1 — SSE client support for React Native may be added in a future release.
+> **SSE (Server-Sent Events):** The Slingshot backend supports server-push streams for browser clients via `/__sse/*` endpoints. Pocketshot uses WebSockets for real-time in v1 — SSE client support for React Native may be added in a future release.
 
 **Community** (call `createCommunityHooks(api)` to create)
 
@@ -213,7 +213,7 @@ export const { useListThreads, useCreateThread, useCheckBan } = community
 | `useGetWebhookDelivery(deliveryId)` | Get a single delivery record |
 | `useTestWebhookEndpoint()` | Fire a test delivery; invalidates delivery list on success |
 
-> **No retry hook:** Bunshot manages retries internally via BullMQ. There is no client-triggered retry endpoint.
+> **No retry hook:** Slingshot manages retries internally via BullMQ. There is no client-triggered retry endpoint.
 
 ```ts
 import { createWebhookHooks } from '@lastshotlabs/pocketshot'
@@ -245,13 +245,13 @@ export const { useListWebhookEndpoints, useCreateWebhookEndpoint } = webhooks
 | Request header | `x-user-token: <jwt>` |
 | Refresh | `POST /auth/refresh` with `{ refreshToken }` in body; on success, retries original request once; on second 401, clears tokens |
 | OAuth | `expo-web-browser` opens `GET /auth/:provider`, deep link returns `scheme://auth/callback?code=xxx`, exchanged via `POST /auth/oauth/exchange` |
-| WebSocket | `wss://host/ws?token=<jwt>` (bunshot accepts `?token=` for React Native clients) |
+| WebSocket | `wss://host/ws?token=<jwt>` (Slingshot accepts `?token=` for React Native clients) |
 
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `EXPO_PUBLIC_API_URL` | `http://localhost:3000` | bunshot backend base URL |
+| `EXPO_PUBLIC_API_URL` | `http://localhost:3000` | Slingshot backend base URL |
 | `EXPO_PUBLIC_WS_ENDPOINT` | `ws://localhost:3000/chat` | WebSocket endpoint URL (optional) |
 
 ## File structure

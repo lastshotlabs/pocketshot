@@ -21,7 +21,7 @@ export interface ManifestSyncOptions {
 }
 
 /**
- * Fetches the manifest from the bunshot server and generates:
+ * Fetches the manifest from the Slingshot server and generates:
  * - One screen file per route in `outDir/`
  * - A `manifest.ts` config file with the full ManifestConfig
  */

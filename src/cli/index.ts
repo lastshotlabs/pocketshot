@@ -81,14 +81,14 @@ async function main() {
   // Help — must come before init, which catches the no-command case
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
-pocketshot — Expo mobile framework for bunshot backends
+pocketshot — Expo mobile framework for Slingshot backends
 
 Commands:
   init [--yes] [--dir <path>]    Scaffold a new pocketshot app
   sync [--file <path>] [--api <url>] [--watch]
                                  Generate API client + hooks from OpenAPI spec
   manifest --api <url> [--out <dir>]
-                                 Fetch and generate screens from a bunshot manifest
+                                 Fetch and generate screens from a Slingshot manifest
 
 Options:
   --yes, -y        Skip prompts, use defaults
@@ -147,7 +147,7 @@ Options:
   cd ${relDir}
 
   Fill in your .env:
-    EXPO_PUBLIC_API_URL   — your bunshot backend URL
+    EXPO_PUBLIC_API_URL   — your Slingshot backend URL
 ${wsLine}
   expo start             — start the dev server
   npx pocketshot sync    — generate typed API hooks from OpenAPI spec

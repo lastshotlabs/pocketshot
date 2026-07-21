@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router'
  * Register your app's deep link routes here.
  * Called once in the root layout.
  *
- * Universal links (https://) work after bunshot-deep-links plugin is deployed.
+ * Universal links (https://) work after slingshot-deep-links plugin is deployed.
  * Scheme links (${config.scheme}://) work immediately.
  */
 export function useDeepLinks() {

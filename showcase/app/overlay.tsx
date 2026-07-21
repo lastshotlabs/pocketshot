@@ -150,7 +150,7 @@ function OverlayControls() {
         }}
       >
         <Stack config={{ gap: 12, padding: 16 }}>
-          <Body config={{ text: 'Pocketshot is the React Native SDK for bunshot-powered backends.' }} />
+          <Body config={{ text: 'Pocketshot is the React Native SDK for Slingshot-powered backends.' }} />
         </Stack>
       </Modal>
 

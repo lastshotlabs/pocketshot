@@ -243,7 +243,7 @@ export default function CommunicationShowcase() {
             url: 'https://github.com/lastshotlabs/pocketshot',
             repoOwner: 'lastshotlabs',
             repoName: 'pocketshot',
-            repoDescription: 'React Native/Expo SDK for bunshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation.',
+            repoDescription: 'React Native/Expo SDK for Slingshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation.',
             language: 'TypeScript',
             languageColor: '#3178C6',
             stars: 4821,
@@ -306,7 +306,7 @@ function CommunicationDemos() {
       {
         id: 'feed-3',
         title: 'Maestro E2E Testing Guide',
-        body: 'Step-by-step guide for setting up Maestro flows against a local bunshot dev instance.',
+        body: 'Step-by-step guide for setting up Maestro flows against a local Slingshot dev instance.',
         author: { name: 'Carol Davis' },
         createdAt: '2026-04-07T11:15:00Z',
         tags: ['testing', 'docs'],

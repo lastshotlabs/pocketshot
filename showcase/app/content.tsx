@@ -273,7 +273,7 @@ export default function ContentShowcase() {
             url: 'https://github.com/lastshotlabs/pocketshot',
             repoOwner: 'lastshotlabs',
             repoName: 'pocketshot',
-            repoDescription: 'React Native/Expo SDK for bunshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation from OpenAPI specs.',
+            repoDescription: 'React Native/Expo SDK for Slingshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation from OpenAPI specs.',
             language: 'TypeScript',
             languageColor: '#3178C6',
             stars: 4821,

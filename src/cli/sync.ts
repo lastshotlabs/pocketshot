@@ -480,7 +480,7 @@ function paramType(p: Parameter): string {
   return schemaToTs(p.schema ?? { type: 'string' })
 }
 
-/** Detects bunshot's pagination envelope: { data: T[], total: number, ... } */
+/** Detects Slingshot's pagination envelope: { data: T[], total: number, ... } */
 function isPaginatedSchema(schema: SchemaObject): { itemSchema: SchemaObject } | null {
   if (!schema.properties) return null
   const { data, total } = schema.properties
@@ -951,7 +951,7 @@ async function runSyncOnce(
     if (err instanceof Error && 'status' in err) {
       const status = (err as Error & { status: number }).status
       if (status === 401 || status === 403) {
-        logger.info('Tip: check your bunshot config — /openapi.json may require authentication')
+        logger.info('Tip: check your Slingshot config — /openapi.json may require authentication')
       }
     }
     throw err

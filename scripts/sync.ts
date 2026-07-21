@@ -2,7 +2,7 @@
 /**
  * bun run sync
  *
- * Fetches the OpenAPI spec from the running bunshot server and generates
+ * Fetches the OpenAPI spec from the running Slingshot server and generates
  * a typed TypeScript client at lib/generated/api.ts.
  *
  * Usage:

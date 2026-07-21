@@ -130,7 +130,7 @@ export default function NavigationShowcase() {
           config={{
             id: 'faq-accordion',
             sections: [
-              { id: 'what', title: 'What is Pocketshot?', content: 'Pocketshot is the React Native SDK for bunshot-powered backends. It provides hooks, typed API clients, and a config-driven UI layer.' },
+              { id: 'what', title: 'What is Pocketshot?', content: 'Pocketshot is the React Native SDK for Slingshot-powered backends. It provides hooks, typed API clients, and a config-driven UI layer.' },
               { id: 'how', title: 'How do I get started?', content: 'Run `pocketshot init` in your Expo project, configure your backend URL, and start using the generated hooks.' },
               { id: 'tokens', title: 'What are design tokens?', content: 'Tokens are semantic design primitives — colors, spacing, typography, and radii — that drive all visual properties across components.' },
               { id: 'offline', title: 'Does it work offline?', content: 'Yes. The offline module uses expo-sqlite for local persistence and automatically syncs queued mutations when connectivity is restored.' },
