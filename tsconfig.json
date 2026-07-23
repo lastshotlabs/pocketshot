@@ -9,9 +9,7 @@
     "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@ui-test/*": ["./tests/ui/*"],
-      "@lastshotlabs/frontend-contract": ["../frontend-contract/src/index.ts"],
-      "@lastshotlabs/frontend-contract/*": ["../frontend-contract/src/*"]
+      "@ui-test/*": ["./tests/ui/*"]
     }
   },
   "include": ["src", "tests"]
