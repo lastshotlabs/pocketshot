@@ -46,6 +46,15 @@ jobs:
       - run: npm run check:accessibility
       - run: npm run check:performance
       - run: npm run check:maestro
+      - name: Generate and validate production SBOM
+        run: |
+          npm sbom --omit=dev --sbom-format=cyclonedx > pocketshot-sbom.cdx.json
+          jq -e '.bomFormat == "CycloneDX" and (.components | length > 0)' pocketshot-sbom.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pocketshot-production-sbom
+          path: pocketshot-sbom.cdx.json
+          if-no-files-found: error
       - run: npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

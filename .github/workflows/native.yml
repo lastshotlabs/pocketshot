@@ -84,7 +84,9 @@ jobs:
       - name: Compile iOS simulator app
         run: |
           workspace=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
-          scheme=$(xcodebuild -workspace "$workspace" -list -json | jq -r '.workspace.schemes[0]')
+          scheme=$(basename "$workspace" .xcworkspace)
+          xcodebuild -workspace "$workspace" -list -json |
+            jq -e --arg scheme "$scheme" '.workspace.schemes | index($scheme) != null'
           xcodebuild \
             -workspace "$workspace" \
             -scheme "$scheme" \

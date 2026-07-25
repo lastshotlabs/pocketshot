@@ -136,7 +136,9 @@ jobs:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
         run: |
           workspace=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
-          scheme=$(xcodebuild -workspace "$workspace" -list -json | jq -r '.workspace.schemes[0]')
+          scheme=$(basename "$workspace" .xcworkspace)
+          xcodebuild -workspace "$workspace" -list -json |
+            jq -e --arg scheme "$scheme" '.workspace.schemes | index($scheme) != null'
           xcodebuild \
             -workspace "$workspace" \
             -scheme "$scheme" \
@@ -152,9 +154,10 @@ jobs:
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
         run: |
-          app=$(find "$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data/Build/Products/Debug-iphonesimulator" \
-            -maxdepth 1 -name '*.app' -print -quit)
+          products="$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data/Build/Products/Debug-iphonesimulator"
+          app=$(find "$products" -maxdepth 1 -type d -name '*.app' -print -quit)
           test -n "$app"
+          echo "Installing $app on simulator $DEVICE_ID"
           xcrun simctl install "$DEVICE_ID" "$app"
           "$HOME/.maestro/bin/maestro" --device "$DEVICE_ID" test ${{ matrix.flow }}
       - uses: actions/upload-artifact@v4

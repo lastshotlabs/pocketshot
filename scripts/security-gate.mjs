@@ -24,12 +24,34 @@ for (const heading of ['Trust boundaries', 'Persisted-data inventory', 'Release 
   if (!threatModel.includes(`## ${heading}`)) failures.push(`threat model is missing ${heading}`)
 }
 
+const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8')
+const releaseWorkflow = await readFile(
+  new URL('../.github/workflows/release.yml', import.meta.url),
+  'utf8',
+)
+for (const [name, workflow] of [
+  ['CI', ciWorkflow],
+  ['release', releaseWorkflow],
+]) {
+  if (!workflow.includes('npm audit --omit=dev --audit-level=high') && name === 'CI') {
+    failures.push('CI does not reject high/critical production dependency findings')
+  }
+  if (!workflow.includes('npm sbom --omit=dev --sbom-format=cyclonedx')) {
+    failures.push(`${name} workflow does not generate a production CycloneDX SBOM`)
+  }
+}
+if (!releaseWorkflow.includes('npm publish --provenance')) {
+  failures.push('release workflow does not publish registry provenance')
+}
+
 if (failures.length) {
   console.error(`Security gate failed:\n- ${failures.join('\n- ')}`)
   process.exit(1)
 }
 
-console.log('Security gate passes (source/config secret, transport, and threat-model checks).')
+console.log(
+  'Security gate passes (secrets, transport, threat model, audit, SBOM, and provenance checks).',
+)
 
 function check(name, body) {
   if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(body)) {

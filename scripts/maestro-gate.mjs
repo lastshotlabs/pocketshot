@@ -8,6 +8,10 @@ const workflow = await readFile(
   new URL('../.github/workflows/device-e2e.yml', import.meta.url),
   'utf8',
 )
+const nativeWorkflow = await readFile(
+  new URL('../.github/workflows/native.yml', import.meta.url),
+  'utf8',
+)
 const failures = []
 
 const appIds = [
@@ -61,6 +65,12 @@ for (const shell of ['party', 'coach', 'community']) {
 }
 if (!workflow.includes('maestro" --device "$DEVICE_ID" test')) {
   failures.push('iOS workflow does not target its isolated simulator')
+}
+if (!workflow.includes('scheme=$(basename "$workspace" .xcworkspace)')) {
+  failures.push('iOS workflow does not select the application workspace scheme')
+}
+if (!nativeWorkflow.includes('scheme=$(basename "$workspace" .xcworkspace)')) {
+  failures.push('native smoke workflow does not select the application workspace scheme')
 }
 
 if (failures.length) {
