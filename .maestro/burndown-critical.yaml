@@ -1,0 +1,28 @@
+appId: com.lastshotlabs.pocketshot.burndown
+name: Burndown shared-device turn, challenge, and privacy handoff
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    text: Wait
+    optional: true
+- tapOn:
+    id: enter-shared
+- assertVisible: Lobby.*
+- tapOn:
+    id: start-match
+- assertVisible: Pass to Alex
+- tapOn:
+    id: arm-seat
+- tapOn:
+    id: burn-word
+- assertVisible: Pass to Sam
+- tapOn:
+    id: arm-seat
+- tapOn:
+    id: challenge
+- tapOn:
+    id: vote-invalid
+- tapOn:
+    id: resolve-challenge
+- assertVisible: Pass to Alex

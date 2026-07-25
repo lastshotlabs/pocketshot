@@ -28,6 +28,10 @@ jobs:
             flow: .maestro/coach-critical.yaml
           - shell: community
             flow: .maestro/community-critical.yaml
+          - shell: burndown
+            flow: .maestro/burndown-critical.yaml
+          - shell: blankslate
+            flow: .maestro/blankslate-critical.yaml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -103,6 +107,10 @@ jobs:
             flow: .maestro/coach-critical.yaml
           - shell: community
             flow: .maestro/community-critical.yaml
+          - shell: burndown
+            flow: .maestro/burndown-critical.yaml
+          - shell: blankslate
+            flow: .maestro/blankslate-critical.yaml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

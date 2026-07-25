@@ -1,0 +1,54 @@
+appId: com.lastshotlabs.pocketshot.blankslate
+name: Blank Slate private write, reveal, vote, score, and next round
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    text: Wait
+    optional: true
+- tapOn:
+    id: guest-entry
+- assertVisible: Lobby
+- tapOn:
+    id: start-round
+- tapOn:
+    id: submit-alex
+- tapOn:
+    id: submit-sam
+- scrollUntilVisible:
+    element:
+      id: submit-jo
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: submit-jo
+- scrollUntilVisible:
+    element:
+      id: reveal
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: reveal
+- assertVisible: cake
+- scrollUntilVisible:
+    element:
+      id: merge-vote
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: merge-vote
+- tapOn:
+    id: approve-merge
+- tapOn:
+    id: close-vote
+- scrollUntilVisible:
+    element:
+      id: score-round
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    id: score-round
+- assertVisible: Alex · 2
+- tapOn:
+    id: next-round
+- assertVisible: Birthday.*

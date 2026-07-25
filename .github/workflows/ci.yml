@@ -42,6 +42,12 @@ jobs:
       - run: npm run verify:community
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm run verify:burndown
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm run verify:blankslate
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run check:release-artifacts
       - run: npm run check:security
       - run: npm run check:accessibility
