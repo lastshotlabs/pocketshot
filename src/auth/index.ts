@@ -7,3 +7,5 @@ export type {
   AccountAuthTransport,
 } from './lifecycle'
 export type { TokenStorage } from './storage'
+export { PasskeyLifecycleController } from './passkeys'
+export type { PasskeyAuthenticator, PasskeyTransport, PasskeyLifecycleSnapshot } from './passkeys'
