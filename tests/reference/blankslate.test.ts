@@ -42,6 +42,9 @@ describe('Blank Slate native acceptance model', () => {
     })
     expect(() => game.configureSetup({ writeMs: 1_000 })).toThrow('Write timer')
     expect(() => game.configureSetup({ selectedDeckId: 'missing' })).toThrow('Unknown prompt deck')
+    game.enter()
+    game.startRound()
+    expect(game.remainingWriteMs()).toBeGreaterThan(34_000)
   })
 
   it('durably replays offline answers and merge votes once after process restoration', async () => {
@@ -169,6 +172,18 @@ describe('Blank Slate native acceptance model', () => {
     game.acknowledgeSubmission('p1', 'submit-2')
     expect(game.state.submissionStates.p1.status).toBe('accepted')
     expect(game.tvProjection()).not.toHaveProperty('submissionStates')
+  })
+
+  it('exposes latest-submission delivery helpers for native retry controls', () => {
+    const game = new BlankSlateController()
+    game.enter()
+    game.startRound()
+    game.submit('p1', 'cake', 'first-attempt')
+    game.rejectLatestSubmission('p1', 'Connection lost')
+    expect(game.state.submissionStates.p1.status).toBe('rejected')
+    expect(game.resendLatestSubmission('p1', 'second-attempt')).toBe(true)
+    game.acknowledgeLatestSubmission('p1')
+    expect(game.state.submissionStates.p1.status).toBe('accepted')
   })
 
   it('emits native-safe lock, matched-reveal, and rejection feedback', () => {

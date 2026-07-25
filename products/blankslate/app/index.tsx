@@ -270,6 +270,10 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
             <Text style={styles.copy}>
               {game.submittedIds.length}/{game.players.length} slates locked
             </Text>
+            <Text style={styles.meta}>
+              {Math.ceil(controller.remainingWriteMs() / 1000)} seconds · Alex:{' '}
+              {game.submissionStates.p1?.status ?? 'draft'}
+            </Text>
             <Text testID="offline-command-count" style={styles.meta}>
               Offline commands: {controller.pendingOfflineCommandCount}
             </Text>
@@ -310,6 +314,29 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
               label="Sam writes cake"
               onPress={() => controller.submit('p2', 'cake', `p2-${game.round}`)}
             />
+            {game.submissionStates.p1?.status === 'pending' && (
+              <>
+                <Action
+                  testID="acknowledge-alex-slate"
+                  label="Confirm Alex’s slate delivered"
+                  onPress={() => controller.acknowledgeLatestSubmission('p1')}
+                />
+                <Action
+                  testID="reject-alex-slate"
+                  label="Simulate Alex send failure"
+                  onPress={() => controller.rejectLatestSubmission('p1', 'Connection lost')}
+                />
+              </>
+            )}
+            {game.submissionStates.p1?.status === 'rejected' && (
+              <Action
+                testID="resend-alex-slate"
+                label="Resend Alex’s slate"
+                onPress={() =>
+                  controller.resendLatestSubmission('p1', `p1-resend-${game.round}-${Date.now()}`)
+                }
+              />
+            )}
             <Action
               testID="submit-jo"
               label="Jo writes party"

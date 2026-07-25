@@ -482,7 +482,7 @@ export class BlankSlateController {
     this.value.groups = []
     this.submissions = new PrivateSubmissionController<string>(5_000)
     this.corrections = new HostCorrectionController<SlateGroup[]>([])
-    this.timer = new TimedPhaseController('write', 30_000)
+    this.timer = new TimedPhaseController('write', rules.writeMs)
     this.appendActivity('round-start', `Round ${this.value.round} started`)
     this.emit()
   }
@@ -537,6 +537,26 @@ export class BlankSlateController {
       this.emit()
     }
     return accepted
+  }
+
+  acknowledgeLatestSubmission(playerId: string): void {
+    const submission = this.submissions.snapshot.find((candidate) => candidate.actorId === playerId)
+    if (!submission) throw new Error(`No submission for actor: ${playerId}`)
+    this.acknowledgeSubmission(playerId, submission.idempotencyKey)
+  }
+
+  rejectLatestSubmission(playerId: string, reason: string): void {
+    const submission = this.submissions.snapshot.find((candidate) => candidate.actorId === playerId)
+    if (!submission) throw new Error(`No submission for actor: ${playerId}`)
+    this.rejectSubmission(playerId, submission.idempotencyKey, reason)
+  }
+
+  resendLatestSubmission(playerId: string, key: string): boolean {
+    return this.resendSubmission(playerId, key)
+  }
+
+  remainingWriteMs(): number {
+    return this.timer.remainingMs()
   }
 
   async queueAnswer(playerId: string, answer: string, key: string): Promise<void> {
