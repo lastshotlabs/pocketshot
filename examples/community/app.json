@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "PocketShot Community",
+    "slug": "pocketshot-community",
+    "scheme": "pocketshot-community",
+    "version": "0.0.1",
+    "platforms": ["ios", "android"],
+    "ios": { "bundleIdentifier": "com.lastshotlabs.pocketshot.community" },
+    "android": { "package": "com.lastshotlabs.pocketshot.community" },
+    "plugins": ["expo-router", "expo-sqlite"]
+  }
+}

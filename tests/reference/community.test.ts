@@ -1,0 +1,80 @@
+import { describe, expect, it, vi } from 'vitest'
+import { CommunityDemoController } from '../../examples/community/lib/community'
+
+describe('Community reference shell', () => {
+  it('persists and publishes a composed thread', async () => {
+    const community = new CommunityDemoController()
+    await community.updateDraft('Best trail?', 'Looking for local ideas.')
+    expect(community.composer.snapshot.value.title).toBe('Best trail?')
+    await community.publishDraft()
+    expect(community.state.threads[0]).toMatchObject({
+      title: 'Best trail?',
+      body: 'Looking for local ideas.',
+    })
+    expect(community.state.view).toBe('thread')
+  })
+
+  it('adds replies and applies each reaction once', async () => {
+    const community = new CommunityDemoController()
+    await community.updateDraft('Question', 'Body')
+    await community.publishDraft()
+    const id = community.state.threads[0].id
+    community.reply('First reply')
+    community.react(id)
+    community.react(id)
+    expect(community.state.replies).toHaveLength(1)
+    expect(community.state.threads[0]).toMatchObject({ replyCount: 1, reactions: 1 })
+  })
+
+  it('searches threads and reconciles unread notifications', async () => {
+    const community = new CommunityDemoController()
+    await community.updateDraft('Rainy route', 'Try this in wet weather')
+    await community.publishDraft()
+    community.search('rainy')
+    community.notify('Someone replied')
+    expect(community.state.searchResults).toEqual([community.state.threads[0].id])
+    expect(community.state.unread).toBe(1)
+    community.readAll()
+    expect(community.state.unread).toBe(0)
+    expect(community.state.notifications[0].read).toBe(true)
+  })
+
+  it('stops message sends when membership is revoked', () => {
+    const community = new CommunityDemoController()
+    community.sendMessage('Before')
+    community.revokeMessageAccess()
+    community.sendMessage('After')
+    expect(community.state.messages.map((message) => message.body)).toEqual(['Before'])
+    expect(community.state.notice).toContain('no longer have access')
+  })
+
+  it('moves a report through the moderator audit lifecycle', () => {
+    const community = new CommunityDemoController()
+    community.report('thread-welcome', 'Needs review')
+    const report = community.state.reports[0]
+    expect(report.status).toBe('open')
+    community.resolveReport(report.id, 'warn')
+    expect(community.state.reports[0]).toMatchObject({ status: 'resolved', action: 'warn' })
+  })
+
+  it('applies privacy controls and completes an export request', async () => {
+    const community = new CommunityDemoController()
+    const listener = vi.fn()
+    community.subscribe(listener)
+    community.block('morgan')
+    community.block('morgan')
+    community.requestExport()
+    await Promise.resolve()
+    expect(community.state.blockedUsers).toEqual(['morgan'])
+    expect(community.state.exportStatus).toBe('ready')
+    expect(listener).toHaveBeenCalled()
+  })
+
+  it('recovers its visible connection state after reconnect', async () => {
+    const community = new CommunityDemoController()
+    community.reconnect()
+    expect(community.state.connection).toBe('reconnecting')
+    await Promise.resolve()
+    expect(community.state.connection).toBe('online')
+  })
+})

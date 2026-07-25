@@ -79,7 +79,8 @@
     "verify:consumer": "npm run build && node scripts/verify-package-consumer.mjs",
     "verify:showcase": "node scripts/verify-showcase.mjs",
     "verify:party": "npm run build && node scripts/verify-reference-shell.mjs party",
-    "verify:coach": "npm run build && node scripts/verify-reference-shell.mjs coach"
+    "verify:coach": "npm run build && node scripts/verify-reference-shell.mjs coach",
+    "verify:community": "npm run build && node scripts/verify-reference-shell.mjs community"
   },
   "peerDependencies": {
     "@react-native-community/netinfo": ">=11.0.0",
