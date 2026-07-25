@@ -13,6 +13,7 @@ const entries = [
   'coach',
   'party',
   'observability',
+  'accessibility',
 ]
 
 const failures = []

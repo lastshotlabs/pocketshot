@@ -56,6 +56,7 @@ export default defineConfig([
       coach: 'src/coach/index.ts',
       party: 'src/party/index.ts',
       observability: 'src/observability/index.ts',
+      accessibility: 'src/accessibility/index.ts',
     },
     format: ['esm', 'cjs'],
     sourcemap: true,

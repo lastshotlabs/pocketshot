@@ -43,6 +43,7 @@ export default function CommunityShell() {
             <Pressable
               key={view}
               accessibilityRole="tab"
+              accessibilityLabel={`${view} tab`}
               accessibilityState={{ selected: state.view === view }}
               onPress={() => community.navigate(view)}
               style={styles.tab}
@@ -59,6 +60,7 @@ export default function CommunityShell() {
               <Pressable
                 key={thread.id}
                 accessibilityRole="button"
+                accessibilityLabel={`Open ${thread.title}`}
                 onPress={() => community.openThread(thread.id)}
                 style={styles.thread}
               >
@@ -262,6 +264,7 @@ const styles = StyleSheet.create({
   onboarding: { margin: 16, padding: 16, borderRadius: 14, backgroundColor: '#fff', gap: 10 },
   tabs: { flexDirection: 'row', flexWrap: 'wrap', padding: 14, gap: 8 },
   tab: {
+    minHeight: 44,
     backgroundColor: '#dcfce7',
     borderRadius: 999,
     paddingHorizontal: 12,
@@ -272,7 +275,13 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 18, padding: 18, gap: 12 },
   heading: { color: '#14532d', fontSize: 20, fontWeight: '800' },
   copy: { color: '#374151', fontSize: 15, lineHeight: 22 },
-  thread: { padding: 12, borderRadius: 12, backgroundColor: '#f0fdf4', gap: 6 },
+  thread: {
+    minHeight: 44,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#f0fdf4',
+    gap: 6,
+  },
   reply: { padding: 10, borderLeftWidth: 3, borderLeftColor: '#22c55e', color: '#374151' },
   button: {
     minHeight: 48,

@@ -32,6 +32,8 @@ const budgets = {
   'dist/party.cjs': 20 * 1024,
   'dist/observability.js': 20 * 1024,
   'dist/observability.cjs': 24 * 1024,
+  'dist/accessibility.js': 12 * 1024,
+  'dist/accessibility.cjs': 16 * 1024,
 }
 
 async function filesUnder(directory) {
@@ -86,6 +88,7 @@ for (const target of [
   packageJson.exports?.['./coach']?.types,
   packageJson.exports?.['./party']?.types,
   packageJson.exports?.['./observability']?.types,
+  packageJson.exports?.['./accessibility']?.types,
   packageJson.bin?.pocketshot,
 ]) {
   if (!target) {

@@ -343,6 +343,19 @@ const flags = new FeatureFlagController()
 flags.replace(remoteFlags)
 ```
 
+### Accessibility and release budgets
+
+`@lastshotlabs/pocketshot/accessibility` centralizes runtime preferences for up
+to 200% font scaling, reduced-motion duration selection, high-contrast token
+selection, screen-reader announcements, and focus restoration. Native
+preference detection remains injected so applications can bind the current
+React Native/Expo APIs without coupling the package to one SDK version.
+
+CI parses all three reference shells to require accessible names and roles on
+interactive controls, verifies minimum touch targets, and enforces package plus
+optimized iOS/Android Hermes size budgets from
+`config/performance-budgets.json`.
+
 ### Reliable realtime channels
 
 Import the headless API from `@lastshotlabs/pocketshot/realtime`. Each channel

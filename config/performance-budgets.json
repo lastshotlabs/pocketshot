@@ -1,0 +1,17 @@
+{
+  "packageBytes": {
+    "dist/index.js": 163840,
+    "dist/index.cjs": 184320,
+    "dist/ui.js": 1572864,
+    "dist/ui.cjs": 1677722
+  },
+  "referenceHermesBytes": {
+    "party": 6291456,
+    "coach": 6291456,
+    "community": 6291456
+  },
+  "offlineLimits": {
+    "maxQueuedCommands": 1000,
+    "maxDiagnosticsEvents": 100
+  }
+}
