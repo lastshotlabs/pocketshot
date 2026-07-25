@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AutomodController,
+  CommunityAuthorizationController,
   CursorFeedController,
   DiscussionController,
   MessagingController,
@@ -203,6 +205,52 @@ describe('ModerationController', () => {
       expect.objectContaining({ action: 'assign' }),
       expect.objectContaining({ action: 'remove', reason: 'Confirmed spam' }),
     ])
+  })
+})
+
+describe('community authorization and automod', () => {
+  it('enforces role permissions and immediate scope revocation', () => {
+    const authorization = new CommunityAuthorizationController()
+    authorization.setRole('sam', 'moderator')
+    expect(authorization.can('sam', 'moderate', 'space-1')).toBe(true)
+    authorization.revoke('sam', 'space-1')
+    expect(authorization.can('sam', 'moderate', 'space-1')).toBe(false)
+    expect(() => authorization.require('sam', 'moderate', 'space-1')).toThrow('authorization')
+    authorization.restore('sam', 'space-1')
+    expect(authorization.can('sam', 'moderate', 'space-1')).toBe(true)
+  })
+
+  it('returns explainable blocked-term, link, and rate-limit decisions', () => {
+    let now = 1_000
+    const automod = new AutomodController(() => now)
+    automod.savePolicy({
+      id: 'term',
+      kind: 'blocked-term',
+      value: 'scam',
+      action: 'reject',
+      explanation: 'Known scam phrase',
+      enabled: true,
+    })
+    automod.savePolicy({
+      id: 'rate',
+      kind: 'rate-limit',
+      value: 1,
+      action: 'flag',
+      explanation: 'More than one post per minute',
+      enabled: true,
+    })
+    expect(automod.evaluate({ actorId: 'alex', text: 'A scam offer' })).toEqual({
+      allowed: false,
+      action: 'reject',
+      matchedPolicyIds: ['term'],
+      explanations: ['Known scam phrase'],
+    })
+    now += 1
+    expect(automod.evaluate({ actorId: 'alex', text: 'Second post' })).toMatchObject({
+      allowed: true,
+      action: 'flag',
+      matchedPolicyIds: ['rate'],
+    })
   })
 })
 

@@ -501,6 +501,128 @@ export class ModerationController {
   }
 }
 
+export type CommunityRole = 'guest' | 'member' | 'moderator' | 'admin'
+export type CommunityPermission = 'read' | 'post' | 'reply' | 'message' | 'moderate' | 'administer'
+
+export class CommunityAuthorizationController {
+  private roles = new Map<string, CommunityRole>()
+  private revokedScopes = new Map<string, Set<string>>()
+
+  setRole(actorId: string, role: CommunityRole): void {
+    this.roles.set(actorId, role)
+  }
+
+  revoke(actorId: string, scope: string): void {
+    const scopes = this.revokedScopes.get(actorId) ?? new Set<string>()
+    scopes.add(scope)
+    this.revokedScopes.set(actorId, scopes)
+  }
+
+  restore(actorId: string, scope: string): void {
+    this.revokedScopes.get(actorId)?.delete(scope)
+  }
+
+  can(actorId: string, permission: CommunityPermission, scope = '*'): boolean {
+    if (this.revokedScopes.get(actorId)?.has('*') || this.revokedScopes.get(actorId)?.has(scope)) {
+      return false
+    }
+    const role = this.roles.get(actorId) ?? 'guest'
+    const permissions: Record<CommunityRole, CommunityPermission[]> = {
+      guest: ['read'],
+      member: ['read', 'post', 'reply', 'message'],
+      moderator: ['read', 'post', 'reply', 'message', 'moderate'],
+      admin: ['read', 'post', 'reply', 'message', 'moderate', 'administer'],
+    }
+    return permissions[role].includes(permission)
+  }
+
+  require(actorId: string, permission: CommunityPermission, scope = '*'): void {
+    if (!this.can(actorId, permission, scope)) {
+      throw new Error('Community authorization revoked or insufficient')
+    }
+  }
+}
+
+export interface AutomodPolicy {
+  id: string
+  kind: 'blocked-term' | 'link-limit' | 'rate-limit'
+  value: string | number
+  action: 'allow' | 'flag' | 'reject'
+  explanation: string
+  enabled: boolean
+}
+
+export interface AutomodDecision {
+  allowed: boolean
+  action: 'allow' | 'flag' | 'reject'
+  matchedPolicyIds: string[]
+  explanations: string[]
+}
+
+export class AutomodController {
+  private policies = new Map<string, AutomodPolicy>()
+  private recent = new Map<string, number[]>()
+
+  constructor(private readonly now: () => number = Date.now) {}
+
+  savePolicy(policy: AutomodPolicy): void {
+    if (!policy.id || !policy.explanation.trim()) {
+      throw new Error('Automod policy requires an ID and explanation')
+    }
+    if (
+      (policy.kind === 'blocked-term' &&
+        (typeof policy.value !== 'string' || !policy.value.trim())) ||
+      (policy.kind !== 'blocked-term' &&
+        (typeof policy.value !== 'number' || !Number.isInteger(policy.value) || policy.value < 1))
+    ) {
+      throw new Error('Automod policy value is invalid')
+    }
+    this.policies.set(policy.id, structuredClone(policy))
+  }
+
+  evaluate(input: { actorId: string; text: string; windowMs?: number }): AutomodDecision {
+    const matches: AutomodPolicy[] = []
+    const text = input.text.toLocaleLowerCase()
+    const now = this.now()
+    const windowMs = input.windowMs ?? 60_000
+    const timestamps = (this.recent.get(input.actorId) ?? []).filter(
+      (timestamp) => timestamp > now - windowMs,
+    )
+    timestamps.push(now)
+    this.recent.set(input.actorId, timestamps)
+
+    for (const policy of this.policies.values()) {
+      if (!policy.enabled) continue
+      if (
+        policy.kind === 'blocked-term' &&
+        text.includes(String(policy.value).toLocaleLowerCase())
+      ) {
+        matches.push(policy)
+      }
+      if (
+        policy.kind === 'link-limit' &&
+        (input.text.match(/https?:\/\//gi)?.length ?? 0) > Number(policy.value)
+      ) {
+        matches.push(policy)
+      }
+      if (policy.kind === 'rate-limit' && timestamps.length > Number(policy.value)) {
+        matches.push(policy)
+      }
+    }
+    const action = matches.some((policy) => policy.action === 'reject')
+      ? 'reject'
+      : matches.some((policy) => policy.action === 'flag')
+        ? 'flag'
+        : 'allow'
+    return {
+      allowed: action !== 'reject',
+      action,
+      matchedPolicyIds: matches.map((policy) => policy.id),
+      explanations: matches.map((policy) => policy.explanation),
+    }
+  }
+}
+
 export class PrivacyController {
   private blocked = new Set<string>()
   private muted = new Set<string>()
