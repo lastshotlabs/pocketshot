@@ -132,4 +132,24 @@ describe('Blank Slate native acceptance model', () => {
     const voting = new BlankSlateController(writing.exportSnapshot())
     expect(voting.closeVote().get(writing.state.groups[0].id)).toBe(1)
   })
+
+  it('restores its game dashboard and records completed rematches', () => {
+    const game = new BlankSlateController()
+    game.enter()
+    game.startRound()
+    const restored = new BlankSlateController(game.exportSnapshot())
+    expect(restored.games.page({ scope: 'active' }).items[0].status).toBe('active')
+    restored.endMatch()
+    expect(restored.games.page({ scope: 'history' }).items).toHaveLength(1)
+    restored.rematch('dashboard')
+    expect(restored.games.snapshot.records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'blankslate-dashboard',
+          status: 'lobby',
+          rematchOf: 'blankslate-game-1',
+        }),
+      ]),
+    )
+  })
 })

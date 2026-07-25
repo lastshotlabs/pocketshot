@@ -43,8 +43,19 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
         )}
         {game.phase === 'entry' && section === 'Games' && (
           <Card title="Your games">
-            <Text style={styles.copy}>No interrupted games. Completed matches appear here.</Text>
-            <Action testID="games-refresh" label="Refresh games" onPress={() => undefined} />
+            {controller.games.snapshot.records.map((record) => (
+              <View key={record.id} style={styles.libraryRow}>
+                <Text style={styles.copy}>{record.title}</Text>
+                <Text style={styles.meta}>
+                  {record.status} · {record.resumable ? 'resumable' : 'history'}
+                </Text>
+              </View>
+            ))}
+            <Action
+              testID="games-refresh"
+              label="Refresh games"
+              onPress={() => controller.games.refresh(controller.games.snapshot.records)}
+            />
           </Card>
         )}
         {game.phase === 'entry' && section === 'Library' && (

@@ -1,6 +1,7 @@
 import {
   BallotController,
   ContentLibraryController,
+  GameDashboardController,
   HostCorrectionController,
   PartySessionController,
   PrivateSubmissionController,
@@ -10,6 +11,7 @@ import {
   type PartySessionSnapshot,
   type PrivateSubmission,
   type TimedPhaseSnapshot,
+  type GameDashboardSnapshot,
 } from '@lastshotlabs/pocketshot/party-session'
 
 export type BlankSlatePhase =
@@ -65,6 +67,8 @@ export interface BlankSlateSnapshot {
   corrections: CorrectionSnapshot<SlateGroup[]>
   ballot: BallotSnapshot<string> | null
   timer: TimedPhaseSnapshot
+  dashboard: GameDashboardSnapshot
+  currentGameId: string
 }
 
 export class BlankSlateController {
@@ -74,6 +78,7 @@ export class BlankSlateController {
   private corrections: HostCorrectionController<SlateGroup[]>
   private ballot: BallotController<string> | null
   private timer: TimedPhaseController
+  private currentGameId: string
   private readonly initialState: BlankSlateState = {
     phase: 'entry',
     prompt: 'Birthday ___',
@@ -96,6 +101,7 @@ export class BlankSlateController {
   }
   private readonly listeners = new Set<(state: BlankSlateState) => void>()
   readonly prompts = new ContentLibraryController<{ cue: string }>(validateCue, (item) => item.cue)
+  readonly games: GameDashboardController
 
   constructor(snapshot?: BlankSlateSnapshot) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
@@ -114,6 +120,8 @@ export class BlankSlateController {
       Date.now,
       snapshot?.timer,
     )
+    this.currentGameId = snapshot?.currentGameId ?? 'blankslate-game-1'
+    this.games = new GameDashboardController(snapshot?.dashboard)
     if (!snapshot) {
       this.value.players.forEach((player, seat) =>
         this.session.join({
@@ -124,6 +132,14 @@ export class BlankSlateController {
           connected: true,
         }),
       )
+      this.games.upsert({
+        id: this.currentGameId,
+        product: 'blankslate',
+        title: 'Blank Slate match',
+        status: 'lobby',
+        joinCode: 'SLATE-42',
+        resumable: true,
+      })
     }
     this.prompts.create('starter', 'p1', 'Starter prompts')
     this.prompts.appendItems('starter', 'p1', 1, [
@@ -145,6 +161,8 @@ export class BlankSlateController {
       corrections: this.corrections.snapshot,
       ballot: this.ballot?.snapshot ?? null,
       timer: this.timer.snapshot,
+      dashboard: this.games.snapshot,
+      currentGameId: this.currentGameId,
     }
   }
 
@@ -156,6 +174,7 @@ export class BlankSlateController {
 
   enter(): void {
     this.value.phase = 'lobby'
+    this.games.setStatus(this.currentGameId, 'lobby')
     this.emit()
   }
 
@@ -176,6 +195,7 @@ export class BlankSlateController {
     this.value.winMode = rules.winMode
     this.value.fixedRounds = rules.fixedRounds
     this.value.round += 1
+    this.games.setStatus(this.currentGameId, 'active')
     this.value.phase = 'write'
     this.value.submittedIds = []
     this.value.submissionStates = {}
@@ -352,6 +372,7 @@ export class BlankSlateController {
         .filter((player) => player.score === highest)
         .map((player) => player.id)
       this.value.phase = 'results'
+      this.games.setStatus(this.currentGameId, 'complete')
     } else if (terminal) {
       this.value.phase = 'sudden-death'
       this.value.notice = 'Tie game — sudden death round'
@@ -370,6 +391,8 @@ export class BlankSlateController {
     this.value.ended = false
     this.value.paused = false
     this.value.phase = 'lobby'
+    const rematch = this.games.createRematch(this.currentGameId, `blankslate-${key}`)
+    this.currentGameId = rematch.id
     this.emit()
     return true
   }
@@ -410,6 +433,7 @@ export class BlankSlateController {
     this.session.pause(this.session.snapshot.hostId ?? 'p1')
     this.timer.pause()
     this.value.paused = true
+    this.games.setStatus(this.currentGameId, 'paused')
     this.emit()
   }
 
@@ -417,6 +441,7 @@ export class BlankSlateController {
     this.session.resume(this.session.snapshot.hostId ?? 'p1')
     this.timer.resume()
     this.value.paused = false
+    this.games.setStatus(this.currentGameId, 'active')
     this.emit()
   }
 
@@ -466,6 +491,7 @@ export class BlankSlateController {
     this.value.winnerIds = this.value.players
       .filter((player) => player.score === highScore)
       .map((player) => player.id)
+    this.games.setStatus(this.currentGameId, 'complete')
     this.emit()
   }
 
