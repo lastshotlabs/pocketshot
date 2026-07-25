@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "PocketShot Coach",
+    "slug": "pocketshot-coach",
+    "scheme": "pocketshot-coach",
+    "version": "0.0.1",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.pocketshot.coach",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Capture a photo for your coaching analysis.",
+        "NSPhotoLibraryUsageDescription": "Choose a photo for your coaching analysis."
+      }
+    },
+    "android": { "package": "com.lastshotlabs.pocketshot.coach" },
+    "plugins": ["expo-router", "expo-image-picker"]
+  }
+}

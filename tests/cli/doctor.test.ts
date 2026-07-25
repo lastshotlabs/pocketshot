@@ -66,6 +66,7 @@ describe('pocketshot doctor', () => {
       cwd: createProject(),
       release: true,
       env: {
+        NODE_ENV: 'test',
         EXPO_PUBLIC_API_URL: 'https://api.example.com',
         EXPO_TOKEN: 'test-token',
       },
@@ -87,7 +88,7 @@ describe('pocketshot doctor', () => {
       appJson: { expo: { scheme: 'Bad Scheme' } },
       easJson: { build: {} },
     })
-    const result = runDoctor({ cwd, release: true, env: {} })
+    const result = runDoctor({ cwd, release: true, env: { NODE_ENV: 'test' } })
 
     expect(result.ok).toBe(false)
     expect(result.checks).toEqual(
@@ -102,7 +103,7 @@ describe('pocketshot doctor', () => {
   })
 
   it('warns about development-only release inputs outside release mode', () => {
-    const result = runDoctor({ cwd: createProject(), env: {} })
+    const result = runDoctor({ cwd: createProject(), env: { NODE_ENV: 'test' } })
 
     expect(result.ok).toBe(true)
     expect(result.checks).toEqual(

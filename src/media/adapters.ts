@@ -18,7 +18,7 @@ interface PickerAsset {
   fileName?: string | null
   mimeType?: string | null
   fileSize?: number | null
-  type?: 'image' | 'video'
+  type?: string | null
   width?: number
   height?: number
   duration?: number | null
@@ -29,11 +29,11 @@ export interface ExpoImagePickerLike {
   requestMediaLibraryPermissionsAsync(): Promise<PickerPermission>
   launchCameraAsync(options: Record<string, unknown>): Promise<{
     canceled: boolean
-    assets?: PickerAsset[]
+    assets?: PickerAsset[] | null
   }>
   launchImageLibraryAsync(options: Record<string, unknown>): Promise<{
     canceled: boolean
-    assets?: PickerAsset[]
+    assets?: PickerAsset[] | null
   }>
 }
 
@@ -84,7 +84,7 @@ export function createMediaTransformAdapter(
 }
 
 function normalizePickerAsset(asset: PickerAsset): MediaAsset {
-  const kind = asset.type ?? (asset.mimeType?.startsWith('video/') ? 'video' : 'image')
+  const kind = asset.type === 'video' || asset.mimeType?.startsWith('video/') ? 'video' : 'image'
   const extension = kind === 'video' ? 'mp4' : 'jpg'
   return {
     uri: asset.uri,
