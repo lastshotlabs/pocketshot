@@ -3,6 +3,7 @@ import {
   BallotController,
   ContentLibraryController,
   HostCorrectionController,
+  PartyActivityController,
   PartySessionController,
   PersonalCuePolicy,
   PrivateSubmissionController,
@@ -188,6 +189,41 @@ describe('party lifecycle primitives', () => {
     expect(cue.shouldDeliver({ ...request, eventId: 'other' }, 'suspended')).toBe(false)
     cue.setRoomMuted('room', true)
     expect(cue.shouldDeliver({ ...request, eventId: 'muted' }, 'active')).toBe(false)
+  })
+
+  it('orders, deduplicates, restores, and bounds party activity and reactions', () => {
+    const activity = new PartyActivityController(undefined, 2)
+    activity.append({
+      id: 'one',
+      sequence: 1,
+      kind: 'join',
+      actorId: 'a',
+      text: 'Alex joined',
+      createdAt: 1,
+    })
+    expect(
+      activity.append({
+        id: 'one',
+        sequence: 1,
+        kind: 'join',
+        text: 'duplicate',
+        createdAt: 1,
+      }),
+    ).toBe(false)
+    activity.react('one', 'b', '👏', true)
+    activity.append({ id: 'two', sequence: 2, kind: 'round', text: 'Round 1', createdAt: 2 })
+    activity.append({ id: 'three', sequence: 3, kind: 'score', text: 'Scored', createdAt: 3 })
+    expect(activity.snapshot.events.map((event) => event.id)).toEqual(['two', 'three'])
+    expect(() =>
+      activity.append({
+        id: 'five',
+        sequence: 5,
+        kind: 'bad',
+        text: 'gap',
+        createdAt: 5,
+      }),
+    ).toThrow('sequence gap')
+    expect(new PartyActivityController(activity.snapshot).publicProjection(1)[0].id).toBe('three')
   })
 
   it('provides versioned content browse, ownership, workflow, and AI review', () => {

@@ -718,6 +718,77 @@ export class PersonalCuePolicy {
   }
 }
 
+export interface PartyActivityEvent {
+  id: string
+  sequence: number
+  kind: string
+  actorId?: string
+  text: string
+  createdAt: number
+  reactions: Record<string, string[]>
+}
+
+export interface PartyActivitySnapshot {
+  events: PartyActivityEvent[]
+  lastSequence: number
+}
+
+export class PartyActivityController {
+  private events = new Map<string, PartyActivityEvent>()
+  private lastSequence = 0
+
+  constructor(
+    snapshot?: PartyActivitySnapshot,
+    private readonly maximumEvents = 100,
+  ) {
+    if (!Number.isInteger(maximumEvents) || maximumEvents < 1) {
+      throw new Error('Activity capacity must be a positive integer')
+    }
+    this.lastSequence = snapshot?.lastSequence ?? 0
+    for (const event of snapshot?.events ?? []) this.events.set(event.id, structuredClone(event))
+  }
+
+  get snapshot(): PartyActivitySnapshot {
+    return {
+      events: [...this.events.values()]
+        .sort((left, right) => left.sequence - right.sequence)
+        .map((event) => structuredClone(event)),
+      lastSequence: this.lastSequence,
+    }
+  }
+
+  append(event: Omit<PartyActivityEvent, 'reactions'>): boolean {
+    if (this.events.has(event.id) || event.sequence <= this.lastSequence) return false
+    if (event.sequence !== this.lastSequence + 1) throw new Error('Activity event sequence gap')
+    this.events.set(event.id, { ...structuredClone(event), reactions: {} })
+    this.lastSequence = event.sequence
+    this.trim()
+    return true
+  }
+
+  react(eventId: string, actorId: string, emoji: string, active: boolean): void {
+    const event = this.events.get(eventId)
+    if (!event) throw new Error(`Unknown activity event: ${eventId}`)
+    if (!actorId || !emoji.trim()) throw new Error('Reaction actor and emoji are required')
+    const actors = new Set(event.reactions[emoji] ?? [])
+    if (active) actors.add(actorId)
+    else actors.delete(actorId)
+    if (actors.size) event.reactions[emoji] = [...actors].sort()
+    else delete event.reactions[emoji]
+  }
+
+  publicProjection(limit = 20): PartyActivityEvent[] {
+    if (!Number.isInteger(limit) || limit < 0) throw new Error('Activity limit cannot be negative')
+    return this.snapshot.events.slice(-limit)
+  }
+
+  private trim(): void {
+    const overflow = this.snapshot.events.length - this.maximumEvents
+    if (overflow <= 0) return
+    for (const event of this.snapshot.events.slice(0, overflow)) this.events.delete(event.id)
+  }
+}
+
 export type ContentStatus = 'draft' | 'submitted' | 'approved' | 'published' | 'archived'
 
 export interface ContentCollection<Item> {
