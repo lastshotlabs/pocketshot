@@ -66,6 +66,14 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
               onPress={() => controller.enter('shared')}
             />
             <Action
+              testID="setup-six-player-table"
+              label="Set up a 6-player shared table"
+              onPress={() => {
+                controller.configureSharedTable(6)
+                controller.enter('shared')
+              }}
+            />
+            <Action
               testID="account-entry"
               label="Continue with Apple"
               onPress={() => void controller.signInOAuth('apple')}
@@ -171,14 +179,22 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
           </Card>
         )}
         {game.phase === 'handoff' && (
-          <Card title={`Pass to ${game.players.find((p) => p.id === game.activePlayerId)?.name}`}>
+          <View
+            testID="shared-handoff-curtain"
+            accessibilityViewIsModal
+            accessibilityLabel={`Pass device to ${game.players.find((p) => p.id === game.activePlayerId)?.name}`}
+            style={styles.handoffCurtain}
+          >
+            <Text accessibilityRole="header" style={styles.handoffTitle}>
+              Pass to {game.players.find((p) => p.id === game.activePlayerId)?.name}
+            </Text>
             <Text style={styles.copy}>Answers stay hidden until the active player is ready.</Text>
             <Action
               testID="arm-seat"
               label="I’m ready"
               onPress={() => controller.revealHandoff()}
             />
-          </Card>
+          </View>
         )}
         {game.phase === 'turn' && (
           <Card title={`${game.category} · ${game.letter}`}>
@@ -229,11 +245,29 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
         )}
         {game.phase === 'challenge' && (
           <Card title="Challenge">
-            <Action
-              testID="vote-invalid"
-              label="Vote invalid"
-              onPress={() => controller.vote('p1', 'invalid')}
-            />
+            <View
+              testID="shared-challenge-grid"
+              accessibilityLabel="Per-player challenge voting grid"
+              style={styles.voteGrid}
+            >
+              {game.players
+                .filter((player) => !player.eliminated)
+                .map((player) => (
+                  <View key={player.id} style={styles.voteSeat}>
+                    <Text style={styles.copy}>{player.name}</Text>
+                    <Action
+                      testID={player.id === 'p1' ? 'vote-invalid' : `vote-invalid-${player.id}`}
+                      label={`${player.name} votes invalid`}
+                      onPress={() => controller.vote(player.id, 'invalid')}
+                    />
+                    <Action
+                      testID={`vote-nobody-${player.id}`}
+                      label={`${player.name} votes Nobody`}
+                      onPress={() => controller.vote(player.id, 'nobody')}
+                    />
+                  </View>
+                ))}
+            </View>
             <Action
               testID="resolve-challenge"
               label="Resolve vote"
@@ -372,6 +406,15 @@ const styles = StyleSheet.create({
   qr: { alignSelf: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 12 },
   turn: { color: '#ffd166', fontSize: 32, fontWeight: '900' },
   notice: { color: '#fff', backgroundColor: '#8b1e1e', borderRadius: 10, padding: 12 },
+  handoffCurtain: {
+    minHeight: 520,
+    backgroundColor: '#090504',
+    borderRadius: 20,
+    padding: 28,
+    justifyContent: 'center',
+    gap: 24,
+  },
+  handoffTitle: { color: '#ffd166', fontSize: 42, fontWeight: '900', textAlign: 'center' },
   button: {
     minHeight: 48,
     backgroundColor: '#d9481c',
@@ -394,6 +437,17 @@ const styles = StyleSheet.create({
   selectedSection: { backgroundColor: '#5f2d1c' },
   sectionText: { color: '#fff4e8', fontWeight: '800' },
   board: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
+  voteGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  voteSeat: {
+    minWidth: 150,
+    flexGrow: 1,
+    flexBasis: '30%',
+    borderColor: '#5f2d1c',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    gap: 8,
+  },
   letter: {
     color: '#fff4e8',
     borderColor: '#5f2d1c',

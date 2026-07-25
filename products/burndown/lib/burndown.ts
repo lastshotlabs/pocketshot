@@ -296,16 +296,26 @@ export class BurndownController {
     if (!request) throw new Error(`Unknown admission request: ${id}`)
     this.session.decideAdmission(this.session.snapshot.hostId ?? 'p1', id, admit)
     if (admit) {
+      const seat =
+        request.role === 'spectator'
+          ? null
+          : Math.max(-1, ...this.session.snapshot.members.map((member) => member.seat ?? -1)) + 1
       this.session.join({
         id: request.id,
         displayName: request.displayName,
         role: request.role,
-        seat:
-          request.role === 'spectator'
-            ? null
-            : Math.max(-1, ...this.session.snapshot.members.map((member) => member.seat ?? -1)) + 1,
+        seat,
         connected: true,
       })
+      if (seat !== null && !this.value.players.some((player) => player.id === request.id)) {
+        this.value.players.push({
+          id: request.id,
+          name: request.displayName,
+          seat,
+          lives: this.session.snapshot.rules.lives,
+          eliminated: false,
+        })
+      }
     }
     this.value.notice = admit ? 'Waiting guest admitted' : 'Waiting guest declined'
     this.emit()
@@ -317,6 +327,36 @@ export class BurndownController {
 
   lobbyProjection() {
     return this.session.publicProjection()
+  }
+
+  configureSharedTable(playerCount: number): void {
+    if (this.value.phase !== 'entry' && this.value.phase !== 'lobby') {
+      throw new Error('Shared-table seats can only be configured before a match')
+    }
+    if (!Number.isInteger(playerCount) || playerCount < 2 || playerCount > 8) {
+      throw new Error('Shared-table player count must be between 2 and 8')
+    }
+    const names = ['Alex', 'Sam', 'Jo', 'Rae', 'Morgan', 'Drew', 'Kai', 'Lee']
+    for (let seat = this.value.players.length; seat < playerCount; seat += 1) {
+      const player = {
+        id: `p${seat + 1}`,
+        name: names[seat],
+        seat,
+        lives: this.session.snapshot.rules.lives,
+        eliminated: false,
+      }
+      this.value.players.push(player)
+      this.session.join({
+        id: player.id,
+        displayName: player.name,
+        role: 'participant',
+        seat,
+        connected: true,
+      })
+    }
+    this.value.mode = 'shared'
+    this.value.notice = `${this.value.players.length}-player shared table ready`
+    this.emit()
   }
 
   start(): void {

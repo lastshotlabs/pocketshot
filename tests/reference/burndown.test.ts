@@ -32,6 +32,21 @@ describe('Burndown native acceptance model', () => {
     )
   })
 
+  it('adds admitted participants to the authoritative player roster', () => {
+    const game = new BurndownController()
+    game.enter('phones')
+    game.setAdmissionPolicy('approval')
+    game.requestAdmission('p3', 'Jo')
+    game.decideAdmission('p3', true)
+    expect(game.state.players).toContainEqual({
+      id: 'p3',
+      name: 'Jo',
+      seat: 2,
+      lives: 3,
+      eliminated: false,
+    })
+  })
+
   it('normalizes cold native joins and rejects expired invites', () => {
     expect(normalizeBurndownSystemPath('pocketshot-burndown://join/BURN-42')).toBe('/join/BURN-42')
     expect(normalizeBurndownSystemPath('pocketshot-burndown://join/%E0%A4%A')).toBe('/')
@@ -68,6 +83,20 @@ describe('Burndown native acceptance model', () => {
     expect(game.state.phase).toBe('turn')
     expect(game.burn('Answer', 'same-command')).toBe(true)
     expect(game.state.phase).toBe('handoff')
+  })
+
+  it('configures a 6–8 seat shared table with every player challenge-eligible', () => {
+    const game = new BurndownController()
+    game.configureSharedTable(8)
+    expect(game.state.players).toHaveLength(8)
+    expect(game.state.players.map((player) => player.seat)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+    game.enter('shared')
+    game.start()
+    game.revealHandoff()
+    game.openChallenge()
+    for (const player of game.state.players) game.vote(player.id, 'nobody')
+    expect(game.resolveChallenge()).toBe('nobody')
+    expect(() => new BurndownController().configureSharedTable(9)).toThrow('between 2 and 8')
   })
 
   it('projects only public match state and recovers host control', () => {
