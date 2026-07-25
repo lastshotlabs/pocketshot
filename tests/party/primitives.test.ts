@@ -76,6 +76,22 @@ describe('party lifecycle primitives', () => {
     expect(submissions.projection('tv', true)[0]).toHaveProperty('value', 'secret')
   })
 
+  it('tracks submission acknowledgement, rejection, and idempotent resend', () => {
+    const submissions = new PrivateSubmissionController<string>(5_000)
+    submissions.submit('a', 'secret', 'submit-1')
+    submissions.reject('a', 'stale-key', 'ignored')
+    expect(submissions.snapshot[0].deliveryStatus).toBe('pending')
+    submissions.reject('a', 'submit-1', 'network rejected')
+    expect(submissions.snapshot[0]).toMatchObject({
+      deliveryStatus: 'rejected',
+      rejectionReason: 'network rejected',
+    })
+    expect(submissions.resend('a', 'submit-2')).toBe(true)
+    expect(submissions.resend('a', 'submit-2')).toBe(false)
+    submissions.acknowledge('a', 'submit-2')
+    expect(submissions.snapshot[0]).toMatchObject({ deliveryStatus: 'accepted' })
+  })
+
   it('supports cumulative ballot approval and revocation', () => {
     const ballot = new BallotController<'merge' | 'nobody'>(['a', 'b'])
     ballot.set('a', 'merge', true)
@@ -84,6 +100,37 @@ describe('party lifecycle primitives', () => {
     ballot.set('b', 'merge', true)
     expect(ballot.close().get('merge')).toBe(2)
     expect(() => ballot.set('a', 'merge', false)).toThrow('closed')
+  })
+
+  it('deduplicates and orders authoritative ballot events', () => {
+    const ballot = new BallotController<'merge'>(['a'])
+    expect(
+      ballot.applyEvent({
+        id: 'event-1',
+        sequence: 1,
+        voterId: 'a',
+        choice: 'merge',
+        approved: true,
+      }),
+    ).toBe(true)
+    expect(
+      ballot.applyEvent({
+        id: 'event-1',
+        sequence: 1,
+        voterId: 'a',
+        choice: 'merge',
+        approved: true,
+      }),
+    ).toBe(false)
+    expect(() =>
+      ballot.applyEvent({
+        id: 'event-3',
+        sequence: 3,
+        voterId: 'a',
+        choice: 'merge',
+        approved: false,
+      }),
+    ).toThrow('sequence gap')
   })
 
   it('requires arm/propose/confirm and restores correction history', () => {

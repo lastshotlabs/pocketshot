@@ -335,6 +335,8 @@ export interface PrivateSubmission<Value> {
   editableUntil: number
   version: number
   idempotencyKey: string
+  deliveryStatus?: 'pending' | 'accepted' | 'rejected'
+  rejectionReason?: string
 }
 
 export class PrivateSubmissionController<Value> {
@@ -371,7 +373,36 @@ export class PrivateSubmissionController<Value> {
       editableUntil: submittedAt + this.editWindowMs,
       version: (existing?.version ?? 0) + 1,
       idempotencyKey,
+      deliveryStatus: 'pending',
     })
+    this.processedKeys.add(idempotencyKey)
+    return true
+  }
+
+  acknowledge(actorId: string, idempotencyKey: string): void {
+    const submission = this.requireSubmission(actorId)
+    if (submission.idempotencyKey !== idempotencyKey) return
+    submission.deliveryStatus = 'accepted'
+    delete submission.rejectionReason
+  }
+
+  reject(actorId: string, idempotencyKey: string, reason: string): void {
+    if (!reason.trim()) throw new Error('Submission rejection reason is required')
+    const submission = this.requireSubmission(actorId)
+    if (submission.idempotencyKey !== idempotencyKey) return
+    submission.deliveryStatus = 'rejected'
+    submission.rejectionReason = reason.trim()
+  }
+
+  resend(actorId: string, idempotencyKey: string): boolean {
+    const submission = this.requireSubmission(actorId)
+    if (this.processedKeys.has(idempotencyKey)) return false
+    if (submission.deliveryStatus !== 'rejected') {
+      throw new Error('Only rejected submissions can be resent')
+    }
+    submission.idempotencyKey = idempotencyKey
+    submission.deliveryStatus = 'pending'
+    delete submission.rejectionReason
     this.processedKeys.add(idempotencyKey)
     return true
   }
@@ -392,22 +423,34 @@ export class PrivateSubmissionController<Value> {
         : {}),
     }))
   }
+
+  private requireSubmission(actorId: string): PrivateSubmission<Value> {
+    const submission = this.submissions.get(actorId)
+    if (!submission) throw new Error(`No submission for actor: ${actorId}`)
+    return submission
+  }
 }
 
 export interface BallotSnapshot<Choice extends string> {
   eligible: string[]
   votes: Array<{ voterId: string; choices: Choice[] }>
   closed: boolean
+  lastSequence?: number
+  processedEventIds?: string[]
 }
 
 export class BallotController<Choice extends string> {
   private eligible: Set<string>
   private votes = new Map<string, Set<Choice>>()
   private closed = false
+  private lastSequence = 0
+  private processedEventIds = new Set<string>()
 
   constructor(eligible: string[], snapshot?: BallotSnapshot<Choice>) {
     this.eligible = new Set(snapshot?.eligible ?? eligible)
     this.closed = snapshot?.closed ?? false
+    this.lastSequence = snapshot?.lastSequence ?? 0
+    this.processedEventIds = new Set(snapshot?.processedEventIds ?? [])
     for (const vote of snapshot?.votes ?? []) this.votes.set(vote.voterId, new Set(vote.choices))
   }
 
@@ -416,7 +459,25 @@ export class BallotController<Choice extends string> {
       eligible: [...this.eligible],
       votes: [...this.votes].map(([voterId, choices]) => ({ voterId, choices: [...choices] })),
       closed: this.closed,
+      lastSequence: this.lastSequence,
+      processedEventIds: [...this.processedEventIds],
     }
+  }
+
+  applyEvent(event: {
+    id: string
+    sequence: number
+    voterId: string
+    choice: Choice
+    approved: boolean
+  }): boolean {
+    if (!event.id) throw new Error('Ballot event ID is required')
+    if (this.processedEventIds.has(event.id) || event.sequence <= this.lastSequence) return false
+    if (event.sequence !== this.lastSequence + 1) throw new Error('Ballot event sequence gap')
+    this.set(event.voterId, event.choice, event.approved)
+    this.processedEventIds.add(event.id)
+    this.lastSequence = event.sequence
+    return true
   }
 
   set(voterId: string, choice: Choice, approved: boolean): void {
