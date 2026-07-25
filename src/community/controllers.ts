@@ -276,21 +276,42 @@ export interface CommunityNotification {
   category: string
   text: string
   read: boolean
+  channel?: string
+  route?: string
 }
 
 export class NotificationInboxController {
   private items = new Map<string, CommunityNotification>()
   private lastSequence = 0
   private preferences = new Map<string, boolean>()
+  private readCursors = new Map<string, number>()
+  private processedEvents = new Set<string>()
 
-  get snapshot(): { items: CommunityNotification[]; unread: number; lastSequence: number } {
+  get snapshot(): {
+    items: CommunityNotification[]
+    unread: number
+    unreadByChannel: Record<string, number>
+    lastSequence: number
+    readCursors: Record<string, number>
+    preferences: Record<string, boolean>
+  } {
     const items = [...this.items.values()]
       .sort((left, right) => right.sequence - left.sequence)
       .map((item) => structuredClone(item))
     return {
       items,
       unread: items.filter((item) => !item.read).length,
+      unreadByChannel: Object.fromEntries(
+        [...new Set(items.map((item) => item.channel ?? 'default'))]
+          .sort()
+          .map((channel) => [
+            channel,
+            items.filter((item) => (item.channel ?? 'default') === channel && !item.read).length,
+          ]),
+      ),
       lastSequence: this.lastSequence,
+      readCursors: Object.fromEntries(this.readCursors),
+      preferences: Object.fromEntries(this.preferences),
     }
   }
 
@@ -301,17 +322,62 @@ export class NotificationInboxController {
     this.items.set(item.id, { ...structuredClone(item), read: false })
   }
 
+  applyEvent(
+    event: {
+      eventId: string
+      notification: Omit<CommunityNotification, 'read'>
+    },
+    strictOrdering = true,
+  ): boolean {
+    if (this.processedEvents.has(event.eventId)) return false
+    if (strictOrdering && event.notification.sequence !== this.lastSequence + 1) {
+      throw new Error('Notification event sequence gap')
+    }
+    if (event.notification.sequence <= this.lastSequence) return false
+    this.processedEvents.add(event.eventId)
+    this.receive(event.notification)
+    return true
+  }
+
   markRead(id: string): void {
     const item = this.items.get(id)
-    if (item) this.items.set(id, { ...item, read: true })
+    if (item) {
+      this.items.set(id, { ...item, read: true })
+      const channel = item.channel ?? 'default'
+      this.readCursors.set(channel, Math.max(this.readCursors.get(channel) ?? 0, item.sequence))
+    }
   }
 
   markAllRead(): void {
-    for (const [id, item] of this.items) this.items.set(id, { ...item, read: true })
+    for (const [id, item] of this.items) {
+      this.items.set(id, { ...item, read: true })
+      const channel = item.channel ?? 'default'
+      this.readCursors.set(channel, Math.max(this.readCursors.get(channel) ?? 0, item.sequence))
+    }
   }
 
   setPreference(category: string, enabled: boolean): void {
     this.preferences.set(category, enabled)
+  }
+
+  openRoute(
+    id: string,
+    allowedPrefixes: string[],
+  ): { notificationId: string; route: string } | null {
+    const item = this.items.get(id)
+    if (!item?.route) return null
+    const url = new URL(item.route, 'https://pocketshot.invalid')
+    const route = `${url.pathname}${url.search}${url.hash}`
+    if (
+      !allowedPrefixes.some(
+        (prefix) =>
+          route === prefix || route.startsWith(`${prefix}/`) || route.startsWith(`${prefix}?`),
+      )
+    ) {
+      throw new Error('Notification route is not allowlisted')
+    }
+    this.markRead(id)
+    return { notificationId: id, route }
   }
 }
 

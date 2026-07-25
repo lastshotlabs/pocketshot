@@ -144,6 +144,54 @@ describe('NotificationInboxController', () => {
     inbox.markAllRead()
     expect(inbox.snapshot.unread).toBe(0)
   })
+
+  it('reconciles per-channel unread cursors and safe push-open routes', () => {
+    const notifications = new NotificationInboxController()
+    expect(
+      notifications.applyEvent({
+        eventId: 'event-1',
+        notification: {
+          id: 'one',
+          sequence: 1,
+          category: 'reply',
+          channel: 'community',
+          text: 'New reply',
+          route: '/threads/thread-1#reply-2',
+        },
+      }),
+    ).toBe(true)
+    expect(
+      notifications.applyEvent({
+        eventId: 'event-1',
+        notification: {
+          id: 'one',
+          sequence: 1,
+          category: 'reply',
+          text: 'duplicate',
+        },
+      }),
+    ).toBe(false)
+    expect(notifications.snapshot.unreadByChannel).toEqual({ community: 1 })
+    expect(notifications.openRoute('one', ['/threads'])).toEqual({
+      notificationId: 'one',
+      route: '/threads/thread-1#reply-2',
+    })
+    expect(notifications.snapshot).toMatchObject({
+      unread: 0,
+      readCursors: { community: 1 },
+    })
+    expect(() =>
+      notifications.applyEvent({
+        eventId: 'event-3',
+        notification: {
+          id: 'three',
+          sequence: 3,
+          category: 'reply',
+          text: 'gap',
+        },
+      }),
+    ).toThrow('sequence gap')
+  })
 })
 
 describe('MessagingController', () => {
