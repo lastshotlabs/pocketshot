@@ -148,6 +148,7 @@ export type {
   StoreEntitlement,
   BillingAdapter,
 } from './coach/controllers'
+
 export type {
   CursorEntity,
   CursorPage,

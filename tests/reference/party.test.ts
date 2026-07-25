@@ -102,4 +102,12 @@ describe('Party clean-room acceptance model', () => {
     expect(party.resolveChallenge(0)).toBe('challenger')
     expect(party.state.timeline.map((card) => card.year)).toEqual([1972, 1984, 1999])
   })
+
+  it('imports, validates, and publishes a healthy deck through the package entry', () => {
+    const party = new PartyDemoController()
+    party.importTracks('Blue Monday,New Order,1983,https://preview.test/blue-monday')
+    expect(party.deckHealth()).toMatchObject({ playable: 1, isPublishable: true })
+    party.publishDeck('2026-07-25T00:00:00Z')
+    expect(party.deckLibrary.snapshot[0].status).toBe('published')
+  })
 })

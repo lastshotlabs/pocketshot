@@ -267,6 +267,28 @@ service and active lock-screen controls; on iOS it requires the generated audio
 background mode. PocketShot’s adapter configures the runtime audio session and
 lock-screen metadata, while the Expo plugin owns those native declarations.
 
+### Party decks, providers, and replay
+
+`@lastshotlabs/pocketshot/party` supplies the product-facing mechanics around
+the realtime match engine:
+
+- `DeckLibraryController` imports pasted CSV/TSV track lists, combines decks,
+  deduplicates tracks, supports add/replace/remove, reports playability and year
+  health, and enforces draft → review → publish → archive transitions.
+- `PlaybackProviderController` exposes Spotify/Audius-style capabilities,
+  excludes providers that require missing authorization, merges search results,
+  and falls back from full playback to provider or direct previews.
+- `exportPartyReplay` emits a versioned support/participant replay while
+  excluding hidden answers and redacting secret fields.
+
+```ts
+import { DeckLibraryController, PlaybackProviderController } from '@lastshotlabs/pocketshot/party'
+
+const decks = new DeckLibraryController()
+decks.create('friday', 'Friday Mix')
+const playback = new PlaybackProviderController([spotifyAdapter, audiusAdapter])
+```
+
 ### Coaching, metrics, workouts, and entitlements
 
 `@lastshotlabs/pocketshot/coach` contains headless, injected controllers for

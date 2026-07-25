@@ -16,6 +16,7 @@
       "@lastshotlabs/pocketshot/ai": ["./src/ai/index.ts"],
       "@lastshotlabs/pocketshot/audio": ["./src/audio/index.ts"],
       "@lastshotlabs/pocketshot/coach": ["./src/coach/index.ts"],
+      "@lastshotlabs/pocketshot/party": ["./src/party/index.ts"],
       "@lastshotlabs/pocketshot/drafts": ["./src/drafts/index.ts"],
       "@lastshotlabs/pocketshot/media": ["./src/media/index.ts"],
       "@lastshotlabs/pocketshot/realtime": ["./src/realtime/index.ts"]

@@ -71,6 +71,11 @@
       "types": "./dist/types/coach/index.d.ts",
       "import": "./dist/coach.js",
       "require": "./dist/coach.cjs"
+    },
+    "./party": {
+      "types": "./dist/types/party/index.d.ts",
+      "import": "./dist/party.js",
+      "require": "./dist/party.cjs"
     }
   },
   "scripts": {

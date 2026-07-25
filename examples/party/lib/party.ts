@@ -8,6 +8,12 @@ import {
   type DraftStorage,
 } from '@lastshotlabs/pocketshot/drafts'
 import { RealtimeReconciler, type RealtimeEvent } from '@lastshotlabs/pocketshot/realtime'
+import {
+  DeckLibraryController,
+  PlaybackProviderController,
+  type PartyTrack,
+  type PlaybackCapabilities,
+} from '@lastshotlabs/pocketshot/party'
 import { z } from 'zod'
 
 export type PartyPhase = 'entry' | 'lobby' | 'round' | 'results' | 'deck'
@@ -74,8 +80,11 @@ export class PartyDemoController {
   >('party-demo', ({ phase, round, question, score }) => ({ phase, round, question, score }))
 
   readonly deck
+  readonly deckLibrary = new DeckLibraryController()
+  readonly playback = new PlaybackProviderController([])
 
   constructor(storage: DraftStorage = createMemoryDraftStorage()) {
+    this.deckLibrary.create('friday-mix', 'Friday Mix')
     this.deck = createDurableDraft({
       id: 'party-deck',
       initialValue: { title: 'Friday Mix', cards: ['Opening track'] },
@@ -92,6 +101,28 @@ export class PartyDemoController {
       cursor: 0,
       state: this.stateValue,
     })
+  }
+
+  importTracks(input: string): void {
+    this.deckLibrary.importDelimited('friday-mix', input)
+  }
+
+  publishDeck(at: string): void {
+    this.deckLibrary.submit('friday-mix')
+    this.deckLibrary.approve('friday-mix')
+    this.deckLibrary.publish('friday-mix', at)
+  }
+
+  deckHealth() {
+    return this.deckLibrary.health('friday-mix')
+  }
+
+  providerCapabilities(): PlaybackCapabilities[] {
+    return this.playback.capabilities
+  }
+
+  addTrack(track: PartyTrack): void {
+    this.deckLibrary.add('friday-mix', track)
   }
 
   get state(): PartyState {

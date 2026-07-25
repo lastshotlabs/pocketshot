@@ -102,6 +102,19 @@ export default function PartyShell() {
             onPress={() => void controller.renameDeck('Updated Mix')}
           />
           <Action
+            testID="import-track"
+            label="Import demo track"
+            onPress={() =>
+              controller.importTracks(
+                'Blue Monday,New Order,1983,https://example.test/blue-monday.mp3',
+              )
+            }
+          />
+          <Text style={styles.copy}>
+            {controller.deckHealth().playable} playable · {controller.providerCapabilities().length}{' '}
+            connected providers
+          </Text>
+          <Action
             testID="back-to-lobby"
             label="Back to lobby"
             onPress={() => controller.rematch()}
