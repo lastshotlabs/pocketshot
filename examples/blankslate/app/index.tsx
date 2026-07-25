@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { BlankSlateController, type BlankSlateState } from '../lib/blankslate'
 
@@ -205,10 +205,72 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
           <Card title="Winners">
             <Text style={styles.answer}>{game.winnerIds.join(', ')}</Text>
             <Action
+              testID="share-results"
+              label="Share results"
+              onPress={() => void Share.share(controller.resultsSharePayload())}
+            />
+            <Action
               testID="rematch"
               label="Rematch"
               onPress={() => controller.rematch('native-rematch')}
             />
+          </Card>
+        )}
+        {game.phase !== 'entry' && game.phase !== 'results' && (
+          <Card title="Host booth">
+            <Text style={styles.meta}>
+              {game.paused ? 'Match paused' : 'Match live'} · {game.blockedPlayerIds.length} blocked
+            </Text>
+            <Action
+              testID="pause-resume"
+              label={game.paused ? 'Resume match' : 'Pause match'}
+              onPress={() => (game.paused ? controller.resume() : controller.pause())}
+            />
+            <Action
+              testID="stage-rules"
+              label="Stage fixed-round rules"
+              onPress={() => controller.stageWinRules({ winMode: 'fixed-rounds', fixedRounds: 5 })}
+            />
+            <Action
+              testID="recover-host"
+              label="Recover host"
+              onPress={() => controller.recoverHost()}
+            />
+            <Action
+              testID="handoff-seat"
+              label="Hand seat to Sam"
+              onPress={() => controller.handoffSeat('p1', 'p2')}
+            />
+            {controller.activityProjection().at(-1) && (
+              <Action
+                testID="react-activity"
+                label="React to activity"
+                onPress={() => controller.reactToLatest('p1', '👏')}
+              />
+            )}
+            {!game.endConfirmationPending ? (
+              <Action
+                testID="request-end"
+                label="End match"
+                onPress={() => controller.requestEndMatch()}
+              />
+            ) : (
+              <>
+                <Text accessibilityRole="alert" style={styles.notice}>
+                  End this match for everyone?
+                </Text>
+                <Action
+                  testID="confirm-end"
+                  label="Confirm end match"
+                  onPress={() => controller.confirmEndMatch()}
+                />
+                <Action
+                  testID="cancel-end"
+                  label="Keep playing"
+                  onPress={() => controller.cancelEndMatch()}
+                />
+              </>
+            )}
           </Card>
         )}
       </ScrollView>

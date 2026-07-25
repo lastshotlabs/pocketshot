@@ -99,6 +99,29 @@ describe('Blank Slate native acceptance model', () => {
     expect(game.state).toMatchObject({ phase: 'lobby', ended: false, targetScore: 20 })
   })
 
+  it('requires reviewed host termination and exposes bounded public activity and sharing', () => {
+    const game = new BlankSlateController()
+    game.enter()
+    game.startRound()
+    expect(() => game.confirmEndMatch()).toThrow('confirmation')
+    game.requestEndMatch()
+    expect(game.state.endConfirmationPending).toBe(true)
+    game.cancelEndMatch()
+    expect(game.state.endConfirmationPending).toBe(false)
+    game.requestEndMatch()
+    game.confirmEndMatch()
+    game.reactToLatest('p2', '👏')
+    game.reactToLatest('p2', '👏')
+    expect(game.activityProjection().at(-1)).toMatchObject({
+      kind: 'match-end',
+      reactions: {},
+    })
+    expect(game.resultsSharePayload()).toMatchObject({
+      title: 'Blank Slate results',
+      message: expect.stringContaining('Blank Slate'),
+    })
+  })
+
   it('runs fixed-round sudden death and host recovery lifecycle', () => {
     const game = new BlankSlateController()
     game.enter()

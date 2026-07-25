@@ -3,11 +3,13 @@ import {
   ContentLibraryController,
   GameDashboardController,
   HostCorrectionController,
+  PartyActivityController,
   PartySessionController,
   PrivateSubmissionController,
   TimedPhaseController,
   type BallotSnapshot,
   type CorrectionSnapshot,
+  type PartyActivitySnapshot,
   type PartySessionSnapshot,
   type PrivateSubmission,
   type TimedPhaseSnapshot,
@@ -51,6 +53,8 @@ export interface BlankSlateState {
   winnerIds: string[]
   notice: string | null
   ended: boolean
+  endConfirmationPending: boolean
+  blockedPlayerIds: string[]
 }
 
 type BlankSlateRules = {
@@ -68,6 +72,7 @@ export interface BlankSlateSnapshot {
   ballot: BallotSnapshot<string> | null
   timer: TimedPhaseSnapshot
   dashboard: GameDashboardSnapshot
+  activity?: PartyActivitySnapshot
   currentGameId: string
 }
 
@@ -79,6 +84,7 @@ export class BlankSlateController {
   private ballot: BallotController<string> | null
   private timer: TimedPhaseController
   private currentGameId: string
+  private readonly activity: PartyActivityController
   private readonly initialState: BlankSlateState = {
     phase: 'entry',
     prompt: 'Birthday ___',
@@ -98,6 +104,8 @@ export class BlankSlateController {
     winnerIds: [],
     notice: null,
     ended: false,
+    endConfirmationPending: false,
+    blockedPlayerIds: [],
   }
   private readonly listeners = new Set<(state: BlankSlateState) => void>()
   readonly prompts = new ContentLibraryController<{ cue: string }>(validateCue, (item) => item.cue)
@@ -122,6 +130,7 @@ export class BlankSlateController {
     )
     this.currentGameId = snapshot?.currentGameId ?? 'blankslate-game-1'
     this.games = new GameDashboardController(snapshot?.dashboard)
+    this.activity = new PartyActivityController(snapshot?.activity)
     if (!snapshot) {
       this.value.players.forEach((player, seat) =>
         this.session.join({
@@ -163,6 +172,7 @@ export class BlankSlateController {
       timer: this.timer.snapshot,
       dashboard: this.games.snapshot,
       currentGameId: this.currentGameId,
+      activity: this.activity.snapshot,
     }
   }
 
@@ -203,6 +213,7 @@ export class BlankSlateController {
     this.submissions = new PrivateSubmissionController<string>(5_000)
     this.corrections = new HostCorrectionController<SlateGroup[]>([])
     this.timer = new TimedPhaseController('write', 30_000)
+    this.appendActivity('round-start', `Round ${this.value.round} started`)
     this.emit()
   }
 
@@ -291,6 +302,7 @@ export class BlankSlateController {
     this.corrections = new HostCorrectionController(this.value.groups)
     this.value.phase = 'reveal'
     this.value.notice = null
+    this.appendActivity('reveal', `${this.value.groups.length} slate groups revealed`)
     this.emit()
   }
 
@@ -379,6 +391,7 @@ export class BlankSlateController {
     } else {
       this.value.phase = 'summary'
     }
+    this.appendActivity('score', `Round ${this.value.round} scored`)
     this.emit()
   }
 
@@ -389,6 +402,7 @@ export class BlankSlateController {
     this.value.players = this.value.players.map((player) => ({ ...player, score: 0 }))
     this.value.winnerIds = []
     this.value.ended = false
+    this.value.endConfirmationPending = false
     this.value.paused = false
     this.value.phase = 'lobby'
     const rematch = this.games.createRematch(this.currentGameId, `blankslate-${key}`)
@@ -463,11 +477,13 @@ export class BlankSlateController {
   blockPlayer(playerId: string): void {
     this.session.block(this.session.snapshot.hostId ?? 'p1', playerId)
     this.value.players = this.value.players.filter((player) => player.id !== playerId)
+    if (!this.value.blockedPlayerIds.includes(playerId)) this.value.blockedPlayerIds.push(playerId)
     this.emit()
   }
 
   unblockPlayer(playerId: string): void {
     this.session.unblock(this.session.snapshot.hostId ?? 'p1', playerId)
+    this.value.blockedPlayerIds = this.value.blockedPlayerIds.filter((id) => id !== playerId)
     this.emit()
   }
 
@@ -492,7 +508,46 @@ export class BlankSlateController {
       .filter((player) => player.score === highScore)
       .map((player) => player.id)
     this.games.setStatus(this.currentGameId, 'complete')
+    this.value.endConfirmationPending = false
+    this.appendActivity('match-end', 'The host ended the match')
     this.emit()
+  }
+
+  requestEndMatch(): void {
+    this.value.endConfirmationPending = true
+    this.emit()
+  }
+
+  cancelEndMatch(): void {
+    this.value.endConfirmationPending = false
+    this.emit()
+  }
+
+  confirmEndMatch(): void {
+    if (!this.value.endConfirmationPending) throw new Error('End confirmation is required')
+    this.endMatch()
+  }
+
+  reactToLatest(actorId: string, emoji: string): void {
+    const latest = this.activity.snapshot.events.at(-1)
+    if (!latest) return
+    const active = !(latest.reactions[emoji] ?? []).includes(actorId)
+    this.activity.react(latest.id, actorId, emoji, active)
+    this.emit()
+  }
+
+  activityProjection() {
+    return this.activity.publicProjection()
+  }
+
+  resultsSharePayload(): { title: string; message: string } {
+    const winners = this.value.winnerIds.map((id) => this.player(id).name)
+    return {
+      title: 'Blank Slate results',
+      message: winners.length
+        ? `${winners.join(' & ')} won Blank Slate after ${this.value.round} rounds.`
+        : `Blank Slate finished after ${this.value.round} rounds.`,
+    }
   }
 
   private player(id: string): SlatePlayer {
@@ -503,6 +558,18 @@ export class BlankSlateController {
 
   private emit(): void {
     for (const listener of this.listeners) listener(this.state)
+  }
+
+  private appendActivity(kind: string, text: string): void {
+    const sequence = this.activity.snapshot.lastSequence + 1
+    this.activity.append({
+      id: `blankslate-activity-${sequence}`,
+      sequence,
+      kind,
+      actorId: 'p1',
+      text,
+      createdAt: Date.now(),
+    })
   }
 }
 
