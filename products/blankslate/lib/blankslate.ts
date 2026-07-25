@@ -771,6 +771,42 @@ export class BlankSlateController {
     this.prompts.publish('starter')
   }
 
+  bulkAddPrompts(input: string): void {
+    const cues = input
+      .split(/\r?\n/)
+      .map((cue) => cue.trim())
+      .filter(Boolean)
+      .map((cue) => ({ cue }))
+    if (!cues.length) throw new Error('Bulk prompt input cannot be empty')
+    const collection = this.prompts.snapshot.find((candidate) => candidate.id === 'starter')
+    if (!collection) throw new Error('Starter prompt deck is unavailable')
+    this.prompts.appendItems('starter', 'p1', collection.revision, cues)
+    this.value.notice = `${cues.length} bulk prompts added`
+    this.emit()
+  }
+
+  renamePromptDeck(title: string): void {
+    const collection = this.prompts.snapshot.find((candidate) => candidate.id === 'starter')
+    if (!collection) throw new Error('Starter prompt deck is unavailable')
+    this.prompts.updateMetadata('starter', 'p1', collection.revision, { title })
+    this.value.notice = 'Prompt deck autosaved'
+    this.emit()
+  }
+
+  duplicatePromptDeck(): void {
+    if (!this.prompts.snapshot.some((candidate) => candidate.id === 'starter-copy')) {
+      this.prompts.duplicate('starter', 'starter-copy', 'p1', 'Starter prompts copy')
+    }
+    this.value.notice = 'Prompt deck duplicated'
+    this.emit()
+  }
+
+  archivePromptDeck(id = 'starter-copy'): void {
+    this.prompts.archive(id, 'p1')
+    this.value.notice = 'Prompt deck archived'
+    this.emit()
+  }
+
   stageWinRules(
     patch: Partial<{
       targetScore: number

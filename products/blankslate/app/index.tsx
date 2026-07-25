@@ -145,6 +145,32 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
                 setContentRevision((value) => value + 1)
               }}
             />
+            <Action
+              testID="bulk-add-prompts"
+              label="Paste three prompt cues"
+              onPress={() =>
+                controller.bulkAddPrompts('Summer ___\n___ station\nSuper ___ surprise')
+              }
+            />
+            <Action
+              testID="rename-prompt-deck"
+              label="Rename and autosave deck"
+              onPress={() => controller.renamePromptDeck('Weekend prompts')}
+            />
+            <Action
+              testID="duplicate-prompt-deck"
+              label="Duplicate prompt deck"
+              onPress={() => controller.duplicatePromptDeck()}
+            />
+            {controller.prompts.snapshot.some(
+              (collection) => collection.id === 'starter-copy' && collection.status !== 'archived',
+            ) && (
+              <Action
+                testID="archive-prompt-deck"
+                label="Delete duplicate deck"
+                onPress={() => controller.archivePromptDeck()}
+              />
+            )}
             <Text style={styles.meta}>
               {controller.prompts.health('starter').itemCount} valid cues
             </Text>

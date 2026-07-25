@@ -140,6 +140,34 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
                 setContentRevision((value) => value + 1)
               }}
             />
+            <Action
+              testID="bulk-add-categories"
+              label="Paste category list"
+              onPress={() =>
+                controller.bulkAddCategories(
+                  'Things in a backpack\nFoods at a picnic\nThings in a backpack',
+                )
+              }
+            />
+            <Action
+              testID="rename-category-deck"
+              label="Rename and autosave deck"
+              onPress={() => controller.renameCategoryDeck('Weekend categories')}
+            />
+            <Action
+              testID="duplicate-category-deck"
+              label="Duplicate category deck"
+              onPress={() => controller.duplicateCategoryDeck()}
+            />
+            {controller.categories.snapshot.some(
+              (collection) => collection.id === 'starter-copy' && collection.status !== 'archived',
+            ) && (
+              <Action
+                testID="archive-category-deck"
+                label="Delete duplicate deck"
+                onPress={() => controller.archiveCategoryDeck()}
+              />
+            )}
             <Text style={styles.meta}>
               {controller.categories.health('starter').itemCount} valid categories
             </Text>

@@ -626,6 +626,42 @@ export class BurndownController {
     this.categories.publish('starter')
   }
 
+  bulkAddCategories(input: string): void {
+    const categories = input
+      .split(/\r?\n/)
+      .map((category) => category.trim())
+      .filter(Boolean)
+      .map((category) => ({ category }))
+    if (!categories.length) throw new Error('Bulk category input cannot be empty')
+    const collection = this.categories.snapshot.find((candidate) => candidate.id === 'starter')
+    if (!collection) throw new Error('Starter category deck is unavailable')
+    this.categories.appendItems('starter', 'p1', collection.revision, categories)
+    this.value.notice = `${categories.length} bulk categories added`
+    this.emit()
+  }
+
+  renameCategoryDeck(title: string): void {
+    const collection = this.categories.snapshot.find((candidate) => candidate.id === 'starter')
+    if (!collection) throw new Error('Starter category deck is unavailable')
+    this.categories.updateMetadata('starter', 'p1', collection.revision, { title })
+    this.value.notice = 'Category deck autosaved'
+    this.emit()
+  }
+
+  duplicateCategoryDeck(): void {
+    if (!this.categories.snapshot.some((candidate) => candidate.id === 'starter-copy')) {
+      this.categories.duplicate('starter', 'starter-copy', 'p1', 'Starter categories copy')
+    }
+    this.value.notice = 'Category deck duplicated'
+    this.emit()
+  }
+
+  archiveCategoryDeck(id = 'starter-copy'): void {
+    this.categories.archive(id, 'p1')
+    this.value.notice = 'Category deck archived'
+    this.emit()
+  }
+
   private beginTurn(id: string): void {
     this.value.activePlayerId = id
     const rules = this.session.snapshot.rules

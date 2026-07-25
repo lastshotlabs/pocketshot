@@ -120,6 +120,30 @@ describe('Burndown native acceptance model', () => {
     })
   })
 
+  it('bulk edits, autosaves, duplicates, and archives category decks', () => {
+    const game = new BurndownController()
+    game.bulkAddCategories('Things in a backpack\nFoods at a picnic\nThings in a backpack')
+    game.renameCategoryDeck('Weekend categories')
+    game.duplicateCategoryDeck()
+    expect(game.categories.snapshot).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'starter',
+          title: 'Weekend categories',
+          items: expect.arrayContaining([
+            { category: 'Things in a backpack' },
+            { category: 'Foods at a picnic' },
+          ]),
+        }),
+        expect.objectContaining({ id: 'starter-copy', status: 'draft' }),
+      ]),
+    )
+    game.archiveCategoryDeck()
+    expect(game.categories.snapshot.find((deck) => deck.id === 'starter-copy')?.status).toBe(
+      'archived',
+    )
+  })
+
   it('supports staged host rules, life correction, and explicit match termination', () => {
     const game = new BurndownController()
     game.stageRules({ lives: 5, turnMs: 15_000 })

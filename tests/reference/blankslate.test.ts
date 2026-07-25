@@ -229,6 +229,27 @@ describe('Blank Slate native acceptance model', () => {
     expect(game.prompts.snapshot[0].status).toBe('published')
   })
 
+  it('bulk edits, autosaves, duplicates, and archives prompt decks', () => {
+    const game = new BlankSlateController()
+    game.bulkAddPrompts('Summer ___\n___ station\nSummer ___')
+    game.renamePromptDeck('Weekend prompts')
+    game.duplicatePromptDeck()
+    expect(game.prompts.snapshot).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'starter',
+          title: 'Weekend prompts',
+          items: expect.arrayContaining([{ cue: 'Summer ___' }, { cue: '___ station' }]),
+        }),
+        expect.objectContaining({ id: 'starter-copy', status: 'draft' }),
+      ]),
+    )
+    game.archivePromptDeck()
+    expect(game.prompts.snapshot.find((deck) => deck.id === 'starter-copy')?.status).toBe(
+      'archived',
+    )
+  })
+
   it('supports staged win rules, score correction, and host termination', () => {
     const game = new BlankSlateController()
     game.stageWinRules({ targetScore: 20 })
