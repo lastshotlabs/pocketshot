@@ -49,3 +49,36 @@ export interface PushTokenRegistrationResponse {
   pushToken: string
   updatedAt: string
 }
+
+export interface PersonalPush {
+  id: string
+  category: string
+  recipientId: string
+  roomId?: string
+  title: string
+  body: string
+  route?: string
+  createdAt: string
+  expiresAt?: string
+  data?: Record<string, unknown>
+}
+
+export interface PushQuietHours {
+  startMinute: number
+  endMinute: number
+  timeZoneOffsetMinutes?: number
+}
+
+export type PushDisposition =
+  | { status: 'deliver'; notification: PersonalPush }
+  | {
+      status: 'suppressed'
+      reason: 'duplicate' | 'expired' | 'muted' | 'disabled-category' | 'quiet-hours'
+    }
+
+export interface PushOpenRoute {
+  notificationId: string
+  route: string
+  openedAt: string
+  coldStart: boolean
+}
