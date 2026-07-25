@@ -14,6 +14,41 @@ describe('Party clean-room acceptance model', () => {
     expect(party.state.phase).toBe('lobby')
   })
 
+  it('configures presets, teams, readiness, and confirmed leave', () => {
+    const party = new PartyDemoController()
+    party.guest('Alex')
+    party.applyPreset('expert')
+    party.assignTeam('guest-1', 'team-2')
+    party.renameTeam('team-2', 'Needle Drops')
+    expect(party.canStart()).toBe(false)
+    party.ready()
+    expect(party.canStart()).toBe(true)
+    expect(party.state).toMatchObject({
+      settings: {
+        preset: 'expert',
+        targetCards: 15,
+        namingRequired: true,
+        steals: true,
+      },
+      teams: [expect.anything(), expect.objectContaining({ name: 'Needle Drops' })],
+    })
+    expect(party.leave('guest-1', false)).toBe(false)
+    expect(party.leave('guest-1', true)).toBe(true)
+    expect(party.state.phase).toBe('entry')
+  })
+
+  it('validates custom match and token rules', () => {
+    const party = new PartyDemoController()
+    expect(() => party.configure({ targetCards: 2 })).toThrow('between')
+    party.configure({ targetCards: 20, tokenCap: 2, freeCardCost: 2 })
+    expect(party.state.settings).toMatchObject({
+      preset: 'custom',
+      targetCards: 20,
+      tokenCap: 2,
+      freeCardCost: 2,
+    })
+  })
+
   it('deduplicates a rapid repeated player action', () => {
     const party = new PartyDemoController()
     party.guest('Alex')

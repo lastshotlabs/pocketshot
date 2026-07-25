@@ -17,11 +17,25 @@ import {
 import { z } from 'zod'
 
 export type PartyPhase = 'entry' | 'lobby' | 'round' | 'results' | 'deck'
+export type PartyPreset = 'classic' | 'pro' | 'expert' | 'cutthroat'
+
+export interface PartyMatchSettings {
+  preset: PartyPreset | 'custom'
+  targetCards: number
+  namingRequired: boolean
+  challenges: boolean
+  steals: boolean
+  soloTeams: boolean
+  tokenCap: number
+  freeCardCost: number
+}
 
 export interface PartyState {
   phase: PartyPhase
   joinCode: string
-  players: { id: string; name: string; ready: boolean }[]
+  players: { id: string; name: string; ready: boolean; teamId: string | null }[]
+  teams: { id: string; name: string; score: number }[]
+  settings: PartyMatchSettings
   round: number
   question: string
   answer: string
@@ -48,6 +62,20 @@ const initial: PartyState = {
   phase: 'entry',
   joinCode: 'HIT-427',
   players: [],
+  teams: [
+    { id: 'team-1', name: 'Team One', score: 0 },
+    { id: 'team-2', name: 'Team Two', score: 0 },
+  ],
+  settings: {
+    preset: 'classic',
+    targetCards: 10,
+    namingRequired: false,
+    challenges: true,
+    steals: false,
+    soloTeams: false,
+    tokenCap: 5,
+    freeCardCost: 3,
+  },
   round: 0,
   question: '',
   answer: '',
@@ -142,6 +170,103 @@ export class PartyDemoController {
     this.emit()
   }
 
+  applyPreset(preset: PartyPreset): void {
+    const presets: Record<PartyPreset, Omit<PartyMatchSettings, 'preset'>> = {
+      classic: {
+        targetCards: 10,
+        namingRequired: false,
+        challenges: true,
+        steals: false,
+        soloTeams: false,
+        tokenCap: 5,
+        freeCardCost: 3,
+      },
+      pro: {
+        targetCards: 12,
+        namingRequired: true,
+        challenges: true,
+        steals: false,
+        soloTeams: false,
+        tokenCap: 5,
+        freeCardCost: 3,
+      },
+      expert: {
+        targetCards: 15,
+        namingRequired: true,
+        challenges: true,
+        steals: true,
+        soloTeams: false,
+        tokenCap: 4,
+        freeCardCost: 4,
+      },
+      cutthroat: {
+        targetCards: 8,
+        namingRequired: true,
+        challenges: true,
+        steals: true,
+        soloTeams: true,
+        tokenCap: 3,
+        freeCardCost: 3,
+      },
+    }
+    this.stateValue.settings = { preset, ...presets[preset] }
+    this.stateValue.tokens = Math.min(this.stateValue.tokens, this.stateValue.settings.tokenCap)
+    this.emit()
+  }
+
+  configure(patch: Partial<Omit<PartyMatchSettings, 'preset'>>): void {
+    const next = { ...this.stateValue.settings, ...patch, preset: 'custom' as const }
+    if (!Number.isInteger(next.targetCards) || next.targetCards < 3 || next.targetCards > 50) {
+      throw new Error('Target cards must be between 3 and 50')
+    }
+    if (
+      !Number.isInteger(next.tokenCap) ||
+      next.tokenCap < 0 ||
+      !Number.isInteger(next.freeCardCost) ||
+      next.freeCardCost < 1
+    ) {
+      throw new Error('Token rules are invalid')
+    }
+    this.stateValue.settings = next
+    this.stateValue.tokens = Math.min(this.stateValue.tokens, next.tokenCap)
+    this.emit()
+  }
+
+  assignTeam(playerId: string, teamId: string): void {
+    if (!this.stateValue.teams.some((team) => team.id === teamId)) {
+      throw new Error(`Unknown team: ${teamId}`)
+    }
+    this.stateValue.players = this.stateValue.players.map((player) =>
+      player.id === playerId ? { ...player, teamId } : player,
+    )
+    this.emit()
+  }
+
+  renameTeam(teamId: string, name: string): void {
+    if (!name.trim()) throw new Error('Team name is required')
+    this.stateValue.teams = this.stateValue.teams.map((team) =>
+      team.id === teamId ? { ...team, name: name.trim() } : team,
+    )
+    this.emit()
+  }
+
+  canStart(): boolean {
+    return (
+      this.stateValue.players.length > 0 &&
+      this.stateValue.players.every(
+        (player) => player.ready && (this.stateValue.settings.soloTeams || player.teamId),
+      )
+    )
+  }
+
+  leave(playerId: string, confirmed: boolean): boolean {
+    if (!confirmed) return false
+    this.stateValue.players = this.stateValue.players.filter((player) => player.id !== playerId)
+    if (playerId === 'guest-1') this.stateValue.phase = 'entry'
+    this.emit()
+    return true
+  }
+
   join(code: string, name: string): void {
     if (code !== this.stateValue.joinCode) {
       this.stateValue.notice = 'That join code has expired.'
@@ -205,7 +330,8 @@ export class PartyDemoController {
         ...this.stateValue.timeline.slice(index),
       ]
       this.stateValue.score += 1
-      this.stateValue.winner = this.stateValue.timeline.length >= 10
+      this.stateValue.winner =
+        this.stateValue.timeline.length >= this.stateValue.settings.targetCards
     }
     this.emit()
     return correct
@@ -213,14 +339,18 @@ export class PartyDemoController {
 
   judgeNaming(correct: boolean): void {
     if (!this.stateValue.activeCard) return
-    this.stateValue.tokens = Math.min(5, this.stateValue.tokens + (correct ? 1 : 0))
+    this.stateValue.tokens = Math.min(
+      this.stateValue.settings.tokenCap,
+      this.stateValue.tokens + (correct ? 1 : 0),
+    )
     this.emit()
   }
 
   spendTokensForCard(): boolean {
     const card = this.stateValue.activeCard
-    if (!card || this.stateValue.tokens < 3 || this.stateValue.revealed) return false
-    this.stateValue.tokens -= 3
+    const cost = this.stateValue.settings.freeCardCost
+    if (!card || this.stateValue.tokens < cost || this.stateValue.revealed) return false
+    this.stateValue.tokens -= cost
     const index = insertionIndex(this.stateValue.timeline, card.year)
     this.stateValue.timeline = [
       ...this.stateValue.timeline.slice(0, index),
@@ -229,13 +359,18 @@ export class PartyDemoController {
     ]
     this.stateValue.score += 1
     this.stateValue.revealed = true
-    this.stateValue.winner = this.stateValue.timeline.length >= 10
+    this.stateValue.winner = this.stateValue.timeline.length >= this.stateValue.settings.targetCards
     this.emit()
     return true
   }
 
   challengePlacement(challengerId: string, index: number): void {
-    if (!this.stateValue.activeCard || this.stateValue.revealed) return
+    if (
+      !this.stateValue.settings.challenges ||
+      !this.stateValue.activeCard ||
+      this.stateValue.revealed
+    )
+      return
     this.stateValue.challenge = { challengerId, index }
     this.emit()
   }
@@ -341,7 +476,7 @@ function reduceParty(state: PartyState, event: Event): PartyState {
   if (event.kind === 'joined') {
     return {
       ...state,
-      players: [...state.players, { id: event.id, name: event.name, ready: false }],
+      players: [...state.players, { id: event.id, name: event.name, ready: false, teamId: null }],
     }
   }
   if (event.kind === 'ready') {
