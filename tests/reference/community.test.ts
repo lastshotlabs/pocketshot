@@ -265,13 +265,46 @@ describe('Community reference shell', () => {
     })
   })
 
+  it('sends attachment-only messages and enforces automod and scoped authorization', () => {
+    const community = new CommunityDemoController()
+    community.sendMessage('', [
+      {
+        id: 'photo-1',
+        url: 'https://cdn.example.test/trail.jpg',
+        mediaType: 'image/jpeg',
+      },
+    ])
+    community.sendMessage('This message contains harass language')
+    expect(community.state.messages).toEqual([
+      expect.objectContaining({
+        status: 'sent',
+        attachments: [expect.objectContaining({ id: 'photo-1' })],
+      }),
+    ])
+    expect(community.state.automodNotice).toContain('Harassment')
+    community.revokeMessageAccess()
+    expect(() =>
+      community.messaging.send({
+        id: 'blocked',
+        clientId: 'blocked',
+        body: 'No access',
+      }),
+    ).toThrow('revoked')
+  })
+
   it('moves a report through the moderator audit lifecycle', () => {
     const community = new CommunityDemoController()
     community.report('thread-welcome', 'Needs review')
     const report = community.state.reports[0]
     expect(report.status).toBe('open')
     community.resolveReport(report.id, 'warn')
-    expect(community.state.reports[0]).toMatchObject({ status: 'resolved', action: 'warn' })
+    expect(community.state.reports[0]).toMatchObject({
+      status: 'resolved',
+      action: 'warn',
+      assigneeId: 'alex',
+      noteCount: 1,
+    })
+    expect(community.state.moderationAuditCount).toBe(2)
   })
 
   it('applies privacy controls and completes an export request', async () => {

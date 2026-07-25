@@ -264,9 +264,12 @@ export default function CommunityShell() {
               {state.presence} · {state.typing ? 'typing…' : 'not typing'}
             </Text>
             {state.messages.map((message) => (
-              <Text key={message.id} style={styles.reply}>
-                {message.body}
-              </Text>
+              <View key={message.id} style={styles.replyBlock}>
+                <Text style={styles.reply}>{message.body || 'Attachment'}</Text>
+                {!!message.attachments?.length && (
+                  <Text style={styles.copy}>{message.attachments.length} validated attachment</Text>
+                )}
+              </View>
             ))}
             {state.rooms.map((room) => (
               <View key={room.id} style={styles.thread}>
@@ -306,6 +309,19 @@ export default function CommunityShell() {
               onPress={() => community.sendMessage('Hello!')}
             />
             <Action
+              testID="send-message-attachment"
+              label="Send validated photo"
+              onPress={() =>
+                community.sendMessage('', [
+                  {
+                    id: 'trail-photo',
+                    url: 'https://cdn.example.test/trail.jpg',
+                    mediaType: 'image/jpeg',
+                  },
+                ])
+              }
+            />
+            <Action
               testID="revoke-access"
               label="Simulate revoked access"
               onPress={() => community.revokeMessageAccess()}
@@ -315,13 +331,15 @@ export default function CommunityShell() {
         {state.view === 'moderation' && (
           <Card title="Moderator queue">
             <Text style={styles.copy}>Admin audit events: {state.adminAuditCount}</Text>
+            <Text style={styles.copy}>Moderation audit events: {state.moderationAuditCount}</Text>
             <Text style={styles.copy}>
               Slow mode: {state.adminFlags['slow-mode'] ? 'enabled' : 'disabled'}
             </Text>
             {state.reports.map((report) => (
               <View key={report.id} style={styles.thread}>
                 <Text style={styles.copy}>
-                  {report.reason} · {report.status}
+                  {report.reason} · {report.status} · {report.assigneeId ?? 'unassigned'} ·{' '}
+                  {report.noteCount ?? 0} notes
                 </Text>
                 {report.status === 'open' && (
                   <Action

@@ -4,8 +4,12 @@ import {
   type DraftStorage,
 } from '@lastshotlabs/pocketshot/drafts'
 import {
+  AutomodController,
+  CommunityAuthorizationController,
   CommunityAdminController,
   CommunityProfileController,
+  MessagingController,
+  ModerationController,
   RoomStateController,
   SocialGraphController,
   type CommunityProfileVisibility,
@@ -53,6 +57,8 @@ export interface CommunityMessage {
   body: string
   mine: boolean
   read: boolean
+  status?: 'pending' | 'sent' | 'failed'
+  attachments?: Array<{ id: string; url: string; mediaType: string }>
 }
 
 export interface CommunityReport {
@@ -61,6 +67,8 @@ export interface CommunityReport {
   reason: string
   status: 'open' | 'resolved'
   action?: string
+  assigneeId?: string | null
+  noteCount?: number
 }
 
 export type CommunityView =
@@ -113,6 +121,8 @@ export interface CommunityState {
   activeRoomId: string | null
   adminFlags: Record<string, boolean>
   adminAuditCount: number
+  moderationAuditCount: number
+  automodNotice: string | null
 }
 
 type Event =
@@ -168,6 +178,8 @@ const initial: CommunityState = {
   activeRoomId: null,
   adminFlags: {},
   adminAuditCount: 0,
+  moderationAuditCount: 0,
+  automodNotice: null,
 }
 
 export class CommunityDemoController {
@@ -189,6 +201,10 @@ export class CommunityDemoController {
   readonly social = new SocialGraphController()
   readonly rooms = new RoomStateController()
   readonly admin = new CommunityAdminController(() => '2026-07-25T12:00:00.000Z')
+  readonly messaging = new MessagingController()
+  readonly moderation = new ModerationController(() => '2026-07-25T12:00:00.000Z')
+  readonly automod = new AutomodController(() => Date.parse('2026-07-25T12:00:00.000Z'))
+  readonly authorization = new CommunityAuthorizationController()
   readonly account = createCommunityAccount()
   readonly accountData = new AccountDataController(
     {
@@ -244,6 +260,17 @@ export class CommunityDemoController {
       state: this.stateValue,
     })
     this.rooms.openRoom('trail-room')
+    this.messaging.configureMembers(['alex', 'morgan'])
+    this.authorization.setRole('alex', 'admin')
+    this.authorization.setRole('morgan', 'member')
+    this.automod.savePolicy({
+      id: 'blocked-harassment',
+      kind: 'blocked-term',
+      value: 'harass',
+      action: 'reject',
+      explanation: 'Harassment language is not permitted.',
+      enabled: true,
+    })
     for (const ability of ['ban', 'broadcast', 'manage_flags', 'view_audit'] as const) {
       this.admin.grant('system', 'alex', ability)
     }
@@ -683,16 +710,44 @@ export class CommunityDemoController {
     this.emit()
   }
 
-  sendMessage(body: string): void {
+  sendMessage(
+    body: string,
+    attachments: Array<{ id: string; url: string; mediaType: string }> = [],
+  ): void {
     if (this.stateValue.messageAccess === 'revoked') {
       this.stateValue.notice = 'You no longer have access to this conversation.'
       this.emit()
       return
     }
+    this.authorization.require('alex', 'message', 'dm:alex-morgan')
+    const decision = this.automod.evaluate({ actorId: 'alex', text: body })
+    if (!decision.allowed) {
+      this.stateValue.automodNotice = decision.explanations.join(' ')
+      this.stateValue.notice = this.stateValue.automodNotice
+      this.emit()
+      return
+    }
     this.messageId += 1
+    const clientId = `message-client-${this.messageId}`
+    this.messaging.send({
+      id: clientId,
+      clientId,
+      body,
+      conversationId: 'dm:alex-morgan',
+      attachments,
+      createdAt: `2026-07-25T12:00:${String(this.messageId).padStart(2, '0')}.000Z`,
+    })
+    this.messaging.acknowledge(clientId, `message-${this.messageId}`)
     this.event({
       kind: 'message',
-      message: { id: `message-${this.messageId}`, body, mine: true, read: false },
+      message: {
+        id: `message-${this.messageId}`,
+        body,
+        mine: true,
+        read: false,
+        status: 'sent',
+        attachments: structuredClone(attachments),
+      },
     })
   }
 
@@ -715,6 +770,8 @@ export class CommunityDemoController {
   }
 
   revokeMessageAccess(): void {
+    this.authorization.revoke('alex', 'dm:alex-morgan')
+    this.messaging.revokeAccess()
     this.stateValue.messageAccess = 'revoked'
     this.stateValue.notice = 'Conversation access was revoked.'
     this.emit()
@@ -722,20 +779,32 @@ export class CommunityDemoController {
 
   report(targetId: string, reason: string): void {
     this.reportId += 1
-    this.stateValue.reports.push({
+    const report = {
       id: `report-${this.reportId}`,
       targetId,
       reason,
-      status: 'open',
-    })
+      status: 'open' as const,
+      assigneeId: null,
+      noteCount: 0,
+    }
+    this.moderation.submit(report)
+    this.stateValue.reports.push(report)
     this.stateValue.view = 'moderation'
     this.emit()
   }
 
   resolveReport(id: string, action: string): void {
-    this.stateValue.reports = this.stateValue.reports.map((report) =>
-      report.id === id ? { ...report, status: 'resolved', action } : report,
-    )
+    this.authorization.require('alex', 'moderate')
+    this.moderation.assign(id, 'alex')
+    this.moderation.addNote(id, 'alex', 'Reviewed in the mobile moderator queue')
+    this.moderation.proposeAction(`action-${id}`, {
+      reportId: id,
+      actorId: 'alex',
+      action,
+      reason: 'Confirmed after moderator review',
+    })
+    this.moderation.confirmAction(`action-${id}`)
+    this.syncModeration()
     this.emit()
   }
 
@@ -840,6 +909,20 @@ export class CommunityDemoController {
     this.stateValue.adminFlags = snapshot.flags
     this.stateValue.adminAuditCount = snapshot.audit.length
     this.emit()
+  }
+
+  private syncModeration(): void {
+    const snapshot = this.moderation.snapshot
+    this.stateValue.reports = snapshot.reports.map((report) => ({
+      id: report.id,
+      targetId: report.targetId,
+      reason: report.reason,
+      status: report.status === 'resolved' ? 'resolved' : 'open',
+      action: [...snapshot.audit].reverse().find((entry) => entry.reportId === report.id)?.action,
+      assigneeId: report.assigneeId,
+      noteCount: snapshot.notes[report.id]?.length ?? 0,
+    }))
+    this.stateValue.moderationAuditCount = snapshot.audit.length
   }
 }
 
