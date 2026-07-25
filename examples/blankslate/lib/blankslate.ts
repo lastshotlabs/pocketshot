@@ -246,6 +246,65 @@ export class BlankSlateController {
     return true
   }
 
+  setAdmissionPolicy(policy: 'open' | 'approval' | 'closed'): void {
+    this.session.setAdmissionPolicy(this.session.snapshot.hostId ?? 'p1', policy)
+    this.value.notice = `Admission policy: ${policy}`
+    this.emit()
+  }
+
+  requestAdmission(
+    id: string,
+    displayName: string,
+    role: 'participant' | 'spectator' = 'participant',
+  ): 'admitted' | 'pending' {
+    const status = this.session.requestAdmission({
+      id,
+      displayName,
+      role,
+      requestedAt: Date.now(),
+    })
+    this.value.notice =
+      status === 'pending'
+        ? `${displayName} is waiting for host approval`
+        : `${displayName} may join`
+    this.emit()
+    return status
+  }
+
+  decideAdmission(memberId: string, admit: boolean): void {
+    const request = this.session.snapshot.admissionQueue?.find(
+      (candidate) => candidate.id === memberId,
+    )
+    if (!request) throw new Error(`Unknown admission request: ${memberId}`)
+    this.session.decideAdmission(this.session.snapshot.hostId ?? 'p1', memberId, admit)
+    if (admit) {
+      const seat =
+        request.role === 'spectator'
+          ? null
+          : Math.max(-1, ...this.session.snapshot.members.map((member) => member.seat ?? -1)) + 1
+      this.session.join({
+        id: request.id,
+        displayName: request.displayName,
+        role: request.role,
+        seat,
+        connected: true,
+      })
+      if (request.role === 'participant') {
+        this.value.players.push({ id: request.id, name: request.displayName, score: 0 })
+      }
+    }
+    this.value.notice = `${request.displayName} was ${admit ? 'admitted' : 'denied'}`
+    this.emit()
+  }
+
+  admissionQueue() {
+    return structuredClone(this.session.snapshot.admissionQueue ?? [])
+  }
+
+  lobbyProjection() {
+    return this.session.publicProjection()
+  }
+
   startRound(): void {
     this.session.applyStagedRules()
     const rules = this.session.snapshot.rules

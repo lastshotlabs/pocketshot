@@ -132,6 +132,29 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
         {game.phase === 'lobby' && (
           <Card title="Lobby">
             <Text style={styles.copy}>{game.players.map((player) => player.name).join(' · ')}</Text>
+            <Text style={styles.meta}>Waiting: {controller.admissionQueue().length}</Text>
+            <Action
+              testID="enable-admission"
+              label="Require host approval"
+              onPress={() => controller.setAdmissionPolicy('approval')}
+            />
+            <Action
+              testID="request-spectator"
+              label="Request TV spectator"
+              onPress={() => controller.requestAdmission('tv', 'Living Room TV', 'spectator')}
+            />
+            {controller.admissionQueue().find((request) => request.status === 'pending') && (
+              <Action
+                testID="admit-request"
+                label="Admit waiting guest"
+                onPress={() =>
+                  controller.decideAdmission(
+                    controller.admissionQueue().find((request) => request.status === 'pending')!.id,
+                    true,
+                  )
+                }
+              />
+            )}
             <Action
               testID="start-round"
               label="Start round"

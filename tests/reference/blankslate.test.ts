@@ -33,6 +33,25 @@ describe('Blank Slate native acceptance model', () => {
     expect(passkey.state.passkeyCount).toBe(0)
   })
 
+  it('runs host admission for participants and spectators with public-safe projection', () => {
+    const game = new BlankSlateController()
+    game.enter()
+    game.setAdmissionPolicy('approval')
+    expect(game.requestAdmission('p4', 'Rae')).toBe('pending')
+    expect(game.requestAdmission('tv', 'Living Room TV', 'spectator')).toBe('pending')
+    expect(game.admissionQueue()).toEqual([
+      expect.objectContaining({ id: 'p4', status: 'pending' }),
+      expect.objectContaining({ id: 'tv', role: 'spectator', status: 'pending' }),
+    ])
+    game.decideAdmission('p4', true)
+    game.decideAdmission('tv', true)
+    expect(game.state.players).toContainEqual({ id: 'p4', name: 'Rae', score: 0 })
+    expect(game.lobbyProjection().members).toContainEqual(
+      expect.objectContaining({ id: 'tv', role: 'spectator', seat: null }),
+    )
+    expect(game.lobbyProjection()).not.toHaveProperty('admissionQueue')
+  })
+
   it('normalizes cold native joins and rejects expired invites', () => {
     expect(normalizeBlankSlateSystemPath('pocketshot-blankslate://join/SLATE-42')).toBe(
       '/join/SLATE-42',
