@@ -75,6 +75,11 @@ describe('Party clean-room acceptance model', () => {
     party.assignTeam('guest-1', 'team-2')
     party.renameTeam('team-2', 'Needle Drops')
     expect(party.canStart()).toBe(false)
+    party.startRound()
+    expect(party.state).toMatchObject({
+      phase: 'lobby',
+      notice: 'Every player must choose a team and be ready.',
+    })
     party.ready()
     expect(party.canStart()).toBe(true)
     expect(party.state).toMatchObject({
@@ -106,6 +111,7 @@ describe('Party clean-room acceptance model', () => {
   it('deduplicates a rapid repeated player action', () => {
     const party = new PartyDemoController()
     party.guest('Alex')
+    party.ready()
     party.startRound()
     party.answer(3)
     party.answer(3)
@@ -149,6 +155,7 @@ describe('Party clean-room acceptance model', () => {
   it('composes host pause, audio, token, activity, reviewed end, and sharing controls', () => {
     const party = new PartyDemoController()
     party.guest('Alex')
+    party.ready()
     party.startRound()
     party.toggleMute()
     party.pauseMatch()
@@ -183,6 +190,7 @@ describe('Party clean-room acceptance model', () => {
   it('never projects the hidden answer to a second screen', () => {
     const party = new PartyDemoController()
     party.guest('Alex')
+    party.ready()
     party.startRound()
     expect(JSON.stringify(party.publicDisplay())).not.toContain('Private answer')
     expect(JSON.stringify(party.publicDisplay())).not.toContain('Private artist')
@@ -191,6 +199,7 @@ describe('Party clean-room acceptance model', () => {
   it('accepts relative timeline placement and either side of an equal year', () => {
     const party = new PartyDemoController()
     party.guest('Alex')
+    party.ready()
     party.startRound()
     expect(party.placeCard(1)).toBe(true)
     expect(party.state.timeline.map((card) => card.year)).toEqual([1972, 1984, 1999])
@@ -203,6 +212,7 @@ describe('Party clean-room acceptance model', () => {
   it('caps naming tokens and spends three for a correctly ordered free card', () => {
     const party = new PartyDemoController()
     party.guest('Alex')
+    party.ready()
     party.startRound()
     party.judgeNaming(true)
     party.judgeNaming(true)
@@ -217,6 +227,7 @@ describe('Party clean-room acceptance model', () => {
   it('awards a challenged card only to the side with a correct placement', () => {
     const party = new PartyDemoController()
     party.guest('Alex')
+    party.ready()
     party.startRound()
     party.challengePlacement('team-2', 1)
     expect(party.resolveChallenge(0)).toBe('challenger')

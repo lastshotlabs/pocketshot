@@ -85,6 +85,24 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
               {player.name} · {player.ready ? 'Ready' : 'Waiting'}
             </Text>
           ))}
+          <Text style={styles.copy}>
+            {party.settings.preset} · first to {party.settings.targetCards} cards
+          </Text>
+          <Action
+            testID="classic-preset"
+            label="Use Classic rules"
+            onPress={() => controller.applyPreset('classic')}
+          />
+          <Action
+            testID="cutthroat-preset"
+            label="Use Cutthroat rules"
+            onPress={() => controller.applyPreset('cutthroat')}
+          />
+          <Action
+            testID="choose-team-two"
+            label="Join Team Two"
+            onPress={() => controller.assignTeam('guest-1', 'team-2')}
+          />
           <Action testID="ready" label="Ready up" onPress={() => controller.ready()} />
           <Action
             testID="claim-seat"

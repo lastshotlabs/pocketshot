@@ -424,6 +424,7 @@ export class PartyDemoController {
       })
     }
     this.event({ kind: 'joined', id: 'guest-1', name })
+    this.assignTeam('guest-1', 'team-1')
     this.stateValue.phase = 'lobby'
     this.appendActivity('join', `${name} joined the party`, 'guest-1')
     this.emit()
@@ -573,6 +574,11 @@ export class PartyDemoController {
   }
 
   startRound(): void {
+    if (!this.canStart()) {
+      this.stateValue.notice = 'Every player must choose a team and be ready.'
+      this.emit()
+      return
+    }
     this.event({ kind: 'round', question: 'Name this song', answer: 'Private answer' })
     this.stateValue.activeCard = {
       id: `card-${this.stateValue.round}`,
