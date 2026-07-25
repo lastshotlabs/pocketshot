@@ -9,9 +9,12 @@
       "android"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lastshotlabs.pocketshotshowcase"
     },
-    "android": {},
+    "android": {
+      "package": "com.lastshotlabs.pocketshotshowcase"
+    },
     "plugins": [
       "expo-router",
       "expo-secure-store",
