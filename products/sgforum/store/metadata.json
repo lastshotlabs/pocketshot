@@ -1,0 +1,15 @@
+{
+  "name": "SGForum",
+  "subtitle": "Communities worth joining",
+  "shortDescription": "Discover discussions, share rich posts, message members, and build safer spaces.",
+  "description": "SGForum brings community discovery, threaded conversation, rooms, direct messages, notifications, profiles, and moderation to a native mobile experience. Publish rich discussions and polls, follow replies, preserve your reading position, manage privacy preferences, and use transparent report and moderation workflows.",
+  "keywords": ["community", "forum", "discussion", "chat", "groups", "social"],
+  "category": "Social Networking",
+  "contentRating": "17+",
+  "privacyUrl": "https://sgforum.app/privacy",
+  "termsUrl": "https://sgforum.app/terms",
+  "supportUrl": "https://sgforum.app/support",
+  "deletionUrl": "https://sgforum.app/account/delete",
+  "reviewNotes": "Guest discovery is available immediately. The included review journey can create a local identity, post, message, report content, and exercise privacy controls.",
+  "releaseNotes": "Initial mobile release with ranked feeds, rich threads, nested replies, rooms and messages, push handoff, moderation, admin controls, and privacy workflows."
+}

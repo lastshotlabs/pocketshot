@@ -1,0 +1,7 @@
+{
+  "required": ["entry", "lobby", "live-round", "results", "deck-builder"],
+  "hero": "live-round",
+  "appearances": ["dark"],
+  "locales": ["en-US"],
+  "devices": ["compact-iphone", "modern-iphone", "pixel-phone"]
+}

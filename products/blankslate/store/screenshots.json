@@ -1,0 +1,7 @@
+{
+  "required": ["entry", "private-write", "reveal", "merge-vote", "results"],
+  "hero": "reveal",
+  "appearances": ["dark"],
+  "locales": ["en-US"],
+  "devices": ["compact-iphone", "modern-iphone", "pixel-phone"]
+}

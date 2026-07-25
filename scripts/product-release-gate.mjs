@@ -71,6 +71,51 @@ for (const product of products) {
   if (!app.android?.intentFilters?.some((filter) => filter.autoVerify)) {
     failures.push(`${product} has no verified Android App Link`)
   }
+  const metadata = JSON.parse(
+    await readFile(new URL(`../products/${product}/store/metadata.json`, import.meta.url), 'utf8'),
+  )
+  const screenshots = JSON.parse(
+    await readFile(
+      new URL(`../products/${product}/store/screenshots.json`, import.meta.url),
+      'utf8',
+    ),
+  )
+  for (const key of [
+    'name',
+    'subtitle',
+    'shortDescription',
+    'description',
+    'category',
+    'contentRating',
+    'privacyUrl',
+    'termsUrl',
+    'supportUrl',
+    'deletionUrl',
+    'reviewNotes',
+    'releaseNotes',
+  ]) {
+    if (typeof metadata[key] !== 'string' || !metadata[key].trim()) {
+      failures.push(`${product} store metadata is missing ${key}`)
+    }
+  }
+  if (metadata.subtitle?.length > 30)
+    failures.push(`${product} store subtitle exceeds 30 characters`)
+  if (!Array.isArray(metadata.keywords) || metadata.keywords.length < 3) {
+    failures.push(`${product} store keywords are incomplete`)
+  }
+  if (
+    !Array.isArray(screenshots.required) ||
+    screenshots.required.length < 5 ||
+    !screenshots.required.includes(screenshots.hero)
+  ) {
+    failures.push(`${product} screenshot plan must include at least five journeys and its hero`)
+  }
+  if (
+    !screenshots.devices?.includes('modern-iphone') ||
+    !screenshots.devices?.includes('pixel-phone')
+  ) {
+    failures.push(`${product} screenshot plan does not cover iPhone and Android`)
+  }
   for (const [label, assetPath] of [
     ['icon', app.icon],
     ['splash', app.splash?.image],

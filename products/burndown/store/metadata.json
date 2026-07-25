@@ -1,0 +1,15 @@
+{
+  "name": "Burndown",
+  "subtitle": "Fast words. Last player wins.",
+  "shortDescription": "Race the alphabet on separate phones or around one shared table.",
+  "description": "Burndown is a rapid word party game for two to eight players. Pick a category, beat the clock, burn letters, challenge answers, and survive with the last lives on the board. Play on separate phones or pass one device with a full privacy handoff curtain, shared voting, wake lock, spectators, and TV projection.",
+  "keywords": ["word", "party", "alphabet", "challenge", "tabletop", "friends"],
+  "category": "Games/Word",
+  "contentRating": "4+",
+  "privacyUrl": "https://burndown.app/privacy",
+  "termsUrl": "https://burndown.app/terms",
+  "supportUrl": "https://burndown.app/support",
+  "deletionUrl": "https://burndown.app/account/delete",
+  "reviewNotes": "Choose Share this device to review without an account or backend. Shared-table mode intentionally keeps the screen awake only while a match is active.",
+  "releaseNotes": "Initial mobile release with separate-phone and shared-table modes, 2–8 players, challenges, custom categories, host recovery, spectators, TV projection, and native sharing."
+}

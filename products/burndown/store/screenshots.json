@@ -1,0 +1,7 @@
+{
+  "required": ["mode-entry", "shared-handoff", "alphabet-turn", "challenge-grid", "results"],
+  "hero": "alphabet-turn",
+  "appearances": ["dark"],
+  "locales": ["en-US"],
+  "devices": ["compact-iphone", "modern-iphone", "pixel-phone", "landscape-tablet"]
+}

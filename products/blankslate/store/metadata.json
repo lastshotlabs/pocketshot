@@ -1,0 +1,15 @@
+{
+  "name": "Blank Slate",
+  "subtitle": "Think alike. Score together.",
+  "shortDescription": "Fill the blank, match your friends, and settle surprising answers together.",
+  "description": "Blank Slate is a private-write word matching party game for friends. Join in one tap, write your slate privately, reveal everyone together, score exact matches, vote on close groups, and play to a target or fixed round count. Native offline resend, quiet hours, personal turn notifications, host correction, and strict TV redaction keep play fair.",
+  "keywords": ["word", "party", "matching", "friends", "slate", "game"],
+  "category": "Games/Word",
+  "contentRating": "4+",
+  "privacyUrl": "https://blankslate.app/privacy",
+  "termsUrl": "https://blankslate.app/terms",
+  "supportUrl": "https://blankslate.app/support",
+  "deletionUrl": "https://blankslate.app/account/delete",
+  "reviewNotes": "Use Continue as guest for the complete journey. Other players are simulated for review; no answer appears in another player or TV projection before reveal.",
+  "releaseNotes": "Initial mobile release with private native slate entry, group scoring, merge votes, host fix-up and undo, offline replay, haptics, personal notifications, and custom prompt decks."
+}

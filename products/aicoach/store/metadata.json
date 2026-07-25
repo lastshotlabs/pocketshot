@@ -1,0 +1,15 @@
+{
+  "name": "AICoach",
+  "subtitle": "Training that adapts to you",
+  "shortDescription": "Plan workouts, track progress, and turn coaching guidance into reviewed actions.",
+  "description": "AICoach combines daily coaching, goals, metrics, workouts, progress photos, and trusted memory in one mobile training companion. Stream answers, review every proposed action before it changes your log, continue workouts after interruptions, and safely synchronize offline entries. Account privacy, export, deletion, and subscription controls remain visible and reversible.",
+  "keywords": ["fitness", "coach", "workout", "training", "goals", "health"],
+  "category": "Health & Fitness",
+  "contentRating": "4+",
+  "privacyUrl": "https://aicoach.app/privacy",
+  "termsUrl": "https://aicoach.app/terms",
+  "supportUrl": "https://aicoach.app/support",
+  "deletionUrl": "https://aicoach.app/account/delete",
+  "reviewNotes": "A review account may be supplied in App Store Connect. AI actions always require explicit confirmation; the app does not provide medical diagnosis.",
+  "releaseNotes": "Initial mobile release with streaming coaching, goals and metrics, custom programs, workout recovery, progress photos, offline sync, privacy controls, and subscriptions."
+}

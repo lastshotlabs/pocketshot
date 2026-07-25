@@ -1,0 +1,7 @@
+{
+  "required": ["daily-coach", "action-confirmation", "today-metrics", "workout", "progress-photo"],
+  "hero": "daily-coach",
+  "appearances": ["light", "dark"],
+  "locales": ["en-US"],
+  "devices": ["compact-iphone", "modern-iphone", "pixel-phone"]
+}

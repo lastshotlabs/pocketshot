@@ -1,0 +1,7 @@
+{
+  "required": ["community-feed", "thread", "compose", "messages", "moderation"],
+  "hero": "community-feed",
+  "appearances": ["light", "dark"],
+  "locales": ["en-US"],
+  "devices": ["compact-iphone", "modern-iphone", "pixel-phone"]
+}

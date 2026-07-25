@@ -1,0 +1,15 @@
+{
+  "name": "Hitshot",
+  "subtitle": "Music trivia with friends",
+  "shortDescription": "Build playlists, place songs on the timeline, and challenge your friends.",
+  "description": "Hitshot turns music knowledge into a fast social party game. Create or join a room, choose a curated or custom deck, listen together, place tracks on a timeline, name songs, challenge close calls, and finish with a shareable result. Guest play, QR joining, reconnect recovery, public TV mode, and accessible host controls keep every group in the game.",
+  "keywords": ["music", "trivia", "party", "timeline", "playlist", "friends"],
+  "category": "Games/Trivia",
+  "contentRating": "12+",
+  "privacyUrl": "https://hitshot.app/privacy",
+  "termsUrl": "https://hitshot.app/terms",
+  "supportUrl": "https://hitshot.app/support",
+  "deletionUrl": "https://hitshot.app/account/delete",
+  "reviewNotes": "Use guest entry for review. Spotify is optional; preview fallback supports the complete review journey without an external playback account.",
+  "releaseNotes": "Initial mobile release with party matches, custom decks, provider fallback, host recovery, TV projection, and accessible iPhone and Android play."
+}
