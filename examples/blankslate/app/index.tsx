@@ -3,10 +3,19 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 import { StatusBar } from 'expo-status-bar'
 import { BlankSlateController, type BlankSlateState } from '../lib/blankslate'
 
+type AppSection = 'Play' | 'Games' | 'Library' | 'Build' | 'You'
+
 export default function BlankSlateApp() {
   const controller = useMemo(() => new BlankSlateController(), [])
   const [game, setGame] = useState<BlankSlateState>(controller.state)
+  const [section, setSection] = useState<AppSection>('Play')
+  const [contentRevision, setContentRevision] = useState(0)
   useEffect(() => controller.subscribe(setGame), [controller])
+  const collections = controller.prompts.browse({
+    scope: section === 'Library' ? 'all' : 'mine',
+    viewerId: 'p1',
+    sort: 'updated',
+  }).items
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -20,12 +29,61 @@ export default function BlankSlateApp() {
             {game.notice}
           </Text>
         )}
-        {game.phase === 'entry' && (
+        {game.phase === 'entry' && section === 'Play' && (
           <Card title="Match your friends">
             <Action
               testID="guest-entry"
               label="Continue as guest"
               onPress={() => controller.enter()}
+            />
+          </Card>
+        )}
+        {game.phase === 'entry' && section === 'Games' && (
+          <Card title="Your games">
+            <Text style={styles.copy}>No interrupted games. Completed matches appear here.</Text>
+            <Action testID="games-refresh" label="Refresh games" onPress={() => undefined} />
+          </Card>
+        )}
+        {game.phase === 'entry' && section === 'Library' && (
+          <Card title="Prompt library">
+            {collections.map((collection) => (
+              <View key={collection.id} style={styles.libraryRow}>
+                <Text style={styles.copy}>{collection.title}</Text>
+                <Text style={styles.meta}>
+                  {collection.items.length} cues · {collection.status}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        )}
+        {game.phase === 'entry' && section === 'Build' && (
+          <Card title="Build a prompt deck">
+            <Text style={styles.copy}>
+              Cue validation supports prefix, suffix, and infix blanks with review before publish.
+            </Text>
+            <Action
+              testID="generate-prompt"
+              label="Generate reviewed suggestion"
+              onPress={() => {
+                const id = `mobile-proposal-${contentRevision}`
+                controller.proposePrompts(id, [`Road ___ ${contentRevision + 1}`], 'Mobile draft')
+                controller.reviewPromptProposal(id, true)
+                setContentRevision((value) => value + 1)
+              }}
+            />
+            <Text style={styles.meta}>
+              {controller.prompts.health('starter').itemCount} valid cues
+            </Text>
+          </Card>
+        )}
+        {game.phase === 'entry' && section === 'You' && (
+          <Card title="You">
+            <Text style={styles.copy}>Alex · guest session</Text>
+            <Text style={styles.meta}>Push: personal turns only · Room mute available</Text>
+            <Action
+              testID="account-settings"
+              label="Account and privacy"
+              onPress={() => undefined}
             />
           </Card>
         )}
@@ -119,13 +177,23 @@ export default function BlankSlateApp() {
           </Card>
         )}
       </ScrollView>
-      <View accessibilityRole="tablist" style={styles.tabs}>
-        {['Play', 'Games', 'Library', 'Build', 'You'].map((tab) => (
-          <Text accessibilityRole="tab" key={tab} style={styles.tab}>
-            {tab}
-          </Text>
-        ))}
-      </View>
+      {game.phase === 'entry' && (
+        <View accessibilityRole="tablist" style={styles.tabs}>
+          {(['Play', 'Games', 'Library', 'Build', 'You'] as const).map((tab) => (
+            <Pressable
+              accessibilityRole="tab"
+              accessibilityState={{ selected: section === tab }}
+              accessibilityLabel={tab}
+              testID={`tab-${tab.toLocaleLowerCase()}`}
+              key={tab}
+              onPress={() => setSection(tab)}
+              style={[styles.tab, section === tab && styles.selectedTab]}
+            >
+              <Text style={styles.tabText}>{tab}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </SafeAreaView>
   )
 }
@@ -175,6 +243,8 @@ const styles = StyleSheet.create({
   },
   heading: { color: '#fff8e8', fontSize: 25, fontWeight: '800' },
   copy: { color: '#c8dfd5', fontSize: 17 },
+  meta: { color: '#8fb5a5', fontSize: 14 },
+  libraryRow: { borderBottomColor: '#376c59', borderBottomWidth: 1, paddingVertical: 10, gap: 4 },
   notice: { color: '#fff', backgroundColor: '#8b1e1e', padding: 12, borderRadius: 10 },
   slate: { backgroundColor: '#f5e7c6', borderRadius: 10, padding: 14 },
   answer: { color: '#10251e', fontSize: 28, fontWeight: '900' },
@@ -198,5 +268,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
   },
-  tab: { color: '#f5e7c6', minWidth: 48, textAlign: 'center', paddingVertical: 14 },
+  tab: {
+    minWidth: 56,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  selectedTab: { borderTopColor: '#d99d3f', borderTopWidth: 3 },
+  tabText: { color: '#f5e7c6', fontSize: 13, fontWeight: '700' },
 })

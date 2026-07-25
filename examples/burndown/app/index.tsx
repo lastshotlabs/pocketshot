@@ -6,6 +6,8 @@ import { BurndownController, type BurndownState } from '../lib/burndown'
 export default function BurndownApp() {
   const controller = useMemo(() => new BurndownController(), [])
   const [game, setGame] = useState<BurndownState>(controller.state)
+  const [section, setSection] = useState<'play' | 'library' | 'build'>('play')
+  const [contentRevision, setContentRevision] = useState(0)
   useEffect(() => controller.subscribe(setGame), [controller])
 
   return (
@@ -15,12 +17,29 @@ export default function BurndownApp() {
         <Text accessibilityRole="header" style={styles.brand}>
           BURNDOWN
         </Text>
+        {game.phase === 'entry' && (
+          <View accessibilityRole="tablist" style={styles.sections}>
+            {(['play', 'library', 'build'] as const).map((item) => (
+              <Pressable
+                accessibilityRole="tab"
+                accessibilityState={{ selected: section === item }}
+                accessibilityLabel={item}
+                testID={`section-${item}`}
+                key={item}
+                style={[styles.section, section === item && styles.selectedSection]}
+                onPress={() => setSection(item)}
+              >
+                <Text style={styles.sectionText}>{item.toLocaleUpperCase()}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
         {game.notice && (
           <Text accessibilityRole="alert" style={styles.notice}>
             {game.notice}
           </Text>
         )}
-        {game.phase === 'entry' && (
+        {game.phase === 'entry' && section === 'play' && (
           <Card title="Choose how to play">
             <Action
               testID="enter-phones"
@@ -32,6 +51,42 @@ export default function BurndownApp() {
               label="Share this device"
               onPress={() => controller.enter('shared')}
             />
+          </Card>
+        )}
+        {game.phase === 'entry' && section === 'library' && (
+          <Card title="Category library">
+            {controller.categories.browse({ sort: 'title' }).items.map((collection) => (
+              <View key={collection.id} style={styles.libraryRow}>
+                <Text style={styles.copy}>{collection.title}</Text>
+                <Text style={styles.meta}>
+                  {collection.items.length} categories · {collection.status}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        )}
+        {game.phase === 'entry' && section === 'build' && (
+          <Card title="Build categories">
+            <Text style={styles.copy}>
+              Add, search, deduplicate, review, and publish custom category decks.
+            </Text>
+            <Action
+              testID="generate-category"
+              label="Generate reviewed category"
+              onPress={() => {
+                const id = `mobile-category-${contentRevision}`
+                controller.proposeCategories(
+                  id,
+                  [`Things on vacation ${contentRevision + 1}`],
+                  'Mobile draft',
+                )
+                controller.reviewCategoryProposal(id, true)
+                setContentRevision((value) => value + 1)
+              }}
+            />
+            <Text style={styles.meta}>
+              {controller.categories.health('starter').itemCount} valid categories
+            </Text>
           </Card>
         )}
         {game.phase === 'lobby' && (
@@ -155,6 +210,8 @@ const styles = StyleSheet.create({
   },
   heading: { color: '#fff4e8', fontSize: 24, fontWeight: '800' },
   copy: { color: '#e8c9b5', fontSize: 17 },
+  meta: { color: '#bd8f77', fontSize: 14 },
+  libraryRow: { borderBottomColor: '#5f2d1c', borderBottomWidth: 1, paddingVertical: 10, gap: 4 },
   turn: { color: '#ffd166', fontSize: 32, fontWeight: '900' },
   notice: { color: '#fff', backgroundColor: '#8b1e1e', borderRadius: 10, padding: 12 },
   button: {
@@ -166,4 +223,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   buttonText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  sections: { flexDirection: 'row', gap: 8 },
+  section: {
+    minHeight: 48,
+    flex: 1,
+    borderRadius: 10,
+    borderColor: '#5f2d1c',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedSection: { backgroundColor: '#5f2d1c' },
+  sectionText: { color: '#fff4e8', fontWeight: '800' },
 })
