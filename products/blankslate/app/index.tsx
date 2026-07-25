@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  AppState,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -27,13 +28,21 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
     [],
   )
   const [game, setGame] = useState<BlankSlateState>(controller.state)
-  const [slate, setSlate] = useState('')
   const [section, setSection] = useState<AppSection>('Play')
   const [contentRevision, setContentRevision] = useState(0)
   useEffect(() => controller.subscribe(setGame), [controller])
   useEffect(() => {
     if (initialJoinCode) controller.join(initialJoinCode)
   }, [controller, initialJoinCode])
+  useEffect(
+    () =>
+      AppState.addEventListener('change', (next) =>
+        controller.setLifecycle(
+          next === 'active' ? 'active' : next === 'background' ? 'background' : 'suspended',
+        ),
+      ).remove,
+    [controller],
+  )
   const collections = controller.prompts.browse({
     scope: section === 'Library' ? 'all' : 'mine',
     viewerId: 'p1',
@@ -46,6 +55,9 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.brand}>
           BLANK SLATE
+        </Text>
+        <Text accessibilityLiveRegion="polite" style={styles.meta}>
+          {game.connection === 'online' ? 'Connected' : game.connection}
         </Text>
         {game.notice && (
           <Text accessibilityRole="alert" style={styles.notice}>
@@ -293,8 +305,8 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
               testID="private-slate-input"
               accessibilityLabel="Your private slate"
               accessibilityHint="Your answer remains private until the host reveals all slates"
-              value={slate}
-              onChangeText={setSlate}
+              value={game.draftAnswers.p1 ?? ''}
+              onChangeText={(value) => controller.updateSlateDraft('p1', value)}
               placeholder="Write your answer"
               placeholderTextColor="#8fb5a5"
               autoCorrect={false}
@@ -307,7 +319,13 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
             <Action
               testID="submit-alex"
               label={game.submittedIds.includes('p1') ? 'Edit Alex’s slate' : 'Lock Alex’s slate'}
-              onPress={() => controller.submit('p1', slate, `p1-${game.round}-${Date.now()}`)}
+              onPress={() =>
+                controller.submit(
+                  'p1',
+                  game.draftAnswers.p1 ?? '',
+                  `p1-${game.round}-${Date.now()}`,
+                )
+              }
             />
             <Action
               testID="submit-sam"

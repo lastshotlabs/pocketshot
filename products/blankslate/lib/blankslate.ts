@@ -78,6 +78,8 @@ export interface BlankSlateState {
   selectedDeckId: string
   hostParticipates: boolean
   writeMs: number
+  connection: 'online' | 'reconnecting' | 'offline'
+  draftAnswers: Record<string, string>
 }
 
 type BlankSlateRules = {
@@ -157,6 +159,8 @@ export class BlankSlateController {
     selectedDeckId: 'starter',
     hostParticipates: true,
     writeMs: 30_000,
+    connection: 'online',
+    draftAnswers: {},
   }
   private readonly listeners = new Set<(state: BlankSlateState) => void>()
   readonly prompts = new ContentLibraryController<{ cue: string }>(validateCue, (item) => item.cue)
@@ -476,6 +480,7 @@ export class BlankSlateController {
     this.value.submittedIds = []
     this.value.submissionStates = {}
     this.value.groups = []
+    this.value.draftAnswers = {}
     this.submissions = new PrivateSubmissionController<string>(5_000)
     this.corrections = new HostCorrectionController<SlateGroup[]>([])
     this.timer = new TimedPhaseController('write', rules.writeMs)
@@ -500,6 +505,26 @@ export class BlankSlateController {
     }
     this.emit()
     return accepted
+  }
+
+  updateSlateDraft(playerId: string, answer: string): void {
+    this.player(playerId)
+    this.value.draftAnswers[playerId] = answer
+    this.emit()
+  }
+
+  setLifecycle(lifecycle: 'active' | 'background' | 'suspended'): void {
+    if (lifecycle !== 'active') {
+      this.value.connection = 'offline'
+      this.emit()
+      return
+    }
+    this.value.connection = 'reconnecting'
+    this.emit()
+    queueMicrotask(() => {
+      this.value.connection = 'online'
+      this.emit()
+    })
   }
 
   acknowledgeSubmission(playerId: string, key: string): void {

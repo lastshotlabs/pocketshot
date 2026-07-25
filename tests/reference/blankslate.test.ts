@@ -332,6 +332,25 @@ describe('Blank Slate native acceptance model', () => {
     expect(voting.closeVote().get(writing.state.groups[0].id)).toBe(1)
   })
 
+  it('restores unlocked private text and reconnects without exposing it', async () => {
+    const game = new BlankSlateController()
+    game.enter()
+    game.startRound()
+    game.updateSlateDraft('p1', 'private draft')
+    game.setLifecycle('background')
+    const restored = new BlankSlateController(game.exportSnapshot())
+    expect(restored.state).toMatchObject({
+      connection: 'offline',
+      draftAnswers: { p1: 'private draft' },
+    })
+    expect(JSON.stringify(restored.tvProjection())).not.toContain('private draft')
+    restored.setLifecycle('active')
+    expect(restored.state.connection).toBe('reconnecting')
+    await Promise.resolve()
+    expect(restored.state.connection).toBe('online')
+    expect(restored.state.draftAnswers.p1).toBe('private draft')
+  })
+
   it('restores its game dashboard and records completed rematches', () => {
     const game = new BlankSlateController()
     game.enter()
