@@ -12,6 +12,10 @@ const nativeWorkflow = await readFile(
   new URL('../.github/workflows/native.yml', import.meta.url),
   'utf8',
 )
+const partyJoinRoute = await readFile(
+  new URL('../examples/party/app/join/[code].tsx', import.meta.url),
+  'utf8',
+)
 const failures = []
 
 const appIds = [
@@ -50,6 +54,9 @@ for (const id of requiredIds) {
 if (!all.includes('openLink: pocketshot-party://join/')) {
   failures.push('Party cold deep-link journey is missing')
 }
+if (!partyJoinRoute.includes('initialJoinCode')) {
+  failures.push('Party shell does not route cold join links into the application')
+}
 for (const [index, body] of bodies.entries()) {
   if (!body.includes('launchApp:')) failures.push(`${files[index]} does not launch the app`)
   if (!body.includes('assertVisible:')) failures.push(`${files[index]} has no visible assertion`)
@@ -71,6 +78,9 @@ if (!workflow.includes('Enable KVM acceleration') || !workflow.includes('99-kvm4
 }
 if (!workflow.includes('emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot')) {
   failures.push('Android workflow does not use a clean headless emulator boot')
+}
+if (!workflow.includes('adb shell settings put global hide_error_dialogs 1')) {
+  failures.push('Android workflow does not suppress runner-service ANR dialogs')
 }
 if (!workflow.includes('scheme=$(basename "$workspace" .xcworkspace)')) {
   failures.push('iOS workflow does not select the application workspace scheme')

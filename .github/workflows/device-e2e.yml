@@ -79,6 +79,8 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            adb wait-for-device
+            adb shell settings put global hide_error_dialogs 1
             adb install -r "examples/${{ matrix.shell }}/android/app/build/outputs/apk/release/app-release.apk"
             "$HOME/.maestro/bin/maestro" test ${{ matrix.flow }}
       - uses: actions/upload-artifact@v4

@@ -7,7 +7,7 @@ import QRCode from 'react-native-qrcode-svg'
 import { createSQLiteDraftStorage } from '@lastshotlabs/pocketshot/drafts'
 import { PartyDemoController, type PartyState } from '../lib/party'
 
-export default function PartyShell() {
+export default function PartyShell({ initialJoinCode }: { initialJoinCode?: string } = {}) {
   const controller = useMemo(
     () => new PartyDemoController(createSQLiteDraftStorage('party-shell.db', SQLite)),
     [],
@@ -15,11 +15,15 @@ export default function PartyShell() {
   const [party, setParty] = useState<PartyState>(controller.state)
   useEffect(() => controller.subscribe(setParty), [controller])
   useEffect(() => {
-    void Linking.getInitialURL().then((url) => {
-      if (url) controller.joinFromUrl(url)
-    })
+    if (initialJoinCode) {
+      controller.join(initialJoinCode.toUpperCase(), 'Linked guest')
+    } else {
+      void Linking.getInitialURL().then((url) => {
+        if (url) controller.joinFromUrl(url)
+      })
+    }
     return Linking.addEventListener('url', ({ url }) => controller.joinFromUrl(url)).remove
-  }, [controller])
+  }, [controller, initialJoinCode])
 
   return (
     <SafeAreaView style={styles.screen}>

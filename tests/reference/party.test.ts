@@ -105,8 +105,13 @@ describe('Party clean-room acceptance model', () => {
 
   it('imports, validates, and publishes a healthy deck through the package entry', () => {
     const party = new PartyDemoController()
+    let renders = 0
+    party.subscribe(() => {
+      renders += 1
+    })
     party.importTracks('Blue Monday,New Order,1983,https://preview.test/blue-monday')
     expect(party.deckHealth()).toMatchObject({ playable: 1, isPublishable: true })
+    expect(renders).toBe(2)
     party.publishDeck('2026-07-25T00:00:00Z')
     expect(party.deckLibrary.snapshot[0].status).toBe('published')
   })

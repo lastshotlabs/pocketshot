@@ -105,6 +105,7 @@ export class PartyDemoController {
 
   importTracks(input: string): void {
     this.deckLibrary.importDelimited('friday-mix', input)
+    this.emit()
   }
 
   publishDeck(at: string): void {
