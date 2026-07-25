@@ -40,11 +40,35 @@ export default function CoachShell() {
             {state.accountEmail ? ` · ${state.accountEmail}` : ''}
           </Text>
           {state.accountStatus === 'anonymous' && (
-            <Action
-              testID="register-account"
-              label="Create demo account"
-              onPress={() => void coach.registerDemoAccount()}
-            />
+            <>
+              <Action
+                testID="register-account"
+                label="Create demo account"
+                onPress={() => void coach.registerDemoAccount()}
+              />
+              <Action
+                testID="login-account"
+                label="Sign in"
+                onPress={() => void coach.signInDemoAccount()}
+              />
+              <Action
+                testID="oauth-account"
+                label="Continue with Apple"
+                onPress={() => void coach.completeDemoOAuth('apple')}
+              />
+              <Action
+                testID="forgot-password"
+                label="Forgot password"
+                onPress={() => void coach.requestPasswordReset()}
+              />
+              {state.accountEmail && (
+                <Action
+                  testID="reset-password"
+                  label="Complete password reset"
+                  onPress={() => void coach.completePasswordReset()}
+                />
+              )}
+            </>
           )}
           {state.accountStatus === 'verification-required' && (
             <Action

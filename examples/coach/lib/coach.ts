@@ -171,6 +171,42 @@ export class CoachDemoController {
     }
   }
 
+  async signInDemoAccount(): Promise<void> {
+    try {
+      await this.account.login('alex@example.com', 'demo-password')
+    } finally {
+      this.syncAccount()
+    }
+  }
+
+  async completeDemoOAuth(provider: 'apple' | 'google'): Promise<void> {
+    try {
+      await this.account.completeOAuth(
+        provider,
+        'demo-code',
+        `pocketshot-coach://oauth/${provider}`,
+      )
+    } finally {
+      this.syncAccount()
+    }
+  }
+
+  async requestPasswordReset(): Promise<void> {
+    try {
+      await this.account.forgotPassword('alex@example.com')
+    } finally {
+      this.syncAccount()
+    }
+  }
+
+  async completePasswordReset(): Promise<void> {
+    try {
+      await this.account.resetPassword('demo-reset-token', 'new-demo-password')
+    } finally {
+      this.syncAccount()
+    }
+  }
+
   async signOut(): Promise<void> {
     await this.account.logout()
     this.syncAccount()

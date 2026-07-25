@@ -16,6 +16,28 @@ describe('Coach clean-room acceptance model', () => {
     expect(coach.state.accountStatus).toBe('anonymous')
   })
 
+  it('composes login, OAuth, forgot-password, and reset-password returns', async () => {
+    const login = new CoachDemoController()
+    await login.signInDemoAccount()
+    expect(login.state.accountStatus).toBe('authenticated')
+
+    const oauth = new CoachDemoController()
+    await oauth.completeDemoOAuth('google')
+    expect(oauth.state).toMatchObject({
+      accountStatus: 'authenticated',
+      accountEmail: 'alex@example.com',
+    })
+
+    const recovery = new CoachDemoController()
+    await recovery.requestPasswordReset()
+    expect(recovery.state).toMatchObject({
+      accountStatus: 'anonymous',
+      accountEmail: 'alex@example.com',
+    })
+    await recovery.completePasswordReset()
+    expect(recovery.state).toMatchObject({ accountStatus: 'anonymous', accountEmail: null })
+  })
+
   it('streams advice and requires review before committing an action', async () => {
     const coach = new CoachDemoController()
     await coach.initialize()
