@@ -20,6 +20,14 @@ describe('PresenceIndicator', () => {
     expect(toJSON()).toBeTruthy()
   })
 
+  it('accepts schema input and applies defaults before rendering', () => {
+    const { toJSON } = renderWithProviders(
+      <PresenceIndicator config={{ status: 'online', showLabel: true }} />,
+    )
+
+    expect(toJSON()).toBeTruthy()
+  })
+
   it('renders the label when showLabel is true', () => {
     const { getByText } = renderWithProviders(
       <PresenceIndicator config={cfg({ showLabel: true, label: 'Available' })} />,

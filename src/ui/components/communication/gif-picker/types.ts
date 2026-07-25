@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { GifPickerSchema } from './schema'
 
-export type GifPickerConfig = z.infer<typeof GifPickerSchema>
+export type GifPickerConfig = z.input<typeof GifPickerSchema>
 
 export interface GifResult {
   id: string

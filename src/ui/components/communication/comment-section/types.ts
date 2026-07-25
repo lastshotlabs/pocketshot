@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { CommentSectionSchema } from './schema'
 
-export type CommentSectionConfig = z.infer<typeof CommentSectionSchema>
+export type CommentSectionConfig = z.input<typeof CommentSectionSchema>
 
 export interface CommentAuthor {
   name: string

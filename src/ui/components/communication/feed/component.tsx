@@ -5,8 +5,10 @@ import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import { useComponentData } from '../../_base/useComponentData'
 import { FeedBase, type FeedBaseItem } from './standalone'
 import type { FeedConfig, FeedItem } from './types'
+import { FeedSchema } from './schema'
 
-export function Feed({ config }: { config: FeedConfig }) {
+export function Feed({ config: inputConfig }: { config: FeedConfig }) {
+  const config = FeedSchema.parse(inputConfig)
   const { dispatch, setValue, values } = useScreenContext()
 
   const dataSpec = isFromRef(config.data) ? config.data : (config.data as string)

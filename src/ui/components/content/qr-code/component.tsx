@@ -6,8 +6,10 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import { QrCodeBase } from './standalone'
 import type { QrCodeConfig } from './types'
+import { QrCodeSchema } from './schema'
 
-export function QrCode({ config }: { config: QrCodeConfig }) {
+export function QrCode({ config: inputConfig }: { config: QrCodeConfig }) {
+  const config = QrCodeSchema.parse(inputConfig)
   const tokens = useTokens()
   const { values } = useScreenContext()
 

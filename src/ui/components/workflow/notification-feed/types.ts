@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { NotificationFeedSchema } from './schema'
 
-export type NotificationFeedConfig = z.infer<typeof NotificationFeedSchema>
+export type NotificationFeedConfig = z.input<typeof NotificationFeedSchema>
 
 export interface Notification {
   id: string

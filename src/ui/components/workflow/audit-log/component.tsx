@@ -4,8 +4,10 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { useComponentData } from '../../_base/useComponentData'
 import { AuditLogBase, type AuditLogBaseEntry } from './standalone'
 import type { AuditLogConfig, AuditEntry } from './types'
+import { AuditLogSchema } from './schema'
 
-export function AuditLog({ config }: { config: AuditLogConfig }) {
+export function AuditLog({ config: inputConfig }: { config: AuditLogConfig }) {
+  const config = AuditLogSchema.parse(inputConfig)
   const { setValue, dispatch } = useScreenContext()
   const { data: fetchedData, isLoading, error } = useComponentData<AuditEntry[]>(config.data)
 

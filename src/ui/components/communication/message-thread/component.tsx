@@ -5,8 +5,10 @@ import { resolveFromRef } from '../../_base/fromRef'
 import { useComponentData } from '../../_base/useComponentData'
 import { MessageThreadBase, type MessageThreadMessage } from './standalone'
 import type { MessageThreadConfig, Message } from './types'
+import { MessageThreadSchema } from './schema'
 
-export function MessageThread({ config }: { config: MessageThreadConfig }) {
+export function MessageThread({ config: inputConfig }: { config: MessageThreadConfig }) {
+  const config = MessageThreadSchema.parse(inputConfig)
   const { values, dispatch, setValue } = useScreenContext()
 
   const currentUserId = resolveFromRef(config.currentUserId, values) as string

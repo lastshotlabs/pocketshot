@@ -46,7 +46,7 @@ function OverlayControls() {
       >
         <Stack config={{ gap: 16, padding: 16 }}>
           <Body config={{ text: 'Choose how you want to share this post with your network.' }} />
-          <Row config={{ gap: 8, justify: 'space-between', wrap: true }}>
+          <Row config={{ gap: 8, justifyContent: 'between', flexWrap: 'wrap' }}>
             {['Twitter', 'LinkedIn', 'Email', 'Copy Link'].map((opt) => (
               <View key={opt} style={styles.shareOption}>
                 <Text style={styles.shareOptionText}>{opt}</Text>
@@ -77,7 +77,11 @@ function OverlayControls() {
         }}
       >
         <Stack config={{ gap: 16, padding: 16 }}>
-          <Body config={{ text: 'Filter options would appear here — category, price range, rating, distance.' }} />
+          <Body
+            config={{
+              text: 'Filter options would appear here — category, price range, rating, distance.',
+            }}
+          />
           <Body config={{ text: 'Drag the handle to expand to full view.' }} />
         </Stack>
       </BottomSheet>
@@ -109,7 +113,7 @@ function OverlayControls() {
               color: '#71717a',
             }}
           />
-          <Row config={{ gap: 12, justify: 'flex-end' }}>
+          <Row config={{ gap: 12, justifyContent: 'end' }}>
             <TouchableOpacity
               style={styles.cancelBtn}
               onPress={() => setValue('__modal_confirm-modal', false)}
@@ -150,7 +154,9 @@ function OverlayControls() {
         }}
       >
         <Stack config={{ gap: 12, padding: 16 }}>
-          <Body config={{ text: 'Pocketshot is the React Native SDK for Slingshot-powered backends.' }} />
+          <Body
+            config={{ text: 'Pocketshot is the React Native SDK for Slingshot-powered backends.' }}
+          />
         </Stack>
       </Modal>
 
@@ -158,7 +164,14 @@ function OverlayControls() {
       <Toast config={{ id: 'screen-toast', position: 'bottom' }} />
       <TouchableOpacity
         style={styles.triggerButton}
-        onPress={() => setValue('__toast', { message: 'Hello from Toast!', variant: 'success', duration: 3000, id: Date.now() })}
+        onPress={() =>
+          setValue('__toast', {
+            message: 'Hello from Toast!',
+            variant: 'success',
+            duration: 3000,
+            id: Date.now(),
+          })
+        }
         accessibilityRole="button"
         accessibilityLabel="Trigger toast"
         testID="overlay-trigger-toast"
@@ -167,7 +180,14 @@ function OverlayControls() {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.triggerButton}
-        onPress={() => setValue('__toast', { message: 'Something went wrong', variant: 'error', duration: 3000, id: Date.now() })}
+        onPress={() =>
+          setValue('__toast', {
+            message: 'Something went wrong',
+            variant: 'error',
+            duration: 3000,
+            id: Date.now(),
+          })
+        }
         accessibilityRole="button"
         accessibilityLabel="Trigger error toast"
         testID="overlay-trigger-error-toast"
@@ -186,7 +206,11 @@ function OverlayControls() {
               { label: 'Edit Post', action: { type: 'toast', message: 'Edit tapped' } },
               { label: 'Share', action: { type: 'toast', message: 'Share tapped' } },
               { label: 'Save to Collection', action: { type: 'toast', message: 'Saved!' } },
-              { label: 'Report', action: { type: 'toast', message: 'Reported' }, destructive: true },
+              {
+                label: 'Report',
+                action: { type: 'toast', message: 'Reported' },
+                destructive: true,
+              },
             ],
           })
         }
@@ -251,7 +275,8 @@ function OverlayControls() {
           id: 'info-popover',
           triggerLabel: 'What is this?',
           title: 'Token System',
-          content: 'Tokens are design primitives that drive all visual properties. Colors, spacing, typography, and radii are all token-driven.',
+          content:
+            'Tokens are design primitives that drive all visual properties. Colors, spacing, typography, and radii are all token-driven.',
           position: 'bottom',
         }}
       />
@@ -272,11 +297,38 @@ function OverlayControls() {
           id: 'post-menu',
           trigger: { label: 'Post Options', icon: '⋯' },
           items: [
-            { id: 'edit', label: 'Edit Post', icon: '✏️', onPress: { type: 'toast', message: 'Edit tapped' } },
-            { id: 'duplicate', label: 'Duplicate', icon: '📋', onPress: { type: 'toast', message: 'Duplicated' } },
-            { id: 'archive', label: 'Archive', icon: '📦', onPress: { type: 'toast', message: 'Archived' } },
-            { id: 'export', label: 'Export as PDF', icon: '📄', onPress: { type: 'toast', message: 'Exporting...' }, disabled: true },
-            { id: 'delete', label: 'Delete Post', icon: '🗑️', onPress: { type: 'toast', message: 'Deleted' }, destructive: true },
+            {
+              id: 'edit',
+              label: 'Edit Post',
+              icon: '✏️',
+              onPress: { type: 'toast', message: 'Edit tapped' },
+            },
+            {
+              id: 'duplicate',
+              label: 'Duplicate',
+              icon: '📋',
+              onPress: { type: 'toast', message: 'Duplicated' },
+            },
+            {
+              id: 'archive',
+              label: 'Archive',
+              icon: '📦',
+              onPress: { type: 'toast', message: 'Archived' },
+            },
+            {
+              id: 'export',
+              label: 'Export as PDF',
+              icon: '📄',
+              onPress: { type: 'toast', message: 'Exporting...' },
+              disabled: true,
+            },
+            {
+              id: 'delete',
+              label: 'Delete Post',
+              icon: '🗑️',
+              onPress: { type: 'toast', message: 'Deleted' },
+              destructive: true,
+            },
           ],
         }}
       />
@@ -287,11 +339,23 @@ function OverlayControls() {
           id: 'sort-menu',
           trigger: { label: 'Sort By' },
           items: [
-            { id: 'newest', label: 'Newest First', onPress: { type: 'toast', message: 'Sorted by newest' } },
-            { id: 'oldest', label: 'Oldest First', onPress: { type: 'toast', message: 'Sorted by oldest' } },
-            { id: 'popular', label: 'Most Popular', onPress: { type: 'toast', message: 'Sorted by popularity' } },
+            {
+              id: 'newest',
+              label: 'Newest First',
+              onPress: { type: 'toast', message: 'Sorted by newest' },
+            },
+            {
+              id: 'oldest',
+              label: 'Oldest First',
+              onPress: { type: 'toast', message: 'Sorted by oldest' },
+            },
+            {
+              id: 'popular',
+              label: 'Most Popular',
+              onPress: { type: 'toast', message: 'Sorted by popularity' },
+            },
           ],
-          align: 'end',
+          alignItems: 'end',
         }}
       />
 
@@ -301,10 +365,31 @@ function OverlayControls() {
           id: 'demo-context-menu',
           triggerLabel: 'Long-press this area to open the context menu',
           items: [
-            { id: 'copy', label: 'Copy', icon: '📋', onPress: { type: 'toast', message: 'Copied' } },
-            { id: 'paste', label: 'Paste', icon: '📌', onPress: { type: 'toast', message: 'Pasted' } },
-            { id: 'select-all', label: 'Select All', icon: '✅', onPress: { type: 'toast', message: 'All selected' } },
-            { id: 'delete', label: 'Delete', icon: '🗑️', onPress: { type: 'toast', message: 'Deleted' }, destructive: true },
+            {
+              id: 'copy',
+              label: 'Copy',
+              icon: '📋',
+              onPress: { type: 'toast', message: 'Copied' },
+            },
+            {
+              id: 'paste',
+              label: 'Paste',
+              icon: '📌',
+              onPress: { type: 'toast', message: 'Pasted' },
+            },
+            {
+              id: 'select-all',
+              label: 'Select All',
+              icon: '✅',
+              onPress: { type: 'toast', message: 'All selected' },
+            },
+            {
+              id: 'delete',
+              label: 'Delete',
+              icon: '🗑️',
+              onPress: { type: 'toast', message: 'Deleted' },
+              destructive: true,
+            },
           ],
         }}
       />
@@ -348,7 +433,8 @@ function OverlayControls() {
         config={{
           id: 'delete-confirm',
           title: 'Delete Project',
-          message: 'This will permanently delete the project and all associated data. This action cannot be undone.',
+          message:
+            'This will permanently delete the project and all associated data. This action cannot be undone.',
           confirmLabel: 'Delete Project',
           cancelLabel: 'Keep Project',
           variant: 'destructive',
@@ -373,12 +459,56 @@ function OverlayControls() {
           id: 'demo-palette',
           placeholder: 'Search commands...',
           items: [
-            { id: 'new-project', label: 'New Project', description: 'Create a new project from scratch', icon: '📁', group: 'Create', onSelect: { type: 'toast', message: 'New project' } },
-            { id: 'new-file', label: 'New File', description: 'Add a file to the current project', icon: '📄', group: 'Create', onSelect: { type: 'toast', message: 'New file' } },
-            { id: 'search', label: 'Search Files', description: 'Find files across all projects', icon: '🔍', group: 'Navigation', shortcut: '⌘P', onSelect: { type: 'toast', message: 'Searching...' } },
-            { id: 'goto-settings', label: 'Go to Settings', description: 'Open application settings', icon: '⚙️', group: 'Navigation', shortcut: '⌘,', onSelect: { type: 'toast', message: 'Opening settings' } },
-            { id: 'toggle-theme', label: 'Toggle Theme', description: 'Switch between light and dark mode', icon: '🌗', group: 'Appearance', onSelect: { type: 'toast', message: 'Theme toggled' } },
-            { id: 'export', label: 'Export Data', description: 'Export project data as JSON', icon: '📤', group: 'Actions', onSelect: { type: 'toast', message: 'Exporting...' } },
+            {
+              id: 'new-project',
+              label: 'New Project',
+              description: 'Create a new project from scratch',
+              icon: '📁',
+              group: 'Create',
+              onSelect: { type: 'toast', message: 'New project' },
+            },
+            {
+              id: 'new-file',
+              label: 'New File',
+              description: 'Add a file to the current project',
+              icon: '📄',
+              group: 'Create',
+              onSelect: { type: 'toast', message: 'New file' },
+            },
+            {
+              id: 'search',
+              label: 'Search Files',
+              description: 'Find files across all projects',
+              icon: '🔍',
+              group: 'Navigation',
+              shortcut: '⌘P',
+              onSelect: { type: 'toast', message: 'Searching...' },
+            },
+            {
+              id: 'goto-settings',
+              label: 'Go to Settings',
+              description: 'Open application settings',
+              icon: '⚙️',
+              group: 'Navigation',
+              shortcut: '⌘,',
+              onSelect: { type: 'toast', message: 'Opening settings' },
+            },
+            {
+              id: 'toggle-theme',
+              label: 'Toggle Theme',
+              description: 'Switch between light and dark mode',
+              icon: '🌗',
+              group: 'Appearance',
+              onSelect: { type: 'toast', message: 'Theme toggled' },
+            },
+            {
+              id: 'export',
+              label: 'Export Data',
+              description: 'Export project data as JSON',
+              icon: '📤',
+              group: 'Actions',
+              onSelect: { type: 'toast', message: 'Exporting...' },
+            },
           ],
           maxResults: 10,
         }}

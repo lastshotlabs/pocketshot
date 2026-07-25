@@ -5,8 +5,10 @@ import { resolveFromRef } from '../../_base/fromRef'
 import { useComponentData } from '../../_base/useComponentData'
 import { ChatWindowBase, type ChatWindowMessage } from './standalone'
 import type { ChatWindowConfig, ChatMessage } from './types'
+import { ChatWindowSchema } from './schema'
 
-export function ChatWindow({ config }: { config: ChatWindowConfig }) {
+export function ChatWindow({ config: inputConfig }: { config: ChatWindowConfig }) {
+  const config = ChatWindowSchema.parse(inputConfig)
   const { values, dispatch, setValue } = useScreenContext()
 
   const currentUserId = resolveFromRef(config.currentUserId, values) as string

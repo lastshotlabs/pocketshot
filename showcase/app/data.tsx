@@ -35,7 +35,7 @@ export default function DataShowcase() {
     <ShowcaseScreen title="Data Display">
       <MockProviders>
         <SectionLabel label="Badge — variants" />
-        <Row config={{ gap: 8, wrap: true }}>
+        <Row config={{ gap: 8, flexWrap: 'wrap' }}>
           <Badge config={{ label: 'Default', variant: 'default', size: 'md' }} />
           <Badge config={{ label: 'Primary', variant: 'primary', size: 'md' }} />
           <Badge config={{ label: 'Success', variant: 'success', size: 'md' }} />
@@ -45,14 +45,14 @@ export default function DataShowcase() {
         </Row>
 
         <SectionLabel label="Badge — sizes" />
-        <Row config={{ gap: 8, align: 'center', wrap: true }}>
+        <Row config={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <Badge config={{ label: 'Small', variant: 'primary', size: 'sm' }} />
           <Badge config={{ label: 'Medium', variant: 'primary', size: 'md' }} />
           <Badge config={{ label: 'Large', variant: 'primary', size: 'lg' }} />
         </Row>
 
         <SectionLabel label="Avatar — sizes + shapes" />
-        <Row config={{ gap: 12, align: 'center' }}>
+        <Row config={{ gap: 12, alignItems: 'center' }}>
           <Avatar config={{ name: 'Alice', size: 'xs' }} />
           <Avatar config={{ name: 'Bob', size: 'sm' }} />
           <Avatar config={{ name: 'Carol', size: 'md' }} />
@@ -61,14 +61,14 @@ export default function DataShowcase() {
         </Row>
 
         <SectionLabel label="Avatar — shapes" />
-        <Row config={{ gap: 12, align: 'center' }}>
+        <Row config={{ gap: 12, alignItems: 'center' }}>
           <Avatar config={{ name: 'Circle', size: 'lg', shape: 'circle' }} />
           <Avatar config={{ name: 'Round', size: 'lg', shape: 'rounded' }} />
           <Avatar config={{ name: 'Sq', size: 'lg', shape: 'square' }} />
         </Row>
 
         <SectionLabel label="Avatar — with image" />
-        <Row config={{ gap: 12, align: 'center' }}>
+        <Row config={{ gap: 12, alignItems: 'center' }}>
           <Avatar
             config={{
               src: 'https://i.pravatar.cc/150?u=alice',
@@ -227,15 +227,13 @@ export default function DataShowcase() {
 
         {/* ── Tooltip ───────────────────────────────────────────────────── */}
         <SectionLabel label="Tooltip — positions" />
-        <Row config={{ gap: 24, justify: 'center' }}>
+        <Row config={{ gap: 24, justifyContent: 'center' }}>
           <Tooltip config={{ trigger: 'Top', content: 'Tooltip on top', position: 'top' }} />
           <Tooltip
             config={{ trigger: 'Bottom', content: 'Tooltip on bottom', position: 'bottom' }}
           />
           <Tooltip config={{ trigger: 'Left', content: 'Tooltip on left', position: 'left' }} />
-          <Tooltip
-            config={{ trigger: 'Right', content: 'Tooltip on right', position: 'right' }}
-          />
+          <Tooltip config={{ trigger: 'Right', content: 'Tooltip on right', position: 'right' }} />
         </Row>
 
         {/* ── SaveIndicator ─────────────────────────────────────────────── */}
@@ -341,7 +339,7 @@ export default function DataShowcase() {
 
         {/* ── FavoriteButton ────────────────────────────────────────────── */}
         <SectionLabel label="FavoriteButton — heart variant (sm, md, lg)" />
-        <Row config={{ gap: 16, align: 'center' }}>
+        <Row config={{ gap: 16, alignItems: 'center' }}>
           <FavoriteButton
             config={{
               id: 'fav-heart-sm',
@@ -370,7 +368,7 @@ export default function DataShowcase() {
         </Row>
 
         <SectionLabel label="FavoriteButton — star variant (sm, md, lg)" />
-        <Row config={{ gap: 16, align: 'center' }}>
+        <Row config={{ gap: 16, alignItems: 'center' }}>
           <FavoriteButton
             config={{
               id: 'fav-star-sm',
@@ -400,7 +398,7 @@ export default function DataShowcase() {
 
         {/* ── NotificationBell ──────────────────────────────────────────── */}
         <SectionLabel label="NotificationBell — counts" />
-        <Row config={{ gap: 24, align: 'center' }}>
+        <Row config={{ gap: 24, alignItems: 'center' }}>
           <NotificationBell
             config={{
               id: 'bell-zero',
@@ -540,14 +538,14 @@ export default function DataShowcase() {
 
         {/* ── ProgressCircle ───────────────────────────────────────────── */}
         <SectionLabel label="ProgressCircle — sizes" />
-        <Row config={{ gap: 16, align: 'center' }}>
+        <Row config={{ gap: 16, alignItems: 'center' }}>
           <ProgressCircle config={{ value: 25, size: 'sm', label: '25%' }} />
           <ProgressCircle config={{ value: 60, size: 'md', label: '60%' }} />
           <ProgressCircle config={{ value: 90, size: 'lg', label: '90%' }} />
         </Row>
 
         <SectionLabel label="ProgressCircle — without value label" />
-        <Row config={{ gap: 16, align: 'center' }}>
+        <Row config={{ gap: 16, alignItems: 'center' }}>
           <ProgressCircle config={{ value: 33, size: 'md', showValue: false }} />
           <ProgressCircle config={{ value: 75, size: 'md', showValue: false }} />
           <ProgressCircle config={{ value: 100, size: 'md', showValue: false }} />

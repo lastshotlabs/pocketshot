@@ -4,8 +4,10 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import { ReactionBarBase, type ReactionItem } from './standalone'
 import type { ReactionBarConfig } from './types'
+import { ReactionBarSchema } from './schema'
 
-export function ReactionBar({ config }: { config: ReactionBarConfig }) {
+export function ReactionBar({ config: inputConfig }: { config: ReactionBarConfig }) {
+  const config = ReactionBarSchema.parse(inputConfig)
   const { values, dispatch, setValue } = useScreenContext()
 
   const rawReactions = resolveFromRef(config.reactions, values) as ReactionItem[]

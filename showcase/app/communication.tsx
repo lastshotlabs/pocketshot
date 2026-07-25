@@ -42,7 +42,8 @@ export default function CommunicationShowcase() {
           />
           <ChatBubble
             config={{
-              message: 'Yes! The config-driven UI layer looks amazing. I love how components auto-fetch their data.',
+              message:
+                'Yes! The config-driven UI layer looks amazing. I love how components auto-fetch their data.',
               sender: 'Me',
               timestamp: '10:33 AM',
               isOwn: true,
@@ -51,7 +52,8 @@ export default function CommunicationShowcase() {
           />
           <ChatBubble
             config={{
-              message: 'Exactly. And the token system makes theming super clean. No more hardcoded colors 🎨',
+              message:
+                'Exactly. And the token system makes theming super clean. No more hardcoded colors 🎨',
               sender: 'Alice',
               timestamp: '10:34 AM',
               isOwn: false,
@@ -89,7 +91,7 @@ export default function CommunicationShowcase() {
           />
         </Stack>
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         {/* ── NotificationItem ──────────────────────────────────────── */}
         <SectionLabel label="NotificationItem — read + unread" />
@@ -135,7 +137,7 @@ export default function CommunicationShowcase() {
           />
         </Stack>
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         {/* ── ReactionBar ───────────────────────────────────────────── */}
         <SectionLabel label="ReactionBar — reactions with counts" />
@@ -152,11 +154,11 @@ export default function CommunicationShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         {/* ── Presence + Typing ──────────────────────────────────────── */}
         <SectionLabel label="PresenceIndicator — all statuses" />
-        <Row config={{ gap: 16, align: 'center' }}>
+        <Row config={{ gap: 16, alignItems: 'center' }}>
           <PresenceIndicator config={{ status: 'online' }} />
           <PresenceIndicator config={{ status: 'offline' }} />
           <PresenceIndicator config={{ status: 'away' }} />
@@ -165,7 +167,7 @@ export default function CommunicationShowcase() {
         </Row>
 
         <SectionLabel label="PresenceIndicator — with labels" />
-        <Row config={{ gap: 16, align: 'center', wrap: true }}>
+        <Row config={{ gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
           <PresenceIndicator config={{ status: 'online', showLabel: true }} />
           <PresenceIndicator config={{ status: 'offline', showLabel: true }} />
           <PresenceIndicator config={{ status: 'away', showLabel: true }} />
@@ -176,11 +178,11 @@ export default function CommunicationShowcase() {
         <SectionLabel label="TypingIndicator" />
         <TypingIndicator config={{ isTyping: true, userName: 'Alice' }} />
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         {/* ── Pickers — grouped compact ─────────────────────────────── */}
         <SectionLabel label="Pickers — emoji, GIF, reaction" />
-        <Row config={{ gap: 12, align: 'center', wrap: true }}>
+        <Row config={{ gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <EmojiPicker
             config={{
               id: 'showcase-emoji-picker',
@@ -213,7 +215,7 @@ export default function CommunicationShowcase() {
           />
         </Row>
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         {/* ── LinkEmbed — rich provider embeds ───────────────────────── */}
         <SectionLabel label="LinkEmbed — YouTube" />
@@ -221,7 +223,8 @@ export default function CommunicationShowcase() {
           config={{
             url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             title: 'Building Config-Driven Mobile Apps with Pocketshot',
-            description: 'A deep dive into how Pocketshot turns JSON manifests into native iOS and Android screens.',
+            description:
+              'A deep dive into how Pocketshot turns JSON manifests into native iOS and Android screens.',
             videoId: 'dQw4w9WgXcQ',
           }}
         />
@@ -232,7 +235,8 @@ export default function CommunicationShowcase() {
             url: 'https://x.com/lastshotlabs/status/123456',
             authorName: 'LastShot Labs',
             authorHandle: 'lastshotlabs',
-            tweetText: 'Just shipped Pocketshot 2.0 — 125 config-driven components, 8 design flavors, and full manifest-to-native rendering. The mobile SDK that actually has parity with web. 🚀',
+            tweetText:
+              'Just shipped Pocketshot 2.0 — 125 config-driven components, 8 design flavors, and full manifest-to-native rendering. The mobile SDK that actually has parity with web. 🚀',
             metrics: { likes: 2430, retweets: 312, replies: 89 },
           }}
         />
@@ -243,7 +247,8 @@ export default function CommunicationShowcase() {
             url: 'https://github.com/lastshotlabs/pocketshot',
             repoOwner: 'lastshotlabs',
             repoName: 'pocketshot',
-            repoDescription: 'React Native/Expo SDK for Slingshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation.',
+            repoDescription:
+              'React Native/Expo SDK for Slingshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation.',
             language: 'TypeScript',
             languageColor: '#3178C6',
             stars: 4821,
@@ -267,13 +272,14 @@ export default function CommunicationShowcase() {
           config={{
             url: 'https://lastshotlabs.com/blog/config-driven-ui',
             title: 'Config-Driven UI: Build Mobile Apps Without Code',
-            description: 'Learn how Pocketshot turns JSON manifests into fully native React Native screens.',
+            description:
+              'Learn how Pocketshot turns JSON manifests into fully native React Native screens.',
             imageUrl: 'https://picsum.photos/seed/linkembed1/800/400',
             favicon: '🚀',
           }}
         />
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         {/* ── Data-driven components ─────────────────────────────────── */}
         <CommunicationDemos />
@@ -325,7 +331,8 @@ function CommunicationDemos() {
         id: 'msg-2',
         senderId: 'user-me',
         senderName: 'Me',
-        content: 'Yes, it works great with expo-sqlite. Queued mutations replay perfectly after reconnect.',
+        content:
+          'Yes, it works great with expo-sqlite. Queued mutations replay perfectly after reconnect.',
         createdAt: '2026-04-09T10:01:00Z',
       },
       {
@@ -339,7 +346,8 @@ function CommunicationDemos() {
         id: 'msg-4',
         senderId: 'user-me',
         senderName: 'Me',
-        content: 'Last-write-wins by default, but you can provide a custom merge function in the sync config.',
+        content:
+          'Last-write-wins by default, but you can provide a custom merge function in the sync config.',
         createdAt: '2026-04-09T10:03:00Z',
       },
       {
@@ -411,7 +419,15 @@ function CommunicationDemos() {
     <Stack config={{ gap: 16 }}>
       {/* ── Feed ──────────────────────────────────────────────────── */}
       <SectionLabel label="Feed — data-driven post list" />
-      <View style={{ height: 480, borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 12, overflow: 'hidden' }}>
+      <View
+        style={{
+          height: 480,
+          borderWidth: 1,
+          borderColor: '#e4e4e7',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
+      >
         <Feed
           config={{
             data: { from: 'feedData' },
@@ -421,11 +437,19 @@ function CommunicationDemos() {
         />
       </View>
 
-      <Divider config={{ marginVertical: 8 }} />
+      <Divider config={{ marginY: 8 }} />
 
       {/* ── MessageThread ─────────────────────────────────────────── */}
       <SectionLabel label="MessageThread — conversation history" />
-      <View style={{ height: 380, borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 12, overflow: 'hidden' }}>
+      <View
+        style={{
+          height: 380,
+          borderWidth: 1,
+          borderColor: '#e4e4e7',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
+      >
         <MessageThread
           config={{
             data: { from: 'threadMessages' },
@@ -435,11 +459,19 @@ function CommunicationDemos() {
         />
       </View>
 
-      <Divider config={{ marginVertical: 8 }} />
+      <Divider config={{ marginY: 8 }} />
 
       {/* ── ChatWindow ────────────────────────────────────────────── */}
       <SectionLabel label="ChatWindow — interactive chat" />
-      <View style={{ height: 420, borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 12, overflow: 'hidden' }}>
+      <View
+        style={{
+          height: 420,
+          borderWidth: 1,
+          borderColor: '#e4e4e7',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
+      >
         <ChatWindow
           config={{
             id: 'showcase-chat',
@@ -452,11 +484,19 @@ function CommunicationDemos() {
         />
       </View>
 
-      <Divider config={{ marginVertical: 8 }} />
+      <Divider config={{ marginY: 8 }} />
 
       {/* ── CommentSection ────────────────────────────────────────── */}
       <SectionLabel label="CommentSection — threaded comments" />
-      <View style={{ height: 420, borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 12, overflow: 'hidden' }}>
+      <View
+        style={{
+          height: 420,
+          borderWidth: 1,
+          borderColor: '#e4e4e7',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
+      >
         <CommentSection
           config={{
             id: 'showcase-comments',
@@ -471,7 +511,7 @@ function CommunicationDemos() {
         />
       </View>
 
-      <Divider config={{ marginVertical: 8 }} />
+      <Divider config={{ marginY: 8 }} />
 
       {/* ── ActivityFeed — empty state ────────────────────────────── */}
       <SectionLabel label="ActivityFeed — empty state" />

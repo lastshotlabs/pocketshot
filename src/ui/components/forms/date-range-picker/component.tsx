@@ -4,18 +4,16 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import { DateRangePickerBase } from './standalone'
 import type { DateRangePickerConfig } from './types'
+import { DateRangePickerSchema } from './schema'
 
-export function DateRangePicker({ config }: { config: DateRangePickerConfig }) {
+export function DateRangePicker({ config: inputConfig }: { config: DateRangePickerConfig }) {
+  const config = DateRangePickerSchema.parse(inputConfig)
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedStart =
-    config.defaultStart != null
-      ? resolveFromRef<string>(config.defaultStart, values)
-      : undefined
+    config.defaultStart != null ? resolveFromRef<string>(config.defaultStart, values) : undefined
   const resolvedEnd =
-    config.defaultEnd != null
-      ? resolveFromRef<string>(config.defaultEnd, values)
-      : undefined
+    config.defaultEnd != null ? resolveFromRef<string>(config.defaultEnd, values) : undefined
 
   const handleChange = useCallback(
     (range: { start: string | null; end: string | null }) => {

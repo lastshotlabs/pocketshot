@@ -4,8 +4,10 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import { PresenceIndicatorBase, type PresenceStatus } from './standalone'
 import type { PresenceIndicatorConfig } from './types'
+import { PresenceIndicatorSchema } from './schema'
 
-export function PresenceIndicator({ config }: { config: PresenceIndicatorConfig }) {
+export function PresenceIndicator({ config: inputConfig }: { config: PresenceIndicatorConfig }) {
+  const config = PresenceIndicatorSchema.parse(inputConfig)
   const { values } = useScreenContext()
 
   const status = resolveFromRef(config.status, values) as PresenceStatus

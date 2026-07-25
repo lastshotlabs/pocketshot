@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { resolveTokens, flavorNames, defaultSpacing, defaultRadius } from '@lastshotlabs/pocketshot/ui'
+import {
+  resolveTokens,
+  flavorNames,
+  defaultSpacing,
+  defaultRadius,
+} from '@lastshotlabs/pocketshot/ui'
 import type { FlavorName, DesignTokens } from '@lastshotlabs/pocketshot/ui'
 
 const FLAVOR_LIST: FlavorName[] = [...flavorNames]
@@ -39,12 +44,7 @@ function FlavorCard({
         <View style={[styles.swatch, { backgroundColor: tokens.colors.error }]} />
         <View style={[styles.swatch, { backgroundColor: tokens.colors.info }]} />
       </View>
-      <Text
-        style={[
-          styles.flavorName,
-          { color: selected ? tokens.colors.primary : '#18181b' },
-        ]}
-      >
+      <Text style={[styles.flavorName, { color: selected ? tokens.colors.primary : '#18181b' }]}>
         {flavor}
         {selected ? ' ✓' : ''}
       </Text>
@@ -77,10 +77,7 @@ function TokenTable({ tokens }: { tokens: DesignTokens }) {
           {Object.entries(tokens.radius).map(([key, val]) => (
             <View key={key} style={styles.tokenItem}>
               <View
-                style={[
-                  styles.radiusBlock,
-                  { borderRadius: typeof val === 'number' ? val : 9999 },
-                ]}
+                style={[styles.radiusBlock, { borderRadius: typeof val === 'number' ? val : 9999 }]}
               />
               <Text style={styles.tokenKey}>{key}</Text>
               <Text style={styles.tokenVal}>{val}px</Text>
@@ -163,7 +160,9 @@ export default function ThemeShowcase() {
           accessibilityLabel={`Switch to ${scheme === 'light' ? 'dark' : 'light'} mode`}
           testID="theme-scheme-toggle"
         >
-          <Text style={{ color: tokens.colors.text }}>{scheme === 'light' ? '☀️ Light' : '🌙 Dark'}</Text>
+          <Text style={{ color: tokens.colors.text }}>
+            {scheme === 'light' ? '☀️ Light' : '🌙 Dark'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -188,19 +187,43 @@ export default function ThemeShowcase() {
           })}
         </View>
 
-        <View style={[styles.previewCard, { backgroundColor: tokens.colors.surface, borderColor: tokens.colors.border }]}>
-          <Text style={[styles.previewHeading, { color: tokens.colors.text, fontSize: tokens.typography.fontSize2xl }]}>
+        <View
+          style={[
+            styles.previewCard,
+            { backgroundColor: tokens.colors.surface, borderColor: tokens.colors.border },
+          ]}
+        >
+          <Text
+            style={[
+              styles.previewHeading,
+              { color: tokens.colors.text, fontSize: tokens.typography.fontSize2xl },
+            ]}
+          >
             Live Preview
           </Text>
           <Text style={[styles.previewBody, { color: tokens.colors.textMuted }]}>
             This card updates instantly when you switch flavors or color schemes.
           </Text>
           <View style={styles.previewActions}>
-            <View style={[styles.previewBtn, { backgroundColor: tokens.colors.primary, borderRadius: tokens.radius.md }]}>
-              <Text style={{ color: tokens.colors.primaryForeground, fontWeight: '600' }}>Primary</Text>
+            <View
+              style={[
+                styles.previewBtn,
+                { backgroundColor: tokens.colors.primary, borderRadius: tokens.radius.md },
+              ]}
+            >
+              <Text style={{ color: tokens.colors.primaryForeground, fontWeight: '600' }}>
+                Primary
+              </Text>
             </View>
-            <View style={[styles.previewBtn, { backgroundColor: tokens.colors.secondary, borderRadius: tokens.radius.md }]}>
-              <Text style={{ color: tokens.colors.secondaryForeground, fontWeight: '600' }}>Secondary</Text>
+            <View
+              style={[
+                styles.previewBtn,
+                { backgroundColor: tokens.colors.secondary, borderRadius: tokens.radius.md },
+              ]}
+            >
+              <Text style={{ color: tokens.colors.secondaryForeground, fontWeight: '600' }}>
+                Secondary
+              </Text>
             </View>
           </View>
           <View style={styles.previewBadges}>
@@ -212,7 +235,10 @@ export default function ThemeShowcase() {
             ].map(({ label, bg, fg }) => (
               <View
                 key={label}
-                style={[styles.previewBadge, { backgroundColor: bg, borderRadius: tokens.radius.full }]}
+                style={[
+                  styles.previewBadge,
+                  { backgroundColor: bg, borderRadius: tokens.radius.full },
+                ]}
               >
                 <Text style={{ color: fg, fontSize: 11, fontWeight: '600' }}>{label}</Text>
               </View>

@@ -4,16 +4,20 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import { TreeViewBase, type TreeNode } from './standalone'
 import type { TreeViewConfig } from './types'
+import { TreeViewSchema } from './schema'
 
 /**
  * Config-driven hierarchical tree view.
  */
-export function TreeView({ config }: { config: TreeViewConfig }) {
+export function TreeView({ config: inputConfig }: { config: TreeViewConfig }) {
+  const config = TreeViewSchema.parse(inputConfig)
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedData = useMemo<TreeNode[]>(() => {
     if (isFromRef(config.data)) {
-      return ((resolveFromRef(config.data as { from: string }, values) as unknown) as TreeNode[]) ?? []
+      return (
+        (resolveFromRef(config.data as { from: string }, values) as unknown as TreeNode[]) ?? []
+      )
     }
     return config.data as TreeNode[]
   }, [config.data, values])

@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { MessageThreadSchema } from './schema'
 
-export type MessageThreadConfig = z.infer<typeof MessageThreadSchema>
+export type MessageThreadConfig = z.input<typeof MessageThreadSchema>
 
 export interface Message {
   id: string

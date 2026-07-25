@@ -1,12 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native'
-import {
-  Stack,
-  Row,
-  Card,
-  Divider,
-  Spacer,
-  Section,
-} from '@lastshotlabs/pocketshot/ui'
+import { Stack, Row, Card, Divider, Spacer, Section } from '@lastshotlabs/pocketshot/ui'
 import { ShowcaseScreen, SectionLabel } from '@/lib/ShowcaseScreen'
 import { MockProviders } from '@/lib/MockProviders'
 
@@ -15,28 +8,28 @@ export default function LayoutShowcase() {
     <ShowcaseScreen title="Layout">
       <MockProviders>
         <SectionLabel label="Stack — vertical layout" />
-        <Stack config={{ gap: 8, padding: 12, backgroundColor: '#f4f4f5' }}>
+        <Stack config={{ gap: 8, padding: 12, bg: '#f4f4f5' }}>
           <View style={styles.block} />
           <View style={styles.block} />
           <View style={styles.block} />
         </Stack>
 
         <SectionLabel label="Stack — centered" />
-        <Stack config={{ gap: 8, align: 'center', padding: 12, backgroundColor: '#f4f4f5' }}>
+        <Stack config={{ gap: 8, alignItems: 'center', padding: 12, bg: '#f4f4f5' }}>
           <View style={[styles.block, { width: 80 }]} />
           <View style={[styles.block, { width: 120 }]} />
           <View style={[styles.block, { width: 60 }]} />
         </Stack>
 
         <SectionLabel label="Row — space-between" />
-        <Row config={{ justify: 'space-between', padding: 12, backgroundColor: '#f4f4f5' }}>
+        <Row config={{ justifyContent: 'between', padding: 12, bg: '#f4f4f5' }}>
           <View style={[styles.block, { width: 60 }]} />
           <View style={[styles.block, { width: 60 }]} />
           <View style={[styles.block, { width: 60 }]} />
         </Row>
 
         <SectionLabel label="Row — gap + wrap" />
-        <Row config={{ gap: 8, wrap: true, padding: 12, backgroundColor: '#f4f4f5' }}>
+        <Row config={{ gap: 8, flexWrap: 'wrap', padding: 12, bg: '#f4f4f5' }}>
           {[80, 100, 60, 120, 90].map((w, i) => (
             <View key={i} style={[styles.block, { width: w }]} />
           ))}
@@ -57,21 +50,21 @@ export default function LayoutShowcase() {
 
         <SectionLabel label="Card — radius variants" />
         <Stack config={{ gap: 8 }}>
-          <Card config={{ radius: 'none', padding: 12, backgroundColor: '#ede9fe' }}>
+          <Card config={{ borderRadius: 'none', padding: 12, bg: '#ede9fe' }}>
             <Text style={styles.cardText}>Radius: none</Text>
           </Card>
-          <Card config={{ radius: 'md', padding: 12, backgroundColor: '#ede9fe' }}>
+          <Card config={{ borderRadius: 'md', padding: 12, bg: '#ede9fe' }}>
             <Text style={styles.cardText}>Radius: md</Text>
           </Card>
-          <Card config={{ radius: '2xl', padding: 12, backgroundColor: '#ede9fe' }}>
+          <Card config={{ borderRadius: '2xl', padding: 12, bg: '#ede9fe' }}>
             <Text style={styles.cardText}>Radius: 2xl</Text>
           </Card>
         </Stack>
 
         <SectionLabel label="Divider" />
         <Divider config={{ thickness: 1 }} />
-        <Divider config={{ thickness: 2, color: '#7c3aed', marginVertical: 4 }} />
-        <Divider config={{ thickness: 4, color: '#e4e4e7', marginVertical: 8 }} />
+        <Divider config={{ thickness: 2, color: '#7c3aed', marginY: 4 }} />
+        <Divider config={{ thickness: 4, color: '#e4e4e7', marginY: 8 }} />
 
         <SectionLabel label="Spacer" />
         <View style={styles.spacerDemo}>
@@ -83,7 +76,13 @@ export default function LayoutShowcase() {
         </View>
 
         <SectionLabel label="Section — with title + description" />
-        <Section config={{ title: 'Account Settings', description: 'Manage your profile and preferences', padding: 0 }}>
+        <Section
+          config={{
+            title: 'Account Settings',
+            description: 'Manage your profile and preferences',
+            padding: 0,
+          }}
+        >
           <View style={styles.sectionContent}>
             <Text style={styles.cardText}>Section children go here</Text>
           </View>

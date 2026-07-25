@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { AuditLogSchema } from './schema'
 
-export type AuditLogConfig = z.infer<typeof AuditLogSchema>
+export type AuditLogConfig = z.input<typeof AuditLogSchema>
 
 export interface AuditEntry {
   id: string

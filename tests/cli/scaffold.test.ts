@@ -107,6 +107,15 @@ describe('scaffold', () => {
     expect(pkg.dependencies['@lastshotlabs/pocketshot']).toBe('latest')
   })
 
+  it('package.json targets the current stable Expo SDK toolchain', () => {
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
+
+    expect(pkg.dependencies.expo).toBe('~57.0.8')
+    expect(pkg.dependencies.react).toBe('19.2.3')
+    expect(pkg.dependencies['react-native']).toBe('0.86.0')
+    expect(pkg.devDependencies.typescript).toBe('~6.0.3')
+  })
+
   it('package.json includes qrcode deps when mfaScreens', () => {
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
     expect(pkg.dependencies['react-native-qrcode-svg']).toBeDefined()

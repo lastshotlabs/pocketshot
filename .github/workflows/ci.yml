@@ -29,4 +29,7 @@ jobs:
       - run: npm run verify:consumer
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm run verify:showcase
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm audit --omit=dev --audit-level=high

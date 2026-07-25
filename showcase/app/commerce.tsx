@@ -46,20 +46,21 @@ export default function CommerceShowcase() {
         </Stack>
 
         <SectionLabel label="PriceDisplay — currencies" />
-        <Row config={{ gap: 16, wrap: true }}>
+        <Row config={{ gap: 16, flexWrap: 'wrap' }}>
           <PriceDisplay config={{ amount: 29.99, currency: 'USD', locale: 'en-US', size: 'md' }} />
-          <PriceDisplay config={{ amount: 27.50, currency: 'EUR', locale: 'de-DE', size: 'md' }} />
+          <PriceDisplay config={{ amount: 27.5, currency: 'EUR', locale: 'de-DE', size: 'md' }} />
           <PriceDisplay config={{ amount: 4200, currency: 'JPY', locale: 'ja-JP', size: 'md' }} />
           <PriceDisplay config={{ amount: 24.99, currency: 'GBP', locale: 'en-GB', size: 'md' }} />
         </Row>
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="ProductCard — full featured" />
         <ProductCard
           config={{
             title: 'Mechanical Keyboard Pro',
-            description: 'TKL layout, Cherry MX Blue switches, aluminum frame with RGB backlighting.',
+            description:
+              'TKL layout, Cherry MX Blue switches, aluminum frame with RGB backlighting.',
             image: 'https://picsum.photos/seed/keyboard/600/400',
             price: 149.99,
             currency: 'USD',
@@ -98,7 +99,7 @@ export default function CommerceShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="CartItem" />
         <Stack config={{ gap: 8 }}>
@@ -138,25 +139,25 @@ export default function CommerceShowcase() {
           />
         </Stack>
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="Order total" />
-        <Stack config={{ gap: 4, padding: 16, backgroundColor: '#f9f9f9' }}>
-          <Row config={{ justify: 'space-between', align: 'center' }}>
+        <Stack config={{ gap: 4, padding: 16, bg: '#f9f9f9' }}>
+          <Row config={{ justifyContent: 'between', alignItems: 'center' }}>
             <Heading config={{ text: 'Subtotal', level: 5 }} />
             <PriceDisplay config={{ amount: 359.97, currency: 'USD', size: 'md' }} />
           </Row>
-          <Row config={{ justify: 'space-between', align: 'center' }}>
+          <Row config={{ justifyContent: 'between', alignItems: 'center' }}>
             <Heading config={{ text: 'Shipping', level: 5 }} />
             <PriceDisplay config={{ amount: 0, currency: 'USD', size: 'md' }} />
           </Row>
-          <Divider config={{ marginVertical: 4 }} />
-          <Row config={{ justify: 'space-between', align: 'center' }}>
+          <Divider config={{ marginY: 4 }} />
+          <Row config={{ justifyContent: 'between', alignItems: 'center' }}>
             <Heading config={{ text: 'Total', level: 4 }} />
             <PriceDisplay config={{ amount: 359.97, currency: 'USD', size: 'xl' }} />
           </Row>
         </Stack>
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="PricingTable — 3-tier plans" />
         <PricingTable

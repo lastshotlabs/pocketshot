@@ -4,8 +4,10 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import { CalendarBase, type CalendarBaseEvent } from './standalone'
 import type { CalendarConfig, CalendarEvent } from './types'
+import { CalendarSchema } from './schema'
 
-export function Calendar({ config }: { config: CalendarConfig }) {
+export function Calendar({ config: inputConfig }: { config: CalendarConfig }) {
+  const config = CalendarSchema.parse(inputConfig)
   const { values, setValue, dispatch } = useScreenContext()
 
   const resolvedValue = isFromRef(config.value)

@@ -25,7 +25,11 @@ export default function NavigationShowcase() {
             title: 'My Feed',
             subtitle: 'Latest posts',
             showBack: true,
-            rightAction: { icon: '🔔', label: 'Notifications', action: { type: 'toast', message: 'Notifications tapped' } },
+            rightAction: {
+              icon: '🔔',
+              label: 'Notifications',
+              action: { type: 'toast', message: 'Notifications tapped' },
+            },
           }}
         />
 
@@ -34,7 +38,11 @@ export default function NavigationShowcase() {
           config={{
             title: 'Search Results',
             rightActions: [
-              { icon: '⚙️', label: 'Settings', action: { type: 'toast', message: 'Settings tapped' } },
+              {
+                icon: '⚙️',
+                label: 'Settings',
+                action: { type: 'toast', message: 'Settings tapped' },
+              },
               { icon: '🔍', label: 'Search', action: { type: 'toast', message: 'Search tapped' } },
             ],
           }}
@@ -121,7 +129,7 @@ export default function NavigationShowcase() {
         <SectionLabel label="BackButton — variants" />
         <Stack config={{ gap: 8 }}>
           <BackButton config={{ label: 'Back' }} />
-          <BackButton config={{ label: 'Go to Home', action: { type: 'navigate', path: '/' } }} />
+          <BackButton config={{ label: 'Go to Home', action: { type: 'navigate', to: '/' } }} />
           <BackButton config={{ label: 'Cancel' }} />
         </Stack>
 
@@ -130,10 +138,30 @@ export default function NavigationShowcase() {
           config={{
             id: 'faq-accordion',
             sections: [
-              { id: 'what', title: 'What is Pocketshot?', content: 'Pocketshot is the React Native SDK for Slingshot-powered backends. It provides hooks, typed API clients, and a config-driven UI layer.' },
-              { id: 'how', title: 'How do I get started?', content: 'Run `pocketshot init` in your Expo project, configure your backend URL, and start using the generated hooks.' },
-              { id: 'tokens', title: 'What are design tokens?', content: 'Tokens are semantic design primitives — colors, spacing, typography, and radii — that drive all visual properties across components.' },
-              { id: 'offline', title: 'Does it work offline?', content: 'Yes. The offline module uses expo-sqlite for local persistence and automatically syncs queued mutations when connectivity is restored.' },
+              {
+                id: 'what',
+                title: 'What is Pocketshot?',
+                content:
+                  'Pocketshot is the React Native SDK for Slingshot-powered backends. It provides hooks, typed API clients, and a config-driven UI layer.',
+              },
+              {
+                id: 'how',
+                title: 'How do I get started?',
+                content:
+                  'Run `pocketshot init` in your Expo project, configure your backend URL, and start using the generated hooks.',
+              },
+              {
+                id: 'tokens',
+                title: 'What are design tokens?',
+                content:
+                  'Tokens are semantic design primitives — colors, spacing, typography, and radii — that drive all visual properties across components.',
+              },
+              {
+                id: 'offline',
+                title: 'Does it work offline?',
+                content:
+                  'Yes. The offline module uses expo-sqlite for local persistence and automatically syncs queued mutations when connectivity is restored.',
+              },
             ],
             defaultOpenIds: ['what'],
             allowMultiple: true,
@@ -146,9 +174,26 @@ export default function NavigationShowcase() {
           config={{
             id: 'settings-accordion',
             sections: [
-              { id: 'account', title: 'Account Settings', icon: '👤', content: 'Manage your profile, email preferences, and connected accounts.' },
-              { id: 'security', title: 'Security & Privacy', icon: '🔒', content: 'Enable two-factor authentication, manage sessions, and configure privacy controls.' },
-              { id: 'billing', title: 'Billing & Plans', icon: '💳', subtitle: 'Pro Plan', content: 'View invoices, update payment methods, and manage your subscription.' },
+              {
+                id: 'account',
+                title: 'Account Settings',
+                icon: '👤',
+                content: 'Manage your profile, email preferences, and connected accounts.',
+              },
+              {
+                id: 'security',
+                title: 'Security & Privacy',
+                icon: '🔒',
+                content:
+                  'Enable two-factor authentication, manage sessions, and configure privacy controls.',
+              },
+              {
+                id: 'billing',
+                title: 'Billing & Plans',
+                icon: '💳',
+                subtitle: 'Pro Plan',
+                content: 'View invoices, update payment methods, and manage your subscription.',
+              },
             ],
             allowMultiple: false,
             variant: 'bordered',
@@ -178,9 +223,7 @@ export default function NavigationShowcase() {
                     id: 'hooks',
                     label: 'hooks',
                     icon: '📁',
-                    children: [
-                      { id: 'useauth', label: 'useAuth.ts', icon: '📄' },
-                    ],
+                    children: [{ id: 'useauth', label: 'useAuth.ts', icon: '📄' }],
                   },
                   { id: 'index', label: 'index.ts', icon: '📄' },
                 ],
@@ -189,9 +232,7 @@ export default function NavigationShowcase() {
                 id: 'tests',
                 label: 'tests',
                 icon: '📁',
-                children: [
-                  { id: 'button-test', label: 'Button.test.tsx', icon: '📄' },
-                ],
+                children: [{ id: 'button-test', label: 'Button.test.tsx', icon: '📄' }],
               },
             ],
             defaultExpandedIds: ['src', 'components'],
@@ -233,10 +274,31 @@ function NavigationNewDemos() {
         config={{
           id: 'bottom-tabs-demo',
           tabs: [
-            { id: 'home', label: 'Home', icon: '🏠', onPress: { type: 'toast', message: 'Home tapped' } },
-            { id: 'search', label: 'Search', icon: '🔍', onPress: { type: 'toast', message: 'Search tapped' } },
-            { id: 'notifications', label: 'Alerts', icon: '🔔', badge: 5, onPress: { type: 'toast', message: 'Notifications tapped' } },
-            { id: 'profile', label: 'Profile', icon: '👤', onPress: { type: 'toast', message: 'Profile tapped' } },
+            {
+              id: 'home',
+              label: 'Home',
+              icon: '🏠',
+              onPress: { type: 'toast', message: 'Home tapped' },
+            },
+            {
+              id: 'search',
+              label: 'Search',
+              icon: '🔍',
+              onPress: { type: 'toast', message: 'Search tapped' },
+            },
+            {
+              id: 'notifications',
+              label: 'Alerts',
+              icon: '🔔',
+              badge: 5,
+              onPress: { type: 'toast', message: 'Notifications tapped' },
+            },
+            {
+              id: 'profile',
+              label: 'Profile',
+              icon: '👤',
+              onPress: { type: 'toast', message: 'Profile tapped' },
+            },
           ],
           activeTab: 'home',
           showLabels: true,
@@ -263,11 +325,42 @@ function NavigationNewDemos() {
             avatar: '👩',
           },
           items: [
-            { id: 'home', label: 'Home', icon: '🏠', section: 'Main', onPress: { type: 'toast', message: 'Home tapped' } },
-            { id: 'projects', label: 'Projects', icon: '📁', section: 'Main', onPress: { type: 'toast', message: 'Projects tapped' } },
-            { id: 'messages', label: 'Messages', icon: '💬', section: 'Main', badge: 3, onPress: { type: 'toast', message: 'Messages tapped' } },
-            { id: 'settings', label: 'Settings', icon: '⚙️', section: 'Preferences', onPress: { type: 'toast', message: 'Settings tapped' } },
-            { id: 'help', label: 'Help & Support', icon: '❓', section: 'Preferences', onPress: { type: 'toast', message: 'Help tapped' } },
+            {
+              id: 'home',
+              label: 'Home',
+              icon: '🏠',
+              section: 'Main',
+              onPress: { type: 'toast', message: 'Home tapped' },
+            },
+            {
+              id: 'projects',
+              label: 'Projects',
+              icon: '📁',
+              section: 'Main',
+              onPress: { type: 'toast', message: 'Projects tapped' },
+            },
+            {
+              id: 'messages',
+              label: 'Messages',
+              icon: '💬',
+              section: 'Main',
+              badge: 3,
+              onPress: { type: 'toast', message: 'Messages tapped' },
+            },
+            {
+              id: 'settings',
+              label: 'Settings',
+              icon: '⚙️',
+              section: 'Preferences',
+              onPress: { type: 'toast', message: 'Settings tapped' },
+            },
+            {
+              id: 'help',
+              label: 'Help & Support',
+              icon: '❓',
+              section: 'Preferences',
+              onPress: { type: 'toast', message: 'Help tapped' },
+            },
           ],
           footer: {
             label: 'Sign Out',

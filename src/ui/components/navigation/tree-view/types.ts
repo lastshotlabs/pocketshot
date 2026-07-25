@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { TreeViewSchema } from './schema'
 
-export type TreeViewConfig = z.infer<typeof TreeViewSchema>
+export type TreeViewConfig = z.input<typeof TreeViewSchema>
 
 export interface TreeNode {
   id: string

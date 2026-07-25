@@ -24,7 +24,7 @@ export default function AuthComponentsShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         <SectionLabel label="LoginForm — with social providers" />
         <LoginForm
@@ -37,7 +37,7 @@ export default function AuthComponentsShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         <SectionLabel label="RegisterForm — default fields" />
         <RegisterForm
@@ -48,7 +48,7 @@ export default function AuthComponentsShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         <SectionLabel label="RegisterForm — full fields" />
         <RegisterForm
@@ -60,7 +60,7 @@ export default function AuthComponentsShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 8 }} />
+        <Divider config={{ marginY: 8 }} />
 
         <SectionLabel label="ForgotPasswordForm" />
         <ForgotPasswordForm

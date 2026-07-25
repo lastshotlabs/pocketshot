@@ -3,8 +3,10 @@ import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { ReactionPickerBase } from './standalone'
 import type { ReactionPickerConfig } from './types'
+import { ReactionPickerSchema } from './schema'
 
-export function ReactionPicker({ config }: { config: ReactionPickerConfig }) {
+export function ReactionPicker({ config: inputConfig }: { config: ReactionPickerConfig }) {
+  const config = ReactionPickerSchema.parse(inputConfig)
   const { dispatch, setValue } = useScreenContext()
   const [visible, setVisible] = useState(false)
 

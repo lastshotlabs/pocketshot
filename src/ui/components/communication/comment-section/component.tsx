@@ -5,8 +5,10 @@ import { resolveFromRef, isFromRef } from '../../_base/fromRef'
 import { useComponentData } from '../../_base/useComponentData'
 import { CommentSectionBase, type CommentBase } from './standalone'
 import type { CommentSectionConfig, Comment } from './types'
+import { CommentSectionSchema } from './schema'
 
-export function CommentSection({ config }: { config: CommentSectionConfig }) {
+export function CommentSection({ config: inputConfig }: { config: CommentSectionConfig }) {
+  const config = CommentSectionSchema.parse(inputConfig)
   const { values, dispatch, setValue } = useScreenContext()
 
   const dataSpec = isFromRef(config.data) ? config.data : (config.data as string)

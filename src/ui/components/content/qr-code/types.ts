@@ -1,4 +1,4 @@
 import type { z } from 'zod'
 import type { QrCodeSchema } from './schema'
 
-export type QrCodeConfig = z.infer<typeof QrCodeSchema>
+export type QrCodeConfig = z.input<typeof QrCodeSchema>

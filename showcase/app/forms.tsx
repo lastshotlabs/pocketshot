@@ -212,13 +212,31 @@ export default function FormsShowcase() {
             id: 'contact-form',
             fields: [
               { id: 'name', type: 'text', label: 'Name', placeholder: 'Your name', required: true },
-              { id: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true },
-              { id: 'subject', type: 'select', label: 'Subject', required: true, options: [
-                { label: 'General Inquiry', value: 'general' },
-                { label: 'Bug Report', value: 'bug' },
-                { label: 'Feature Request', value: 'feature' },
-              ]},
-              { id: 'message', type: 'text', label: 'Message', placeholder: 'Describe your question...', required: true },
+              {
+                id: 'email',
+                type: 'email',
+                label: 'Email',
+                placeholder: 'you@example.com',
+                required: true,
+              },
+              {
+                id: 'subject',
+                type: 'select',
+                label: 'Subject',
+                required: true,
+                options: [
+                  { label: 'General Inquiry', value: 'general' },
+                  { label: 'Bug Report', value: 'bug' },
+                  { label: 'Feature Request', value: 'feature' },
+                ],
+              },
+              {
+                id: 'message',
+                type: 'text',
+                label: 'Message',
+                placeholder: 'Describe your question...',
+                required: true,
+              },
               { id: 'subscribe', type: 'checkbox', label: 'Send me updates', defaultValue: false },
             ],
             submitLabel: 'Send Message',
@@ -231,15 +249,43 @@ export default function FormsShowcase() {
           config={{
             id: 'reg-form',
             fields: [
-              { id: 'username', type: 'text', label: 'Username', placeholder: 'your_handle', required: true },
-              { id: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true },
-              { id: 'password', type: 'password', label: 'Password', placeholder: 'Min 8 characters', required: true },
-              { id: 'role', type: 'select', label: 'Role', options: [
-                { label: 'Developer', value: 'dev' },
-                { label: 'Designer', value: 'design' },
-                { label: 'Manager', value: 'mgr' },
-              ]},
-              { id: 'terms', type: 'checkbox', label: 'I agree to the Terms of Service', required: true },
+              {
+                id: 'username',
+                type: 'text',
+                label: 'Username',
+                placeholder: 'your_handle',
+                required: true,
+              },
+              {
+                id: 'email',
+                type: 'email',
+                label: 'Email',
+                placeholder: 'you@example.com',
+                required: true,
+              },
+              {
+                id: 'password',
+                type: 'password',
+                label: 'Password',
+                placeholder: 'Min 8 characters',
+                required: true,
+              },
+              {
+                id: 'role',
+                type: 'select',
+                label: 'Role',
+                options: [
+                  { label: 'Developer', value: 'dev' },
+                  { label: 'Designer', value: 'design' },
+                  { label: 'Manager', value: 'mgr' },
+                ],
+              },
+              {
+                id: 'terms',
+                type: 'checkbox',
+                label: 'I agree to the Terms of Service',
+                required: true,
+              },
             ],
             submitLabel: 'Create Account',
             onSubmit: { type: 'toast', message: 'Account created!' },
@@ -285,7 +331,7 @@ export default function FormsShowcase() {
         </Stack>
 
         <SectionLabel label="Button — sizes" />
-        <Row config={{ gap: 12, align: 'center' }}>
+        <Row config={{ gap: 12, alignItems: 'center' }}>
           <Button
             config={{
               label: 'Small',
@@ -417,7 +463,7 @@ export default function FormsShowcase() {
 
         <SectionLabel label="Toggle — sizes and states" />
         <Stack config={{ gap: 12 }}>
-          <Row config={{ gap: 16, align: 'center' }}>
+          <Row config={{ gap: 16, alignItems: 'center' }}>
             <Toggle config={{ id: 'toggle-sm', label: 'Small', size: 'sm', defaultValue: true }} />
             <Toggle config={{ id: 'toggle-md', label: 'Medium', size: 'md', defaultValue: true }} />
             <Toggle config={{ id: 'toggle-lg', label: 'Large', size: 'lg', defaultValue: true }} />
@@ -516,9 +562,27 @@ export default function FormsShowcase() {
                 title: 'Personal Info',
                 description: 'Tell us a bit about yourself',
                 fields: [
-                  { id: 'first-name', type: 'text', label: 'First Name', placeholder: 'Jane', required: true },
-                  { id: 'last-name', type: 'text', label: 'Last Name', placeholder: 'Doe', required: true },
-                  { id: 'email', type: 'email', label: 'Email', placeholder: 'jane@example.com', required: true },
+                  {
+                    id: 'first-name',
+                    type: 'text',
+                    label: 'First Name',
+                    placeholder: 'Jane',
+                    required: true,
+                  },
+                  {
+                    id: 'last-name',
+                    type: 'text',
+                    label: 'Last Name',
+                    placeholder: 'Doe',
+                    required: true,
+                  },
+                  {
+                    id: 'email',
+                    type: 'email',
+                    label: 'Email',
+                    placeholder: 'jane@example.com',
+                    required: true,
+                  },
                 ],
               },
               {
@@ -538,8 +602,19 @@ export default function FormsShowcase() {
                       { value: 'other', label: 'Other' },
                     ],
                   },
-                  { id: 'bio', type: 'textarea', label: 'Bio', placeholder: 'A few words about you...', helperText: 'Optional but recommended' },
-                  { id: 'newsletter', type: 'checkbox', label: 'Subscribe to product updates', defaultValue: true },
+                  {
+                    id: 'bio',
+                    type: 'textarea',
+                    label: 'Bio',
+                    placeholder: 'A few words about you...',
+                    helperText: 'Optional but recommended',
+                  },
+                  {
+                    id: 'newsletter',
+                    type: 'checkbox',
+                    label: 'Subscribe to product updates',
+                    defaultValue: true,
+                  },
                 ],
               },
               {
@@ -547,8 +622,18 @@ export default function FormsShowcase() {
                 title: 'Review',
                 description: 'Confirm your details before submitting',
                 fields: [
-                  { id: 'terms', type: 'checkbox', label: 'I agree to the Terms of Service', required: true },
-                  { id: 'privacy', type: 'checkbox', label: 'I accept the Privacy Policy', required: true },
+                  {
+                    id: 'terms',
+                    type: 'checkbox',
+                    label: 'I agree to the Terms of Service',
+                    required: true,
+                  },
+                  {
+                    id: 'privacy',
+                    type: 'checkbox',
+                    label: 'I accept the Privacy Policy',
+                    required: true,
+                  },
                 ],
               },
             ],

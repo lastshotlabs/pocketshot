@@ -3,8 +3,10 @@ import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { EmojiPickerBase } from './standalone'
 import type { EmojiPickerConfig } from './types'
+import { EmojiPickerSchema } from './schema'
 
-export function EmojiPicker({ config }: { config: EmojiPickerConfig }) {
+export function EmojiPicker({ config: inputConfig }: { config: EmojiPickerConfig }) {
+  const config = EmojiPickerSchema.parse(inputConfig)
   const { dispatch, setValue } = useScreenContext()
   const [visible, setVisible] = useState(false)
 

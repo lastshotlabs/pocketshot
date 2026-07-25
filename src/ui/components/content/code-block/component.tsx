@@ -4,8 +4,10 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import { CodeBlockBase } from './standalone'
 import type { CodeBlockConfig } from './types'
+import { CodeBlockSchema } from './schema'
 
-export function CodeBlock({ config }: { config: CodeBlockConfig }) {
+export function CodeBlock({ config: inputConfig }: { config: CodeBlockConfig }) {
+  const config = CodeBlockSchema.parse(inputConfig)
   const { values, dispatch } = useScreenContext()
   const code = resolveFromRef(config.code, values) as string
 

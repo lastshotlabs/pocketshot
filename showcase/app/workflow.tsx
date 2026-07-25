@@ -157,7 +157,7 @@ function WorkflowDemos() {
         }}
       />
 
-      <Divider config={{ marginVertical: 4 }} />
+      <Divider config={{ marginY: 4 }} />
 
       <SectionLabel label="AuditLog — grouped by date" />
       <AuditLog
@@ -170,7 +170,7 @@ function WorkflowDemos() {
         }}
       />
 
-      <Divider config={{ marginVertical: 4 }} />
+      <Divider config={{ marginY: 4 }} />
 
       <SectionLabel label="NotificationFeed — with mark all read" />
       <NotificationFeed
@@ -183,7 +183,7 @@ function WorkflowDemos() {
         }}
       />
 
-      <Divider config={{ marginVertical: 4 }} />
+      <Divider config={{ marginY: 4 }} />
 
       <SectionLabel label="KanbanBoard — 3 columns with cards" />
       <KanbanBoard
@@ -316,13 +316,13 @@ export default function WorkflowShowcase() {
 
         <SectionLabel label="ProgressBar — height + radius variants" />
         <Stack config={{ gap: 12 }}>
-          <ProgressBar config={{ value: 60, height: 4, radius: 'full' }} />
-          <ProgressBar config={{ value: 60, height: 8, radius: 'full' }} />
-          <ProgressBar config={{ value: 60, height: 16, radius: 'md' }} />
-          <ProgressBar config={{ value: 60, height: 24, radius: 'none' }} />
+          <ProgressBar config={{ value: 60, height: 4, borderRadius: 'full' }} />
+          <ProgressBar config={{ value: 60, height: 8, borderRadius: 'full' }} />
+          <ProgressBar config={{ value: 60, height: 16, borderRadius: 'md' }} />
+          <ProgressBar config={{ value: 60, height: 24, borderRadius: 'none' }} />
         </Stack>
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="Stepper — horizontal (checkout)" />
         <Stepper
@@ -346,7 +346,11 @@ export default function WorkflowShowcase() {
             steps: [
               { id: 'profile', label: 'Create Profile', description: 'Set your name and photo' },
               { id: 'preferences', label: 'Set Preferences', description: 'Choose your interests' },
-              { id: 'notifications', label: 'Enable Notifications', description: 'Stay up to date' },
+              {
+                id: 'notifications',
+                label: 'Enable Notifications',
+                description: 'Stay up to date',
+              },
               { id: 'invite', label: 'Invite Team', description: 'Add your colleagues' },
             ],
             currentStep: 'preferences',
@@ -354,7 +358,7 @@ export default function WorkflowShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="Timeline — order history" />
         <Timeline
@@ -408,12 +412,12 @@ export default function WorkflowShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="StatusBadge — with statusMap" />
         <Stack config={{ gap: 8 }}>
           {(['active', 'inactive', 'pending', 'banned', 'verified'] as const).map((s) => (
-            <Row key={s} config={{ align: 'center', gap: 8 }}>
+            <Row key={s} config={{ alignItems: 'center', gap: 8 }}>
               <StatusBadge
                 config={{
                   status: s,
@@ -433,7 +437,7 @@ export default function WorkflowShowcase() {
         </Stack>
 
         <SectionLabel label="StatusBadge — sizes" />
-        <Row config={{ gap: 12, align: 'center' }}>
+        <Row config={{ gap: 12, alignItems: 'center' }}>
           <StatusBadge
             config={{
               status: 'active',
@@ -459,7 +463,7 @@ export default function WorkflowShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <WorkflowDemos />
       </MockProviders>

@@ -27,17 +27,17 @@ try {
 
   const dependencies = {
     '@tanstack/react-query': '^5.0.0',
-    expo: '55',
-    'expo-linking': '~55.0.7',
-    'expo-router': '~55.0.6',
-    'expo-secure-store': '~55.0.9',
-    'expo-status-bar': '~55.0.4',
-    'expo-web-browser': '~55.0.10',
+    expo: '~57.0.8',
+    'expo-linking': '~57.0.4',
+    'expo-router': '~57.0.8',
+    'expo-secure-store': '~57.0.1',
+    'expo-status-bar': '~57.0.1',
+    'expo-web-browser': '~57.0.2',
     jotai: '^2.0.0',
-    react: '19.2.0',
-    'react-native': '0.83.2',
-    'react-native-safe-area-context': '~5.6.2',
-    'react-native-screens': '~4.23.0',
+    react: '19.2.3',
+    'react-native': '0.86.0',
+    'react-native-safe-area-context': '~5.7.0',
+    'react-native-screens': '~4.26.0',
     zod: '^4.0.0',
   }
   dependencies['@lastshotlabs/pocketshot'] = `file:${tarball}`
@@ -53,8 +53,8 @@ try {
         scripts: { typecheck: 'tsc --noEmit' },
         dependencies,
         devDependencies: {
-          '@types/react': sourcePackage.devDependencies['@types/react'],
-          typescript: sourcePackage.devDependencies.typescript,
+          '@types/react': '~19.2.4',
+          typescript: '~6.0.3',
         },
       },
       null,

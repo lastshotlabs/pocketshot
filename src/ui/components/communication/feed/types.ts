@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { FeedSchema } from './schema'
 
-export type FeedConfig = z.infer<typeof FeedSchema>
+export type FeedConfig = z.input<typeof FeedSchema>
 
 export interface FeedItem {
   id: string

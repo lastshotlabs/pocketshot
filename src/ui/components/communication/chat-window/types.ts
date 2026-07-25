@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { ChatWindowSchema } from './schema'
 
-export type ChatWindowConfig = z.infer<typeof ChatWindowSchema>
+export type ChatWindowConfig = z.input<typeof ChatWindowSchema>
 
 export interface ChatMessage {
   id: string

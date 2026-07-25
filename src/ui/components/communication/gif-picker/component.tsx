@@ -4,8 +4,10 @@ import { useAppContext } from '../../../context/AppContext'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { GifPickerBase, type GifResult } from './standalone'
 import type { GifPickerConfig } from './types'
+import { GifPickerSchema } from './schema'
 
-export function GifPicker({ config }: { config: GifPickerConfig }) {
+export function GifPicker({ config: inputConfig }: { config: GifPickerConfig }) {
+  const config = GifPickerSchema.parse(inputConfig)
   const { api } = useAppContext()
   const { dispatch, setValue } = useScreenContext()
 

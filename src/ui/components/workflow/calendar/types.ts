@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import type { CalendarSchema } from './schema'
 
-export type CalendarConfig = z.infer<typeof CalendarSchema>
+export type CalendarConfig = z.input<typeof CalendarSchema>
 
 export interface CalendarEvent {
   date: string

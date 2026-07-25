@@ -4,8 +4,10 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { useComponentData } from '../../_base/useComponentData'
 import { NotificationFeedBase, type NotificationFeedBaseItem } from './standalone'
 import type { NotificationFeedConfig, Notification } from './types'
+import { NotificationFeedSchema } from './schema'
 
-export function NotificationFeed({ config }: { config: NotificationFeedConfig }) {
+export function NotificationFeed({ config: inputConfig }: { config: NotificationFeedConfig }) {
+  const config = NotificationFeedSchema.parse(inputConfig)
   const { setValue, dispatch } = useScreenContext()
 
   const { data: fetchedData, isLoading } = useComponentData<Notification[]>(config.data)

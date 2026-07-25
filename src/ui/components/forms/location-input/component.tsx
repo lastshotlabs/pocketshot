@@ -4,8 +4,10 @@ import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
 import { LocationInputBase, type LocationValue } from './standalone'
 import type { LocationInputConfig } from './types'
+import { LocationInputSchema } from './schema'
 
-export function LocationInput({ config }: { config: LocationInputConfig }) {
+export function LocationInput({ config: inputConfig }: { config: LocationInputConfig }) {
+  const config = LocationInputSchema.parse(inputConfig)
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedDefault =

@@ -41,26 +41,41 @@ export default function ContentShowcase() {
 
         <SectionLabel label="Heading — alignment" />
         <Stack config={{ gap: 4 }}>
-          <Heading config={{ text: 'Left aligned (default)', level: 3, align: 'left' }} />
-          <Heading config={{ text: 'Center aligned', level: 3, align: 'center' }} />
-          <Heading config={{ text: 'Right aligned', level: 3, align: 'right' }} />
+          <Heading config={{ text: 'Left aligned (default)', level: 3, textAlign: 'left' }} />
+          <Heading config={{ text: 'Center aligned', level: 3, textAlign: 'center' }} />
+          <Heading config={{ text: 'Right aligned', level: 3, textAlign: 'right' }} />
         </Stack>
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="Body — sizes" />
         <Stack config={{ gap: 8 }}>
-          <Body config={{ text: 'Body small — The quick brown fox jumps over the lazy dog.', size: 'sm' }} />
-          <Body config={{ text: 'Body medium — The quick brown fox jumps over the lazy dog.', size: 'md' }} />
-          <Body config={{ text: 'Body large — The quick brown fox jumps over the lazy dog.', size: 'lg' }} />
+          <Body
+            config={{
+              text: 'Body small — The quick brown fox jumps over the lazy dog.',
+              fontSize: 'sm',
+            }}
+          />
+          <Body
+            config={{
+              text: 'Body medium — The quick brown fox jumps over the lazy dog.',
+              fontSize: 'base',
+            }}
+          />
+          <Body
+            config={{
+              text: 'Body large — The quick brown fox jumps over the lazy dog.',
+              fontSize: 'lg',
+            }}
+          />
         </Stack>
 
         <SectionLabel label="Body — weights" />
         <Stack config={{ gap: 8 }}>
-          <Body config={{ text: 'Regular weight', weight: 'regular' }} />
-          <Body config={{ text: 'Medium weight', weight: 'medium' }} />
-          <Body config={{ text: 'Semibold weight', weight: 'semibold' }} />
-          <Body config={{ text: 'Bold weight', weight: 'bold' }} />
+          <Body config={{ text: 'Regular weight', fontWeight: 'normal' }} />
+          <Body config={{ text: 'Medium weight', fontWeight: 'medium' }} />
+          <Body config={{ text: 'Semibold weight', fontWeight: 'semibold' }} />
+          <Body config={{ text: 'Bold weight', fontWeight: 'bold' }} />
         </Stack>
 
         <SectionLabel label="Body — truncation" />
@@ -71,7 +86,7 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="Label — variants" />
         <Stack config={{ gap: 6 }}>
@@ -89,7 +104,7 @@ export default function ContentShowcase() {
           <Label config={{ text: 'Uppercase label', size: 'sm', uppercase: true }} />
         </Stack>
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="Link" />
         <Stack config={{ gap: 8 }}>
@@ -117,7 +132,7 @@ export default function ContentShowcase() {
           />
         </Stack>
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="Image — cover (16:9)" />
         <Image
@@ -127,7 +142,7 @@ export default function ContentShowcase() {
             width: '100%',
             height: 200,
             resizeMode: 'cover',
-            radius: 'lg',
+            borderRadius: 'lg',
           }}
         />
 
@@ -139,7 +154,7 @@ export default function ContentShowcase() {
             width: 80,
             height: 80,
             resizeMode: 'cover',
-            radius: 'full',
+            borderRadius: 'full',
           }}
         />
 
@@ -152,12 +167,12 @@ export default function ContentShowcase() {
               width: '100%',
               height: 120,
               resizeMode: 'contain',
-              radius: 'md',
+              borderRadius: 'md',
             }}
           />
         </View>
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="Markdown — rich content" />
         <Markdown
@@ -167,7 +182,7 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="CodeBlock — TypeScript with line numbers" />
         <CodeBlock
@@ -187,7 +202,7 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="RichInput — default toolbar" />
         <RichInput
@@ -218,7 +233,7 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="FileUploader — images only" />
         <FileUploader
@@ -244,14 +259,15 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="LinkEmbed — YouTube" />
         <LinkEmbed
           config={{
             url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             title: 'Building Config-Driven Mobile Apps with Pocketshot',
-            description: 'A deep dive into how Pocketshot turns JSON manifests into native iOS and Android screens.',
+            description:
+              'A deep dive into how Pocketshot turns JSON manifests into native iOS and Android screens.',
             videoId: 'dQw4w9WgXcQ',
           }}
         />
@@ -262,7 +278,8 @@ export default function ContentShowcase() {
             url: 'https://x.com/lastshotlabs/status/123456',
             authorName: 'LastShot Labs',
             authorHandle: 'lastshotlabs',
-            tweetText: 'Just shipped Pocketshot 2.0 — 125 config-driven components, 8 design flavors, and full manifest-to-native rendering. The mobile SDK that actually has parity with web. 🚀',
+            tweetText:
+              'Just shipped Pocketshot 2.0 — 125 config-driven components, 8 design flavors, and full manifest-to-native rendering. The mobile SDK that actually has parity with web. 🚀',
             metrics: { likes: 2430, retweets: 312, replies: 89 },
           }}
         />
@@ -273,7 +290,8 @@ export default function ContentShowcase() {
             url: 'https://github.com/lastshotlabs/pocketshot',
             repoOwner: 'lastshotlabs',
             repoName: 'pocketshot',
-            repoDescription: 'React Native/Expo SDK for Slingshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation from OpenAPI specs.',
+            repoDescription:
+              'React Native/Expo SDK for Slingshot-powered backends. 125 config-addressable components, token-based theming, and CLI code generation from OpenAPI specs.',
             language: 'TypeScript',
             languageColor: '#3178C6',
             stars: 4821,
@@ -307,13 +325,14 @@ export default function ContentShowcase() {
           config={{
             url: 'https://lastshotlabs.com/blog/config-driven-ui',
             title: 'Config-Driven UI: Build Mobile Apps Without Code',
-            description: 'Learn how Pocketshot turns JSON manifests into fully native React Native screens.',
+            description:
+              'Learn how Pocketshot turns JSON manifests into fully native React Native screens.',
             imageUrl: 'https://picsum.photos/seed/linkembed1/800/400',
             favicon: '🚀',
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="RichTextViewer — rendered rich text" />
         <RichTextViewer
@@ -333,7 +352,7 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="RichTextEditor — default toolbar" />
         <RichTextEditor
@@ -365,7 +384,7 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="ImageViewer — zoomable image" />
         <ImageViewer
@@ -389,7 +408,7 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="MediaPicker — single image" />
         <MediaPicker
@@ -413,12 +432,13 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="VideoPlayer — with poster" />
         <VideoPlayer
           config={{
-            source: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+            source:
+              'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
             poster: 'https://picsum.photos/seed/vidposter/800/450',
             controls: true,
             aspectRatio: 1.78,
@@ -428,14 +448,15 @@ export default function ContentShowcase() {
         <SectionLabel label="VideoPlayer — muted, looping" />
         <VideoPlayer
           config={{
-            source: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+            source:
+              'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
             muted: true,
             loop: true,
             controls: true,
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="AudioPlayer — podcast episode" />
         <AudioPlayer
@@ -456,7 +477,7 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="QrCode — URL" />
         <QrCode
@@ -473,13 +494,13 @@ export default function ContentShowcase() {
             value: 'https://lastshotlabs.com/invite/abc123',
             size: 240,
             color: '#1e293b',
-            backgroundColor: '#f8fafc',
+            bg: '#f8fafc',
             logo: 'https://picsum.photos/seed/logo/60/60',
             errorCorrectionLevel: 'H',
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="QrScanner — with overlay" />
         <QrScanner
@@ -491,15 +512,14 @@ export default function ContentShowcase() {
           }}
         />
 
-        <Divider config={{ marginVertical: 4 }} />
+        <Divider config={{ marginY: 4 }} />
 
         <SectionLabel label="CompareView — side by side code diff" />
         <CompareView
           config={{
             left: {
               label: 'Before',
-              content:
-                'function greet(name) {\n  console.log("Hello " + name)\n  return name\n}',
+              content: 'function greet(name) {\n  console.log("Hello " + name)\n  return name\n}',
             },
             right: {
               label: 'After',
