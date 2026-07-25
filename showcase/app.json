@@ -3,23 +3,28 @@
     "name": "Pocketshot Showcase",
     "slug": "pocketshot-showcase",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "scheme": "showcase",
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lastshotlabs.pocketshotshowcase"
+      "bundleIdentifier": "com.lastshotlabs.pocketshotshowcase",
+      "buildNumber": "1",
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
     },
     "android": {
-      "package": "com.lastshotlabs.pocketshotshowcase"
+      "package": "com.lastshotlabs.pocketshotshowcase",
+      "versionCode": 1
     },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      "expo-font",
-      "expo-sqlite"
-    ]
+    "plugins": ["expo-router", "expo-secure-store", "expo-font", "expo-sqlite"]
   }
 }
