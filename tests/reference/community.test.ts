@@ -2,6 +2,30 @@ import { describe, expect, it, vi } from 'vitest'
 import { CommunityDemoController } from '../../examples/community/lib/community'
 
 describe('Community reference shell', () => {
+  it('composes registration, verification, OAuth, session restore, and logout', async () => {
+    const registered = new CommunityDemoController()
+    await registered.registerAccount()
+    expect(registered.state).toMatchObject({
+      accountStatus: 'verification-required',
+      accountEmail: 'alex@example.com',
+    })
+    await registered.verifyAccount()
+    expect(registered.state).toMatchObject({
+      accountStatus: 'authenticated',
+      onboarded: true,
+      handle: 'alex',
+    })
+    await registered.signOutAccount()
+    expect(registered.state.accountStatus).toBe('anonymous')
+
+    const oauth = new CommunityDemoController()
+    await oauth.signInOAuth('google')
+    expect(oauth.state).toMatchObject({
+      accountStatus: 'authenticated',
+      onboarded: true,
+    })
+  })
+
   it('composes profile, avatar, follow, mute, and visibility controls', () => {
     const community = new CommunityDemoController()
     community.completeOnboarding('alex')

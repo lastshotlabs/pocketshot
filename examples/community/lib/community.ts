@@ -8,6 +8,11 @@ import {
   SocialGraphController,
   type CommunityProfileVisibility,
 } from '@lastshotlabs/pocketshot/community/core'
+import {
+  AccountAuthController,
+  type AccountAuthTransport,
+  type TokenStorage,
+} from '@lastshotlabs/pocketshot/auth'
 import { RealtimeReconciler, type RealtimeEvent } from '@lastshotlabs/pocketshot/realtime'
 import { z } from 'zod'
 
@@ -61,6 +66,8 @@ export type CommunityView =
 export interface CommunityState {
   view: CommunityView
   onboarded: boolean
+  accountStatus: 'anonymous' | 'verification-required' | 'authenticated'
+  accountEmail: string | null
   handle: string | null
   connection: 'online' | 'reconnecting'
   threads: CommunityThread[]
@@ -99,6 +106,8 @@ type Event =
 const initial: CommunityState = {
   view: 'feed',
   onboarded: false,
+  accountStatus: 'anonymous',
+  accountEmail: null,
   handle: null,
   connection: 'online',
   threads: [
@@ -150,6 +159,7 @@ export class CommunityDemoController {
   readonly composer
   readonly profiles = new CommunityProfileController()
   readonly social = new SocialGraphController()
+  readonly account = createCommunityAccount()
 
   constructor(storage: DraftStorage = createMemoryDraftStorage()) {
     this.composer = createDurableDraft({
@@ -205,6 +215,41 @@ export class CommunityDemoController {
     this.syncProfile()
     this.stateValue.onboarded = true
     this.emit()
+  }
+
+  async registerAccount(): Promise<void> {
+    await this.account.register({
+      email: 'alex@example.com',
+      password: 'community-password',
+      displayName: 'Alex',
+    })
+    this.syncAccount()
+  }
+
+  async verifyAccount(): Promise<void> {
+    await this.account.verifyEmail('123456')
+    this.syncAccount()
+    this.completeOnboarding('alex')
+  }
+
+  async signInOAuth(provider: 'apple' | 'google'): Promise<void> {
+    await this.account.completeOAuth(
+      provider,
+      'demo-code',
+      `pocketshot-community://oauth/${provider}`,
+    )
+    this.syncAccount()
+    this.completeOnboarding('alex')
+  }
+
+  async restoreAccount(): Promise<void> {
+    await this.account.restore()
+    this.syncAccount()
+  }
+
+  async signOutAccount(): Promise<void> {
+    await this.account.logout()
+    this.syncAccount()
   }
 
   updateProfile(input: {
@@ -503,6 +548,18 @@ export class CommunityDemoController {
         }
       : null
   }
+
+  private syncAccount(): void {
+    const snapshot = this.account.snapshot
+    this.stateValue.accountStatus =
+      snapshot.status === 'authenticated'
+        ? 'authenticated'
+        : snapshot.status === 'verification-required'
+          ? 'verification-required'
+          : 'anonymous'
+    this.stateValue.accountEmail = snapshot.user?.email ?? snapshot.pendingEmail
+    this.emit()
+  }
 }
 
 function reduceCommunity(state: CommunityState, event: Event): CommunityState {
@@ -537,4 +594,54 @@ function reduceCommunity(state: CommunityState, event: Event): CommunityState {
     }
   }
   return { ...state, messages: [...state.messages, event.message] }
+}
+
+function createCommunityAccount(): AccountAuthController {
+  let accessToken: string | null = null
+  let refreshToken: string | null = null
+  const storage: TokenStorage = {
+    getToken: async () => accessToken,
+    setToken: async (value) => {
+      accessToken = value
+    },
+    clearToken: async () => {
+      accessToken = null
+    },
+    getRefreshToken: async () => refreshToken,
+    setRefreshToken: async (value) => {
+      refreshToken = value
+    },
+    clearRefreshToken: async () => {
+      refreshToken = null
+    },
+  }
+  const authenticated = {
+    user: {
+      id: 'community-user',
+      email: 'alex@example.com',
+      emailVerified: true,
+      displayName: 'Alex',
+    },
+    accessToken: 'community-access',
+    refreshToken: 'community-refresh',
+  }
+  const transport: AccountAuthTransport = {
+    register: async (input) => ({
+      user: {
+        id: 'community-user',
+        email: input.email,
+        emailVerified: false,
+        displayName: input.displayName,
+      },
+      verificationRequired: true,
+    }),
+    verifyEmail: async () => authenticated,
+    login: async () => authenticated,
+    exchangeOAuth: async () => authenticated,
+    restore: async () => authenticated,
+    logout: async () => undefined,
+    forgotPassword: async () => undefined,
+    resetPassword: async () => undefined,
+  }
+  return new AccountAuthController(transport, storage)
 }

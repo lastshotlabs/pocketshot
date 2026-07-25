@@ -12,6 +12,9 @@ export default function CommunityShell() {
   )
   const [state, setState] = useState<CommunityState>(community.state)
   useEffect(() => community.subscribe(setState), [community])
+  useEffect(() => {
+    void community.restoreAccount()
+  }, [community])
   const selected = state.threads.find((thread) => thread.id === state.selectedThreadId)
 
   return (
@@ -31,11 +34,36 @@ export default function CommunityShell() {
       {!state.onboarded && (
         <View style={styles.onboarding}>
           <Text style={styles.copy}>Choose a community identity to participate.</Text>
+          <Text style={styles.copy}>
+            Account: {state.accountStatus}
+            {state.accountEmail ? ` · ${state.accountEmail}` : ''}
+          </Text>
           <Action
             testID="complete-onboarding"
             label="Continue as @alex"
             onPress={() => community.completeOnboarding('alex')}
           />
+          {state.accountStatus === 'anonymous' && (
+            <>
+              <Action
+                testID="register-account"
+                label="Register account"
+                onPress={() => void community.registerAccount()}
+              />
+              <Action
+                testID="oauth-account"
+                label="Continue with Apple"
+                onPress={() => void community.signInOAuth('apple')}
+              />
+            </>
+          )}
+          {state.accountStatus === 'verification-required' && (
+            <Action
+              testID="verify-account"
+              label="Verify email"
+              onPress={() => void community.verifyAccount()}
+            />
+          )}
         </View>
       )}
       <View style={styles.tabs}>
@@ -210,6 +238,10 @@ export default function CommunityShell() {
             <Text style={styles.copy}>
               Following: {state.followingUsers.length} · Muted: {state.mutedUsers.length}
             </Text>
+            <Text style={styles.copy}>
+              Account: {state.accountStatus}
+              {state.accountEmail ? ` · ${state.accountEmail}` : ''}
+            </Text>
             <Action
               testID="edit-profile"
               label="Complete profile"
@@ -240,6 +272,13 @@ export default function CommunityShell() {
                   : community.mute('morgan')
               }
             />
+            {state.accountStatus === 'authenticated' && (
+              <Action
+                testID="sign-out-account"
+                label="Sign out"
+                onPress={() => void community.signOutAccount()}
+              />
+            )}
           </Card>
         )}
         {state.view === 'privacy' && (
