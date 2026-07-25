@@ -5,7 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "export": "expo export --platform ios --output-dir dist/ios --clear --no-bytecode && expo export --platform android --output-dir dist/android --clear --no-bytecode"
+    "export": "expo export --platform ios --output-dir dist/ios --clear && expo export --platform android --output-dir dist/android --clear"
   },
   "dependencies": {
     "@lastshotlabs/pocketshot": "0.1.2",

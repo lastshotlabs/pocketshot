@@ -1,17 +1,16 @@
 import {
-  AiConversationController,
-  AiMemoryController,
-  createMemoryAiStorage,
   type AiConversation,
   type AiMemoryFact,
-  type AiStreamEvent,
 } from '@lastshotlabs/pocketshot/ai'
 import {
-  MediaPipelineController,
-  createMemoryMediaStorage,
   type MediaCaptureAdapter,
-  type MediaAsset,
 } from '@lastshotlabs/pocketshot/media'
+import {
+  createCoachConversation,
+  createCoachMedia,
+  createCoachMemory,
+  defaultCoachCapture,
+} from './coach-services'
 
 export interface CoachState {
   ready: boolean
@@ -24,8 +23,6 @@ export interface CoachState {
 }
 
 export class CoachDemoController {
-  private attempt = 0
-  private mediaId = 0
   private stateValue: CoachState = {
     ready: false,
     conversation: null,
@@ -37,90 +34,26 @@ export class CoachDemoController {
   }
   private readonly listeners = new Set<(state: CoachState) => void>()
 
-  readonly ai = new AiConversationController({
-    storage: createMemoryAiStorage(),
-    transport: {
-      createAttempt: async () => {
-        this.attempt += 1
-        return {
-          attemptId: `attempt-${this.attempt}`,
-          userMessageId: `user-${this.attempt}`,
-          assistantMessageId: `assistant-${this.attempt}`,
-        }
-      },
-      stream: ({ attemptId, afterSequence, signal }) =>
-        this.stream(attemptId, afterSequence, signal),
-      cancel: async () => undefined,
+  readonly ai = createCoachConversation({
+    commit: (id, value) => {
+      this.stateValue.logs.push({ id, value, undone: false })
+      this.emit()
     },
-    actions: {
-      commit: async (action) => {
-        const value = Number((action.input as { value?: number }).value ?? 0)
-        this.stateValue.logs.push({ id: action.id, value, undone: false })
-        this.emit()
-        return { logId: action.id }
-      },
-      reject: async () => undefined,
-      undo: async (action) => {
-        this.stateValue.logs = this.stateValue.logs.map((log) =>
-          log.id === action.id ? { ...log, undone: true } : log,
-        )
-        this.emit()
-        return { undone: true }
-      },
+    undo: (id) => {
+      this.stateValue.logs = this.stateValue.logs.map((log) =>
+        log.id === id ? { ...log, undone: true } : log,
+      )
+      this.emit()
     },
   })
 
   readonly media
-  constructor(
-    capture: MediaCaptureAdapter = {
-      requestPermission: async () => ({ state: 'granted', canAskAgain: true }),
-      acquire: async () => this.photo(),
-    },
-  ) {
-    this.media = new MediaPipelineController({
-      capture,
-      upload: {
-        strategy: 'multipart-resumable',
-        createSession: async () => ({ id: 'upload-1', offset: 0, chunkSize: 5 }),
-        getOffset: async () => 0,
-        uploadChunk: async ({ offset, length }) => ({ offset: offset + length }),
-        complete: async () => ({ fileUrl: 'https://cdn.example.test/photo.jpg' }),
-        cancel: async () => undefined,
-      },
-      analysis: {
-        start: async () => ({ jobId: 'analysis-1' }),
-        status: async () => ({ state: 'complete', result: { summary: 'Balanced meal' } }),
-        cancel: async () => undefined,
-      },
-      storage: createMemoryMediaStorage(),
-      createId: () => `media-${++this.mediaId}`,
-      wait: async () => undefined,
-    })
+  constructor(capture: MediaCaptureAdapter = defaultCoachCapture()) {
+    this.media = createCoachMedia(capture)
   }
 
   private facts: AiMemoryFact[] = []
-  readonly memory = new AiMemoryController({
-    list: async () => this.facts,
-    create: async (input) => {
-      const fact = {
-        ...input,
-        id: `fact-${this.facts.length + 1}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-      this.facts.push(fact)
-      return fact
-    },
-    update: async (id, patch) => {
-      const current = this.facts.find((fact) => fact.id === id)!
-      const fact = { ...current, ...patch, updatedAt: new Date().toISOString() }
-      this.facts = this.facts.map((item) => (item.id === id ? fact : item))
-      return fact
-    },
-    remove: async (id) => {
-      this.facts = this.facts.filter((fact) => fact.id !== id)
-    },
-  })
+  readonly memory = createCoachMemory(this.facts)
 
   get state(): CoachState {
     return JSON.parse(JSON.stringify(this.stateValue)) as CoachState
@@ -191,63 +124,6 @@ export class CoachDemoController {
       this.stateValue.exportStatus = 'ready'
       this.emit()
     })
-  }
-
-  private stream(
-    attemptId: string,
-    afterSequence: number,
-    signal: AbortSignal,
-  ): AsyncIterable<AiStreamEvent> {
-    const events: AiStreamEvent[] = [
-      { type: 'delta', sequence: 1, attemptId, text: 'Try a short walk after lunch.' },
-      {
-        type: 'citation',
-        sequence: 2,
-        attemptId,
-        citation: { id: 'source-1', title: 'Activity evidence' },
-      },
-      {
-        type: 'action',
-        sequence: 3,
-        attemptId,
-        action: { id: `log-${attemptId}`, kind: 'log_metric', input: { value: 5 } },
-      },
-      {
-        type: 'usage',
-        sequence: 4,
-        attemptId,
-        usage: { inputTokens: 4, outputTokens: 8, remaining: 88 },
-      },
-      { type: 'complete', sequence: 5, attemptId },
-    ]
-    const pending = events.filter((event) => event.sequence > afterSequence)
-    let index = 0
-    return {
-      [Symbol.asyncIterator]() {
-        return {
-          async next() {
-            if (signal.aborted) {
-              const error = new Error('Stopped')
-              error.name = 'AbortError'
-              throw error
-            }
-            const value = pending[index]
-            index += 1
-            return value ? { done: false, value } : { done: true, value: undefined }
-          },
-        }
-      },
-    }
-  }
-
-  private photo(): MediaAsset {
-    return {
-      uri: 'file:///coach-photo.jpg',
-      name: 'coach-photo.jpg',
-      mimeType: 'image/jpeg',
-      kind: 'image',
-      size: 10,
-    }
   }
 
   private emit(): void {
