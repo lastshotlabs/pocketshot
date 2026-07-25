@@ -8,6 +8,7 @@ import {
   CommunityAuthorizationController,
   CommunityAdminController,
   CommunityProfileController,
+  CursorFeedController,
   MessagingController,
   ModerationController,
   RoomStateController,
@@ -123,6 +124,9 @@ export interface CommunityState {
   adminAuditCount: number
   moderationAuditCount: number
   automodNotice: string | null
+  feedNextCursor: string | null
+  feedStale: boolean
+  feedAnchorId: string | null
 }
 
 type Event =
@@ -180,6 +184,9 @@ const initial: CommunityState = {
   adminAuditCount: 0,
   moderationAuditCount: 0,
   automodNotice: null,
+  feedNextCursor: 'feed-page-2',
+  feedStale: false,
+  feedAnchorId: null,
 }
 
 export class CommunityDemoController {
@@ -205,6 +212,10 @@ export class CommunityDemoController {
   readonly moderation = new ModerationController(() => '2026-07-25T12:00:00.000Z')
   readonly automod = new AutomodController(() => Date.parse('2026-07-25T12:00:00.000Z'))
   readonly authorization = new CommunityAuthorizationController()
+  readonly feed = new CursorFeedController<{ id: string; rank: number; version: number }>({
+    compare: (left, right) => right.rank - left.rank || left.id.localeCompare(right.id),
+    version: (item) => item.version,
+  })
   readonly account = createCommunityAccount()
   readonly accountData = new AccountDataController(
     {
@@ -260,6 +271,11 @@ export class CommunityDemoController {
       state: this.stateValue,
     })
     this.rooms.openRoom('trail-room')
+    this.feed.replace({
+      items: [{ id: 'thread-welcome', rank: 100, version: 1 }],
+      nextCursor: 'feed-page-2',
+      version: 1,
+    })
     this.messaging.configureMembers(['alex', 'morgan'])
     this.authorization.setRole('alex', 'admin')
     this.authorization.setRole('morgan', 'member')
@@ -472,6 +488,56 @@ export class CommunityDemoController {
     this.emit()
   }
 
+  loadMoreFeed(): void {
+    const cursor = this.feed.snapshot.nextCursor
+    if (!cursor) return
+    const thread: CommunityThread = {
+      id: 'thread-rain',
+      title: 'Rain-ready routes',
+      body: 'Which paths drain well after a storm?',
+      author: 'Morgan',
+      reactions: 4,
+      replyCount: 1,
+      attachments: [],
+      mentions: [],
+      poll: null,
+    }
+    if (!this.stateValue.threads.some((candidate) => candidate.id === thread.id)) {
+      this.stateValue.threads.push(thread)
+    }
+    this.feed.append(
+      {
+        items: [
+          { id: 'thread-rain', rank: 80, version: 1 },
+          { id: 'thread-welcome', rank: 100, version: 1 },
+        ],
+        nextCursor: null,
+        version: 2,
+      },
+      cursor,
+    )
+    this.syncFeed()
+    this.emit()
+  }
+
+  anchorFeed(threadId: string): void {
+    this.feed.setAnchor(threadId)
+    this.syncFeed()
+    this.emit()
+  }
+
+  refreshFeed(): void {
+    const snapshot = this.feed.snapshot
+    this.feed.replace({
+      items: snapshot.items,
+      nextCursor: snapshot.nextCursor,
+      version: snapshot.version + 1,
+    })
+    if (snapshot.anchorId) this.feed.setAnchor(snapshot.anchorId)
+    this.syncFeed()
+    this.emit()
+  }
+
   reply(body: string, parentId: string | null = null): void {
     const threadId = this.stateValue.selectedThreadId
     if (!threadId || !body.trim()) return
@@ -516,6 +582,8 @@ export class CommunityDemoController {
       (threadId) => threadId !== id,
     )
     this.stateValue.selectedThreadId = null
+    this.feed.remove(id)
+    this.syncFeed()
     this.stateValue.view = 'feed'
     this.emit()
   }
@@ -863,6 +931,10 @@ export class CommunityDemoController {
     }
     const result = this.realtime.push(event)
     if (result.state) this.stateValue = result.state
+    if (payload.kind === 'thread') {
+      this.feed.upsert({ id: payload.thread.id, rank: 120 + this.cursor, version: this.cursor })
+      this.syncFeed()
+    }
     this.emit()
   }
 
@@ -923,6 +995,17 @@ export class CommunityDemoController {
       noteCount: snapshot.notes[report.id]?.length ?? 0,
     }))
     this.stateValue.moderationAuditCount = snapshot.audit.length
+  }
+
+  private syncFeed(): void {
+    const snapshot = this.feed.snapshot
+    const byId = new Map(this.stateValue.threads.map((thread) => [thread.id, thread]))
+    this.stateValue.threads = snapshot.items
+      .map((item) => byId.get(item.id))
+      .filter((thread): thread is CommunityThread => Boolean(thread))
+    this.stateValue.feedNextCursor = snapshot.nextCursor
+    this.stateValue.feedStale = snapshot.isStale
+    this.stateValue.feedAnchorId = snapshot.anchorId ?? null
   }
 }
 

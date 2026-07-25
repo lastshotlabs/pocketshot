@@ -101,6 +101,30 @@ export default function CommunityShell() {
                 </Text>
               </Pressable>
             ))}
+            <Text style={styles.copy}>
+              Feed anchor: {state.feedAnchorId ?? 'none'} ·{' '}
+              {state.feedStale ? 'refresh required' : 'current'}
+            </Text>
+            {state.feedNextCursor && (
+              <Action
+                testID="load-more-feed"
+                label="Load more discussions"
+                onPress={() => community.loadMoreFeed()}
+              />
+            )}
+            <Action
+              testID="anchor-feed"
+              label="Remember first visible discussion"
+              onPress={() => {
+                const first = state.threads[0]
+                if (first) community.anchorFeed(first.id)
+              }}
+            />
+            <Action
+              testID="refresh-feed"
+              label="Refresh without losing position"
+              onPress={() => community.refreshFeed()}
+            />
             <Action
               testID="reconnect"
               label="Test reconnect"

@@ -159,6 +159,24 @@ describe('Community reference shell', () => {
     )
   })
 
+  it('paginates a deterministically ranked feed without duplicates and preserves its anchor', () => {
+    const community = new CommunityDemoController()
+    community.anchorFeed('thread-welcome')
+    community.loadMoreFeed()
+    community.loadMoreFeed()
+    expect(community.state.threads.map((thread) => thread.id)).toEqual([
+      'thread-welcome',
+      'thread-rain',
+    ])
+    expect(community.state).toMatchObject({
+      feedNextCursor: null,
+      feedStale: false,
+      feedAnchorId: 'thread-welcome',
+    })
+    community.refreshFeed()
+    expect(community.state.feedAnchorId).toBe('thread-welcome')
+  })
+
   it('publishes attachments, mentions, and a single-vote poll', async () => {
     const community = new CommunityDemoController()
     await community.updateDraft('Choose a trail', 'Vote below')
