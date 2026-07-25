@@ -7,6 +7,7 @@ import {
   type AiStreamEvent,
   type AiTurnTransport,
   type AiConversation,
+  projectAiConversation,
 } from '../../src/ai'
 
 function transport(events: AiStreamEvent[]): AiTurnTransport {
@@ -137,6 +138,42 @@ describe('AiConversationController', () => {
     expect(actions.undo).toHaveBeenCalledTimes(1)
   })
 
+  it('rechecks authorization immediately before commit and undo', async () => {
+    let allowed = true
+    const actions = {
+      commit: vi.fn(async () => ({ saved: true })),
+      undo: vi.fn(async () => ({ removed: true })),
+    }
+    const authorization = {
+      authorize: vi.fn(async () => allowed),
+    }
+    const ai = controller(completeEvents, { actions, authorization })
+    const conversation = await ai.create()
+    await ai.send(conversation.id, 'Log')
+    await ai.confirmAction(conversation.id, 'action-1')
+    allowed = false
+    await expect(ai.undoAction(conversation.id, 'action-1')).rejects.toThrow(
+      'authorization revoked',
+    )
+    expect(actions.undo).not.toHaveBeenCalled()
+    expect(ai.get(conversation.id)?.messages[1].actions[0].status).toBe('confirmed')
+  })
+
+  it('does not auto-commit when authorization was revoked', async () => {
+    const actions = {
+      commit: vi.fn(async () => ({ saved: true })),
+      undo: vi.fn(async () => undefined),
+    }
+    const ai = controller(completeEvents, {
+      actions,
+      reviewPolicy: 'auto',
+      authorization: { authorize: () => false },
+    })
+    const conversation = await ai.create()
+    await expect(ai.send(conversation.id, 'Log')).rejects.toThrow('authorization revoked')
+    expect(actions.commit).not.toHaveBeenCalled()
+  })
+
   it('rejects a proposal without committing it', async () => {
     const actions = {
       commit: vi.fn(async () => undefined),
@@ -230,6 +267,83 @@ describe('AiConversationController', () => {
     expect(page.messages).toHaveLength(1)
     expect(page.messages[0].role).toBe('assistant')
     expect(page.nextBefore).toBe(1)
+  })
+})
+
+describe('projectAiConversation', () => {
+  it('uses allowlists for support and public projections', () => {
+    const conversation: AiConversation = {
+      schemaVersion: 1,
+      id: 'conversation-1',
+      title: 'Private health coaching',
+      status: 'active',
+      messages: [
+        {
+          id: 'message-1',
+          role: 'user',
+          text: 'My private medical detail',
+          structuredParts: [{ secret: true }],
+          citations: [
+            {
+              id: 'citation-1',
+              title: 'Source',
+              url: 'https://example.com/private',
+              excerpt: 'sensitive excerpt',
+            },
+          ],
+          actions: [
+            {
+              id: 'action-1',
+              kind: 'log_metric',
+              input: { weight: 180 },
+              rationale: 'private rationale',
+              status: 'confirmed',
+              result: { recordId: 'secret-record' },
+              provenance: {
+                attemptId: 'attempt-1',
+                conversationId: 'conversation-1',
+                messageId: 'message-1',
+              },
+            },
+          ],
+          status: 'failed',
+          error: 'private server error',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      usage: { inputTokens: 50, outputTokens: 10, remaining: 4 },
+      lastSequence: 2,
+      activeAttemptId: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:01.000Z',
+    }
+
+    const support = projectAiConversation(conversation, 'support')
+    const publicView = projectAiConversation(conversation, 'public')
+    const owner = projectAiConversation(conversation, 'owner')
+
+    expect(support.messages[0]).toEqual({
+      id: 'message-1',
+      role: 'user',
+      text: '[redacted user message]',
+      citations: [
+        { id: 'citation-1', title: 'Source', url: 'https://example.com/private' },
+      ],
+      actions: [{ id: 'action-1', kind: 'log_metric', status: 'confirmed' }],
+      status: 'failed',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    })
+    expect(publicView.messages[0].citations[0]).toEqual({
+      id: 'citation-1',
+      title: 'Source',
+    })
+    expect(JSON.stringify(publicView)).not.toContain('secret')
+    expect(JSON.stringify(support)).not.toContain('medical')
+    expect(owner.messages[0].actions[0]).toMatchObject({
+      input: { weight: 180 },
+      result: { recordId: 'secret-record' },
+    })
+    expect(owner.usage?.remaining).toBe(4)
   })
 })
 

@@ -148,6 +148,7 @@ export class AiConversationController {
     if (action.status === 'confirmed') return clone(action)
     if (!this.options.actions) throw new Error('[pocketshot] No AI action adapter configured')
     if (editedInput !== undefined) action.input = editedInput
+    await this.authorize('commit', action)
     action.result = await this.options.actions.commit(clone(action))
     action.status = 'confirmed'
     await this.changed(conversation)
@@ -167,6 +168,7 @@ export class AiConversationController {
     if (action.status !== 'confirmed')
       throw new Error('[pocketshot] Only confirmed actions can be undone')
     if (!this.options.actions) throw new Error('[pocketshot] No AI action adapter configured')
+    await this.authorize('undo', action)
     action.result = await this.options.actions.undo(clone(action))
     action.status = 'undone'
     await this.changed(conversation)
@@ -287,6 +289,7 @@ export class AiConversationController {
       }
       message.actions.push(action)
       if (this.options.reviewPolicy === 'auto' && this.options.actions) {
+        await this.authorize('commit', action)
         action.result = await this.options.actions.commit(clone(action))
         action.status = 'confirmed'
       }
@@ -313,6 +316,18 @@ export class AiConversationController {
           message.role === 'assistant' &&
           (!conversation.activeAttemptId || message.attemptId === conversation.activeAttemptId),
       )
+  }
+
+  private async authorize(
+    operation: 'commit' | 'undo',
+    action: AiActionProposal,
+  ): Promise<void> {
+    if (!this.options.authorization) return
+    const allowed = await this.options.authorization.authorize({
+      operation,
+      action: clone(action),
+    })
+    if (!allowed) throw new Error('[pocketshot] AI action authorization revoked')
   }
 
   private findAction(conversationId: string, actionId: string) {

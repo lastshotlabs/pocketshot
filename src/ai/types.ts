@@ -92,13 +92,53 @@ export interface AiActionAdapter {
   undo(action: AiActionProposal): Promise<unknown>
 }
 
+export interface AiActionAuthorization {
+  authorize(input: {
+    operation: 'commit' | 'undo'
+    action: AiActionProposal
+  }): Promise<boolean> | boolean
+}
+
 export interface AiConversationOptions {
   storage: AiConversationStorage
   transport: AiTurnTransport
   actions?: AiActionAdapter
+  authorization?: AiActionAuthorization
   reviewPolicy?: 'always' | 'auto'
   now?: () => Date
   createId?: () => string
+}
+
+export type AiProjectionAudience = 'owner' | 'support' | 'public'
+
+export interface AiProjectedAction {
+  id: string
+  kind: string
+  status: AiActionProposal['status']
+  rationale?: string
+  input?: unknown
+  result?: unknown
+}
+
+export interface AiProjectedMessage {
+  id: string
+  role: AiMessage['role']
+  text: string
+  citations: Array<Pick<AiCitation, 'id' | 'title'> & Partial<Pick<AiCitation, 'url' | 'excerpt'>>>
+  actions: AiProjectedAction[]
+  status: TurnStatus
+  createdAt: string
+  completedAt?: string
+  error?: string
+}
+
+export interface AiConversationProjection {
+  id: string
+  title: string
+  status: ConversationStatus
+  messages: AiProjectedMessage[]
+  usage: AiUsage | null
+  updatedAt: string
 }
 
 export interface AiMemoryFact {

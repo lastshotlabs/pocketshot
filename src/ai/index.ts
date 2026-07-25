@@ -1,4 +1,5 @@
 export * from './types'
+export * from './projection'
 export * from './decoder'
 export * from './storage'
 export * from './controller'
