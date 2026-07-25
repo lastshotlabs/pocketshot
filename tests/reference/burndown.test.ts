@@ -73,6 +73,27 @@ describe('Burndown native acceptance model', () => {
     expect(game.rules).toMatchObject({ lives: 5, turnMs: 15_000 })
   })
 
+  it('requires reviewed host termination and exposes public activity and native sharing data', () => {
+    const game = new BurndownController()
+    game.enter('phones')
+    game.start()
+    expect(() => game.confirmEndMatch()).toThrow('confirmation')
+    game.requestEndMatch()
+    game.cancelEndMatch()
+    expect(game.state.endConfirmationPending).toBe(false)
+    game.requestEndMatch()
+    game.confirmEndMatch()
+    game.reactToLatest('p2', '🔥')
+    expect(game.activityProjection().at(-1)).toMatchObject({
+      kind: 'match-end',
+      reactions: { '🔥': ['p2'] },
+    })
+    expect(game.resultsSharePayload()).toMatchObject({
+      title: 'Burndown results',
+      message: expect.stringContaining('Burndown'),
+    })
+  })
+
   it('tracks alive, burned, and void letters and deterministically resets exhaustion', () => {
     const game = new BurndownController()
     game.enter('phones')

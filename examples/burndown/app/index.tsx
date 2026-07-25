@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { BurndownController, type BurndownState } from '../lib/burndown'
 
@@ -196,10 +196,59 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
               {game.players.find((p) => p.id === game.winnerId)?.name ?? 'Nobody'}
             </Text>
             <Action
+              testID="share-results"
+              label="Share results"
+              onPress={() => void Share.share(controller.resultsSharePayload())}
+            />
+            <Action
               testID="rematch"
               label="Rematch"
               onPress={() => controller.rematch('mobile-rematch')}
             />
+          </Card>
+        )}
+        {game.phase !== 'entry' && game.phase !== 'results' && (
+          <Card title="Host booth">
+            <Action
+              testID="stage-rules"
+              label="Stage faster turns"
+              onPress={() => controller.stageRules({ speedUpMs: 1_000 })}
+            />
+            <Action
+              testID="recover-host"
+              label="Recover host"
+              onPress={() => controller.recoverHost()}
+            />
+            {controller.activityProjection().at(-1) && (
+              <Action
+                testID="react-activity"
+                label="React to activity"
+                onPress={() => controller.reactToLatest('p1', '🔥')}
+              />
+            )}
+            {!game.endConfirmationPending ? (
+              <Action
+                testID="request-end"
+                label="End match"
+                onPress={() => controller.requestEndMatch()}
+              />
+            ) : (
+              <>
+                <Text accessibilityRole="alert" style={styles.notice}>
+                  End this match for everyone?
+                </Text>
+                <Action
+                  testID="confirm-end"
+                  label="Confirm end match"
+                  onPress={() => controller.confirmEndMatch()}
+                />
+                <Action
+                  testID="cancel-end"
+                  label="Keep playing"
+                  onPress={() => controller.cancelEndMatch()}
+                />
+              </>
+            )}
           </Card>
         )}
       </ScrollView>

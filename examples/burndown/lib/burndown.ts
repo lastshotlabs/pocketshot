@@ -2,6 +2,7 @@ import {
   BallotController,
   ContentLibraryController,
   GameDashboardController,
+  PartyActivityController,
   PartySessionController,
   PersonalCuePolicy,
   SharedDeviceController,
@@ -10,6 +11,7 @@ import {
   type SharedDeviceSnapshot,
   type TimedPhaseSnapshot,
   type GameDashboardSnapshot,
+  type PartyActivitySnapshot,
 } from '@lastshotlabs/pocketshot/party-session'
 
 export type BurndownMode = 'phones' | 'shared'
@@ -46,6 +48,7 @@ export interface BurndownState {
   paused: boolean
   winnerId: string | null
   ended: boolean
+  endConfirmationPending: boolean
 }
 
 type BurndownRules = {
@@ -67,6 +70,7 @@ export interface BurndownSnapshot {
   timer: TimedPhaseSnapshot
   commandKeys: string[]
   dashboard: GameDashboardSnapshot
+  activity?: PartyActivitySnapshot
   currentGameId: string
 }
 
@@ -79,6 +83,7 @@ export class BurndownController {
   private timer: TimedPhaseController
   private commandKeys: Set<string>
   private currentGameId: string
+  private readonly activity: PartyActivityController
   private readonly initialState: BurndownState = {
     phase: 'entry',
     mode: 'phones',
@@ -98,6 +103,7 @@ export class BurndownController {
     paused: false,
     winnerId: null,
     ended: false,
+    endConfirmationPending: false,
   }
   private readonly listeners = new Set<(state: BurndownState) => void>()
   private readonly cues = new PersonalCuePolicy()
@@ -137,6 +143,7 @@ export class BurndownController {
     this.commandKeys = new Set(snapshot?.commandKeys ?? [])
     this.currentGameId = snapshot?.currentGameId ?? 'burndown-game-1'
     this.games = new GameDashboardController(snapshot?.dashboard)
+    this.activity = new PartyActivityController(snapshot?.activity)
     if (!snapshot) {
       this.session.join({
         id: 'p1',
@@ -186,6 +193,7 @@ export class BurndownController {
       commandKeys: [...this.commandKeys],
       dashboard: this.games.snapshot,
       currentGameId: this.currentGameId,
+      activity: this.activity.snapshot,
     }
   }
 
@@ -223,6 +231,7 @@ export class BurndownController {
     this.value.round = 1
     this.games.setStatus(this.currentGameId, 'active')
     this.value.letter = alphabet[0]
+    this.appendActivity('match-start', 'Burndown match started')
     this.beginTurn('p1')
   }
 
@@ -252,6 +261,7 @@ export class BurndownController {
     if (!this.value.burnedLetters.includes(this.value.letter)) {
       this.value.burnedLetters.push(this.value.letter)
     }
+    this.appendActivity('burn', `${this.activePlayer().name} burned ${normalized}`)
     if (this.value.mode === 'shared') this.shared.settleCommand(idempotencyKey)
     this.advanceTurn()
     return true
@@ -264,6 +274,7 @@ export class BurndownController {
     )
     this.value.phase = 'challenge'
     this.timer = new TimedPhaseController('challenge', this.session.snapshot.rules.challengeMs)
+    this.appendActivity('challenge', `${this.activePlayer().name}'s answer was challenged`)
     this.emit()
   }
 
@@ -328,6 +339,7 @@ export class BurndownController {
     this.value.voidLetters = []
     this.value.winnerId = null
     this.value.ended = false
+    this.value.endConfirmationPending = false
     this.value.phase = 'lobby'
     this.value.notice = null
     const rematch = this.games.createRematch(this.currentGameId, `burndown-${key}`)
@@ -414,7 +426,46 @@ export class BurndownController {
     this.value.phase = 'results'
     this.shared.end()
     this.games.setStatus(this.currentGameId, 'complete')
+    this.value.endConfirmationPending = false
+    this.appendActivity('match-end', 'The host ended the match')
     this.emit()
+  }
+
+  requestEndMatch(): void {
+    this.value.endConfirmationPending = true
+    this.emit()
+  }
+
+  cancelEndMatch(): void {
+    this.value.endConfirmationPending = false
+    this.emit()
+  }
+
+  confirmEndMatch(): void {
+    if (!this.value.endConfirmationPending) throw new Error('End confirmation is required')
+    this.endMatch()
+  }
+
+  reactToLatest(actorId: string, emoji: string): void {
+    const latest = this.activity.snapshot.events.at(-1)
+    if (!latest) return
+    const active = !(latest.reactions[emoji] ?? []).includes(actorId)
+    this.activity.react(latest.id, actorId, emoji, active)
+    this.emit()
+  }
+
+  activityProjection() {
+    return this.activity.publicProjection()
+  }
+
+  resultsSharePayload(): { title: string; message: string } {
+    const winner = this.value.winnerId ? this.player(this.value.winnerId).name : null
+    return {
+      title: 'Burndown results',
+      message: winner
+        ? `${winner} won Burndown after ${this.value.round} rounds.`
+        : `Burndown finished after ${this.value.round} rounds.`,
+    }
   }
 
   proposeCategories(id: string, categories: string[], rationale: string): void {
@@ -529,6 +580,18 @@ export class BurndownController {
 
   private emit(): void {
     for (const listener of this.listeners) listener(this.state)
+  }
+
+  private appendActivity(kind: string, text: string): void {
+    const sequence = this.activity.snapshot.lastSequence + 1
+    this.activity.append({
+      id: `burndown-activity-${sequence}`,
+      sequence,
+      kind,
+      actorId: this.value.activePlayerId,
+      text,
+      createdAt: Date.now(),
+    })
   }
 }
 
