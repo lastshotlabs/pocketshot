@@ -228,6 +228,25 @@ describe('Party clean-room acceptance model', () => {
     })
   })
 
+  it('combines decks and replaces tracks with version history', () => {
+    const party = new PartyDemoController()
+    party.importTracks('Blue Monday,New Order,1983,https://preview.test/blue-monday')
+    const before = party.deckLibrary.history('friday-mix').length
+    party.combineDemoDeck()
+    expect(
+      party.deckLibrary.snapshot.find((deck) => deck.id === 'friday-mix')?.tracks,
+    ).toHaveLength(2)
+    party.replaceFirstTrack()
+    expect(
+      party.deckLibrary.snapshot.find((deck) => deck.id === 'friday-mix')?.tracks[0],
+    ).toMatchObject({
+      title: 'Replacement Track',
+      year: 2001,
+    })
+    expect(party.deckLibrary.history('friday-mix').length).toBeGreaterThan(before)
+    expect(party.state.deckAction).toContain('Replaced')
+  })
+
   it('reports provider capabilities, authorizes Spotify, and falls back to Audius previews', async () => {
     const party = new PartyDemoController()
     expect(party.providerCapabilities()).toEqual([

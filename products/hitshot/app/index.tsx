@@ -212,6 +212,16 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
                 label="Correct first track year"
                 onPress={() => controller.correctFirstTrackYear(1984)}
               />
+              <Action
+                testID="replace-track"
+                label="Replace first track"
+                onPress={() => controller.replaceFirstTrack()}
+              />
+              <Action
+                testID="combine-decks"
+                label="Combine with Party Favorites"
+                onPress={() => controller.combineDemoDeck()}
+              />
             </>
           )}
           {!controller.deckLibrary.proposalSnapshot.length && (
@@ -273,6 +283,11 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
                 testID="export-deck-csv"
                 label="Export deck CSV"
                 onPress={() => controller.exportDeck('csv')}
+              />
+              <Action
+                testID="archive-deck"
+                label="Archive deck"
+                onPress={() => controller.archiveDeck()}
               />
               <Text style={styles.copy}>
                 Rating: {controller.deckCatalog()[0]?.averageRating ?? 'unrated'}

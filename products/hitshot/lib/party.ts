@@ -234,6 +234,38 @@ export class PartyDemoController {
     this.emit()
   }
 
+  combineDemoDeck(): void {
+    if (!this.deckLibrary.snapshot.some((deck) => deck.id === 'party-favorites')) {
+      this.deckLibrary.create('party-favorites', 'Party Favorites')
+      this.deckLibrary.add('party-favorites', {
+        id: 'favorite-track',
+        title: 'Favorite Track',
+        artist: 'Party Artist',
+        year: 1998,
+        providerIds: { audius: 'favorite-track' },
+        previewUrl: 'https://preview.example.test/favorite.mp3',
+      })
+    }
+    this.deckLibrary.combine('friday-mix', ['party-favorites'])
+    this.stateValue.deckAction = 'Combined Party Favorites'
+    this.emit()
+  }
+
+  replaceFirstTrack(): void {
+    const track = this.deckLibrary.snapshot.find((deck) => deck.id === 'friday-mix')?.tracks[0]
+    if (!track) throw new Error('Add a track before replacing it')
+    this.deckLibrary.replace('friday-mix', track.id, {
+      id: `replacement-${track.id}`,
+      title: 'Replacement Track',
+      artist: 'Replacement Artist',
+      year: 2001,
+      providerIds: { audius: `replacement-${track.id}` },
+      previewUrl: 'https://preview.example.test/replacement.mp3',
+    })
+    this.stateValue.deckAction = `Replaced ${track.title}`
+    this.emit()
+  }
+
   proposeDiggerTracks(): void {
     this.deckLibrary.proposeTracks('digger-mobile-1', 'friday-mix', 'Deep-cut dance classics', [
       {
