@@ -1,10 +1,11 @@
+import { type AiConversation, type AiMemoryFact } from '@lastshotlabs/pocketshot/ai'
+import { type MediaCaptureAdapter } from '@lastshotlabs/pocketshot/media'
 import {
-  type AiConversation,
-  type AiMemoryFact,
-} from '@lastshotlabs/pocketshot/ai'
-import {
-  type MediaCaptureAdapter,
-} from '@lastshotlabs/pocketshot/media'
+  EntitlementController,
+  GoalController,
+  MetricLogController,
+  WorkoutController,
+} from '@lastshotlabs/pocketshot/coach'
 import {
   createCoachConversation,
   createCoachMedia,
@@ -20,6 +21,10 @@ export interface CoachState {
   memory: AiMemoryFact[]
   exportStatus: 'idle' | 'requested' | 'ready'
   error: string | null
+  goalProgress: number
+  chartPoints: number[]
+  workoutStatus: 'idle' | 'active' | 'complete'
+  proAccess: boolean
 }
 
 export class CoachDemoController {
@@ -31,6 +36,10 @@ export class CoachDemoController {
     memory: [],
     exportStatus: 'idle',
     error: null,
+    goalProgress: 0,
+    chartPoints: [],
+    workoutStatus: 'idle',
+    proAccess: false,
   }
   private readonly listeners = new Set<(state: CoachState) => void>()
 
@@ -48,6 +57,18 @@ export class CoachDemoController {
   })
 
   readonly media
+  readonly metrics = new MetricLogController()
+  readonly goals = new GoalController()
+  readonly workouts = new WorkoutController()
+  readonly billing = new EntitlementController({
+    purchase: async (productId) => ({
+      productId,
+      state: 'active',
+      expiresAt: '2026-08-25',
+    }),
+    restore: async () => [{ productId: 'coach-pro', state: 'grace', expiresAt: '2026-07-28' }],
+    refresh: async () => [],
+  })
   constructor(capture: MediaCaptureAdapter = defaultCoachCapture()) {
     this.media = createCoachMedia(capture)
   }
@@ -114,6 +135,75 @@ export class CoachDemoController {
   async remember(content: string): Promise<void> {
     await this.memory.create({ content, trusted: true, source: 'user' })
     this.stateValue.memory = this.memory.list()
+    this.emit()
+  }
+
+  logWeight(clientId: string, value: number): void {
+    if (this.metrics.snapshot.records.some((record) => record.clientId === clientId)) return
+    const recordedAt = `2026-07-${String(this.metrics.snapshot.records.length + 20).padStart(2, '0')}`
+    this.metrics.log({ clientId, kind: 'weight', value, unit: 'kg', recordedAt })
+    this.metrics.acknowledge(clientId, {
+      id: `weight-${clientId}`,
+      kind: 'weight',
+      value,
+      unit: 'kg',
+      recordedAt,
+    })
+    this.stateValue.chartPoints = this.metrics.chart('weight', 'kg').map((point) => point.value)
+    this.emit()
+  }
+
+  setWeightGoal(targetKg: number): void {
+    this.goals.save({
+      id: 'weight-goal',
+      metric: 'weight',
+      target: targetKg,
+      unit: 'kg',
+      deadline: null,
+    })
+    const current = this.metrics.snapshot.records.at(-1)?.value ?? 0
+    this.stateValue.goalProgress = this.goals.progress('weight-goal', current, 'kg')
+    this.emit()
+  }
+
+  startWorkout(): void {
+    this.workouts.saveProgram({
+      id: 'starter',
+      name: 'Starter strength',
+      exercises: [{ id: 'squat', name: 'Squat', targetSets: 3, targetReps: 5 }],
+    })
+    this.workouts.start('workout-1', 'starter', '2026-07-25T12:00:00.000Z')
+    this.stateValue.workoutStatus = 'active'
+    this.emit()
+  }
+
+  logWorkoutSet(): void {
+    this.workouts.logSet({
+      id: 'set-1',
+      exerciseId: 'squat',
+      reps: 5,
+      load: 40,
+      unit: 'kg',
+      completedAt: '2026-07-25T12:05:00.000Z',
+    })
+    this.emit()
+  }
+
+  completeWorkout(): void {
+    this.workouts.complete('2026-07-25T12:30:00.000Z')
+    this.stateValue.workoutStatus = 'complete'
+    this.emit()
+  }
+
+  async purchasePro(): Promise<void> {
+    await this.billing.purchase('coach-pro')
+    this.stateValue.proAccess = this.billing.canAccess('coach-pro')
+    this.emit()
+  }
+
+  async restorePro(): Promise<void> {
+    await this.billing.restore()
+    this.stateValue.proAccess = this.billing.canAccess('coach-pro')
     this.emit()
   }
 

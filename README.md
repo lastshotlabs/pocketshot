@@ -267,6 +267,31 @@ service and active lock-screen controls; on iOS it requires the generated audio
 background mode. PocketShot’s adapter configures the runtime audio session and
 lock-screen metadata, while the Expo plugin owns those native declarations.
 
+### Coaching, metrics, workouts, and entitlements
+
+`@lastshotlabs/pocketshot/coach` contains headless, injected controllers for
+health and coaching products:
+
+- `MetricLogController` deduplicates offline logs, acknowledges server IDs,
+  exposes conflicts explicitly, and produces unit-normalized chart points.
+- `GoalController` validates goals and computes bounded, unit-safe progress.
+- `WorkoutController` builds programs and restores, deduplicates, and completes
+  interrupted workout sessions.
+- `EntitlementController` handles purchase, restore, refresh, active/grace/
+  expired access, loading, and store failures through a `BillingAdapter`.
+
+```ts
+import {
+  EntitlementController,
+  MetricLogController,
+  WorkoutController,
+} from '@lastshotlabs/pocketshot/coach'
+
+const metrics = new MetricLogController()
+const workouts = new WorkoutController()
+const entitlements = new EntitlementController(storeAdapter)
+```
+
 ### Reliable realtime channels
 
 Import the headless API from `@lastshotlabs/pocketshot/realtime`. Each channel

@@ -61,4 +61,37 @@ describe('Coach clean-room acceptance model', () => {
     await Promise.resolve()
     expect(coach.state.exportStatus).toBe('ready')
   })
+
+  it('logs idempotent metrics and produces goal/chart state', () => {
+    const coach = new CoachDemoController()
+    coach.logWeight('client-weight', 80)
+    coach.logWeight('client-weight', 80)
+    coach.setWeightGoal(100)
+    expect(coach.state).toMatchObject({
+      chartPoints: [80],
+      goalProgress: 0.8,
+    })
+  })
+
+  it('builds and completes a restart-safe workout session', () => {
+    const coach = new CoachDemoController()
+    coach.startWorkout()
+    coach.logWorkoutSet()
+    coach.logWorkoutSet()
+    expect(coach.workouts.snapshot.session?.sets).toHaveLength(1)
+    coach.completeWorkout()
+    expect(coach.state.workoutStatus).toBe('complete')
+    expect(coach.workouts.snapshot.session?.status).toBe('complete')
+  })
+
+  it('supports purchase and restore entitlement paths', async () => {
+    const coach = new CoachDemoController()
+    await coach.purchasePro()
+    expect(coach.state.proAccess).toBe(true)
+
+    const restored = new CoachDemoController()
+    await restored.restorePro()
+    expect(restored.state.proAccess).toBe(true)
+    expect(restored.billing.snapshot.entitlements[0].state).toBe('grace')
+  })
 })

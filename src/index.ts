@@ -126,6 +126,28 @@ export {
   ModerationController,
   PrivacyController,
 } from './community/controllers'
+
+// ── Coaching, health records, workouts, and billing ──────────────────────────
+export {
+  MetricLogController,
+  GoalController,
+  WorkoutController,
+  EntitlementController,
+  convertMeasurement,
+} from './coach/controllers'
+export type {
+  MeasurementUnit,
+  MetricRecord,
+  MetricConflict,
+  CoachGoal,
+  ProgramExercise,
+  WorkoutProgram,
+  WorkoutSet,
+  WorkoutSession,
+  EntitlementState,
+  StoreEntitlement,
+  BillingAdapter,
+} from './coach/controllers'
 export type {
   CursorEntity,
   CursorPage,

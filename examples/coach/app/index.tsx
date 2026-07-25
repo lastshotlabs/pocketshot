@@ -73,6 +73,47 @@ export default function CoachShell() {
             onPress={() => void coach.remember('Prefers mornings')}
           />
         </Card>
+        <Card title="Goals and charts">
+          <Text style={styles.copy}>Weight points: {state.chartPoints.join(', ') || 'none'}</Text>
+          <Text style={styles.copy}>Goal progress: {Math.round(state.goalProgress * 100)}%</Text>
+          <Action
+            testID="log-weight"
+            label="Log 80 kg"
+            onPress={() => coach.logWeight('weight-client-1', 80)}
+          />
+          <Action
+            testID="set-goal"
+            label="Set 100 kg goal"
+            onPress={() => coach.setWeightGoal(100)}
+          />
+        </Card>
+        <Card title="Training">
+          <Text style={styles.copy}>Workout: {state.workoutStatus}</Text>
+          <Action
+            testID="start-workout"
+            label="Start workout"
+            onPress={() => coach.startWorkout()}
+          />
+          <Action testID="log-set" label="Log squat set" onPress={() => coach.logWorkoutSet()} />
+          <Action
+            testID="complete-workout"
+            label="Complete workout"
+            onPress={() => coach.completeWorkout()}
+          />
+        </Card>
+        <Card title="Coach Pro">
+          <Text style={styles.copy}>Access: {state.proAccess ? 'active' : 'inactive'}</Text>
+          <Action
+            testID="purchase-pro"
+            label="Purchase Pro"
+            onPress={() => void coach.purchasePro()}
+          />
+          <Action
+            testID="restore-pro"
+            label="Restore purchases"
+            onPress={() => void coach.restorePro()}
+          />
+        </Card>
         <Card title="Privacy">
           <Text style={styles.copy}>Export: {state.exportStatus}</Text>
           <Action

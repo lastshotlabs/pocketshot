@@ -53,6 +53,7 @@ export default defineConfig([
       media: 'src/media/index.ts',
       ai: 'src/ai/index.ts',
       audio: 'src/audio/index.ts',
+      coach: 'src/coach/index.ts',
     },
     format: ['esm', 'cjs'],
     external: peerDeps,

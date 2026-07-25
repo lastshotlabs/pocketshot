@@ -66,6 +66,11 @@
       "types": "./dist/types/audio/index.d.ts",
       "import": "./dist/audio.js",
       "require": "./dist/audio.cjs"
+    },
+    "./coach": {
+      "types": "./dist/types/coach/index.d.ts",
+      "import": "./dist/coach.js",
+      "require": "./dist/coach.cjs"
     }
   },
   "scripts": {
