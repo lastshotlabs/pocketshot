@@ -12,6 +12,7 @@ function run(command, args, cwd = consumerDir) {
     cwd,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, CI: '1' },
   })
 }
 
@@ -27,11 +28,16 @@ try {
   const dependencies = {
     '@tanstack/react-query': '^5.0.0',
     expo: '55',
+    'expo-linking': '~55.0.7',
     'expo-router': '~55.0.6',
     'expo-secure-store': '~55.0.9',
+    'expo-status-bar': '~55.0.4',
+    'expo-web-browser': '~55.0.10',
     jotai: '^2.0.0',
     react: '19.2.0',
     'react-native': '0.83.2',
+    'react-native-safe-area-context': '~5.6.2',
+    'react-native-screens': '~4.23.0',
     zod: '^4.0.0',
   }
   dependencies['@lastshotlabs/pocketshot'] = `file:${tarball}`
@@ -43,6 +49,7 @@ try {
         name: 'pocketshot-clean-consumer',
         version: '0.0.0',
         private: true,
+        main: 'index.js',
         scripts: { typecheck: 'tsc --noEmit' },
         dependencies,
         devDependencies: {
@@ -94,9 +101,39 @@ void manifest
 export const Consumer = () => <ButtonBase {...button} />
 `,
   )
+  await writeFile(
+    join(consumerDir, 'App.tsx'),
+    `import React from 'react'
+import { ButtonBase } from '@lastshotlabs/pocketshot/ui'
+
+export default function App() {
+  return <ButtonBase label="PocketShot consumer" onPress={() => undefined} />
+}
+`,
+  )
+  await writeFile(
+    join(consumerDir, 'index.js'),
+    `import { registerRootComponent } from 'expo'
+import App from './App'
+
+registerRootComponent(App)
+`,
+  )
+  await writeFile(
+    join(consumerDir, 'app.json'),
+    JSON.stringify({
+      expo: {
+        name: 'PocketShot Consumer',
+        slug: 'pocketshot-consumer',
+        version: '0.0.0',
+        platforms: ['android', 'ios'],
+      },
+    }),
+  )
 
   run('npm', ['install', '--legacy-peer-deps', '--ignore-scripts', '--no-audit', '--no-fund'])
   run('npm', ['run', 'typecheck'])
+  run('npx', ['expo', 'export', '--platform', 'all', '--output-dir', 'bundle', '--clear'])
 
   const installed = JSON.parse(
     await readFile(join(consumerDir, 'node_modules/@lastshotlabs/pocketshot/package.json'), 'utf8'),
@@ -107,7 +144,9 @@ export const Consumer = () => <ButtonBase {...button} />
     )
   }
 
-  console.log(`Clean consumer verified against @lastshotlabs/pocketshot@${installed.version}.`)
+  console.log(
+    `Clean consumer typechecked and bundled for iOS/Android against @lastshotlabs/pocketshot@${installed.version}.`,
+  )
 } catch (error) {
   if (error && typeof error === 'object' && 'stderr' in error) {
     process.stderr.write(String(error.stderr))
