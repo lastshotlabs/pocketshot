@@ -53,9 +53,20 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
           />
           <Action
             testID="oauth-entry"
-            label="Continue with OAuth"
-            onPress={() => controller.guest('OAuth player')}
+            label="Continue with Spotify"
+            onPress={() => {
+              controller.connectSpotify()
+              controller.guest('Spotify player')
+            }}
           />
+          <Text style={styles.copy}>
+            {party.playbackCapabilities
+              .map(
+                (provider) =>
+                  `${provider.provider}: ${provider.isAuthorized ? 'connected' : 'preview fallback'}`,
+              )
+              .join(' · ')}
+          </Text>
         </Panel>
       )}
       {party.phase === 'lobby' && (
@@ -76,11 +87,13 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
             label="Simulate reconnect"
             onPress={() => controller.reconnect()}
           />
+          <Action testID="edit-deck" label="Edit deck" onPress={() => void controller.openDeck()} />
           <Action
-            testID="edit-deck"
-            label="Edit deck"
-            onPress={() => void controller.openDeck()}
+            testID="test-playback"
+            label="Test provider playback"
+            onPress={() => void controller.resolveDemoPlayback()}
           />
+          <Text style={styles.copy}>{party.playbackSource ?? 'Playback not started'}</Text>
         </Panel>
       )}
       {party.phase === 'round' && (

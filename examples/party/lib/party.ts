@@ -13,6 +13,7 @@ import {
   PlaybackProviderController,
   type PartyTrack,
   type PlaybackCapabilities,
+  type PlaybackProvider,
 } from '@lastshotlabs/pocketshot/party'
 import { z } from 'zod'
 
@@ -49,6 +50,8 @@ export interface PartyState {
   tokens: number
   challenge: { challengerId: string; index: number } | null
   winner: boolean
+  playbackCapabilities: PlaybackCapabilities[]
+  playbackSource: string | null
 }
 
 type Event =
@@ -92,6 +95,8 @@ const initial: PartyState = {
   tokens: 2,
   challenge: null,
   winner: false,
+  playbackCapabilities: [],
+  playbackSource: null,
 }
 
 export class PartyDemoController {
@@ -109,7 +114,10 @@ export class PartyDemoController {
 
   readonly deck
   readonly deckLibrary = new DeckLibraryController()
-  readonly playback = new PlaybackProviderController([])
+  readonly playback = new PlaybackProviderController([
+    createDemoProvider('spotify', false, 'full'),
+    createDemoProvider('audius', true, 'preview'),
+  ])
 
   constructor(storage: DraftStorage = createMemoryDraftStorage()) {
     this.deckLibrary.create('friday-mix', 'Friday Mix')
@@ -129,6 +137,7 @@ export class PartyDemoController {
       cursor: 0,
       state: this.stateValue,
     })
+    this.syncPlaybackCapabilities()
   }
 
   importTracks(input: string): void {
@@ -148,6 +157,33 @@ export class PartyDemoController {
 
   providerCapabilities(): PlaybackCapabilities[] {
     return this.playback.capabilities
+  }
+
+  connectSpotify(): void {
+    this.playback.setAuthorization('spotify', true)
+    this.syncPlaybackCapabilities()
+    this.stateValue.notice = 'Spotify playback connected'
+    this.emit()
+  }
+
+  disconnectSpotify(): void {
+    this.playback.setAuthorization('spotify', false)
+    this.syncPlaybackCapabilities()
+    this.stateValue.notice = 'Spotify playback disconnected; previews remain available'
+    this.emit()
+  }
+
+  async resolveDemoPlayback(): Promise<void> {
+    const resolved = await this.playback.resolve({
+      id: 'demo-track',
+      title: 'Demo track',
+      artist: 'Demo artist',
+      year: 1984,
+      providerIds: { spotify: 'spotify-demo', audius: 'audius-demo' },
+      previewUrl: 'https://preview.example.test/demo.mp3',
+    })
+    this.stateValue.playbackSource = resolved ? `${resolved.provider}:${resolved.kind}` : null
+    this.emit()
   }
 
   addTrack(track: PartyTrack): void {
@@ -469,6 +505,42 @@ export class PartyDemoController {
 
   private emit(): void {
     for (const listener of this.listeners) listener(this.state)
+  }
+
+  private syncPlaybackCapabilities(): void {
+    this.stateValue.playbackCapabilities = this.playback.capabilities
+  }
+}
+
+function createDemoProvider(
+  provider: 'spotify' | 'audius',
+  authorized: boolean,
+  kind: 'full' | 'preview',
+): PlaybackProvider {
+  return {
+    capabilities: {
+      provider,
+      canSearch: true,
+      canPlayFullTrack: kind === 'full',
+      canPlayPreview: true,
+      requiresAuthorization: provider === 'spotify',
+      isAuthorized: authorized,
+    },
+    search: async (query) => [
+      {
+        id: `${provider}-${query.toLocaleLowerCase().replace(/\s+/g, '-')}`,
+        title: query,
+        artist: 'Demo artist',
+        year: 1984,
+        providerIds: { [provider]: `${provider}-result` },
+        previewUrl: 'https://preview.example.test/search.mp3',
+      },
+    ],
+    resolve: async (track) => {
+      const providerId = track.providerIds[provider]
+      if (!providerId) return null
+      return { uri: `${provider}://${providerId}`, kind }
+    },
   }
 }
 

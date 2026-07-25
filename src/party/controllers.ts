@@ -173,6 +173,15 @@ export class PlaybackProviderController {
     return [...this.providers.values()].map((provider) => structuredClone(provider.capabilities))
   }
 
+  setAuthorization(providerId: string, authorized: boolean): void {
+    const provider = this.providers.get(providerId)
+    if (!provider) throw new Error(`Unknown playback provider: ${providerId}`)
+    if (!provider.capabilities.requiresAuthorization && !authorized) {
+      throw new Error(`${providerId} does not require authorization`)
+    }
+    provider.capabilities.isAuthorized = authorized
+  }
+
   async search(query: string): Promise<PartyTrack[]> {
     const results = await Promise.all(
       [...this.providers.values()]

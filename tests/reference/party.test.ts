@@ -158,6 +158,25 @@ describe('Party clean-room acceptance model', () => {
     expect(party.deckLibrary.snapshot[0].status).toBe('published')
   })
 
+  it('reports provider capabilities, authorizes Spotify, and falls back to Audius previews', async () => {
+    const party = new PartyDemoController()
+    expect(party.providerCapabilities()).toEqual([
+      expect.objectContaining({
+        provider: 'spotify',
+        requiresAuthorization: true,
+        isAuthorized: false,
+      }),
+      expect.objectContaining({ provider: 'audius', isAuthorized: true }),
+    ])
+    await party.resolveDemoPlayback()
+    expect(party.state.playbackSource).toBe('audius:preview')
+    party.connectSpotify()
+    await party.resolveDemoPlayback()
+    expect(party.state.playbackSource).toBe('spotify:full')
+    party.disconnectSpotify()
+    expect(party.state.playbackCapabilities[0].isAuthorized).toBe(false)
+  })
+
   it('initializes durable storage before exposing the deck screen', async () => {
     const party = new PartyDemoController()
     party.guest('Alex')

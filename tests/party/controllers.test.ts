@@ -88,6 +88,16 @@ describe('PlaybackProviderController', () => {
       provider: 'audius',
       kind: 'preview',
     })
+    controller.setAuthorization('spotify', true)
+    expect(controller.capabilities.find((item) => item.provider === 'spotify')?.isAuthorized).toBe(
+      true,
+    )
+    expect(await controller.search('shared')).toHaveLength(1)
+    expect(spotify.search).toHaveBeenCalledOnce()
+    controller.setAuthorization('spotify', false)
+    expect(controller.capabilities.find((item) => item.provider === 'spotify')?.isAuthorized).toBe(
+      false,
+    )
   })
 
   it('uses a plain preview when every provider is unavailable', async () => {
