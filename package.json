@@ -67,6 +67,11 @@
       "import": "./dist/audio.js",
       "require": "./dist/audio.cjs"
     },
+    "./billing": {
+      "types": "./dist/types/billing/index.d.ts",
+      "import": "./dist/billing.js",
+      "require": "./dist/billing.cjs"
+    },
     "./coach": {
       "types": "./dist/types/coach/index.d.ts",
       "import": "./dist/coach.js",

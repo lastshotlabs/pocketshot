@@ -10,6 +10,7 @@ const entries = [
   'media',
   'ai',
   'audio',
+  'billing',
   'coach',
   'party',
   'party-session',

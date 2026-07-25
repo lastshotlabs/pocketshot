@@ -99,6 +99,7 @@ import { AiConversationController, createMemoryAiStorage } from '@lastshotlabs/p
 import { PlaybackController, type AudioTrack } from '@lastshotlabs/pocketshot/audio'
 import { TimedPhaseController } from '@lastshotlabs/pocketshot/party-session'
 import { ReleaseControlPlane } from '@lastshotlabs/pocketshot/release'
+import { LocalBillingAdapter } from '@lastshotlabs/pocketshot/billing'
 import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
@@ -194,6 +195,7 @@ void audioTrack
 void playback
 void new TimedPhaseController('consumer', 1_000)
 void new ReleaseControlPlane('1.0.0')
+void new LocalBillingAdapter()
 
 export const Consumer = () => <ButtonBase {...button} />
 `,

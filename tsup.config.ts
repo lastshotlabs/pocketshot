@@ -53,6 +53,7 @@ export default defineConfig([
       media: 'src/media/index.ts',
       ai: 'src/ai/index.ts',
       audio: 'src/audio/index.ts',
+      billing: 'src/billing/index.ts',
       coach: 'src/coach/index.ts',
       party: 'src/party/index.ts',
       'party-session': 'src/party-session/index.ts',
