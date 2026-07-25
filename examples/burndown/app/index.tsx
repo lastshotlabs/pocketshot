@@ -6,7 +6,7 @@ import { BurndownController, type BurndownState } from '../lib/burndown'
 export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
   const controller = useMemo(() => new BurndownController(), [])
   const [game, setGame] = useState<BurndownState>(controller.state)
-  const [section, setSection] = useState<'play' | 'library' | 'build'>('play')
+  const [section, setSection] = useState<'play' | 'games' | 'library' | 'build'>('play')
   const [contentRevision, setContentRevision] = useState(0)
   useEffect(() => controller.subscribe(setGame), [controller])
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
         </Text>
         {game.phase === 'entry' && (
           <View accessibilityRole="tablist" style={styles.sections}>
-            {(['play', 'library', 'build'] as const).map((item) => (
+            {(['play', 'games', 'library', 'build'] as const).map((item) => (
               <Pressable
                 accessibilityRole="tab"
                 accessibilityState={{ selected: section === item }}
@@ -66,6 +66,23 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
                 </Text>
               </View>
             ))}
+          </Card>
+        )}
+        {game.phase === 'entry' && section === 'games' && (
+          <Card title="Your games">
+            {controller.games.snapshot.records.map((record) => (
+              <View key={record.id} style={styles.libraryRow}>
+                <Text style={styles.copy}>{record.title}</Text>
+                <Text style={styles.meta}>
+                  {record.status} · {record.resumable ? 'resumable' : 'history'}
+                </Text>
+              </View>
+            ))}
+            <Action
+              testID="games-refresh"
+              label="Refresh games"
+              onPress={() => controller.games.refresh(controller.games.snapshot.records)}
+            />
           </Card>
         )}
         {game.phase === 'entry' && section === 'build' && (

@@ -115,4 +115,28 @@ describe('Burndown native acceptance model', () => {
     restored.revealHandoff()
     expect(restored.burn('Banana', 'persisted-command')).toBe(false)
   })
+
+  it('persists active/history dashboard recovery and creates a rematch record', () => {
+    const game = new BurndownController()
+    game.enter('phones')
+    game.start()
+    expect(game.games.page({ scope: 'active' }).items[0]).toMatchObject({
+      status: 'active',
+      resumable: true,
+    })
+    const restored = new BurndownController(game.exportSnapshot())
+    expect(restored.games.page({ scope: 'active' }).items).toHaveLength(1)
+    restored.endMatch()
+    expect(restored.games.page({ scope: 'history' }).items).toHaveLength(1)
+    restored.rematch('dashboard-rematch')
+    expect(restored.games.snapshot.records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'burndown-dashboard-rematch',
+          status: 'lobby',
+          rematchOf: 'burndown-game-1',
+        }),
+      ]),
+    )
+  })
 })

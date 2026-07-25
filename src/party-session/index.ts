@@ -785,6 +785,142 @@ export class PartyActivityController {
   }
 }
 
+export type GameDashboardStatus = 'lobby' | 'active' | 'paused' | 'complete' | 'cancelled' | 'left'
+
+export interface GameDashboardRecord {
+  id: string
+  product: string
+  title: string
+  status: GameDashboardStatus
+  joinCode?: string
+  updatedAt: number
+  resumable: boolean
+  rematchOf?: string
+}
+
+export interface GameDashboardSnapshot {
+  records: GameDashboardRecord[]
+  stale: boolean
+  refreshedAt: number | null
+}
+
+export class GameDashboardController {
+  private records = new Map<string, GameDashboardRecord>()
+  private stale = false
+  private refreshedAt: number | null = null
+
+  constructor(
+    snapshot?: GameDashboardSnapshot,
+    private readonly now: () => number = Date.now,
+  ) {
+    this.stale = snapshot?.stale ?? false
+    this.refreshedAt = snapshot?.refreshedAt ?? null
+    for (const record of snapshot?.records ?? []) {
+      this.records.set(record.id, structuredClone(record))
+    }
+  }
+
+  get snapshot(): GameDashboardSnapshot {
+    return {
+      records: [...this.records.values()]
+        .sort(
+          (left, right) =>
+            Number(isActive(right.status)) - Number(isActive(left.status)) ||
+            right.updatedAt - left.updatedAt ||
+            left.id.localeCompare(right.id),
+        )
+        .map((record) => structuredClone(record)),
+      stale: this.stale,
+      refreshedAt: this.refreshedAt,
+    }
+  }
+
+  upsert(record: Omit<GameDashboardRecord, 'updatedAt'> & { updatedAt?: number }): void {
+    const existing = this.records.get(record.id)
+    const updatedAt = record.updatedAt ?? this.now()
+    if (existing && existing.updatedAt > updatedAt) return
+    this.records.set(record.id, { ...structuredClone(record), updatedAt })
+  }
+
+  setStatus(id: string, status: GameDashboardStatus): void {
+    const record = this.require(id)
+    record.status = status
+    record.resumable = isActive(status)
+    record.updatedAt = this.now()
+  }
+
+  leave(id: string): void {
+    this.setStatus(id, 'left')
+  }
+
+  recover(id: string): GameDashboardRecord {
+    const record = this.require(id)
+    if (!record.resumable || !isActive(record.status)) {
+      throw new Error('Game is not resumable')
+    }
+    return structuredClone(record)
+  }
+
+  createRematch(sourceId: string, id: string): GameDashboardRecord {
+    if (this.records.has(id)) return structuredClone(this.records.get(id)!)
+    const source = this.require(sourceId)
+    const rematch: GameDashboardRecord = {
+      ...structuredClone(source),
+      id,
+      status: 'lobby',
+      resumable: true,
+      rematchOf: sourceId,
+      updatedAt: this.now(),
+    }
+    this.records.set(id, rematch)
+    return structuredClone(rematch)
+  }
+
+  markStale(): void {
+    this.stale = true
+  }
+
+  refresh(records: GameDashboardRecord[]): void {
+    for (const record of records) this.upsert(record)
+    this.stale = false
+    this.refreshedAt = this.now()
+  }
+
+  page(
+    options: {
+      scope?: 'active' | 'history' | 'all'
+      offset?: number
+      limit?: number
+    } = {},
+  ): { items: GameDashboardRecord[]; nextOffset: number | null } {
+    const scope = options.scope ?? 'all'
+    const records = this.snapshot.records.filter((record) =>
+      scope === 'all'
+        ? true
+        : scope === 'active'
+          ? isActive(record.status)
+          : !isActive(record.status),
+    )
+    const offset = Math.max(0, options.offset ?? 0)
+    const limit = Math.max(1, options.limit ?? 20)
+    const items = records.slice(offset, offset + limit)
+    return {
+      items,
+      nextOffset: offset + items.length < records.length ? offset + items.length : null,
+    }
+  }
+
+  private require(id: string): GameDashboardRecord {
+    const record = this.records.get(id)
+    if (!record) throw new Error(`Unknown game: ${id}`)
+    return record
+  }
+}
+
+function isActive(status: GameDashboardStatus): boolean {
+  return status === 'lobby' || status === 'active' || status === 'paused'
+}
+
 export type ContentStatus = 'draft' | 'submitted' | 'approved' | 'published' | 'archived'
 
 export interface ContentCollection<Item> {

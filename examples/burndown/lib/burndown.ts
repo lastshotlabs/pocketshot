@@ -1,6 +1,7 @@
 import {
   BallotController,
   ContentLibraryController,
+  GameDashboardController,
   PartySessionController,
   PersonalCuePolicy,
   SharedDeviceController,
@@ -8,6 +9,7 @@ import {
   type PartySessionSnapshot,
   type SharedDeviceSnapshot,
   type TimedPhaseSnapshot,
+  type GameDashboardSnapshot,
 } from '@lastshotlabs/pocketshot/party-session'
 
 export type BurndownMode = 'phones' | 'shared'
@@ -64,6 +66,8 @@ export interface BurndownSnapshot {
   shared: SharedDeviceSnapshot
   timer: TimedPhaseSnapshot
   commandKeys: string[]
+  dashboard: GameDashboardSnapshot
+  currentGameId: string
 }
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
@@ -74,6 +78,7 @@ export class BurndownController {
   private readonly shared: SharedDeviceController
   private timer: TimedPhaseController
   private commandKeys: Set<string>
+  private currentGameId: string
   private readonly initialState: BurndownState = {
     phase: 'entry',
     mode: 'phones',
@@ -104,6 +109,7 @@ export class BurndownController {
         : ['Category must be between 3 and 80 characters'],
     (item) => item.category,
   )
+  readonly games: GameDashboardController
 
   constructor(snapshot?: BurndownSnapshot) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
@@ -129,6 +135,8 @@ export class BurndownController {
       snapshot?.timer,
     )
     this.commandKeys = new Set(snapshot?.commandKeys ?? [])
+    this.currentGameId = snapshot?.currentGameId ?? 'burndown-game-1'
+    this.games = new GameDashboardController(snapshot?.dashboard)
     if (!snapshot) {
       this.session.join({
         id: 'p1',
@@ -136,6 +144,14 @@ export class BurndownController {
         role: 'host',
         seat: 0,
         connected: true,
+      })
+      this.games.upsert({
+        id: this.currentGameId,
+        product: 'burndown',
+        title: 'Burndown match',
+        status: 'lobby',
+        joinCode: this.value.joinCode,
+        resumable: true,
       })
       this.session.join({
         id: 'p2',
@@ -168,6 +184,8 @@ export class BurndownController {
       shared: this.shared.snapshot,
       timer: this.timer.snapshot,
       commandKeys: [...this.commandKeys],
+      dashboard: this.games.snapshot,
+      currentGameId: this.currentGameId,
     }
   }
 
@@ -180,6 +198,7 @@ export class BurndownController {
   enter(mode: BurndownMode): void {
     this.value.mode = mode
     this.value.phase = 'lobby'
+    this.games.setStatus(this.currentGameId, 'lobby')
     this.emit()
   }
 
@@ -202,6 +221,7 @@ export class BurndownController {
       eliminated: false,
     }))
     this.value.round = 1
+    this.games.setStatus(this.currentGameId, 'active')
     this.value.letter = alphabet[0]
     this.beginTurn('p1')
   }
@@ -273,6 +293,7 @@ export class BurndownController {
     this.session.pause('p1')
     this.timer.pause()
     this.value.paused = true
+    this.games.setStatus(this.currentGameId, 'paused')
     this.emit()
   }
 
@@ -280,6 +301,7 @@ export class BurndownController {
     this.session.resume('p1')
     this.timer.resume()
     this.value.paused = false
+    this.games.setStatus(this.currentGameId, 'active')
     this.emit()
   }
 
@@ -308,6 +330,8 @@ export class BurndownController {
     this.value.ended = false
     this.value.phase = 'lobby'
     this.value.notice = null
+    const rematch = this.games.createRematch(this.currentGameId, `burndown-${key}`)
+    this.currentGameId = rematch.id
     this.emit()
     return true
   }
@@ -389,6 +413,7 @@ export class BurndownController {
     this.value.ended = true
     this.value.phase = 'results'
     this.shared.end()
+    this.games.setStatus(this.currentGameId, 'complete')
     this.emit()
   }
 
@@ -441,6 +466,7 @@ export class BurndownController {
       this.value.winnerId = alive[0]?.id ?? null
       this.value.phase = 'results'
       this.shared.end()
+      this.games.setStatus(this.currentGameId, 'complete')
       this.emit()
       return
     }
@@ -480,6 +506,7 @@ export class BurndownController {
       [...alive].sort((left, right) => right.lives - left.lives || left.seat - right.seat)[0]?.id ??
       null
     this.shared.end()
+    this.games.setStatus(this.currentGameId, 'complete')
     this.emit()
     return false
   }

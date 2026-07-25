@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   BallotController,
   ContentLibraryController,
+  GameDashboardController,
   HostCorrectionController,
   PartyActivityController,
   PartySessionController,
@@ -224,6 +225,34 @@ describe('party lifecycle primitives', () => {
       }),
     ).toThrow('sequence gap')
     expect(new PartyActivityController(activity.snapshot).publicProjection(1)[0].id).toBe('three')
+  })
+
+  it('tracks active/history games, stale refresh, recovery, leave, and idempotent rematch', () => {
+    let now = 10
+    const games = new GameDashboardController(undefined, () => now++)
+    games.upsert({
+      id: 'game-1',
+      product: 'burndown',
+      title: 'Friday game',
+      status: 'active',
+      joinCode: 'BURN-42',
+      resumable: true,
+    })
+    expect(games.recover('game-1').joinCode).toBe('BURN-42')
+    games.markStale()
+    games.refresh([])
+    expect(games.snapshot).toMatchObject({ stale: false, refreshedAt: 11 })
+    games.setStatus('game-1', 'complete')
+    expect(games.page({ scope: 'history' }).items).toHaveLength(1)
+    const rematch = games.createRematch('game-1', 'game-2')
+    expect(rematch).toMatchObject({
+      status: 'lobby',
+      resumable: true,
+      rematchOf: 'game-1',
+    })
+    expect(games.createRematch('game-1', 'game-2')).toEqual(rematch)
+    games.leave('game-2')
+    expect(() => games.recover('game-2')).toThrow('not resumable')
   })
 
   it('provides versioned content browse, ownership, workflow, and AI review', () => {
