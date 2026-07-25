@@ -92,6 +92,11 @@
       "import": "./dist/release.js",
       "require": "./dist/release.cjs"
     },
+    "./privacy": {
+      "types": "./dist/types/privacy/index.d.ts",
+      "import": "./dist/privacy.js",
+      "require": "./dist/privacy.cjs"
+    },
     "./observability": {
       "types": "./dist/types/observability/index.d.ts",
       "import": "./dist/observability.js",

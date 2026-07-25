@@ -20,6 +20,7 @@
       "@lastshotlabs/pocketshot/party": ["./src/party/index.ts"],
       "@lastshotlabs/pocketshot/party-session": ["./src/party-session/index.ts"],
       "@lastshotlabs/pocketshot/release": ["./src/release/index.ts"],
+      "@lastshotlabs/pocketshot/privacy": ["./src/privacy/index.ts"],
       "@lastshotlabs/pocketshot/observability": ["./src/observability/index.ts"],
       "@lastshotlabs/pocketshot/accessibility": ["./src/accessibility/index.ts"],
       "@lastshotlabs/pocketshot/community": ["./src/community/index.ts"],

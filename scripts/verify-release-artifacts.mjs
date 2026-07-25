@@ -15,6 +15,7 @@ const entries = [
   'party',
   'party-session',
   'release',
+  'privacy',
   'observability',
   'accessibility',
   'community',
