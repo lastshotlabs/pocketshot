@@ -23,6 +23,8 @@ import {
 import {
   PartyActivityController,
   PartySessionController,
+  type PartyActivitySnapshot,
+  type PartySessionSnapshot,
 } from '@lastshotlabs/pocketshot/party-session'
 import { z } from 'zod'
 
@@ -70,6 +72,14 @@ export interface PartyState {
   activityCount: number
   deckExport: string | null
   deckAction: string | null
+}
+
+export interface HitshotSnapshot {
+  state: PartyState
+  session: PartySessionSnapshot<{ targetCards: number }>
+  activity: PartyActivitySnapshot
+  cursor: number
+  answeredRounds: number[]
 }
 
 type Event =
@@ -127,9 +137,9 @@ const initial: PartyState = {
 }
 
 export class PartyDemoController {
-  private stateValue = { ...initial, players: [...initial.players] }
+  private stateValue: PartyState
   private cursor = 0
-  private readonly answeredRounds = new Set<number>()
+  private readonly answeredRounds: Set<number>
   private readonly listeners = new Set<(state: PartyState) => void>()
   private readonly realtime = new RealtimeReconciler<Event, PartyState>((state, event) =>
     reduceParty(state, event.payload),
@@ -146,17 +156,27 @@ export class PartyDemoController {
     createDemoProvider('audius', true, 'preview'),
   ])
   readonly account = createDemoPartyAccount()
-  readonly session = new PartySessionController({ targetCards: initial.settings.targetCards })
-  readonly activity = new PartyActivityController()
+  readonly session: PartySessionController<{ targetCards: number }>
+  readonly activity: PartyActivityController
 
-  constructor(storage: DraftStorage = createMemoryDraftStorage()) {
-    this.session.join({
-      id: 'host-1',
-      displayName: 'Host',
-      role: 'host',
-      seat: 0,
-      connected: true,
-    })
+  constructor(storage: DraftStorage = createMemoryDraftStorage(), snapshot?: HitshotSnapshot) {
+    this.stateValue = structuredClone(snapshot?.state ?? initial)
+    this.cursor = snapshot?.cursor ?? 0
+    this.answeredRounds = new Set(snapshot?.answeredRounds ?? [])
+    this.session = new PartySessionController(
+      { targetCards: initial.settings.targetCards },
+      snapshot?.session,
+    )
+    this.activity = new PartyActivityController(snapshot?.activity)
+    if (!snapshot) {
+      this.session.join({
+        id: 'host-1',
+        displayName: 'Host',
+        role: 'host',
+        seat: 0,
+        connected: true,
+      })
+    }
     this.deckLibrary.create('friday-mix', 'Friday Mix')
     this.deck = createDurableDraft({
       id: 'party-deck',
@@ -175,6 +195,16 @@ export class PartyDemoController {
       state: this.stateValue,
     })
     this.syncPlaybackCapabilities()
+  }
+
+  exportSnapshot(): HitshotSnapshot {
+    return {
+      state: this.state,
+      session: this.session.snapshot,
+      activity: this.activity.snapshot,
+      cursor: this.cursor,
+      answeredRounds: [...this.answeredRounds],
+    }
   }
 
   importTracks(input: string): void {
@@ -469,6 +499,29 @@ export class PartyDemoController {
       player.id === playerId ? { ...player, teamId } : player,
     )
     this.emit()
+  }
+
+  claimSeat(playerId: string, seat: number): void {
+    this.session.claimSeat(playerId, seat)
+    this.stateValue.notice = `${playerId} claimed seat ${seat + 1}`
+    this.emit()
+  }
+
+  handoffSeat(fromId: string, toId: string): void {
+    this.session.handoffSeat(fromId, toId)
+    this.stateValue.notice = `Seat handed from ${fromId} to ${toId}`
+    this.emit()
+  }
+
+  rejoin(playerId: string): void {
+    this.session.setConnected(playerId, true)
+    this.stateValue.connection = 'online'
+    this.stateValue.notice = `${playerId} rejoined the party`
+    this.emit()
+  }
+
+  seatProjection() {
+    return this.session.publicProjection().members
   }
 
   renameTeam(teamId: string, name: string): void {

@@ -30,6 +30,44 @@ describe('Party clean-room acceptance model', () => {
     expect(party.state.phase).toBe('lobby')
   })
 
+  it('restores durable guest seat, match state, activity, and command idempotency', () => {
+    const party = new PartyDemoController()
+    party.guest('Alex')
+    party.claimSeat('guest-1', 1)
+    party.ready()
+    party.startRound()
+    party.answer(3)
+    const restored = new PartyDemoController(undefined, party.exportSnapshot())
+    expect(restored.state).toMatchObject({
+      phase: 'results',
+      score: 3,
+      players: [expect.objectContaining({ id: 'guest-1', ready: true })],
+    })
+    expect(restored.seatProjection()).toContainEqual(
+      expect.objectContaining({ id: 'guest-1', seat: 1, connected: true }),
+    )
+    restored.answer(3)
+    expect(restored.state.score).toBe(3)
+    expect(restored.activity.snapshot.events.length).toBeGreaterThan(0)
+  })
+
+  it('hands off and rejoins party seats through the shared lifecycle', () => {
+    const party = new PartyDemoController()
+    party.guest('Alex')
+    party.handoffSeat('host-1', 'guest-1')
+    expect(party.seatProjection()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'host-1', seat: null }),
+        expect.objectContaining({ id: 'guest-1', seat: 0 }),
+      ]),
+    )
+    party.session.setConnected('guest-1', false)
+    party.rejoin('guest-1')
+    expect(party.seatProjection()).toContainEqual(
+      expect.objectContaining({ id: 'guest-1', connected: true }),
+    )
+  })
+
   it('configures presets, teams, readiness, and confirmed leave', () => {
     const party = new PartyDemoController()
     party.guest('Alex')

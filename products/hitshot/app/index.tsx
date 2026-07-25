@@ -87,6 +87,23 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
           ))}
           <Action testID="ready" label="Ready up" onPress={() => controller.ready()} />
           <Action
+            testID="claim-seat"
+            label="Claim player seat"
+            onPress={() => controller.claimSeat('guest-1', 1)}
+          />
+          <Action
+            testID="handoff-seat"
+            label="Hand host seat to Alex"
+            onPress={() => controller.handoffSeat('host-1', 'guest-1')}
+          />
+          <Text style={styles.copy}>
+            Seats:{' '}
+            {controller
+              .seatProjection()
+              .map((member) => `${member.displayName} ${member.seat ?? 'spectator'}`)
+              .join(' · ')}
+          </Text>
+          <Action
             testID="start-round"
             label="Start round"
             onPress={() => controller.startRound()}
