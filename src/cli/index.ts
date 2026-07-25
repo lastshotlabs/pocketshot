@@ -6,6 +6,7 @@ import { scaffold } from './scaffold'
 import { runSync } from './sync'
 import { runManifestSync } from './manifest-sync'
 import { runDoctor } from './doctor'
+import { runEasWorkflow, runUpgradeWorkflow, runVerifyWorkflow } from './workflows'
 
 async function main() {
   const args = process.argv.slice(2)
@@ -108,6 +109,30 @@ async function main() {
     return
   }
 
+  if (positionals[0] === 'verify') {
+    const result = runVerifyWorkflow({
+      cwd: process.cwd(),
+      release: args.includes('--release'),
+    })
+    console.log(JSON.stringify(result, null, 2))
+    if (!result.ok) process.exitCode = 1
+    return
+  }
+
+  if (positionals[0] === 'eas' || positionals[0] === 'upgrade') {
+    const result =
+      positionals[0] === 'eas'
+        ? runEasWorkflow({
+            cwd: process.cwd(),
+            write: args.includes('--write'),
+            force: args.includes('--force'),
+          })
+        : runUpgradeWorkflow({ cwd: process.cwd(), write: args.includes('--write') })
+    console.log(JSON.stringify(result, null, 2))
+    if (!result.ok) process.exitCode = 1
+    return
+  }
+
   // Help — must come before init, which catches the no-command case
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
@@ -120,6 +145,9 @@ Commands:
   manifest --api <url> [--out <dir>]
                                  Fetch and generate screens from a Slingshot manifest
   doctor [--release] [--json]    Validate Expo and native release readiness
+  verify [--release]             Deterministically verify an app (JSON output)
+  eas [--write] [--force]        Check or generate the EAS release baseline
+  upgrade [--write]              Plan or apply the tested Expo 57 dependency line
 
 Options:
   --yes, -y        Skip prompts, use defaults
