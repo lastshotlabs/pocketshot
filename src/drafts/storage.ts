@@ -20,24 +20,38 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-interface SQLiteDatabase {
+export interface SQLiteDraftDatabase {
   execAsync(sql: string): Promise<void>
   getFirstAsync<T>(sql: string, params?: unknown[]): Promise<T | null>
   runAsync(sql: string, params?: unknown[]): Promise<unknown>
 }
 
-export function createSQLiteDraftStorage(databaseName = 'pocketshot_drafts.db'): DraftStorage {
-  let SQLite: { openDatabaseSync(name: string): SQLiteDatabase }
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    SQLite = require('expo-sqlite') as typeof SQLite
-  } catch {
-    throw new Error(
-      '[pocketshot] Durable draft storage requires expo-sqlite.\n' +
-        'Install it: npx expo install expo-sqlite',
-    )
+export interface SQLiteDraftModule {
+  openDatabaseSync(name: string): unknown
+}
+
+/**
+ * Creates durable draft storage. Metro apps should pass their statically
+ * imported `expo-sqlite` module so the optional peer is included in production.
+ */
+export function createSQLiteDraftStorage(
+  databaseName = 'pocketshot_drafts.db',
+  sqlite?: SQLiteDraftModule,
+): DraftStorage {
+  let SQLite = sqlite
+  if (!SQLite) {
+    try {
+      // Node-compatible fallback for existing consumers.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      SQLite = require('expo-sqlite') as SQLiteDraftModule
+    } catch {
+      throw new Error(
+        '[pocketshot] Durable draft storage requires expo-sqlite.\n' +
+          'Install it and pass the imported module: createSQLiteDraftStorage(name, SQLite)',
+      )
+    }
   }
-  const database = SQLite.openDatabaseSync(databaseName)
+  const database = SQLite.openDatabaseSync(databaseName) as SQLiteDraftDatabase
   let initialized: Promise<void> | null = null
   const initialize = () => {
     initialized ??= database.execAsync(

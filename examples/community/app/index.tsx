@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import * as SQLite from 'expo-sqlite'
 import { createSQLiteDraftStorage } from '@lastshotlabs/pocketshot/drafts'
 import { CommunityDemoController, type CommunityState, type CommunityView } from '../lib/community'
 
 export default function CommunityShell() {
   const community = useMemo(
-    () => new CommunityDemoController(createSQLiteDraftStorage('community-shell.db')),
+    () => new CommunityDemoController(createSQLiteDraftStorage('community-shell.db', SQLite)),
     [],
   )
   const [state, setState] = useState<CommunityState>(community.state)

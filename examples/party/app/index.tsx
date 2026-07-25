@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
+import * as SQLite from 'expo-sqlite'
 import QRCode from 'react-native-qrcode-svg'
 import { createSQLiteDraftStorage } from '@lastshotlabs/pocketshot/drafts'
 import { PartyDemoController, type PartyState } from '../lib/party'
 
 export default function PartyShell() {
   const controller = useMemo(
-    () => new PartyDemoController(createSQLiteDraftStorage('party-shell.db')),
+    () => new PartyDemoController(createSQLiteDraftStorage('party-shell.db', SQLite)),
     [],
   )
   const [party, setParty] = useState<PartyState>(controller.state)

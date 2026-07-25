@@ -12,21 +12,49 @@ name: Coach conversation, metrics, workout, billing, and privacy
     timeout: 10000
 - tapOn:
     id: confirm-action
+- scrollUntilVisible:
+    element:
+      id: log-weight
+    direction: DOWN
 - tapOn:
     id: log-weight
+- scrollUntilVisible:
+    element:
+      id: set-goal
+    direction: DOWN
 - tapOn:
     id: set-goal
 - assertVisible: Goal progress.*
+- scrollUntilVisible:
+    element:
+      id: start-workout
+    direction: DOWN
 - tapOn:
     id: start-workout
+- scrollUntilVisible:
+    element:
+      id: log-set
+    direction: DOWN
 - tapOn:
     id: log-set
+- scrollUntilVisible:
+    element:
+      id: complete-workout
+    direction: DOWN
 - tapOn:
     id: complete-workout
 - assertVisible: 'Workout: complete'
+- scrollUntilVisible:
+    element:
+      id: restore-pro
+    direction: DOWN
 - tapOn:
     id: restore-pro
 - assertVisible: 'Access: active'
+- scrollUntilVisible:
+    element:
+      id: request-export
+    direction: DOWN
 - tapOn:
     id: request-export
 - assertVisible: 'Export: ready'
