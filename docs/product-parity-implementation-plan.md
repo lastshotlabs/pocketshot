@@ -54,21 +54,28 @@ interaction patterns and must not carry browser-only assumptions into its public
   performance budgets, structured lifecycle telemetry, diagnostics, and rollback runbooks.
 - Security threat model, persisted-data inventory, redaction and authorization-revocation tests,
   dependency audit, CycloneDX SBOM, and build provenance.
-- Packed-artifact verification and optimized Hermes exports for the existing Party, Coach, and
-  Community shells on iOS and Android.
+- Packed-artifact verification and optimized Hermes exports for all five production applications
+  and all five clean-room reference shells on iOS and Android.
+- Independent production workspaces, final application identifiers, EAS profiles, privacy
+  manifests, branded launch assets, store-copy manifests, screenshot plans, and environment
+  inventories for Hitshot, AICoach, SGForum, Burndown, and Blank Slate.
+- Release-mode Maestro definitions for all five products, Burndown shared-table landscape, and
+  cold custom-scheme journeys for Hitshot, Burndown, and Blank Slate.
 
 ### Hosted certification complete
 
 - Clean hosted CI, package tests, security gates, SBOM generation, and optimized exports.
 - Real application-target native compilation for iOS and Android; the iOS gate validates the app
   workspace scheme rather than accepting a dependency/pod scheme.
-- Release-mode iOS simulator and Android emulator Maestro jobs exist for Party, Coach, and
-  Community. Burndown and Blank Slate shells and their four corresponding jobs remain to be
-  built. The current six-job run must be green before expanding the matrix to ten jobs.
+- Release-mode iOS simulator and Android emulator Maestro jobs exist for Hitshot, AICoach,
+  SGForum, Burndown, and Blank Slate. The matrix contains all ten product/platform jobs plus the
+  Burndown shared-table landscape journey.
 
 ### Remaining release work
 
-- Close any failure found by the final six-job Release-mode Maestro run and retain its artifacts.
+- Run the corrected eleven-job Release-mode device matrix on the final batched commit and retain
+  its artifacts. Corrections now present locally include stable SGForum published-thread
+  assertions, Coach lifecycle sentinels, and standalone Android custom-scheme intent filters.
 - Run cross-product visual, Dynamic Type, VoiceOver, TalkBack, reduced-motion, orientation, and
   recovery certification on the physical-device matrix.
 - Configure real Expo, Apple, Google, push, OAuth, associated-domain, billing, analytics, and

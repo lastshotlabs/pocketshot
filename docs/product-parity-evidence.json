@@ -1,0 +1,129 @@
+{
+  "updated": "2026-07-25",
+  "classifications": {
+    "implemented": "Code-owned behavior has production composition and deterministic tests.",
+    "app-owned": "Pocketshot exposes a typed seam; consumer policy, copy, renderer, or backend remains app-owned.",
+    "device-proof": "Code and automation exist; signed or physical-device evidence is still required.",
+    "external": "Completion requires credentials, accounts, services, hardware, or owner approval."
+  },
+  "requirements": [
+    {
+      "id": "hitshot-entry-setup-content",
+      "product": "hitshot",
+      "status": "implemented",
+      "evidence": ["products/hitshot/lib/party.ts", "tests/reference/party.test.ts"]
+    },
+    {
+      "id": "hitshot-live-gameplay",
+      "product": "hitshot",
+      "status": "implemented",
+      "evidence": ["src/party/controllers.ts", "src/party-session/index.ts", "tests/party"]
+    },
+    {
+      "id": "hitshot-native-release-proof",
+      "product": "hitshot",
+      "status": "device-proof",
+      "evidence": [".maestro/party-critical.yaml", ".maestro/party-deep-link.yaml"]
+    },
+    {
+      "id": "aicoach-account-daily-coach",
+      "product": "aicoach",
+      "status": "implemented",
+      "evidence": ["products/aicoach/lib/coach.ts", "src/ai", "tests/reference/coach.test.ts"]
+    },
+    {
+      "id": "aicoach-health-training-media",
+      "product": "aicoach",
+      "status": "implemented",
+      "evidence": ["src/coach/controllers.ts", "src/media", "tests/coach"]
+    },
+    {
+      "id": "aicoach-native-release-proof",
+      "product": "aicoach",
+      "status": "device-proof",
+      "evidence": [".maestro/coach-critical.yaml", "products/aicoach/app/index.tsx"]
+    },
+    {
+      "id": "sgforum-public-web-rendering",
+      "product": "sgforum",
+      "status": "app-owned",
+      "evidence": ["src/community/contract.ts", "src/community/hooks.ts"]
+    },
+    {
+      "id": "sgforum-participation-messaging",
+      "product": "sgforum",
+      "status": "implemented",
+      "evidence": [
+        "products/sgforum/lib/community.ts",
+        "src/community/core.ts",
+        "tests/reference/community.test.ts"
+      ]
+    },
+    {
+      "id": "sgforum-safety-admin-privacy",
+      "product": "sgforum",
+      "status": "implemented",
+      "evidence": [
+        "src/community/controllers.ts",
+        "src/upload/authorization.ts",
+        "src/privacy/index.ts"
+      ]
+    },
+    {
+      "id": "sgforum-native-release-proof",
+      "product": "sgforum",
+      "status": "device-proof",
+      "evidence": [".maestro/community-critical.yaml", "products/sgforum/app/index.tsx"]
+    },
+    {
+      "id": "burndown-entry-content-dashboard",
+      "product": "burndown",
+      "status": "implemented",
+      "evidence": ["products/burndown/lib/burndown.ts", "tests/reference/burndown.test.ts"]
+    },
+    {
+      "id": "burndown-separate-shared-gameplay",
+      "product": "burndown",
+      "status": "implemented",
+      "evidence": ["products/burndown/app/index.tsx", "src/party-session/index.ts"]
+    },
+    {
+      "id": "burndown-native-release-proof",
+      "product": "burndown",
+      "status": "device-proof",
+      "evidence": [
+        ".maestro/burndown-critical.yaml",
+        ".maestro/burndown-landscape.yaml",
+        ".maestro/burndown-deep-link.yaml"
+      ]
+    },
+    {
+      "id": "blankslate-entry-content",
+      "product": "blankslate",
+      "status": "implemented",
+      "evidence": ["products/blankslate/lib/blankslate.ts", "tests/reference/blankslate.test.ts"]
+    },
+    {
+      "id": "blankslate-gameplay-mobile-behavior",
+      "product": "blankslate",
+      "status": "implemented",
+      "evidence": [
+        "products/blankslate/app/index.tsx",
+        "src/party-session/index.ts",
+        "src/push/controller.ts"
+      ]
+    },
+    {
+      "id": "blankslate-native-release-proof",
+      "product": "blankslate",
+      "status": "device-proof",
+      "evidence": [".maestro/blankslate-critical.yaml", ".maestro/blankslate-deep-link.yaml"]
+    },
+    {
+      "id": "production-credentials-signing-stores",
+      "product": "cross-product",
+      "status": "external",
+      "evidence": ["docs/product-parity-implementation-plan.md", "docs/mobile-release-runbook.md"]
+    }
+  ]
+}
