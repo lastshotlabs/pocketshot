@@ -3,6 +3,40 @@ import { BurndownController } from '../../examples/burndown/lib/burndown'
 import { normalizeBurndownSystemPath } from '../../examples/burndown/lib/link'
 
 describe('Burndown native acceptance model', () => {
+  it('composes profile, quickplay presets, and validated custom setup', () => {
+    const game = new BurndownController()
+    game.updateProfile('Alex Rivera', 'https://cdn.example.test/alex.jpg')
+    game.applyPreset('blitz')
+    expect(game.state).toMatchObject({
+      profile: {
+        displayName: 'Alex Rivera',
+        avatarUrl: 'https://cdn.example.test/alex.jpg',
+      },
+      preset: 'blitz',
+    })
+    expect(game.state.players).toContainEqual(
+      expect.objectContaining({ id: 'p1', name: 'Alex Rivera' }),
+    )
+    game.configureSetup({
+      lives: 4,
+      turnMs: 18_000,
+      warningMs: 5_000,
+      boardExhaustion: 'reset',
+      hostParticipates: false,
+    })
+    expect(game.state.preset).toBe('custom')
+    game.enter('shared')
+    game.start()
+    expect(game.rules).toMatchObject({
+      lives: 4,
+      turnMs: 18_000,
+      boardExhaustion: 'reset',
+      hostParticipates: false,
+    })
+    expect(game.state.players.every((player) => player.lives === 4)).toBe(true)
+    expect(() => new BurndownController().configureSetup({ turnMs: 1_000 })).toThrow('timing')
+  })
+
   it('composes durable account OAuth independently from guest play', async () => {
     const game = new BurndownController()
     await game.signInOAuth('google')

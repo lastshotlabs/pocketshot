@@ -55,6 +55,41 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
             <View accessibilityLabel={`QR join code ${game.joinCode}`} style={styles.qr}>
               <QRCode value={`burndown://join/${game.joinCode}`} size={112} />
             </View>
+            <Text style={styles.meta}>
+              {game.preset} · {controller.rules.lives} lives ·{' '}
+              {Math.round(controller.rules.turnMs / 1000)} second turns
+            </Text>
+            <Action
+              testID="quickplay-setup"
+              label="Use quickplay rules"
+              onPress={() => controller.applyPreset('quickplay')}
+            />
+            <Action
+              testID="blitz-setup"
+              label="Use Blitz rules"
+              onPress={() => controller.applyPreset('blitz')}
+            />
+            <Action
+              testID="custom-setup"
+              label="Configure custom table rules"
+              onPress={() =>
+                controller.configureSetup({
+                  lives: 4,
+                  turnMs: 18_000,
+                  warningMs: 5_000,
+                  challengeMode: 'serialized',
+                  boardExhaustion: 'reset',
+                  hostParticipates: false,
+                })
+              }
+            />
+            <Action
+              testID="edit-profile"
+              label="Complete player profile"
+              onPress={() =>
+                controller.updateProfile('Alex Rivera', 'https://cdn.example.test/alex.jpg')
+              }
+            />
             <Action
               testID="enter-phones"
               label="Everyone has a phone"

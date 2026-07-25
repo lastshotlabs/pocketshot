@@ -59,6 +59,8 @@ export interface BurndownState {
   identityStatus: 'guest' | 'account' | 'passkey'
   identityEmail: string | null
   passkeyCount: number
+  profile: { displayName: string; avatarUrl: string | null } | null
+  preset: 'quickplay' | 'blitz' | 'endurance' | 'custom'
 }
 
 type BurndownRules = {
@@ -117,6 +119,8 @@ export class BurndownController {
     identityStatus: 'guest',
     identityEmail: null,
     passkeyCount: 0,
+    profile: null,
+    preset: 'quickplay',
   }
   private readonly listeners = new Set<(state: BurndownState) => void>()
   private readonly cues = new PersonalCuePolicy()
@@ -255,6 +259,61 @@ export class BurndownController {
     this.value.identityEmail = this.passkeys.snapshot.user?.email ?? null
     this.value.passkeyCount = this.passkeys.snapshot.credentials.length
     this.enter(mode)
+  }
+
+  updateProfile(displayName: string, avatarUrl: string | null): void {
+    if (!displayName.trim()) throw new Error('Display name is required')
+    this.value.profile = { displayName: displayName.trim(), avatarUrl }
+    const player = this.value.players.find((candidate) => candidate.id === 'p1')
+    if (player) player.name = displayName.trim()
+    this.value.notice = 'Profile saved'
+    this.emit()
+  }
+
+  applyPreset(preset: 'quickplay' | 'blitz' | 'endurance'): void {
+    const rules: Record<typeof preset, Partial<BurndownRules>> = {
+      quickplay: {
+        lives: 3,
+        turnMs: 20_000,
+        warningMs: 5_000,
+        speedUpMs: 1_000,
+        challenge: true,
+        challengeMs: 10_000,
+        challengeMode: 'serialized',
+        boardExhaustion: 'end',
+      },
+      blitz: {
+        lives: 2,
+        turnMs: 10_000,
+        warningMs: 3_000,
+        speedUpMs: 750,
+        challenge: true,
+        challengeMs: 6_000,
+        challengeMode: 'overlap',
+        boardExhaustion: 'end',
+      },
+      endurance: {
+        lives: 5,
+        turnMs: 30_000,
+        warningMs: 7_000,
+        speedUpMs: 500,
+        challenge: true,
+        challengeMs: 12_000,
+        challengeMode: 'serialized',
+        boardExhaustion: 'reset',
+      },
+    }
+    this.stageRules(rules[preset])
+    this.value.preset = preset
+    this.value.notice = `${preset} rules staged`
+    this.emit()
+  }
+
+  configureSetup(patch: Partial<BurndownRules>): void {
+    this.stageRules(patch)
+    this.value.preset = 'custom'
+    this.value.notice = 'Custom rules staged for the next round'
+    this.emit()
   }
 
   join(code: string, mode: BurndownMode = 'phones'): boolean {
@@ -513,7 +572,8 @@ export class BurndownController {
   }
 
   get rules() {
-    return structuredClone(this.session.snapshot.rules)
+    const snapshot = this.session.snapshot
+    return structuredClone({ ...snapshot.rules, ...(snapshot.stagedRules ?? {}) })
   }
 
   board(): Array<{ letter: string; status: 'alive' | 'active' | 'burned' | 'void' }> {
