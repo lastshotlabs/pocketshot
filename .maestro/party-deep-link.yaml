@@ -5,5 +5,11 @@ name: Party cold deep link
     clearState: true
     stopApp: true
 - openLink: pocketshot-party://join/HIT-427
+- tapOn:
+    text: Open
+    optional: true
+- tapOn:
+    text: Wait
+    optional: true
 - assertVisible: Lobby
 - assertVisible: Linked guest.*

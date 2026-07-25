@@ -4,25 +4,32 @@ name: Community post, message, moderation, privacy, and reconnect
 - launchApp:
     clearState: true
 - tapOn:
+    text: Wait
+    optional: true
+- tapOn:
     id: complete-onboarding
 - assertVisible: Trail Talk
 - tapOn:
     id: reconnect
-- tapOn: compose
+- tapOn:
+    id: tab-compose
 - tapOn:
     id: write-draft
 - tapOn:
     id: publish-thread
-- tapOn: feed
+- tapOn:
+    id: tab-feed
 - assertVisible: Offline trail report
-- tapOn: messages
+- tapOn:
+    id: tab-messages
 - tapOn:
     id: typing
 - tapOn:
     id: send-message
 - tapOn:
     id: read-messages
-- tapOn: privacy
+- tapOn:
+    id: tab-privacy
 - tapOn:
     id: block-user
 - tapOn:

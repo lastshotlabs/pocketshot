@@ -3,6 +3,10 @@ import React from 'react'
 import { Timeline } from '../component'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 
+vi.mock('../../../_base/useComponentData', () => ({
+  useComponentData: vi.fn(() => ({ data: null, isLoading: false, error: null })),
+}))
+
 const BASIC_ITEMS = [
   { id: 'evt1', title: 'Order placed' },
   { id: 'evt2', title: 'Payment confirmed' },

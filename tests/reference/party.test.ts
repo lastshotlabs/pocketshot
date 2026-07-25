@@ -110,4 +110,12 @@ describe('Party clean-room acceptance model', () => {
     party.publishDeck('2026-07-25T00:00:00Z')
     expect(party.deckLibrary.snapshot[0].status).toBe('published')
   })
+
+  it('initializes durable storage before exposing the deck screen', async () => {
+    const party = new PartyDemoController()
+    party.guest('Alex')
+    await party.openDeck()
+    expect(party.state).toMatchObject({ phase: 'deck', notice: null })
+    expect(party.deck.snapshot.value.title).toBe('Friday Mix')
+  })
 })

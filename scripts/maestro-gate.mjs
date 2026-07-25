@@ -66,6 +66,12 @@ for (const shell of ['party', 'coach', 'community']) {
 if (!workflow.includes('maestro" --device "$DEVICE_ID" test')) {
   failures.push('iOS workflow does not target its isolated simulator')
 }
+if (!workflow.includes('Enable KVM acceleration') || !workflow.includes('99-kvm4all.rules')) {
+  failures.push('Android workflow does not enable required KVM acceleration')
+}
+if (!workflow.includes('emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot')) {
+  failures.push('Android workflow does not use a clean headless emulator boot')
+}
 if (!workflow.includes('scheme=$(basename "$workspace" .xcworkspace)')) {
   failures.push('iOS workflow does not select the application workspace scheme')
 }

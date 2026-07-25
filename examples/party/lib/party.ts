@@ -292,8 +292,16 @@ export class PartyDemoController {
     this.emit()
   }
 
-  openDeck(): void {
-    this.stateValue.phase = 'deck'
+  async openDeck(): Promise<void> {
+    try {
+      await this.deck.initialize()
+      this.stateValue.phase = 'deck'
+      this.stateValue.notice = null
+    } catch (error) {
+      this.stateValue.notice = `Deck unavailable: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    }
     this.emit()
   }
 

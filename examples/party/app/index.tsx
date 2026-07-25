@@ -72,7 +72,11 @@ export default function PartyShell() {
             label="Simulate reconnect"
             onPress={() => controller.reconnect()}
           />
-          <Action testID="edit-deck" label="Edit deck" onPress={() => controller.openDeck()} />
+          <Action
+            testID="edit-deck"
+            label="Edit deck"
+            onPress={() => void controller.openDeck()}
+          />
         </Panel>
       )}
       {party.phase === 'round' && (

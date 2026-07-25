@@ -3,6 +3,9 @@ name: Coach conversation, metrics, workout, billing, and privacy
 ---
 - launchApp:
     clearState: true
+- tapOn:
+    text: Wait
+    optional: true
 - assertVisible: PocketShot Coach
 - tapOn:
     id: ask-coach

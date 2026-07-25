@@ -4,6 +4,9 @@ name: Party match, reconnect, rematch, and deck
 - launchApp:
     clearState: true
 - tapOn:
+    text: Wait
+    optional: true
+- tapOn:
     id: guest-entry
 - assertVisible: Lobby
 - tapOn:

@@ -43,6 +43,7 @@ export default function CommunityShell() {
           (view) => (
             <Pressable
               key={view}
+              testID={`tab-${view}`}
               accessibilityRole="tab"
               accessibilityLabel={`${view} tab`}
               accessibilityState={{ selected: state.view === view }}
