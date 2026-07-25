@@ -32,14 +32,32 @@ export interface PartyDeckCatalogEntry {
   ratingCount: number
 }
 
+export interface DeckTrackProposal {
+  id: string
+  deckId: string
+  prompt: string
+  tracks: PartyTrack[]
+  status: 'pending' | 'accepted' | 'rejected'
+  reviewedBy: string | null
+}
+
+export interface PlaylistImporter {
+  importPlaylist(reference: string): Promise<PartyTrack[]>
+}
+
 export class DeckLibraryController {
   private decks = new Map<string, PartyDeck>()
   private versions = new Map<string, PartyDeck[]>()
   private ratings = new Map<string, Map<string, number>>()
   private featured = new Set<string>()
+  private proposals = new Map<string, DeckTrackProposal>()
 
   get snapshot(): PartyDeck[] {
     return [...this.decks.values()].map((deck) => structuredClone(deck))
+  }
+
+  get proposalSnapshot(): DeckTrackProposal[] {
+    return [...this.proposals.values()].map((proposal) => structuredClone(proposal))
   }
 
   create(id: string, title: string): void {
@@ -64,6 +82,12 @@ export class DeckLibraryController {
 
   importDelimited(id: string, input: string): void {
     this.import(id, parseDelimitedTracks(input))
+  }
+
+  async importPlaylist(id: string, reference: string, importer: PlaylistImporter): Promise<void> {
+    if (!reference.trim()) throw new Error('Playlist reference is required')
+    const tracks = await importer.importPlaylist(reference.trim())
+    this.import(id, tracks)
   }
 
   combine(targetId: string, sourceIds: string[]): void {
@@ -92,6 +116,40 @@ export class DeckLibraryController {
     deck.tracks[index] = structuredClone(replacement)
     deck.revision += 1
     this.recordVersion(id)
+  }
+
+  correctYear(id: string, trackId: string, year: number): void {
+    const deck = this.requireEditable(id)
+    const track = deck.tracks.find((candidate) => candidate.id === trackId)
+    if (!track) throw new Error(`Unknown track: ${trackId}`)
+    this.replace(id, trackId, { ...track, year })
+  }
+
+  proposeTracks(id: string, deckId: string, prompt: string, tracks: PartyTrack[]): void {
+    this.requireEditable(deckId)
+    if (this.proposals.has(id)) throw new Error(`Proposal already exists: ${id}`)
+    if (!prompt.trim() || tracks.length === 0) {
+      throw new Error('A proposal requires a prompt and at least one track')
+    }
+    tracks.forEach(validateTrack)
+    this.proposals.set(id, {
+      id,
+      deckId,
+      prompt: prompt.trim(),
+      tracks: structuredClone(tracks),
+      status: 'pending',
+      reviewedBy: null,
+    })
+  }
+
+  reviewProposal(id: string, reviewerId: string, accept: boolean): void {
+    const proposal = this.proposals.get(id)
+    if (!proposal) throw new Error(`Unknown proposal: ${id}`)
+    if (proposal.status !== 'pending') throw new Error('Proposal has already been reviewed')
+    if (!reviewerId.trim()) throw new Error('Reviewer is required')
+    if (accept) this.import(proposal.deckId, proposal.tracks)
+    proposal.status = accept ? 'accepted' : 'rejected'
+    proposal.reviewedBy = reviewerId
   }
 
   remove(id: string, trackId: string): void {

@@ -69,6 +69,7 @@ export interface PartyState {
   endConfirmationPending: boolean
   activityCount: number
   deckExport: string | null
+  deckAction: string | null
 }
 
 type Event =
@@ -122,6 +123,7 @@ const initial: PartyState = {
   endConfirmationPending: false,
   activityCount: 0,
   deckExport: null,
+  deckAction: null,
 }
 
 export class PartyDemoController {
@@ -177,6 +179,81 @@ export class PartyDemoController {
 
   importTracks(input: string): void {
     this.deckLibrary.importDelimited('friday-mix', input)
+    this.emit()
+  }
+
+  async importDemoPlaylist(reference = 'spotify:playlist:demo'): Promise<void> {
+    await this.deckLibrary.importPlaylist('friday-mix', reference, {
+      importPlaylist: async () => [
+        {
+          id: 'playlist-track',
+          title: 'Playlist Track',
+          artist: 'Imported Artist',
+          year: 2004,
+          providerIds: { spotify: 'playlist-track' },
+          previewUrl: null,
+        },
+      ],
+    })
+    this.stateValue.deckAction = 'Playlist imported'
+    this.emit()
+  }
+
+  async searchAndAddTrack(query: string): Promise<void> {
+    const [track] = await this.playback.search(query)
+    if (!track) {
+      this.stateValue.deckAction = 'No provider result'
+      this.emit()
+      return
+    }
+    this.deckLibrary.add('friday-mix', track)
+    this.stateValue.deckAction = `Added ${track.title}`
+    this.emit()
+  }
+
+  async auditionFirstTrack(): Promise<void> {
+    const tracks = this.deckLibrary.snapshot[0]?.tracks ?? []
+    if (!tracks.length) throw new Error('Add a track before auditioning')
+    let resolved: Awaited<ReturnType<PlaybackProviderController['resolve']>> = null
+    for (const track of tracks) {
+      resolved = await this.playback.resolve(track, 'spotify')
+      if (resolved) break
+    }
+    this.stateValue.playbackSource = resolved ? `${resolved.provider}:${resolved.kind}` : null
+    this.stateValue.deckAction = resolved
+      ? `Auditioning via ${resolved.provider}`
+      : 'Track unavailable'
+    this.emit()
+  }
+
+  correctFirstTrackYear(year: number): void {
+    const track = this.deckLibrary.snapshot[0]?.tracks[0]
+    if (!track) throw new Error('Add a track before correcting its year')
+    this.deckLibrary.correctYear('friday-mix', track.id, year)
+    this.stateValue.deckAction = `Year corrected to ${year}`
+    this.emit()
+  }
+
+  proposeDiggerTracks(): void {
+    this.deckLibrary.proposeTracks('digger-mobile-1', 'friday-mix', 'Deep-cut dance classics', [
+      {
+        id: 'digger-track',
+        title: 'Reviewed Deep Cut',
+        artist: 'Digger Artist',
+        year: 1992,
+        providerIds: { audius: 'digger-track' },
+        previewUrl: 'https://preview.example.test/digger.mp3',
+      },
+    ])
+    this.stateValue.deckAction = 'Digger suggestion awaiting review'
+    this.emit()
+  }
+
+  reviewDiggerTracks(accept: boolean): void {
+    this.deckLibrary.reviewProposal('digger-mobile-1', 'host-1', accept)
+    this.stateValue.deckAction = accept
+      ? 'Digger suggestion accepted'
+      : 'Digger suggestion rejected'
     this.emit()
   }
 

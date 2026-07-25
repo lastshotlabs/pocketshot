@@ -190,9 +190,60 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
               )
             }
           />
+          <Action
+            testID="import-playlist"
+            label="Import provider playlist"
+            onPress={() => void controller.importDemoPlaylist()}
+          />
+          <Action
+            testID="search-add-track"
+            label="Search providers and add track"
+            onPress={() => void controller.searchAndAddTrack('dance classic')}
+          />
+          {controller.deckLibrary.snapshot[0]?.tracks.length > 0 && (
+            <>
+              <Action
+                testID="audition-track"
+                label="Audition first track"
+                onPress={() => void controller.auditionFirstTrack()}
+              />
+              <Action
+                testID="correct-track-year"
+                label="Correct first track year"
+                onPress={() => controller.correctFirstTrackYear(1984)}
+              />
+            </>
+          )}
+          {!controller.deckLibrary.proposalSnapshot.length && (
+            <Action
+              testID="request-digger"
+              label="Ask Digger for tracks"
+              onPress={() => controller.proposeDiggerTracks()}
+            />
+          )}
+          {controller.deckLibrary.proposalSnapshot.some(
+            (proposal) => proposal.status === 'pending',
+          ) && (
+            <>
+              <Text style={styles.copy}>AI suggestions require explicit host review.</Text>
+              <Action
+                testID="accept-digger"
+                label="Review and accept Digger suggestion"
+                onPress={() => controller.reviewDiggerTracks(true)}
+              />
+              <Action
+                testID="reject-digger"
+                label="Review and reject Digger suggestion"
+                onPress={() => controller.reviewDiggerTracks(false)}
+              />
+            </>
+          )}
           <Text style={styles.copy}>
             {controller.deckHealth().playable} playable · {controller.providerCapabilities().length}{' '}
             connected providers
+          </Text>
+          <Text testID="deck-action-status" style={styles.copy}>
+            {party.deckAction ?? 'No deck action yet'}
           </Text>
           <Text style={styles.copy}>
             Versions: {controller.deckLibrary.history('friday-mix').length} ·{' '}

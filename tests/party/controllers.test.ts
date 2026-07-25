@@ -86,6 +86,41 @@ describe('DeckLibraryController', () => {
     expect(target.snapshot[0].tracks).toEqual([track('1', 'Blue Monday')])
     expect(() => target.importJson('target', '{bad')).toThrow('invalid')
   })
+
+  it('imports provider playlists, corrects years, and requires review before adding AI tracks', async () => {
+    const library = new DeckLibraryController()
+    library.create('deck', 'Deep Cuts')
+    await library.importPlaylist('deck', 'spotify:playlist:one', {
+      importPlaylist: async (reference) => {
+        expect(reference).toBe('spotify:playlist:one')
+        return [{ ...track('playlist'), year: null }]
+      },
+    })
+    library.correctYear('deck', 'playlist', 2003)
+    library.proposeTracks('proposal', 'deck', 'Find overlooked tracks', [track('suggested')])
+    expect(library.snapshot[0].tracks.map(({ id }) => id)).toEqual(['playlist'])
+    expect(library.proposalSnapshot[0]).toMatchObject({
+      status: 'pending',
+      reviewedBy: null,
+    })
+    library.reviewProposal('proposal', 'editor', true)
+    expect(library.snapshot[0].tracks.map(({ id }) => id)).toEqual(['playlist', 'suggested'])
+    expect(library.proposalSnapshot[0]).toMatchObject({
+      status: 'accepted',
+      reviewedBy: 'editor',
+    })
+    expect(library.snapshot[0].tracks[0].year).toBe(2003)
+    expect(() => library.reviewProposal('proposal', 'editor', false)).toThrow('already')
+  })
+
+  it('keeps rejected AI suggestions out of a deck', () => {
+    const library = new DeckLibraryController()
+    library.create('deck', 'Deep Cuts')
+    library.proposeTracks('proposal', 'deck', 'Find tracks', [track('suggested')])
+    library.reviewProposal('proposal', 'editor', false)
+    expect(library.snapshot[0].tracks).toEqual([])
+    expect(library.proposalSnapshot[0].status).toBe('rejected')
+  })
 })
 
 describe('PlaybackProviderController', () => {

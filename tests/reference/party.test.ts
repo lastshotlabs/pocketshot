@@ -207,6 +207,27 @@ describe('Party clean-room acceptance model', () => {
     expect(party.state.deckExport).toMatch(/^CSV/)
   })
 
+  it('composes playlist import, provider search, audition, year correction, and reviewed Digger suggestions', async () => {
+    const party = new PartyDemoController()
+    await party.importDemoPlaylist()
+    await party.searchAndAddTrack('dance')
+    await party.auditionFirstTrack()
+    party.correctFirstTrackYear(1984)
+    party.proposeDiggerTracks()
+    expect(party.deckLibrary.proposalSnapshot[0].status).toBe('pending')
+    expect(party.deckLibrary.snapshot[0].tracks).toHaveLength(2)
+    party.reviewDiggerTracks(true)
+    expect(party.deckLibrary.snapshot[0].tracks).toHaveLength(3)
+    expect(party.deckLibrary.proposalSnapshot[0]).toMatchObject({
+      status: 'accepted',
+      reviewedBy: 'host-1',
+    })
+    expect(party.state).toMatchObject({
+      playbackSource: 'audius:preview',
+      deckAction: 'Digger suggestion accepted',
+    })
+  })
+
   it('reports provider capabilities, authorizes Spotify, and falls back to Audius previews', async () => {
     const party = new PartyDemoController()
     expect(party.providerCapabilities()).toEqual([
