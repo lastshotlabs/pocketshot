@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Blank Slate",
+    "slug": "pocketshot-blankslate",
+    "scheme": "pocketshot-blankslate",
+    "version": "0.0.1",
+    "platforms": ["ios", "android"],
+    "ios": { "bundleIdentifier": "com.lastshotlabs.pocketshot.blankslate" },
+    "android": { "package": "com.lastshotlabs.pocketshot.blankslate" },
+    "plugins": ["expo-router"]
+  }
+}

@@ -118,6 +118,7 @@
     "verify:coach": "npm run build && node scripts/verify-reference-shell.mjs coach",
     "verify:community": "npm run build && node scripts/verify-reference-shell.mjs community",
     "verify:burndown": "npm run build && node scripts/verify-reference-shell.mjs burndown",
+    "verify:blankslate": "npm run build && node scripts/verify-reference-shell.mjs blankslate",
     "verify:release": "npm run build && npm run check:release-artifacts"
   },
   "peerDependencies": {
