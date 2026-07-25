@@ -77,3 +77,96 @@ jobs:
           name: maestro-${{ matrix.shell }}-failure
           path: ~/.maestro/tests
           if-no-files-found: ignore
+
+  ios-maestro:
+    runs-on: macos-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shell: party
+            flow: .maestro/party-critical.yaml .maestro/party-deep-link.yaml
+          - shell: coach
+            flow: .maestro/coach-critical.yaml
+          - shell: community
+            flow: .maestro/community-critical.yaml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@lastshotlabs'
+      - run: npm ci --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install current package in reference shell
+        run: |
+          npm run build
+          archive=$(npm pack --pack-destination "$RUNNER_TEMP" --silent)
+          npm install --prefix "examples/${{ matrix.shell }}" \
+            --legacy-peer-deps --package-lock=false
+          npm install --prefix "examples/${{ matrix.shell }}" "$RUNNER_TEMP/$archive" \
+            --no-save --package-lock=false --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate iOS app
+        working-directory: examples/${{ matrix.shell }}
+        run: |
+          npx expo prebuild --platform ios --clean --no-install
+          npx pod-install ios
+      - name: Boot isolated iOS simulator
+        id: simulator
+        run: |
+          runtime=$(xcrun simctl list runtimes available -j |
+            jq -r '[.runtimes[] | select(.name | startswith("iOS"))] | last | .identifier')
+          device=$(xcrun simctl create \
+            "Pocketshot-${{ matrix.shell }}-${{ github.run_id }}" \
+            com.apple.CoreSimulator.SimDeviceType.iPhone-16 \
+            "$runtime")
+          echo "id=$device" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$device"
+          open -a Simulator
+          xcrun simctl bootstatus "$device" -b
+      - name: Compile iOS simulator app
+        working-directory: examples/${{ matrix.shell }}
+        env:
+          DEVICE_ID: ${{ steps.simulator.outputs.id }}
+        run: |
+          workspace=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
+          scheme=$(xcodebuild -workspace "$workspace" -list -json | jq -r '.workspace.schemes[0]')
+          xcodebuild \
+            -workspace "$workspace" \
+            -scheme "$scheme" \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -derivedDataPath "$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Install Maestro CLI
+        run: curl -fsSL "https://get.maestro.mobile.dev" | bash
+      - name: Run critical journeys
+        env:
+          DEVICE_ID: ${{ steps.simulator.outputs.id }}
+        run: |
+          app=$(find "$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data/Build/Products/Debug-iphonesimulator" \
+            -maxdepth 1 -name '*.app' -print -quit)
+          test -n "$app"
+          xcrun simctl install "$DEVICE_ID" "$app"
+          "$HOME/.maestro/bin/maestro" --device "$DEVICE_ID" test ${{ matrix.flow }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: maestro-ios-${{ matrix.shell }}-failure
+          path: ~/.maestro/tests
+          if-no-files-found: ignore
+      - name: Delete iOS simulator
+        if: always() && steps.simulator.outputs.id
+        env:
+          DEVICE_ID: ${{ steps.simulator.outputs.id }}
+        run: |
+          xcrun simctl shutdown "$DEVICE_ID" || true
+          xcrun simctl delete "$DEVICE_ID" || true
