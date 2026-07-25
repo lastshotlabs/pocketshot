@@ -17,7 +17,9 @@ describe('InlineEdit', () => {
 
   it('renders ref-backed affixes', () => {
     const { getByText } = renderWithProviders(
-      <InlineEdit config={{ id: 'price', prefix: { from: 'copy.prefix' }, suffix: { from: 'copy.suffix' } }} />,
+      <InlineEdit
+        config={{ id: 'price', prefix: { from: 'copy.prefix' }, suffix: { from: 'copy.suffix' } }}
+      />,
       { initialValues: { copy: { prefix: '$', suffix: 'USD' } } },
     )
 

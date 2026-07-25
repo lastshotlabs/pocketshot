@@ -2,11 +2,7 @@ import React, { useCallback } from 'react'
 import { ComponentWrapper } from '../../_base/ComponentWrapper'
 import { useScreenContext } from '../../../context/ScreenContext'
 import { resolveFromRef } from '../../_base/fromRef'
-import {
-  WizardBase,
-  type WizardFieldValues,
-  type WizardStepDefinition,
-} from './standalone'
+import { WizardBase, type WizardFieldValues, type WizardStepDefinition } from './standalone'
 import type { WizardConfig } from './types'
 
 export function Wizard({ config }: { config: WizardConfig }) {

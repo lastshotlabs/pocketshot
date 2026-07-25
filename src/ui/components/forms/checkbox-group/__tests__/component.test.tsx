@@ -17,7 +17,9 @@ describe('CheckboxGroup', () => {
   })
 
   it('renders options', () => {
-    const result = renderWithProviders(<CheckboxGroup config={{ id: 'interests', options: OPTIONS }} />)
+    const result = renderWithProviders(
+      <CheckboxGroup config={{ id: 'interests', options: OPTIONS }} />,
+    )
     expect(result.getByTestId('interests-option-photo')).toBeTruthy()
     expect(result.getByTestId('interests-option-travel')).toBeTruthy()
   })

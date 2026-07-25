@@ -30,9 +30,7 @@ export function BottomTabBar({ config }: { config: BottomTabBarConfig }) {
     () =>
       config.tabs.map((tab) => {
         const resolvedBadge =
-          tab.badge != null
-            ? (resolveFromRef(tab.badge, values) as number | undefined)
-            : undefined
+          tab.badge != null ? (resolveFromRef(tab.badge, values) as number | undefined) : undefined
         return {
           id: tab.id,
           label: tab.label,

@@ -217,19 +217,10 @@ export function PopoverBase({
       >
         <TouchableWithoutFeedback onPress={handleBackdropPress} accessibilityLabel="Close popover">
           <Animated.View
-            style={[
-              { flex: 1 },
-              backdropSurface.style as ViewStyle | undefined,
-              { opacity },
-            ]}
+            style={[{ flex: 1 }, backdropSurface.style as ViewStyle | undefined, { opacity }]}
           >
             <TouchableWithoutFeedback>
-              <View
-                style={[
-                  containerSurface.style as ViewStyle | undefined,
-                  positionStyle,
-                ]}
-              >
+              <View style={[containerSurface.style as ViewStyle | undefined, positionStyle]}>
                 <View style={panelSurface.style as ViewStyle | undefined}>
                   <View style={headerSurface.style as ViewStyle | undefined}>
                     {title != null ? (

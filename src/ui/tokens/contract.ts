@@ -215,10 +215,14 @@ function mapThemeColorsToNative(
 
   next.inputBackground = effectiveSurface
   next.inputText = effectiveText
-  next.inputPlaceholder = (mix(next.textMuted ?? baseColors.textMuted, effectiveBackground, 0.35) as HexColor)
+  next.inputPlaceholder = mix(
+    next.textMuted ?? baseColors.textMuted,
+    effectiveBackground,
+    0.35,
+  ) as HexColor
   next.badgeBackground = next.badgeBackground ?? effectiveMuted
-  next.badgeForeground = next.badgeForeground ?? (next.mutedForeground ?? baseColors.badgeForeground)
-  next.borderFocus = next.borderFocus ?? (next.primary ?? baseColors.primary)
+  next.badgeForeground = next.badgeForeground ?? next.mutedForeground ?? baseColors.badgeForeground
+  next.borderFocus = next.borderFocus ?? next.primary ?? baseColors.primary
 
   return next
 }
@@ -395,9 +399,7 @@ export function resolveContractTokens(
   const tokenConfig = contractThemeToTokenConfig(theme)
   const baseTokens = resolveLocalTokens(tokenConfig, systemColorScheme)
   const scheme =
-    tokenConfig.colorScheme === 'system'
-      ? systemColorScheme
-      : (tokenConfig.colorScheme ?? 'light')
+    tokenConfig.colorScheme === 'system' ? systemColorScheme : (tokenConfig.colorScheme ?? 'light')
 
   const contractColors =
     scheme === 'dark' && Object.keys(resolved.fragment.darkColors ?? {}).length > 0

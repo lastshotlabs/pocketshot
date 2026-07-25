@@ -9,9 +9,7 @@ export function Toggle({ config }: { config: ToggleConfig }) {
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedValue =
-    config.value != null
-      ? (resolveFromRef(config.value, values) as boolean | undefined)
-      : undefined
+    config.value != null ? (resolveFromRef(config.value, values) as boolean | undefined) : undefined
   const resolvedDisabled =
     config.disabled != null
       ? (resolveFromRef(config.disabled, values) as boolean | undefined)

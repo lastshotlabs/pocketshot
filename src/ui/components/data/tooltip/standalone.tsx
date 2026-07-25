@@ -73,9 +73,19 @@ function getArrowStyle(position: TooltipPosition, tokens: DesignTokens): ViewSty
 
   switch (position) {
     case 'top':
-      return { ...arrowBase, bottom: -ARROW_SIZE, alignSelf: 'center', transform: [{ rotate: '45deg' }] }
+      return {
+        ...arrowBase,
+        bottom: -ARROW_SIZE,
+        alignSelf: 'center',
+        transform: [{ rotate: '45deg' }],
+      }
     case 'bottom':
-      return { ...arrowBase, top: -ARROW_SIZE, alignSelf: 'center', transform: [{ rotate: '45deg' }] }
+      return {
+        ...arrowBase,
+        top: -ARROW_SIZE,
+        alignSelf: 'center',
+        transform: [{ rotate: '45deg' }],
+      }
     case 'left':
       return {
         ...arrowBase,

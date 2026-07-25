@@ -120,7 +120,9 @@ function LoadingSkeleton({
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
-          <View style={[{ gap: tokens.spacing[2] }, loadingBodySurface.style as ViewStyle | undefined]}>
+          <View
+            style={[{ gap: tokens.spacing[2] }, loadingBodySurface.style as ViewStyle | undefined]}
+          >
             <View
               style={[
                 {

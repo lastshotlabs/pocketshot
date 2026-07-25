@@ -53,7 +53,9 @@ describe('Stack', () => {
   })
 
   it('renders with padding props without crashing', () => {
-    const { toJSON } = renderWithProviders(<Stack config={{ padding: 4, paddingX: 8, paddingY: 2 }} />)
+    const { toJSON } = renderWithProviders(
+      <Stack config={{ padding: 4, paddingX: 8, paddingY: 2 }} />,
+    )
     expect(toJSON()).toBeTruthy()
   })
 

@@ -85,7 +85,8 @@ export function ScrollContainerBase({
   const contentPaddingValue =
     contentPadding !== undefined
       ? typeof contentPadding === 'string'
-        ? (tokens.spacing[contentPadding as unknown as keyof typeof tokens.spacing] ?? contentPadding)
+        ? (tokens.spacing[contentPadding as unknown as keyof typeof tokens.spacing] ??
+          contentPadding)
         : contentPadding
       : undefined
 

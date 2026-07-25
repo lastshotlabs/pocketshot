@@ -19,5 +19,13 @@ export const ChartSchema = extendComponentSchema({
   showLegend: z.boolean().default(false),
   animated: z.boolean().default(true),
   testID: z.string().optional(),
-  slots: slotsSchema(['root', 'legend', 'legendItem', 'tooltip', 'series', 'axis', 'grid']).optional(),
+  slots: slotsSchema([
+    'root',
+    'legend',
+    'legendItem',
+    'tooltip',
+    'series',
+    'axis',
+    'grid',
+  ]).optional(),
 })

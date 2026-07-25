@@ -191,7 +191,9 @@ export function ContextMenuBase({
 
   const renderItem = useCallback(
     ({ item, index }: { item: ContextMenuItem; index: number }) => {
-      const activeStates: RuntimeSurfaceState[] | undefined = item.disabled ? ['disabled'] : undefined
+      const activeStates: RuntimeSurfaceState[] | undefined = item.disabled
+        ? ['disabled']
+        : undefined
       const destructiveColor = item.destructive ? tokens.colors.destructive : undefined
       const rowStyle = resolveSurfacePresentation({
         tokens,

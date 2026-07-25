@@ -22,7 +22,9 @@ describe('HighlightedText', () => {
 
   it('resolves singular highlight from screen context', () => {
     const { getByText } = renderWithProviders(
-      <HighlightedText config={{ text: 'The quick brown fox', highlight: { from: 'search.query' } }} />,
+      <HighlightedText
+        config={{ text: 'The quick brown fox', highlight: { from: 'search.query' } }}
+      />,
       { initialValues: { search: { query: 'fox' } } },
     )
 

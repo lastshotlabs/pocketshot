@@ -10,9 +10,7 @@ export function Select({ config }: { config: SelectConfig }) {
 
   const resolvedOptions = resolveFromRef<SelectOption[]>(config.options, values) ?? []
   const resolvedValue =
-    config.value != null
-      ? (resolveFromRef(config.value, values) as string | undefined)
-      : undefined
+    config.value != null ? (resolveFromRef(config.value, values) as string | undefined) : undefined
 
   const handleChange = useCallback(
     (next: string) => {

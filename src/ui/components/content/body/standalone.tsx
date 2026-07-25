@@ -24,14 +24,7 @@ export interface BodyBaseProps {
  * @example
  * <BodyBase>Some paragraph text</BodyBase>
  */
-export function BodyBase({
-  children,
-  text,
-  numberOfLines,
-  style,
-  slots,
-  testID,
-}: BodyBaseProps) {
+export function BodyBase({ children, text, numberOfLines, style, slots, testID }: BodyBaseProps) {
   const tokens = useTokens()
   const sharedTextStyle = resolveNativeTextStyle({}, tokens)
   const textSurface = resolveSurfacePresentation({
@@ -53,12 +46,7 @@ export function BodyBase({
   }
 
   return (
-    <Text
-      style={finalStyle}
-      numberOfLines={numberOfLines}
-      accessibilityRole="text"
-      testID={testID}
-    >
+    <Text style={finalStyle} numberOfLines={numberOfLines} accessibilityRole="text" testID={testID}>
       {children ?? text}
     </Text>
   )

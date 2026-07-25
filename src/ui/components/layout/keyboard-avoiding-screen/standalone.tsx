@@ -105,9 +105,7 @@ export function KeyboardAvoidingScreenBase({
         </ScrollView>
       ) : (
         <View style={viewportSurface.style as ViewStyle | undefined}>
-          <View
-            style={[contentSurface.style as ViewStyle | undefined, contentContainerStyle]}
-          >
+          <View style={[contentSurface.style as ViewStyle | undefined, contentContainerStyle]}>
             {children}
           </View>
         </View>

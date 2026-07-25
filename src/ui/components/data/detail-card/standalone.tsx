@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from 'react'
-import { Animated, Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native'
+import {
+  Animated,
+  Text,
+  TouchableOpacity,
+  View,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native'
 import { resolveNativeTextStyle } from '../../_base/text-style'
 import { resolveSurfacePresentation } from '../../_base/style-surfaces'
 import { useTokens } from '../../../context/AppContext'
@@ -146,7 +153,9 @@ function FieldValue({
         accessibilityLabel={value}
         testID={testID}
       >
-        <Text style={[textStyle, { color: tokens.colors.primary, textDecorationLine: 'underline' }]}>
+        <Text
+          style={[textStyle, { color: tokens.colors.primary, textDecorationLine: 'underline' }]}
+        >
           {value}
         </Text>
       </TouchableOpacity>
@@ -169,7 +178,9 @@ function FieldValue({
         accessibilityLabel={`Email ${value}`}
         testID={testID}
       >
-        <Text style={[textStyle, { color: tokens.colors.primary, textDecorationLine: 'underline' }]}>
+        <Text
+          style={[textStyle, { color: tokens.colors.primary, textDecorationLine: 'underline' }]}
+        >
           {value}
         </Text>
       </TouchableOpacity>
@@ -184,7 +195,9 @@ function FieldValue({
         accessibilityLabel={`Call ${value}`}
         testID={testID}
       >
-        <Text style={[textStyle, { color: tokens.colors.primary, textDecorationLine: 'underline' }]}>
+        <Text
+          style={[textStyle, { color: tokens.colors.primary, textDecorationLine: 'underline' }]}
+        >
           {value}
         </Text>
       </TouchableOpacity>
@@ -354,8 +367,7 @@ export function DetailCardBase({
               {section.fields.map((field, fieldIdx) => {
                 const displayValue = field.value ?? ''
                 const isLast =
-                  fieldIdx === section.fields.length - 1 &&
-                  sectionIdx === sections.length - 1
+                  fieldIdx === section.fields.length - 1 && sectionIdx === sections.length - 1
                 const fieldTestID = testID
                   ? `${testID}-field-${field.label.toLowerCase().replace(/\s+/g, '-')}`
                   : `detail-card-field-${field.label.toLowerCase().replace(/\s+/g, '-')}`
@@ -392,9 +404,7 @@ export function DetailCardBase({
                     accessibilityRole="text"
                     accessibilityLabel={`${field.label}: ${displayValue}`}
                   >
-                    <View
-                      style={{ width: 120, flexShrink: 0, marginRight: tokens.spacing[3] }}
-                    >
+                    <View style={{ width: 120, flexShrink: 0, marginRight: tokens.spacing[3] }}>
                       <Text
                         style={[fieldLabelStyle, fieldLabelSurface.style as TextStyle | undefined]}
                         numberOfLines={1}
@@ -402,12 +412,7 @@ export function DetailCardBase({
                         {field.label}
                       </Text>
                     </View>
-                    <View
-                      style={[
-                        { flex: 1 },
-                        fieldValueSurface.style as ViewStyle | undefined,
-                      ]}
-                    >
+                    <View style={[{ flex: 1 }, fieldValueSurface.style as ViewStyle | undefined]}>
                       <FieldValue
                         type={field.type ?? 'text'}
                         value={displayValue}

@@ -6,8 +6,19 @@ import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 const config = {
   id: 'main-tabs',
   tabs: [
-    { id: 'home', label: 'Home', icon: 'Home', badge: 2, onPress: { type: 'set-value' as const, target: 'tabs.home', value: true } },
-    { id: 'profile', label: 'Profile', icon: 'Profile', onPress: { type: 'set-value' as const, target: 'tabs.profile', value: true } },
+    {
+      id: 'home',
+      label: 'Home',
+      icon: 'Home',
+      badge: 2,
+      onPress: { type: 'set-value' as const, target: 'tabs.home', value: true },
+    },
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: 'Profile',
+      onPress: { type: 'set-value' as const, target: 'tabs.profile', value: true },
+    },
   ],
 }
 

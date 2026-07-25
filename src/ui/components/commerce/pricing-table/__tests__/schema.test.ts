@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { PricingTableSchema } from '../schema'
 
 describe('PricingTableSchema', () => {
-  const checkoutAction = { type: 'navigate', to: '/checkout' } as unknown as import('../../../../actions/types').Action
+  const checkoutAction = {
+    type: 'navigate',
+    to: '/checkout',
+  } as unknown as import('../../../../actions/types').Action
   const TIER = {
     id: 'pro',
     name: 'Pro',

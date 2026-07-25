@@ -115,9 +115,7 @@ export function ScreenBase({
 
   return (
     <View style={[viewportSurface.style as ViewStyle | undefined, style]} testID={rootTestID}>
-      <View
-        style={[contentSurface.style as ViewStyle | undefined, contentContainerStyle]}
-      >
+      <View style={[contentSurface.style as ViewStyle | undefined, contentContainerStyle]}>
         {children}
       </View>
     </View>

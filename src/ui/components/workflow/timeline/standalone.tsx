@@ -244,9 +244,7 @@ export function TimelineBase({
             </View>
             {item.description != null ? (
               <View style={[contentStyle, contentSurface.style as ViewStyle | undefined]}>
-                <Text
-                  style={[descriptionStyle, descriptionSurface.style as TextStyle | undefined]}
-                >
+                <Text style={[descriptionStyle, descriptionSurface.style as TextStyle | undefined]}>
                   {item.description}
                 </Text>
               </View>
@@ -255,7 +253,17 @@ export function TimelineBase({
         </View>
       )
     },
-    [items.length, slots, sharedTextStyle, textAlign, lineHeight, letterSpacing, baseFontSize, baseColor, tokens],
+    [
+      items.length,
+      slots,
+      sharedTextStyle,
+      textAlign,
+      lineHeight,
+      letterSpacing,
+      baseFontSize,
+      baseColor,
+      tokens,
+    ],
   )
 
   const keyExtractor = useCallback((item: TimelineBaseItem) => item.id, [])
@@ -270,7 +278,10 @@ export function TimelineBase({
       componentSurface: slots?.loadingState,
     })
     return (
-      <View style={[loadingStyle, loadingSurface.style as ViewStyle | undefined, style]} testID={testID ?? id}>
+      <View
+        style={[loadingStyle, loadingSurface.style as ViewStyle | undefined, style]}
+        testID={testID ?? id}
+      >
         <ActivityIndicator size="small" color={tokens.colors.primary} />
       </View>
     )

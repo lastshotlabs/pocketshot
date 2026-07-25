@@ -36,7 +36,9 @@ describe('CodeBlock', () => {
 
   it('accepts shared surface and text props without crashing', () => {
     const { toJSON } = renderWithProviders(
-      <CodeBlock config={cfg({ bg: 'card', borderRadius: 'xl', color: 'muted', fontSize: 'lg' })} />,
+      <CodeBlock
+        config={cfg({ bg: 'card', borderRadius: 'xl', color: 'muted', fontSize: 'lg' })}
+      />,
     )
 
     expect(toJSON()).toBeTruthy()

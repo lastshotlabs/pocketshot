@@ -9,15 +9,11 @@ export function TimePicker({ config }: { config: TimePickerConfig }) {
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedDefault =
-    config.defaultValue != null
-      ? resolveFromRef<string>(config.defaultValue, values)
-      : undefined
+    config.defaultValue != null ? resolveFromRef<string>(config.defaultValue, values) : undefined
   const resolvedLabel =
     config.label != null ? resolveFromRef<string>(config.label, values) : undefined
   const resolvedPlaceholder =
-    config.placeholder != null
-      ? resolveFromRef<string>(config.placeholder, values)
-      : undefined
+    config.placeholder != null ? resolveFromRef<string>(config.placeholder, values) : undefined
 
   const handleChange = useCallback(
     (next: string) => {

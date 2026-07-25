@@ -111,10 +111,7 @@ export function CheckboxGroupBase({
           {label}
         </Text>
       ) : null}
-      <View
-        style={optionsListSurface.style as ViewStyle | undefined}
-        accessibilityRole="none"
-      >
+      <View style={optionsListSurface.style as ViewStyle | undefined} accessibilityRole="none">
         {options.map((option) => {
           const checked = selected.includes(option.value)
           const disabled = option.disabled ?? false

@@ -34,7 +34,10 @@ export function FileUploader({ config }: { config: FileUploaderConfig }) {
 
   const handleChange = (next: FileItem[]) => {
     setFiles(next)
-    setValue(config.id, next.map((f) => f.uri))
+    setValue(
+      config.id,
+      next.map((f) => f.uri),
+    )
     if (config.onChangeAction != null) {
       void dispatch(config.onChangeAction)
     }

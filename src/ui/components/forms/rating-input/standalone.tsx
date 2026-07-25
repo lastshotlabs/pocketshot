@@ -148,7 +148,7 @@ export function RatingInputBase({
           const filled = rating >= index + 1
           const halfFilled = allowHalf && !filled && rating >= index + 0.5
           const starStates: RuntimeSurfaceState[] = [
-            ...((filled || halfFilled) ? (['selected'] as const) : []),
+            ...(filled || halfFilled ? (['selected'] as const) : []),
             ...(readOnly ? (['disabled'] as const) : []),
           ]
           const starSurface = resolveSurfacePresentation({

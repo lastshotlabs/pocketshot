@@ -23,12 +23,7 @@ export function Toast({ config }: { config: ToastConfig }) {
   if (!activeToast) return null
 
   return (
-    <ComponentWrapper
-      id={config.id}
-      testID={config.testID}
-      config={config}
-      activeStates={['open']}
-    >
+    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={['open']}>
       <ToastBase
         id={config.id}
         testID={config.testID}

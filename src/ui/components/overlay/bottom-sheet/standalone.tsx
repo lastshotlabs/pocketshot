@@ -82,8 +82,7 @@ function CustomBottomSheet({
   const tokens = useTokens()
   const sharedTextStyle = resolveNativeTextStyle({}, tokens)
   const heights = (snapPoints ?? ['50%']).map(parseSnapPoint)
-  const primaryHeight =
-    heights[Math.floor(heights.length / 2)] ?? heights[0] ?? WINDOW_HEIGHT * 0.5
+  const primaryHeight = heights[Math.floor(heights.length / 2)] ?? heights[0] ?? WINDOW_HEIGHT * 0.5
 
   const translateY = useRef(new Animated.Value(WINDOW_HEIGHT)).current
   const backdropOpacity = useRef(new Animated.Value(0)).current

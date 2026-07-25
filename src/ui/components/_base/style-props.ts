@@ -146,7 +146,12 @@ export function resolveNativeStyleProps(
   if (borderRadius != null) style.borderRadius = borderRadius
   applyRadiusStyle(style, 'borderTopLeftRadius', baseValue(config.borderTopLeftRadius), tokens)
   applyRadiusStyle(style, 'borderTopRightRadius', baseValue(config.borderTopRightRadius), tokens)
-  applyRadiusStyle(style, 'borderBottomLeftRadius', baseValue(config.borderBottomLeftRadius), tokens)
+  applyRadiusStyle(
+    style,
+    'borderBottomLeftRadius',
+    baseValue(config.borderBottomLeftRadius),
+    tokens,
+  )
   applyRadiusStyle(
     style,
     'borderBottomRightRadius',

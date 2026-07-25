@@ -244,11 +244,7 @@ function FieldRenderer({
         placeholderTextColor={tokens.colors.inputPlaceholder}
         secureTextEntry={field.type === 'password'}
         keyboardType={
-          field.type === 'number'
-            ? 'numeric'
-            : field.type === 'email'
-              ? 'email-address'
-              : 'default'
+          field.type === 'number' ? 'numeric' : field.type === 'email' ? 'email-address' : 'default'
         }
         autoCapitalize={field.type === 'email' || field.type === 'password' ? 'none' : 'sentences'}
         multiline={isTextarea}
@@ -571,13 +567,15 @@ export function WizardBase({
             ) : null}
 
             <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary, submitting ? styles.buttonDisabled : null]}
+              style={[
+                styles.button,
+                styles.buttonPrimary,
+                submitting ? styles.buttonDisabled : null,
+              ]}
               onPress={handleNext}
               disabled={submitting}
               accessibilityRole="button"
-              accessibilityLabel={
-                isLastStep ? (submitLabel ?? 'Submit') : (nextLabel ?? 'Next')
-              }
+              accessibilityLabel={isLastStep ? (submitLabel ?? 'Submit') : (nextLabel ?? 'Next')}
               accessibilityState={{ busy: submitting }}
               testID={`wizard-${wizardId}-${isLastStep ? 'submit' : 'next'}`}
             >

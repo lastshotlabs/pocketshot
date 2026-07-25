@@ -345,19 +345,13 @@ export function DateRangePickerBase({
         testID={testIDBase}
       >
         <View style={styles.dateDisplay}>
-          <Text
-            style={[styles.dateText, !rangeStart && styles.datePlaceholder]}
-            numberOfLines={1}
-          >
+          <Text style={[styles.dateText, !rangeStart && styles.datePlaceholder]} numberOfLines={1}>
             {startDisplay}
           </Text>
         </View>
         <Text style={styles.arrow}>→</Text>
         <View style={styles.dateDisplay}>
-          <Text
-            style={[styles.dateText, !rangeEnd && styles.datePlaceholder]}
-            numberOfLines={1}
-          >
+          <Text style={[styles.dateText, !rangeEnd && styles.datePlaceholder]} numberOfLines={1}>
             {endDisplay}
           </Text>
         </View>

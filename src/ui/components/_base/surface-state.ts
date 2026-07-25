@@ -1,4 +1,7 @@
-import { SURFACE_STATE_NAMES, type SurfaceStateName } from '@lastshotlabs/frontend-contract/components'
+import {
+  SURFACE_STATE_NAMES,
+  type SurfaceStateName,
+} from '@lastshotlabs/frontend-contract/components'
 
 export type RuntimeSurfaceState = SurfaceStateName
 

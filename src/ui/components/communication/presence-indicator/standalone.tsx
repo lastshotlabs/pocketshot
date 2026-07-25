@@ -115,7 +115,9 @@ export function PresenceIndicatorBase({
   )
 
   const dot = (
-    <View style={[styles.dot, { backgroundColor: dotColor }, dotSurface.style as ViewStyle | undefined]}>
+    <View
+      style={[styles.dot, { backgroundColor: dotColor }, dotSurface.style as ViewStyle | undefined]}
+    >
       {status === 'online' && <PulseRing diameter={diameter} color={dotColor} />}
     </View>
   )
@@ -129,7 +131,9 @@ export function PresenceIndicatorBase({
         testID={testID ?? id}
       >
         {dot}
-        <Text style={[styles.label, { color: dotColor }, labelSurface.style as TextStyle | undefined]}>
+        <Text
+          style={[styles.label, { color: dotColor }, labelSurface.style as TextStyle | undefined]}
+        >
           {labelText}
         </Text>
       </View>
@@ -182,7 +186,9 @@ function makeStyles(
       lineHeight:
         typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
       letterSpacing:
-        typeof sharedTextStyle.letterSpacing === 'number' ? sharedTextStyle.letterSpacing : undefined,
+        typeof sharedTextStyle.letterSpacing === 'number'
+          ? sharedTextStyle.letterSpacing
+          : undefined,
       textTransform: 'capitalize',
     },
   })

@@ -351,7 +351,10 @@ export function DrawerMenuBase({
           testID={`${idPrefix}-panel`}
         >
           {header != null ? (
-            <View style={headerSurface.style as ViewStyle | undefined} testID={`${idPrefix}-header`}>
+            <View
+              style={headerSurface.style as ViewStyle | undefined}
+              testID={`${idPrefix}-header`}
+            >
               {header.avatar != null ? (
                 <Image
                   source={{ uri: header.avatar }}
@@ -416,7 +419,9 @@ export function DrawerMenuBase({
               }
               const item = row.item
               const isActive = item.id === activeItemId
-              const activeStates: RuntimeSurfaceState[] | undefined = isActive ? ['selected'] : undefined
+              const activeStates: RuntimeSurfaceState[] | undefined = isActive
+                ? ['selected']
+                : undefined
               const resolvedItemStyle = resolveSurfacePresentation({
                 tokens,
                 implementationBase: menuItemSurface.resolvedConfigForWrapper,
@@ -477,7 +482,10 @@ export function DrawerMenuBase({
             }}
           />
           {footer != null ? (
-            <View style={footerSurface.style as ViewStyle | undefined} testID={`${idPrefix}-footer`}>
+            <View
+              style={footerSurface.style as ViewStyle | undefined}
+              testID={`${idPrefix}-footer`}
+            >
               <TouchableOpacity
                 style={footerButtonSurface.style as ViewStyle | undefined}
                 onPress={footer.onPress}

@@ -13,7 +13,9 @@ const ON_SELECT = { type: 'set-value' as const, target: 'sort.selected', value: 
 describe('SortPicker', () => {
   it('renders options and cancel action when open', () => {
     const { getByText, getByTestId } = renderWithProviders(
-      <SortPicker config={{ id: 'sorter', options: OPTIONS, onSelect: ON_SELECT, testID: 'sorter' }} />,
+      <SortPicker
+        config={{ id: 'sorter', options: OPTIONS, onSelect: ON_SELECT, testID: 'sorter' }}
+      />,
       { initialValues: { __sortPicker_sorter: true } },
     )
 
@@ -24,7 +26,9 @@ describe('SortPicker', () => {
 
   it('selects an option without crashing', () => {
     const result = renderWithProviders(
-      <SortPicker config={{ id: 'sorter', options: OPTIONS, onSelect: ON_SELECT, testID: 'sorter' }} />,
+      <SortPicker
+        config={{ id: 'sorter', options: OPTIONS, onSelect: ON_SELECT, testID: 'sorter' }}
+      />,
       { initialValues: { __sortPicker_sorter: true } },
     )
 

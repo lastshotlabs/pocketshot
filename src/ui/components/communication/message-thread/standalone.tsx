@@ -361,9 +361,7 @@ export function MessageThreadBase({
       }
       const msgTime = new Date(message.createdAt).getTime()
       const isGroupFirst =
-        prevSenderId !== message.senderId ||
-        prevTime === null ||
-        msgTime - prevTime > GROUP_GAP_MS
+        prevSenderId !== message.senderId || prevTime === null || msgTime - prevTime > GROUP_GAP_MS
 
       items.push({
         type: 'message',
@@ -450,7 +448,9 @@ export function MessageThreadBase({
       showsVerticalScrollIndicator={false}
       testID={testID ? `${testID}-list` : id}
       refreshControl={
-        refreshable ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} /> : undefined
+        refreshable ? (
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        ) : undefined
       }
     />
   )

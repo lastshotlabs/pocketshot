@@ -91,13 +91,7 @@ function isSameDay(a: string, b: string): boolean {
   )
 }
 
-function StatusText({
-  status,
-  color,
-}: {
-  status: ChatMessageStatus | undefined
-  color: string
-}) {
+function StatusText({ status, color }: { status: ChatMessageStatus | undefined; color: string }) {
   if (!status) return null
   if (status === 'sending') return <ActivityIndicator size="small" color={color} />
   if (status === 'failed') return <Text style={{ fontSize: 12, color }}>⚠</Text>
@@ -189,7 +183,9 @@ function Bubble({ item, showAvatars, tokens, styles, onLongPress }: BubbleProps)
 
   return (
     <View style={isOwn ? styles.rowOwn : styles.rowOther}>
-      {!isOwn && showAvatars && <AvatarView message={message} show={isGroupFirst} tokens={tokens} />}
+      {!isOwn && showAvatars && (
+        <AvatarView message={message} show={isGroupFirst} tokens={tokens} />
+      )}
 
       <View style={styles.bubbleContainer}>
         {!isOwn && isGroupFirst && message.senderName != null && (
@@ -408,9 +404,7 @@ export function ChatWindowBase({
 
       const msgTime = new Date(message.createdAt).getTime()
       const isGroupFirst =
-        prevSenderId !== message.senderId ||
-        prevTime === null ||
-        msgTime - prevTime > GROUP_GAP_MS
+        prevSenderId !== message.senderId || prevTime === null || msgTime - prevTime > GROUP_GAP_MS
 
       items.push({
         type: 'message',

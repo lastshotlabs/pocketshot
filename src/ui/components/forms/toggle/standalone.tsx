@@ -1,11 +1,5 @@
 import React, { useRef, useState } from 'react'
-import {
-  Animated,
-  Text,
-  TouchableOpacity,
-  type TextStyle,
-  type ViewStyle,
-} from 'react-native'
+import { Animated, Text, TouchableOpacity, type TextStyle, type ViewStyle } from 'react-native'
 import { resolveNativeTextStyle } from '../../_base/text-style'
 import { resolveSurfacePresentation } from '../../_base/style-surfaces'
 import type { RuntimeSurfaceState } from '../../_base/surface-state'
@@ -140,20 +134,16 @@ export function ToggleBase({
   })
 
   const baseTextStyle: TextStyle = {
-    fontSize:
-      typeof sharedTextStyle.fontSize === 'number' ? sharedTextStyle.fontSize : undefined,
+    fontSize: typeof sharedTextStyle.fontSize === 'number' ? sharedTextStyle.fontSize : undefined,
     fontWeight:
       typeof sharedTextStyle.fontWeight === 'string' ? sharedTextStyle.fontWeight : undefined,
     lineHeight:
       typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
     letterSpacing:
-      typeof sharedTextStyle.letterSpacing === 'number'
-        ? sharedTextStyle.letterSpacing
-        : undefined,
+      typeof sharedTextStyle.letterSpacing === 'number' ? sharedTextStyle.letterSpacing : undefined,
     textAlign:
       typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
-    opacity:
-      typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
+    opacity: typeof sharedTextStyle.opacity === 'number' ? sharedTextStyle.opacity : undefined,
   }
 
   function handlePress() {
@@ -184,12 +174,7 @@ export function ToggleBase({
   const accessibilityLabel = label ?? icon ?? (active ? 'Active toggle' : 'Inactive toggle')
 
   return (
-    <Animated.View
-      style={[
-        { transform: [{ scale: scaleAnim }], alignSelf: 'flex-start' },
-        style,
-      ]}
-    >
+    <Animated.View style={[{ transform: [{ scale: scaleAnim }], alignSelf: 'flex-start' }, style]}>
       <TouchableOpacity
         style={buttonSurface.style as ViewStyle | undefined}
         onPress={handlePress}
@@ -203,16 +188,12 @@ export function ToggleBase({
         testID={testID ?? id}
       >
         {icon != null ? (
-          <Text
-            style={{ ...baseTextStyle, ...(iconSurface.style as TextStyle | undefined) }}
-          >
+          <Text style={{ ...baseTextStyle, ...(iconSurface.style as TextStyle | undefined) }}>
             {icon}
           </Text>
         ) : null}
         {label != null ? (
-          <Text
-            style={{ ...baseTextStyle, ...(labelSurface.style as TextStyle | undefined) }}
-          >
+          <Text style={{ ...baseTextStyle, ...(labelSurface.style as TextStyle | undefined) }}>
             {label}
           </Text>
         ) : null}

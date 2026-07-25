@@ -208,7 +208,9 @@ export function BottomTabBarBase({
         <View style={{ flexDirection: 'row' }}>
           {tabs.map((tab) => {
             const isActive = tab.id === current
-            const activeStates: RuntimeSurfaceState[] | undefined = isActive ? ['selected'] : undefined
+            const activeStates: RuntimeSurfaceState[] | undefined = isActive
+              ? ['selected']
+              : undefined
             const resolvedTabStyle = resolveSurfacePresentation({
               tokens,
               implementationBase: tabSurface.resolvedConfigForWrapper,
@@ -243,36 +245,34 @@ export function BottomTabBarBase({
                   >
                     {tab.icon}
                   </Text>
-                  {tab.badge != null && tab.badge > 0
-                    ? tab.badge === -1
-                      ? (
-                        <View
+                  {tab.badge != null && tab.badge > 0 ? (
+                    tab.badge === -1 ? (
+                      <View
+                        style={{
+                          top: -2,
+                          right: -4,
+                          ...(badgeDotSurface.style as ViewStyle | undefined),
+                        }}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          top: -4,
+                          right: -10,
+                          ...(badgeSurface.style as ViewStyle | undefined),
+                        }}
+                      >
+                        <Text
                           style={{
-                            top: -2,
-                            right: -4,
-                            ...(badgeDotSurface.style as ViewStyle | undefined),
-                          }}
-                        />
-                      )
-                      : (
-                        <View
-                          style={{
-                            top: -4,
-                            right: -10,
-                            ...(badgeSurface.style as ViewStyle | undefined),
+                            ...sharedTextStyle,
+                            ...(badgeTextSurface.style as TextStyle | undefined),
                           }}
                         >
-                          <Text
-                            style={{
-                              ...sharedTextStyle,
-                              ...(badgeTextSurface.style as TextStyle | undefined),
-                            }}
-                          >
-                            {tab.badge > 99 ? '99+' : tab.badge}
-                          </Text>
-                        </View>
-                      )
-                    : null}
+                          {tab.badge > 99 ? '99+' : tab.badge}
+                        </Text>
+                      </View>
+                    )
+                  ) : null}
                 </View>
                 {showLabels ? (
                   <Text

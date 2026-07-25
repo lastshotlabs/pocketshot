@@ -59,8 +59,7 @@ export function ForgotPasswordFormBase({
         <Text style={styles.successIcon}>✉️</Text>
         <Text style={styles.successTitle}>Check your email</Text>
         <Text style={styles.successBody}>
-          We've sent a password reset link to {email}. Check your inbox and follow the
-          instructions.
+          We've sent a password reset link to {email}. Check your inbox and follow the instructions.
         </Text>
         {onBack != null && (
           <TouchableOpacity

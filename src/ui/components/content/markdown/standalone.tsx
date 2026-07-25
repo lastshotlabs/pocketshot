@@ -405,7 +405,9 @@ export function MarkdownBase({ content, style, slots, testID, id }: MarkdownBase
 
   const baseTextStyle = resolveNativeTextStyle({}, tokens)
   const baseFontSize =
-    typeof baseTextStyle.fontSize === 'number' ? baseTextStyle.fontSize : tokens.typography.fontSizeMd
+    typeof baseTextStyle.fontSize === 'number'
+      ? baseTextStyle.fontSize
+      : tokens.typography.fontSizeMd
   const baseTextColor =
     typeof baseTextStyle.color === 'string' ? baseTextStyle.color : tokens.colors.text
   const baseTextAlign =
@@ -437,10 +439,7 @@ export function MarkdownBase({ content, style, slots, testID, id }: MarkdownBase
   }
 
   return (
-    <View
-      style={[containerSurface.style as ViewStyle | undefined, style]}
-      testID={testID ?? id}
-    >
+    <View style={[containerSurface.style as ViewStyle | undefined, style]} testID={testID ?? id}>
       {nodes.map((node, index) => {
         if (node.type === 'list_item' && node.ordered) {
           orderedCounter += 1

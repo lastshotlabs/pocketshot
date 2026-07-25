@@ -332,9 +332,29 @@ function Thumbnail({
   )
 }
 
-function YouTubeEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; domain: string; onPress: () => void; sharedTextStyle: TextStyle; cardStyle?: ViewStyle }) {
+function YouTubeEmbed(
+  props: LinkEmbedBaseProps & {
+    provider: LinkEmbedProvider
+    domain: string
+    onPress: () => void
+    sharedTextStyle: TextStyle
+    cardStyle?: ViewStyle
+  },
+) {
   const tokens = useTokens()
-  const { slots, url, title, description, imageUrl, videoId, onPress, sharedTextStyle, testID, id, cardStyle } = props
+  const {
+    slots,
+    url,
+    title,
+    description,
+    imageUrl,
+    videoId,
+    onPress,
+    sharedTextStyle,
+    testID,
+    id,
+    cardStyle,
+  } = props
   const cardSurface = resolveCardSurface(slots, tokens, tokens.colors.surface)
   const bodySurface = resolveSlot(slots, tokens, 'body', {
     padding: 'md',
@@ -363,7 +383,9 @@ function YouTubeEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider;
 
   const resolvedVideoId = videoId ?? extractYouTubeId(url)
   const thumbnailUrl =
-    resolvedVideoId != null ? `https://img.youtube.com/vi/${resolvedVideoId}/hqdefault.jpg` : imageUrl
+    resolvedVideoId != null
+      ? `https://img.youtube.com/vi/${resolvedVideoId}/hqdefault.jpg`
+      : imageUrl
 
   return (
     <TouchableOpacity
@@ -408,7 +430,15 @@ function YouTubeEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider;
   )
 }
 
-function TwitterEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; domain: string; onPress: () => void; sharedTextStyle: TextStyle; cardStyle?: ViewStyle }) {
+function TwitterEmbed(
+  props: LinkEmbedBaseProps & {
+    provider: LinkEmbedProvider
+    domain: string
+    onPress: () => void
+    sharedTextStyle: TextStyle
+    cardStyle?: ViewStyle
+  },
+) {
   const tokens = useTokens()
   const {
     slots,
@@ -513,10 +543,7 @@ function TwitterEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider;
               {authorName ?? 'Unknown'}
             </Text>
             {authorHandle != null ? (
-              <Text
-                style={mergeTextStyle(sharedTextStyle, twitterHandleSurface)}
-                numberOfLines={1}
-              >
+              <Text style={mergeTextStyle(sharedTextStyle, twitterHandleSurface)} numberOfLines={1}>
                 @{authorHandle}
               </Text>
             ) : null}
@@ -563,7 +590,15 @@ function TwitterEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider;
   )
 }
 
-function GitHubEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; domain: string; onPress: () => void; sharedTextStyle: TextStyle; cardStyle?: ViewStyle }) {
+function GitHubEmbed(
+  props: LinkEmbedBaseProps & {
+    provider: LinkEmbedProvider
+    domain: string
+    onPress: () => void
+    sharedTextStyle: TextStyle
+    cardStyle?: ViewStyle
+  },
+) {
   const tokens = useTokens()
   const {
     slots,
@@ -622,8 +657,7 @@ function GitHubEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; 
   const urlParts = url.match(/github\.com\/([^/]+)\/([^/]+)/)
   const owner = repoOwner ?? urlParts?.[1]
   const repo = repoName ?? urlParts?.[2]?.replace(/\.git$/, '')
-  const repoDisplay =
-    owner != null && repo != null ? `${owner} / ${repo}` : title ?? url
+  const repoDisplay = owner != null && repo != null ? `${owner} / ${repo}` : (title ?? url)
 
   return (
     <TouchableOpacity
@@ -653,9 +687,7 @@ function GitHubEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; 
           {language != null ? (
             <View style={ghStatSurface.style as ViewStyle | undefined}>
               <View style={ghLangDotSurface.style as ViewStyle | undefined} />
-              <Text style={mergeTextStyle(sharedTextStyle, ghStatTextSurface)}>
-                {language}
-              </Text>
+              <Text style={mergeTextStyle(sharedTextStyle, ghStatTextSurface)}>{language}</Text>
             </View>
           ) : null}
           {stars != null ? (
@@ -680,7 +712,15 @@ function GitHubEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; 
   )
 }
 
-function SpotifyEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; domain: string; onPress: () => void; sharedTextStyle: TextStyle; cardStyle?: ViewStyle }) {
+function SpotifyEmbed(
+  props: LinkEmbedBaseProps & {
+    provider: LinkEmbedProvider
+    domain: string
+    onPress: () => void
+    sharedTextStyle: TextStyle
+    cardStyle?: ViewStyle
+  },
+) {
   const tokens = useTokens()
   const {
     slots,
@@ -781,7 +821,15 @@ function SpotifyEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider;
   )
 }
 
-function FigmaEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; domain: string; onPress: () => void; sharedTextStyle: TextStyle; cardStyle?: ViewStyle }) {
+function FigmaEmbed(
+  props: LinkEmbedBaseProps & {
+    provider: LinkEmbedProvider
+    domain: string
+    onPress: () => void
+    sharedTextStyle: TextStyle
+    cardStyle?: ViewStyle
+  },
+) {
   const tokens = useTokens()
   const {
     slots,
@@ -834,7 +882,15 @@ function FigmaEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; d
   )
 }
 
-function GenericEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider; domain: string; onPress: () => void; sharedTextStyle: TextStyle; cardStyle?: ViewStyle }) {
+function GenericEmbed(
+  props: LinkEmbedBaseProps & {
+    provider: LinkEmbedProvider
+    domain: string
+    onPress: () => void
+    sharedTextStyle: TextStyle
+    cardStyle?: ViewStyle
+  },
+) {
   const tokens = useTokens()
   const {
     slots,
@@ -902,9 +958,7 @@ function GenericEmbed(props: LinkEmbedBaseProps & { provider: LinkEmbedProvider;
               {BRAND_ICONS[provider]}
             </Text>
           ) : favicon != null && !/^https?:\/\//.test(favicon) ? (
-            <Text style={mergeTextStyle(sharedTextStyle, brandIconSurface)}>
-              {favicon}
-            </Text>
+            <Text style={mergeTextStyle(sharedTextStyle, brandIconSurface)}>{favicon}</Text>
           ) : favicon != null ? (
             <Image
               source={{ uri: favicon }}

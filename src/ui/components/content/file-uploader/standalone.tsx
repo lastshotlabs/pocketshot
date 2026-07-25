@@ -40,10 +40,7 @@ function tryDocumentPicker() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('expo-document-picker') as {
-      getDocumentAsync: (options: {
-        multiple: boolean
-        copyToCacheDirectory: boolean
-      }) => Promise<{
+      getDocumentAsync: (options: { multiple: boolean; copyToCacheDirectory: boolean }) => Promise<{
         canceled: boolean
         assets?: Array<{ uri: string; name: string; size?: number; mimeType?: string }>
       }>
@@ -309,10 +306,7 @@ export function FileUploaderBase({
 
     if (accept === 'document') {
       if (documentPicker == null) {
-        Alert.alert(
-          'Document picker required',
-          'Install expo-document-picker to pick documents.',
-        )
+        Alert.alert('Document picker required', 'Install expo-document-picker to pick documents.')
         return
       }
 
@@ -406,9 +400,7 @@ export function FileUploaderBase({
         activeOpacity={0.7}
       >
         <Text style={mergeTextStyle(sharedTextStyle, dropIconSurface)}>Add</Text>
-        <Text style={mergeTextStyle(sharedTextStyle, dropLabelSurface)}>
-          Tap to select files
-        </Text>
+        <Text style={mergeTextStyle(sharedTextStyle, dropLabelSurface)}>Tap to select files</Text>
         <Text style={mergeTextStyle(sharedTextStyle, dropSubtitleSurface)}>
           {`${getAcceptLabel(accept)} - Max ${maxSizeMb} MB`}
         </Text>

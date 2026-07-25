@@ -271,13 +271,7 @@ function renderNode(params: {
       const headingSurface = resolveSlot(slots, tokens, 'heading', {
         color: 'foreground',
         fontSize:
-          node.level === 1
-            ? 'xl'
-            : node.level === 2
-              ? 'lg'
-              : node.level === 3
-                ? 'base'
-                : 'sm',
+          node.level === 1 ? 'xl' : node.level === 2 ? 'lg' : node.level === 3 ? 'base' : 'sm',
         fontWeight: node.level != null && node.level <= 2 ? 'bold' : 'semibold',
         marginY: 'sm',
       })

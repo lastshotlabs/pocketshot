@@ -8,14 +8,24 @@ describe('Button', () => {
 
   it('renders without crashing with minimal config', () => {
     const { toJSON } = renderWithProviders(
-      <Button config={{ label: 'Save', onPress: { type: 'set-value', target: 'button.save', value: true } }} />,
+      <Button
+        config={{
+          label: 'Save',
+          onPress: { type: 'set-value', target: 'button.save', value: true },
+        }}
+      />,
     )
     expect(toJSON()).toBeTruthy()
   })
 
   it('renders label text', () => {
     const { getByText } = renderWithProviders(
-      <Button config={{ label: 'Save', onPress: { type: 'set-value', target: 'button.save', value: true } }} />,
+      <Button
+        config={{
+          label: 'Save',
+          onPress: { type: 'set-value', target: 'button.save', value: true },
+        }}
+      />,
     )
     expect(getByText('Save')).toBeTruthy()
   })

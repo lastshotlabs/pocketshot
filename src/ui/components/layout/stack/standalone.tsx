@@ -28,7 +28,10 @@ const ALIGN_MAP: Record<NonNullable<StackBaseProps['alignItems']>, ViewStyle['al
   baseline: 'baseline',
 }
 
-const JUSTIFY_MAP: Record<NonNullable<StackBaseProps['justifyContent']>, ViewStyle['justifyContent']> = {
+const JUSTIFY_MAP: Record<
+  NonNullable<StackBaseProps['justifyContent']>,
+  ViewStyle['justifyContent']
+> = {
   start: 'flex-start',
   center: 'center',
   end: 'flex-end',

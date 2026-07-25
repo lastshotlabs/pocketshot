@@ -11,10 +11,7 @@ export function FilterBar({ config }: { config: FilterBarConfig }) {
 
   const controlledValue: string | string[] | undefined = useMemo(() => {
     if (isFromRef(config.value)) {
-      return resolveFromRef<string | string[]>(
-        config.value as unknown as string | string[],
-        values,
-      )
+      return resolveFromRef<string | string[]>(config.value as unknown as string | string[], values)
     }
     return config.value as string | string[] | undefined
   }, [config.value, values])
@@ -22,8 +19,12 @@ export function FilterBar({ config }: { config: FilterBarConfig }) {
   const handleChange = useCallback(
     async (next: string | string[]) => {
       const publishValue = isMultiSelect
-        ? (Array.isArray(next) ? next : [next])
-        : (Array.isArray(next) ? (next[0] ?? null) : next || null)
+        ? Array.isArray(next)
+          ? next
+          : [next]
+        : Array.isArray(next)
+          ? (next[0] ?? null)
+          : next || null
       if (config.id) {
         setValue(config.id, publishValue)
       }

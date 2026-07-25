@@ -7,7 +7,11 @@ describe('DropdownMenuSchema', () => {
       DropdownMenuSchema.parse({
         trigger: { label: 'Actions' },
         items: [
-          { id: 'edit', label: 'Edit', onPress: { type: 'set-value', target: 'menu.edit', value: true } },
+          {
+            id: 'edit',
+            label: 'Edit',
+            onPress: { type: 'set-value', target: 'menu.edit', value: true },
+          },
         ],
       }),
     ).toBeDefined()
@@ -20,8 +24,17 @@ describe('DropdownMenuSchema', () => {
         trigger: { label: 'Actions', icon: 'more' },
         align: 'end',
         items: [
-          { id: 'edit', label: 'Edit', onPress: { type: 'set-value', target: 'menu.edit', value: true } },
-          { id: 'delete', label: 'Delete', destructive: true, onPress: { type: 'set-value', target: 'menu.delete', value: true } },
+          {
+            id: 'edit',
+            label: 'Edit',
+            onPress: { type: 'set-value', target: 'menu.edit', value: true },
+          },
+          {
+            id: 'delete',
+            label: 'Delete',
+            destructive: true,
+            onPress: { type: 'set-value', target: 'menu.delete', value: true },
+          },
         ],
         slots: {
           trigger: { paddingY: 'sm' },

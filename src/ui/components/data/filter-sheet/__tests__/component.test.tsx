@@ -7,7 +7,12 @@ import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 const CONFIG = {
   id: 'filters',
   sections: [
-    { id: 'type', label: 'Type', type: 'select' as const, options: [{ value: 'a', label: 'Alpha' }] },
+    {
+      id: 'type',
+      label: 'Type',
+      type: 'select' as const,
+      options: [{ value: 'a', label: 'Alpha' }],
+    },
     { id: 'featured', label: 'Featured', type: 'toggle' as const },
   ],
   onApply: { type: 'set-value' as const, target: 'filters.applied', value: true },
@@ -17,10 +22,9 @@ const CONFIG = {
 
 describe('FilterSheet', () => {
   it('renders sheet controls when open', () => {
-    const { getByText, getByTestId } = renderWithProviders(
-      <FilterSheet config={CONFIG} />,
-      { initialValues: { __filterSheet_filters: true } },
-    )
+    const { getByText, getByTestId } = renderWithProviders(<FilterSheet config={CONFIG} />, {
+      initialValues: { __filterSheet_filters: true },
+    })
 
     expect(getByText('Filters')).toBeTruthy()
     expect(getByTestId('filters-type-a')).toBeTruthy()

@@ -73,7 +73,9 @@ describe('Skeleton', () => {
   })
 
   it('applies testID when provided', () => {
-    const { getByTestId } = renderWithProviders(<Skeleton config={{ testID: 'loading-skeleton' }} />)
+    const { getByTestId } = renderWithProviders(
+      <Skeleton config={{ testID: 'loading-skeleton' }} />,
+    )
     expect(getByTestId('loading-skeleton')).toBeTruthy()
   })
 })

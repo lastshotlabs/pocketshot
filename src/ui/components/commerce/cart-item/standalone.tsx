@@ -206,10 +206,7 @@ export function CartItemBase({
   const handleIncrement = () => onQuantityChange?.(quantity + 1)
 
   return (
-    <View
-      style={[rowSurface.style as ViewStyle | undefined, style]}
-      testID={testID ?? id}
-    >
+    <View style={[rowSurface.style as ViewStyle | undefined, style]} testID={testID ?? id}>
       {image != null ? (
         <Image
           source={{ uri: image }}

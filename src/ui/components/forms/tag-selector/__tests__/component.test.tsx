@@ -10,7 +10,9 @@ const TAGS = [
 
 describe('TagSelector', () => {
   it('renders without crashing with minimal config', () => {
-    const { toJSON } = renderWithProviders(<TagSelector config={{ id: 'tags', availableTags: TAGS }} />)
+    const { toJSON } = renderWithProviders(
+      <TagSelector config={{ id: 'tags', availableTags: TAGS }} />,
+    )
     expect(toJSON()).toBeTruthy()
   })
 

@@ -74,9 +74,7 @@ export function LinkBase({
       onPress={onPress}
       style={buttonSurface.style as ViewStyle | undefined}
       accessibilityRole="link"
-      accessibilityLabel={
-        accessibilityLabel ?? (typeof display === 'string' ? display : undefined)
-      }
+      accessibilityLabel={accessibilityLabel ?? (typeof display === 'string' ? display : undefined)}
       activeOpacity={0.7}
       testID={testID}
     >

@@ -67,7 +67,7 @@ function generateWaveformBars(seed: string, count: number): number[] {
 
   for (let index = 0; index < count; index += 1) {
     hash = ((hash << 5) - hash + index * 7 + 13) | 0
-    bars.push((Math.abs(hash) % 80 + 20) / 100)
+    bars.push(((Math.abs(hash) % 80) + 20) / 100)
   }
 
   return bars
@@ -142,10 +142,7 @@ export function AudioPlayerBase({
   const soundRef = useRef<SoundInstance | null>(null)
   const playPulse = useRef(new Animated.Value(1)).current
 
-  const waveformBars = useMemo(
-    () => generateWaveformBars(source, WAVEFORM_BAR_COUNT),
-    [source],
-  )
+  const waveformBars = useMemo(() => generateWaveformBars(source, WAVEFORM_BAR_COUNT), [source])
 
   useEffect(() => {
     if (ExpoAudio == null || source.length === 0) {
@@ -157,10 +154,7 @@ export function AudioPlayerBase({
 
     const load = async () => {
       try {
-        const result = await ExpoAudio!.Sound.createAsync(
-          { uri: source },
-          { shouldPlay: autoPlay },
-        )
+        const result = await ExpoAudio!.Sound.createAsync({ uri: source }, { shouldPlay: autoPlay })
 
         if (!mounted) {
           await result.sound.unloadAsync()
@@ -371,9 +365,7 @@ export function AudioPlayerBase({
       <View testID={testId} style={[fallbackSurface.style as ViewStyle | undefined, style]}>
         <Text style={mergeTextStyle(sharedTextStyle, fallbackIconSurface)}>Audio</Text>
         <View style={{ flex: 1 }}>
-          <Text style={mergeTextStyle(sharedTextStyle, fallbackTitleSurface)}>
-            Audio Player
-          </Text>
+          <Text style={mergeTextStyle(sharedTextStyle, fallbackTitleSurface)}>Audio Player</Text>
           <Text style={mergeTextStyle(sharedTextStyle, fallbackMessageSurface)}>
             expo-av is required for audio playback.
           </Text>
@@ -407,18 +399,12 @@ export function AudioPlayerBase({
         {(title != null || artist != null) && (
           <View style={metaRowSurface.style as ViewStyle | undefined}>
             {title != null ? (
-              <Text
-                style={mergeTextStyle(sharedTextStyle, titleSurface)}
-                numberOfLines={1}
-              >
+              <Text style={mergeTextStyle(sharedTextStyle, titleSurface)} numberOfLines={1}>
                 {title}
               </Text>
             ) : null}
             {artist != null ? (
-              <Text
-                style={mergeTextStyle(sharedTextStyle, artistSurface)}
-                numberOfLines={1}
-              >
+              <Text style={mergeTextStyle(sharedTextStyle, artistSurface)} numberOfLines={1}>
                 {artist}
               </Text>
             ) : null}
@@ -434,9 +420,7 @@ export function AudioPlayerBase({
                 height: Math.round(height * WAVEFORM_MAX_HEIGHT),
                 borderRadius: 2,
                 backgroundColor:
-                  index < progressBarIndex
-                    ? tokens.colors.primary
-                    : tokens.colors.muted,
+                  index < progressBarIndex ? tokens.colors.primary : tokens.colors.muted,
               })
 
               return (
@@ -456,10 +440,7 @@ export function AudioPlayerBase({
           <View style={progressContainerSurface.style as ViewStyle | undefined}>
             <View style={progressTrackSurface.style as ViewStyle | undefined}>
               <View
-                style={[
-                  progressFillSurface.style as ViewStyle | undefined,
-                  { flex: progress },
-                ]}
+                style={[progressFillSurface.style as ViewStyle | undefined, { flex: progress }]}
               />
               <View style={{ flex: 1 - progress }} />
             </View>

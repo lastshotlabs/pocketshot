@@ -25,6 +25,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run typecheck
+      - run: npm run format:check
       - run: npm test
       - run: npm run verify:consumer
         env:

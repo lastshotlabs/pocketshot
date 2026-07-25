@@ -85,7 +85,12 @@ function FilterChip({
   const scale = useRef(new Animated.Value(1)).current
 
   const handlePressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, speed: 50, bounciness: 0 }).start()
+    Animated.spring(scale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 0,
+    }).start()
   }, [scale])
 
   const handlePressOut = useCallback(() => {
@@ -158,9 +163,7 @@ function FilterChip({
                 minWidth: 18,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: selected
-                  ? 'rgba(255,255,255,0.15)'
-                  : `${tokens.colors.primary}1A`,
+                backgroundColor: selected ? 'rgba(255,255,255,0.15)' : `${tokens.colors.primary}1A`,
                 marginLeft: tokens.spacing[1],
               },
               countBadgeStyle,
@@ -313,7 +316,9 @@ export function FilterBarBase({
     surfaceOverride?: Record<string, unknown>
     isAllChip?: boolean
   }) => {
-    const activeStates: RuntimeSurfaceState[] | undefined = params.selected ? ['selected'] : undefined
+    const activeStates: RuntimeSurfaceState[] | undefined = params.selected
+      ? ['selected']
+      : undefined
 
     return (
       <FilterChip

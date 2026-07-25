@@ -34,7 +34,7 @@ describe('CommandPalette', () => {
 
   it('renders search input and items when open', () => {
     const result = renderWithProviders(<CommandPalette config={config} />, {
-      initialValues: { '__commandPalette_commands': true },
+      initialValues: { __commandPalette_commands: true },
     })
 
     expect(result.getByTestId('commands-search')).toBeTruthy()
@@ -44,7 +44,7 @@ describe('CommandPalette', () => {
 
   it('renders group labels and item testIDs', () => {
     const result = renderWithProviders(<CommandPalette config={config} />, {
-      initialValues: { '__commandPalette_commands': true },
+      initialValues: { __commandPalette_commands: true },
     })
 
     expect(result.getByText('Navigation')).toBeTruthy()
@@ -65,7 +65,7 @@ describe('CommandPalette', () => {
           },
         }}
       />,
-      { initialValues: { '__commandPalette_commands': true } },
+      { initialValues: { __commandPalette_commands: true } },
     )
 
     expect(toJSON()).toBeTruthy()

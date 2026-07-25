@@ -95,7 +95,11 @@ function SkeletonCard({ tokens }: { tokens: DesignTokens }) {
       <View
         style={[
           styles.skeletonLine,
-          { width: '100%', marginTop: tokens.spacing[1], backgroundColor: tokens.colors.surfaceAlt },
+          {
+            width: '100%',
+            marginTop: tokens.spacing[1],
+            backgroundColor: tokens.colors.surfaceAlt,
+          },
         ]}
       />
       <View
@@ -245,7 +249,9 @@ function FeedItemCard({
 
         {item.imageUrl ? (
           <View style={styles.imagePlaceholder}>
-            <Text style={{ color: tokens.colors.textMuted, fontSize: tokens.typography.fontSizeXs }}>
+            <Text
+              style={{ color: tokens.colors.textMuted, fontSize: tokens.typography.fontSizeXs }}
+            >
               📷 Image
             </Text>
           </View>
@@ -261,7 +267,9 @@ function FeedItemCard({
 
         {item.likes !== undefined || item.comments !== undefined ? (
           <View style={styles.footer}>
-            {item.likes !== undefined ? <Text style={styles.footerStat}>♡ {item.likes}</Text> : null}
+            {item.likes !== undefined ? (
+              <Text style={styles.footerStat}>♡ {item.likes}</Text>
+            ) : null}
             {item.comments !== undefined ? (
               <Text style={styles.footerStat}>💬 {item.comments}</Text>
             ) : null}

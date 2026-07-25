@@ -5,13 +5,7 @@ import type { ScreenConfig } from './types'
 
 type Edge = 'top' | 'bottom' | 'left' | 'right'
 
-export function Screen({
-  config,
-  children,
-}: {
-  config: ScreenConfig
-  children?: React.ReactNode
-}) {
+export function Screen({ config, children }: { config: ScreenConfig; children?: React.ReactNode }) {
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config} style={{ flex: 1 }}>
       <ScreenBase

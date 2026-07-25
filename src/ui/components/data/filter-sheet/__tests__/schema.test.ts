@@ -6,7 +6,9 @@ describe('FilterSheetSchema', () => {
     expect(
       FilterSheetSchema.parse({
         id: 'filters',
-        sections: [{ id: 'type', label: 'Type', type: 'select', options: [{ value: 'a', label: 'A' }] }],
+        sections: [
+          { id: 'type', label: 'Type', type: 'select', options: [{ value: 'a', label: 'A' }] },
+        ],
         onApply: { type: 'set-value', target: 'filters.applied', value: true },
       }),
     ).toBeDefined()
@@ -16,7 +18,14 @@ describe('FilterSheetSchema', () => {
     expect(
       FilterSheetSchema.parse({
         id: 'filters',
-        sections: [{ id: 'type', label: 'Type', type: 'multi-select', options: [{ value: 'a', label: 'A' }] }],
+        sections: [
+          {
+            id: 'type',
+            label: 'Type',
+            type: 'multi-select',
+            options: [{ value: 'a', label: 'A' }],
+          },
+        ],
         onApply: { type: 'set-value', target: 'filters.applied', value: true },
         onReset: { type: 'set-value', target: 'filters.reset', value: true },
         slots: {

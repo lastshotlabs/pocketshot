@@ -263,10 +263,7 @@ export function InlineEditBase({
         <View style={displayRowSurface.style as ViewStyle | undefined}>
           {prefix != null ? <Text style={mergeText(affixSurface)}>{prefix}</Text> : null}
           <Text
-            style={[
-              mergeText(displayTextSurface),
-              isEmpty ? mergeText(emptyTextSurface) : null,
-            ]}
+            style={[mergeText(displayTextSurface), isEmpty ? mergeText(emptyTextSurface) : null]}
             numberOfLines={1}
           >
             {displayText}

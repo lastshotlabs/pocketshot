@@ -10,7 +10,9 @@ const OPTIONS = [
 
 describe('RadioGroup', () => {
   it('renders without crashing with minimal config', () => {
-    const { toJSON } = renderWithProviders(<RadioGroup config={{ id: 'theme', options: OPTIONS }} />)
+    const { toJSON } = renderWithProviders(
+      <RadioGroup config={{ id: 'theme', options: OPTIONS }} />,
+    )
     expect(toJSON()).toBeTruthy()
   })
 

@@ -98,7 +98,12 @@ function TierCard({
   })
   const tierNameSurface = resolveSurfacePresentation({
     tokens,
-    implementationBase: { fontSize: 'lg', color: 'foreground', fontWeight: 'bold', marginBottom: 'xs' },
+    implementationBase: {
+      fontSize: 'lg',
+      color: 'foreground',
+      fontWeight: 'bold',
+      marginBottom: 'xs',
+    },
     componentSurface: slots?.tierName,
     activeStates: tierStates,
   })
@@ -252,7 +257,9 @@ function TierCard({
         accessibilityLabel={`${tier.cta.label} - ${tier.name} plan`}
         testID={testIDPrefix ? `${testIDPrefix}-cta-${tier.id}` : undefined}
       >
-        <Text style={{ ...sharedTextStyle, ...(ctaButtonTextSurface.style as TextStyle | undefined) }}>
+        <Text
+          style={{ ...sharedTextStyle, ...(ctaButtonTextSurface.style as TextStyle | undefined) }}
+        >
           {tier.cta.label}
         </Text>
       </TouchableOpacity>
@@ -330,10 +337,7 @@ export function PricingTableBase({
   )
 
   return (
-    <View
-      style={[containerSurface.style as ViewStyle | undefined, style]}
-      testID={testID ?? id}
-    >
+    <View style={[containerSurface.style as ViewStyle | undefined, style]} testID={testID ?? id}>
       {title ? (
         <Text style={{ ...sharedTextStyle, ...(titleSurface.style as TextStyle | undefined) }}>
           {title}

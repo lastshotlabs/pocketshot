@@ -73,8 +73,7 @@ function computeDiff(leftLines: string[], rightLines: string[]): DiffLine[] {
 
     if (
       rightIndex > 0 &&
-      (leftIndex === 0 ||
-        table[leftIndex]![rightIndex - 1]! >= table[leftIndex - 1]![rightIndex]!)
+      (leftIndex === 0 || table[leftIndex]![rightIndex - 1]! >= table[leftIndex - 1]![rightIndex]!)
     ) {
       stack.push({
         type: 'added',
@@ -210,8 +209,7 @@ function InlineView({
             lineHeight: LINE_HEIGHT,
             flex: 1,
           })
-          const prefix =
-            line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '
+          const prefix = line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '
 
           return (
             <View

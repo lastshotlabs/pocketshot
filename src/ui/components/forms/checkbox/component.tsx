@@ -9,7 +9,9 @@ export function Checkbox({ config }: { config: CheckboxConfig }) {
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedChecked =
-    config.checked != null ? (resolveFromRef(config.checked, values) as boolean | undefined) : undefined
+    config.checked != null
+      ? (resolveFromRef(config.checked, values) as boolean | undefined)
+      : undefined
 
   const handleChange = useCallback(
     (next: boolean) => {
@@ -25,7 +27,12 @@ export function Checkbox({ config }: { config: CheckboxConfig }) {
   ]
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={activeStates}
+    >
       <CheckboxBase
         id={config.id}
         checked={resolvedChecked}

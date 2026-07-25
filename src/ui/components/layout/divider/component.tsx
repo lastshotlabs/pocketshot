@@ -8,8 +8,7 @@ import type { DividerConfig } from './types'
 export function Divider({ config }: { config: DividerConfig }) {
   const tokens = useTokens()
   const sharedTextStyle = resolveNativeTextStyle(config as Record<string, unknown>, tokens)
-  const dividerColor =
-    typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : undefined
+  const dividerColor = typeof sharedTextStyle.color === 'string' ? sharedTextStyle.color : undefined
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>

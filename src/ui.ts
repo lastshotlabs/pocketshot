@@ -358,7 +358,10 @@ export type { CommandPaletteBaseProps } from './ui/components/overlay/command-pa
 // ── Navigation ────────────────────────────────────────────────────────────────
 export { Tabs, TabsBase } from './ui/components/navigation/tabs'
 export type { TabsBaseProps } from './ui/components/navigation/tabs'
-export { SegmentedControl, SegmentedControlBase } from './ui/components/navigation/segmented-control'
+export {
+  SegmentedControl,
+  SegmentedControlBase,
+} from './ui/components/navigation/segmented-control'
 export type { SegmentedControlBaseProps } from './ui/components/navigation/segmented-control'
 export { Header, HeaderBase } from './ui/components/navigation/header'
 export type { HeaderBaseProps } from './ui/components/navigation/header'
@@ -378,7 +381,10 @@ export type { DrawerMenuBaseProps } from './ui/components/navigation/drawer-menu
 // ── Communication ─────────────────────────────────────────────────────────────
 export { ChatBubble, ChatBubbleBase } from './ui/components/communication/chat-bubble'
 export type { ChatBubbleBaseProps } from './ui/components/communication/chat-bubble'
-export { NotificationItem, NotificationItemBase } from './ui/components/communication/notification-item'
+export {
+  NotificationItem,
+  NotificationItemBase,
+} from './ui/components/communication/notification-item'
 export type { NotificationItemBaseProps } from './ui/components/communication/notification-item'
 export { ActivityFeed, ActivityFeedBase } from './ui/components/communication/activity-feed'
 export type { ActivityFeedBaseProps } from './ui/components/communication/activity-feed'
@@ -391,7 +397,10 @@ export {
   PresenceIndicatorBase,
 } from './ui/components/communication/presence-indicator'
 export type { PresenceIndicatorBaseProps } from './ui/components/communication/presence-indicator'
-export { TypingIndicator, TypingIndicatorBase } from './ui/components/communication/typing-indicator'
+export {
+  TypingIndicator,
+  TypingIndicatorBase,
+} from './ui/components/communication/typing-indicator'
 export type { TypingIndicatorBaseProps } from './ui/components/communication/typing-indicator'
 export { MessageThread, MessageThreadBase } from './ui/components/communication/message-thread'
 export type { MessageThreadBaseProps } from './ui/components/communication/message-thread'
@@ -411,7 +420,10 @@ export { LoginForm, LoginFormBase } from './ui/components/auth/login-form'
 export type { LoginFormBaseProps } from './ui/components/auth/login-form'
 export { RegisterForm, RegisterFormBase } from './ui/components/auth/register-form'
 export type { RegisterFormBaseProps, RegisterFieldName } from './ui/components/auth/register-form'
-export { ForgotPasswordForm, ForgotPasswordFormBase } from './ui/components/auth/forgot-password-form'
+export {
+  ForgotPasswordForm,
+  ForgotPasswordFormBase,
+} from './ui/components/auth/forgot-password-form'
 export type { ForgotPasswordFormBaseProps } from './ui/components/auth/forgot-password-form'
 
 // ── Workflow ──────────────────────────────────────────────────────────────────

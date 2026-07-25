@@ -8,7 +8,9 @@ describe('TypingIndicator', () => {
 
   it('renders the typing label from screen context', () => {
     const { getByText } = renderWithProviders(
-      <TypingIndicator config={{ isTyping: { from: 'chat.typing' }, userName: { from: 'chat.user' } }} />,
+      <TypingIndicator
+        config={{ isTyping: { from: 'chat.typing' }, userName: { from: 'chat.user' } }}
+      />,
       { initialValues: { chat: { typing: true, user: 'Taylor' } } },
     )
     expect(getByText('Taylor is typing')).toBeTruthy()

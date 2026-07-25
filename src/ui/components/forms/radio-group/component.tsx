@@ -11,9 +11,7 @@ export function RadioGroup({ config }: { config: RadioGroupConfig }) {
   const resolvedOptions =
     (resolveFromRef(config.options, values) as RadioGroupOption[] | undefined) ?? []
   const resolvedValue =
-    config.value != null
-      ? (resolveFromRef(config.value, values) as string | undefined)
-      : undefined
+    config.value != null ? (resolveFromRef(config.value, values) as string | undefined) : undefined
 
   const handleChange = useCallback(
     (next: string) => {

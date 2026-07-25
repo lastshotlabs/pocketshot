@@ -225,7 +225,9 @@ export function DropdownMenuBase({
 
   const renderItem = useCallback(
     ({ item, index }: { item: DropdownMenuItem; index: number }) => {
-      const activeStates: RuntimeSurfaceState[] | undefined = item.disabled ? ['disabled'] : undefined
+      const activeStates: RuntimeSurfaceState[] | undefined = item.disabled
+        ? ['disabled']
+        : undefined
       const destructiveColor = item.destructive ? tokens.colors.destructive : undefined
       const rowStyle = resolveSurfacePresentation({
         tokens,

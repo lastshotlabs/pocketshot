@@ -8,8 +8,17 @@ const CONFIG = {
   id: 'actions-menu',
   trigger: { label: 'Actions', icon: 'more' },
   items: [
-    { id: 'edit', label: 'Edit', onPress: { type: 'set-value' as const, target: 'menu.edit', value: true } },
-    { id: 'delete', label: 'Delete', destructive: true, onPress: { type: 'set-value' as const, target: 'menu.delete', value: true } },
+    {
+      id: 'edit',
+      label: 'Edit',
+      onPress: { type: 'set-value' as const, target: 'menu.edit', value: true },
+    },
+    {
+      id: 'delete',
+      label: 'Delete',
+      destructive: true,
+      onPress: { type: 'set-value' as const, target: 'menu.delete', value: true },
+    },
   ],
   testID: 'actions-menu',
 }
@@ -19,7 +28,8 @@ describe('DropdownMenu', () => {
     const result = renderWithProviders(<DropdownMenu config={CONFIG} />)
 
     const trigger = result.instance.root.find(
-      (node) => node.props.testID === 'actions-menu-trigger' && typeof node.props.onPress === 'function',
+      (node) =>
+        node.props.testID === 'actions-menu-trigger' && typeof node.props.onPress === 'function',
     )
     act(() => {
       trigger.props.onPress()

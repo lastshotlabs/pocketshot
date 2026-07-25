@@ -10,7 +10,10 @@ const config = {
     { id: 'settings', label: 'Settings', icon: 'Settings', section: 'Main' },
   ],
   header: { title: 'Snapshot', subtitle: 'Workspace' },
-  footer: { label: 'Sign out', onPress: { type: 'set-value' as const, target: 'auth.signout', value: true } },
+  footer: {
+    label: 'Sign out',
+    onPress: { type: 'set-value' as const, target: 'auth.signout', value: true },
+  },
 }
 
 describe('DrawerMenu', () => {

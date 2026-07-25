@@ -25,7 +25,12 @@ export function Switch({ config }: { config: SwitchConfig }) {
   ]
 
   return (
-    <ComponentWrapper id={config.id} testID={config.testID} config={config} activeStates={activeStates}>
+    <ComponentWrapper
+      id={config.id}
+      testID={config.testID}
+      config={config}
+      activeStates={activeStates}
+    >
       <SwitchBase
         id={config.id}
         value={resolvedValue}

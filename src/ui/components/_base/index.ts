@@ -34,8 +34,5 @@ export { resolveNativeStyleProps } from './style-props'
 export { resolveNativeTextStyle } from './text-style'
 export { toNativeDimensionValue, toNumericDimensionValue } from './dimensions'
 export { resolveSurfacePresentation } from './style-surfaces'
-export {
-  CANONICAL_STATE_ORDER,
-  resolveSurfaceStateOrder,
-} from './surface-state'
+export { CANONICAL_STATE_ORDER, resolveSurfaceStateOrder } from './surface-state'
 export type { RuntimeSurfaceState } from './surface-state'

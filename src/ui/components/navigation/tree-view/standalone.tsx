@@ -1,12 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  type ViewStyle,
-} from 'react-native'
+import { FlatList, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from 'react-native'
 import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 
@@ -41,9 +34,7 @@ function flattenTree(
     const isLast = i === nodes.length - 1
     result.push({ node, depth, hasChildren, isExpanded, isLast, parentIds })
     if (hasChildren && isExpanded) {
-      result.push(
-        ...flattenTree(node.children!, expandedIds, depth + 1, [...parentIds, node.id]),
-      )
+      result.push(...flattenTree(node.children!, expandedIds, depth + 1, [...parentIds, node.id]))
     }
   }
   return result

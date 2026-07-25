@@ -13,8 +13,7 @@ export function ChatBubble({ config }: { config: ChatBubbleConfig }) {
     config.timestamp != null
       ? (resolveFromRef(config.timestamp, values) as string | undefined)
       : undefined
-  const isOwn =
-    config.isOwn != null ? (resolveFromRef(config.isOwn, values) as boolean) : false
+  const isOwn = config.isOwn != null ? (resolveFromRef(config.isOwn, values) as boolean) : false
 
   return (
     <ComponentWrapper id={config.id} testID={config.testID} config={config}>

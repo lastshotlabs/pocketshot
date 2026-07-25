@@ -6,7 +6,11 @@ describe('ContextMenuSchema', () => {
     expect(
       ContextMenuSchema.parse({
         items: [
-          { id: 'open', label: 'Open', onPress: { type: 'set-value', target: 'menu.open', value: true } },
+          {
+            id: 'open',
+            label: 'Open',
+            onPress: { type: 'set-value', target: 'menu.open', value: true },
+          },
         ],
       }),
     ).toBeDefined()
@@ -18,8 +22,17 @@ describe('ContextMenuSchema', () => {
         id: 'file-menu',
         triggerLabel: 'File actions',
         items: [
-          { id: 'open', label: 'Open', onPress: { type: 'set-value', target: 'menu.open', value: true } },
-          { id: 'delete', label: 'Delete', destructive: true, onPress: { type: 'set-value', target: 'menu.delete', value: true } },
+          {
+            id: 'open',
+            label: 'Open',
+            onPress: { type: 'set-value', target: 'menu.open', value: true },
+          },
+          {
+            id: 'delete',
+            label: 'Delete',
+            destructive: true,
+            onPress: { type: 'set-value', target: 'menu.delete', value: true },
+          },
         ],
         slots: {
           panel: { bg: 'card' },

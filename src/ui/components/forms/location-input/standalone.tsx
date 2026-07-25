@@ -22,9 +22,10 @@ interface ExpoLocationModule {
   getCurrentPositionAsync(options?: { accuracy?: number }): Promise<{
     coords: { latitude: number; longitude: number }
   }>
-  reverseGeocodeAsync(location: { latitude: number; longitude: number }): Promise<
-    Array<{ street?: string; city?: string; region?: string; country?: string }>
-  >
+  reverseGeocodeAsync(location: {
+    latitude: number
+    longitude: number
+  }): Promise<Array<{ street?: string; city?: string; region?: string; country?: string }>>
 }
 
 let _expoLocationCache: ExpoLocationModule | null | undefined
@@ -88,9 +89,7 @@ function MapPreview({ location, tokens, testIDPrefix }: MapPreviewProps) {
           pitchEnabled={false}
           rotateEnabled={false}
         >
-          <Marker
-            coordinate={{ latitude: location.latitude, longitude: location.longitude }}
-          />
+          <Marker coordinate={{ latitude: location.latitude, longitude: location.longitude }} />
         </MapView>
       </View>
     )

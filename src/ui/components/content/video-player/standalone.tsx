@@ -371,9 +371,7 @@ export function VideoPlayerBase({
       >
         <View style={fallbackSurface.style as ViewStyle | undefined}>
           <Text style={mergeTextStyle(sharedTextStyle, fallbackIconSurface)}>Video</Text>
-          <Text style={mergeTextStyle(sharedTextStyle, fallbackTitleSurface)}>
-            Video Player
-          </Text>
+          <Text style={mergeTextStyle(sharedTextStyle, fallbackTitleSurface)}>Video Player</Text>
           <Text style={mergeTextStyle(sharedTextStyle, fallbackMessageSurface)}>
             {'expo-av is required for video playback.\nInstall it with:'}
           </Text>
@@ -461,10 +459,7 @@ export function VideoPlayerBase({
               >
                 <View style={progressTrackSurface.style as ViewStyle | undefined}>
                   <View
-                    style={[
-                      progressFillSurface.style as ViewStyle | undefined,
-                      { flex: progress },
-                    ]}
+                    style={[progressFillSurface.style as ViewStyle | undefined, { flex: progress }]}
                   />
                   <View style={{ flex: 1 - progress }} />
                 </View>

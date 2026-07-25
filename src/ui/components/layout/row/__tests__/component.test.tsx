@@ -58,7 +58,9 @@ describe('Row', () => {
   })
 
   it('renders with padding props without crashing', () => {
-    const { toJSON } = renderWithProviders(<Row config={{ padding: 4, paddingX: 8, paddingY: 2 }} />)
+    const { toJSON } = renderWithProviders(
+      <Row config={{ padding: 4, paddingX: 8, paddingY: 2 }} />,
+    )
     expect(toJSON()).toBeTruthy()
   })
 

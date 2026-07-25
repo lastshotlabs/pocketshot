@@ -134,7 +134,8 @@ export function ProductCardBase({
 }: ProductCardBaseProps) {
   const tokens = useTokens()
   const sharedTextStyle = resolveNativeTextStyle({}, tokens)
-  const pressableStates: RuntimeSurfaceState[] | undefined = onPress != null ? ['active'] : undefined
+  const pressableStates: RuntimeSurfaceState[] | undefined =
+    onPress != null ? ['active'] : undefined
 
   const pressableSurface = resolveSurfacePresentation({
     tokens,
@@ -261,7 +262,9 @@ export function ProductCardBase({
       )}
       {badge != null ? (
         <View style={badgeContainerSurface.style as ViewStyle | undefined}>
-          <Text style={{ ...sharedTextStyle, ...(badgeTextSurface.style as TextStyle | undefined) }}>
+          <Text
+            style={{ ...sharedTextStyle, ...(badgeTextSurface.style as TextStyle | undefined) }}
+          >
             {badge}
           </Text>
         </View>

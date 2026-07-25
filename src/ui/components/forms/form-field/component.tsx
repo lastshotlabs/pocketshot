@@ -17,9 +17,7 @@ export function FormField({
   const label =
     config.label != null ? String(resolveFromRef(config.label, values) ?? '') : undefined
   const helperText =
-    config.helperText != null
-      ? String(resolveFromRef(config.helperText, values) ?? '')
-      : undefined
+    config.helperText != null ? String(resolveFromRef(config.helperText, values) ?? '') : undefined
   const errorText =
     config.errorKey != null ? (getValue(config.errorKey) as string | undefined) : undefined
 

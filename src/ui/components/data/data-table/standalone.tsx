@@ -207,9 +207,8 @@ export function DataTableBase({
 
   const isSortControlled = sortKey !== undefined
   const [internalSortKey, setInternalSortKey] = useState<string | undefined>(defaultSortKey)
-  const [internalSortDir, setInternalSortDir] = useState<DataTableSortDirection>(
-    defaultSortDirection,
-  )
+  const [internalSortDir, setInternalSortDir] =
+    useState<DataTableSortDirection>(defaultSortDirection)
   const activeSortKey = isSortControlled ? sortKey : internalSortKey
   const activeSortDir = (sortDirection ?? internalSortDir) as DataTableSortDirection
 
@@ -371,9 +370,7 @@ export function DataTableBase({
               accessibilityLabel={`Sort by ${col.label}${
                 isSorted ? `, currently ${activeSortDir}ending` : ''
               }`}
-              testID={
-                testID ? `${testID}-header-${col.key}` : `data-table-header-${col.key}`
-              }
+              testID={testID ? `${testID}-header-${col.key}` : `data-table-header-${col.key}`}
             >
               <Text
                 style={[

@@ -1,12 +1,5 @@
 import React, { useMemo } from 'react'
-import {
-  ActivityIndicator,
-  Image,
-  StyleSheet,
-  Text,
-  View,
-  type ViewStyle,
-} from 'react-native'
+import { ActivityIndicator, Image, StyleSheet, Text, View, type ViewStyle } from 'react-native'
 import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 
@@ -113,7 +106,11 @@ export function ChatBubbleBase({
       <View style={styles.footer}>
         {timestamp != null && <Text style={styles.timestamp}>{timestamp}</Text>}
         {isOwn && (
-          <StatusIndicator status={status} color={tokens.colors.primaryForeground} styles={styles} />
+          <StatusIndicator
+            status={status}
+            color={tokens.colors.primaryForeground}
+            styles={styles}
+          />
         )}
       </View>
     </View>

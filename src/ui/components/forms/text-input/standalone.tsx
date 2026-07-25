@@ -173,7 +173,10 @@ export function TextInputBase({
         </Text>
       ) : null}
       <RNTextInput
-        style={{ ...(sharedTextStyle as TextStyle), ...(inputSurface.style as TextStyle | undefined) }}
+        style={{
+          ...(sharedTextStyle as TextStyle),
+          ...(inputSurface.style as TextStyle | undefined),
+        }}
         value={currentValue}
         onChangeText={handleChange}
         onSubmitEditing={onSubmitEditing}

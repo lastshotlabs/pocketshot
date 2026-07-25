@@ -168,7 +168,9 @@ export function PaginationBase({
     testID: string
     accessibilityLabel: string
   }) {
-    const activeStates: RuntimeSurfaceState[] | undefined = params.disabled ? ['disabled'] : undefined
+    const activeStates: RuntimeSurfaceState[] | undefined = params.disabled
+      ? ['disabled']
+      : undefined
 
     return (
       <TouchableOpacity

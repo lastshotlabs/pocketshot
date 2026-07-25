@@ -32,7 +32,10 @@ function getStepState(index: number, activeIndex: number): StepState {
   return 'upcoming'
 }
 
-function resolveActiveIndex(steps: StepperBaseStep[], currentStep: string | number | undefined): number {
+function resolveActiveIndex(
+  steps: StepperBaseStep[],
+  currentStep: string | number | undefined,
+): number {
   if (currentStep == null) return 0
   const resolved = String(currentStep)
   const byId = steps.findIndex((s) => s.id === resolved)
@@ -61,7 +64,8 @@ export function StepperBase({
   const styles = makeStyles(tokens)
   const activeIndex = resolveActiveIndex(steps, currentStep)
 
-  const containerStyle = variant === 'vertical' ? styles.verticalContainer : styles.horizontalContainer
+  const containerStyle =
+    variant === 'vertical' ? styles.verticalContainer : styles.horizontalContainer
 
   return (
     <View
@@ -116,7 +120,15 @@ interface StepItemProps {
   onPress?: () => void
 }
 
-function HorizontalStepItem({ step, index, state, isLast, tokens, styles, onPress }: StepItemProps) {
+function HorizontalStepItem({
+  step,
+  index,
+  state,
+  isLast,
+  tokens,
+  styles,
+  onPress,
+}: StepItemProps) {
   const circleStyle = [
     styles.circle,
     state === 'completed' && styles.circleCompleted,

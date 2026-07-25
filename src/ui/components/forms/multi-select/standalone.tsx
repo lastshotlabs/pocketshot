@@ -304,9 +304,7 @@ export function MultiSelectBase({
           testID={testIDBase ? `${testIDBase}-option-${item.value}` : undefined}
           activeOpacity={0.7}
         >
-          <Text style={mergeText(checkboxIconSurface)}>
-            {isSelected ? '[x]' : '[ ]'}
-          </Text>
+          <Text style={mergeText(checkboxIconSurface)}>{isSelected ? '[x]' : '[ ]'}</Text>
           <Text style={mergeText(optionLabelSurface)}>{item.label}</Text>
         </TouchableOpacity>
       )
@@ -387,9 +385,7 @@ export function MultiSelectBase({
                 data={filteredOptions}
                 keyExtractor={(item) => item.value}
                 renderItem={renderOption}
-                ListEmptyComponent={
-                  <Text style={mergeText(emptyTextSurface)}>{emptyMessage}</Text>
-                }
+                ListEmptyComponent={<Text style={mergeText(emptyTextSurface)}>{emptyMessage}</Text>}
                 style={optionListSurface.style as ViewStyle | undefined}
                 keyboardShouldPersistTaps="handled"
               />

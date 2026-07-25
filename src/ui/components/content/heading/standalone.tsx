@@ -35,14 +35,7 @@ const LEVEL_SURFACES = {
  * @example
  * <HeadingBase level={2}>Section title</HeadingBase>
  */
-export function HeadingBase({
-  children,
-  text,
-  level = 2,
-  style,
-  slots,
-  testID,
-}: HeadingBaseProps) {
+export function HeadingBase({ children, text, level = 2, style, slots, testID }: HeadingBaseProps) {
   const tokens = useTokens()
   const sharedTextStyle = resolveNativeTextStyle({}, tokens)
   const textSurface = resolveSurfacePresentation({

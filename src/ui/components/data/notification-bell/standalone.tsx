@@ -1,5 +1,12 @@
 import React, { useEffect, useRef } from 'react'
-import { Animated, Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native'
+import {
+  Animated,
+  Text,
+  TouchableOpacity,
+  View,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native'
 import { resolveNativeTextStyle } from '../../_base/text-style'
 import { resolveSurfacePresentation } from '../../_base/style-surfaces'
 import { useTokens } from '../../../context/AppContext'

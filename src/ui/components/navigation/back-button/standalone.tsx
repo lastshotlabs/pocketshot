@@ -27,7 +27,14 @@ export interface BackButtonBaseProps {
  * @example
  * <BackButtonBase label="Back" onPress={() => navigation.goBack()} />
  */
-export function BackButtonBase({ label = 'Back', onPress, style, slots, testID, id }: BackButtonBaseProps) {
+export function BackButtonBase({
+  label = 'Back',
+  onPress,
+  style,
+  slots,
+  testID,
+  id,
+}: BackButtonBaseProps) {
   const tokens = useTokens()
   const sharedTextStyle = resolveNativeTextStyle({}, tokens)
 

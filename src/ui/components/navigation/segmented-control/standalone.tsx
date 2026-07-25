@@ -135,7 +135,9 @@ export function SegmentedControlBase({
             accessibilityRole="button"
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={option.label}
-            testID={testID ? `${testID}-${option.value}` : id ? `${id}-segment-${index}` : undefined}
+            testID={
+              testID ? `${testID}-${option.value}` : id ? `${id}-segment-${index}` : undefined
+            }
           >
             <Text
               style={[styles.segmentLabel, isActive ? styles.activeLabel : styles.inactiveLabel]}

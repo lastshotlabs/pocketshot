@@ -442,11 +442,7 @@ function CameraScannerView({
           onBarcodeScanned: onBarcodeScan,
         },
         showOverlay ? (
-          <ScanOverlay
-            slots={slots}
-            overlayText={overlayText}
-            sharedTextStyle={sharedTextStyle}
-          />
+          <ScanOverlay slots={slots} overlayText={overlayText} sharedTextStyle={sharedTextStyle} />
         ) : null,
       )}
     </View>

@@ -155,8 +155,7 @@ export function ProgressCircleBase({
 
   const valueTextStyle: TextStyle = {
     ...sharedTextStyle,
-    fontSize:
-      diameter <= 60 ? tokens.typography.fontSizeSm : tokens.typography.fontSizeLg,
+    fontSize: diameter <= 60 ? tokens.typography.fontSizeSm : tokens.typography.fontSizeLg,
     fontWeight: tokens.typography.fontWeightBold,
     color: tokens.colors.text,
   }

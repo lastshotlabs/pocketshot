@@ -3,8 +3,14 @@ import React from 'react'
 import { PricingTable } from '../component'
 import { renderWithProviders } from '@ui-test/helpers/renderWithProviders'
 
-const navigateSignup = { type: 'navigate', to: '/signup' } as unknown as import('../../../../actions/types').Action
-const navigateCheckout = { type: 'navigate', to: '/checkout' } as unknown as import('../../../../actions/types').Action
+const navigateSignup = {
+  type: 'navigate',
+  to: '/signup',
+} as unknown as import('../../../../actions/types').Action
+const navigateCheckout = {
+  type: 'navigate',
+  to: '/checkout',
+} as unknown as import('../../../../actions/types').Action
 
 const CONFIG = {
   title: 'Plans',

@@ -82,19 +82,28 @@ function applyFormatting(
     }
     case 'list-bullet': {
       const insert = hasSelection
-        ? selected.split('\n').map((line) => `- ${line}`).join('\n')
+        ? selected
+            .split('\n')
+            .map((line) => `- ${line}`)
+            .join('\n')
         : '- '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'list-number': {
       const insert = hasSelection
-        ? selected.split('\n').map((line, index) => `${index + 1}. ${line}`).join('\n')
+        ? selected
+            .split('\n')
+            .map((line, index) => `${index + 1}. ${line}`)
+            .join('\n')
         : '1. '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'quote': {
       const insert = hasSelection
-        ? selected.split('\n').map((line) => `> ${line}`).join('\n')
+        ? selected
+            .split('\n')
+            .map((line) => `> ${line}`)
+            .join('\n')
         : '> '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
@@ -323,9 +332,7 @@ export function RichInputBase({
                     mergeTextStyle(sharedTextStyle, activeLabelSurface),
                     typedItem === 'bold' ? { fontWeight: '800' as const } : null,
                     typedItem === 'italic' ? { fontStyle: 'italic' as const } : null,
-                    typedItem === 'underline'
-                      ? { textDecorationLine: 'underline' as const }
-                      : null,
+                    typedItem === 'underline' ? { textDecorationLine: 'underline' as const } : null,
                     typedItem === 'strikethrough'
                       ? { textDecorationLine: 'line-through' as const }
                       : null,

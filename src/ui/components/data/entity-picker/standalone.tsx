@@ -154,7 +154,12 @@ export function EntityPickerBase({
 
   const labelSurface = resolveSurfacePresentation({
     tokens,
-    implementationBase: { fontSize: 'sm', fontWeight: 'medium', color: 'foreground', marginY: 'xs' },
+    implementationBase: {
+      fontSize: 'sm',
+      fontWeight: 'medium',
+      color: 'foreground',
+      marginY: 'xs',
+    },
     componentSurface: slots?.label,
   })
   const triggerSurface = resolveSurfacePresentation({

@@ -21,9 +21,7 @@ describe('QrCode', () => {
   })
 
   it('applies the shared wrapper testID', () => {
-    const { getByTestId } = renderWithProviders(
-      <QrCode config={cfg({ testID: 'qr-main' })} />,
-    )
+    const { getByTestId } = renderWithProviders(<QrCode config={cfg({ testID: 'qr-main' })} />)
 
     expect(getByTestId('qr-main')).toBeTruthy()
   })

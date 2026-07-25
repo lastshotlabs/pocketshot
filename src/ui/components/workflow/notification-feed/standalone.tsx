@@ -233,7 +233,10 @@ export function NotificationFeedBase({
     [notifications, localReadIds, dismissed],
   )
 
-  const listItems = useMemo(() => buildListItems(notifications, dismissed), [notifications, dismissed])
+  const listItems = useMemo(
+    () => buildListItems(notifications, dismissed),
+    [notifications, dismissed],
+  )
 
   const handleMarkAllRead = useCallback(() => {
     const allIds = new Set(notifications.map((n) => n.id))

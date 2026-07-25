@@ -76,19 +76,28 @@ function applyFormat(
     }
     case 'list-bullet': {
       const insert = hasSelection
-        ? selected.split('\n').map((line) => `- ${line}`).join('\n')
+        ? selected
+            .split('\n')
+            .map((line) => `- ${line}`)
+            .join('\n')
         : '- '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'list-number': {
       const insert = hasSelection
-        ? selected.split('\n').map((line, index) => `${index + 1}. ${line}`).join('\n')
+        ? selected
+            .split('\n')
+            .map((line, index) => `${index + 1}. ${line}`)
+            .join('\n')
         : '1. '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
     case 'blockquote': {
       const insert = hasSelection
-        ? selected.split('\n').map((line) => `> ${line}`).join('\n')
+        ? selected
+            .split('\n')
+            .map((line) => `> ${line}`)
+            .join('\n')
         : '> '
       return { newValue: before + insert + after, newCursorPos: selection.start + insert.length }
     }
@@ -318,9 +327,7 @@ export function RichTextEditorBase({
                       : null,
                     typedItem === 'bold' ? { fontWeight: '800' as const } : null,
                     typedItem === 'italic' ? { fontStyle: 'italic' as const } : null,
-                    typedItem === 'underline'
-                      ? { textDecorationLine: 'underline' as const }
-                      : null,
+                    typedItem === 'underline' ? { textDecorationLine: 'underline' as const } : null,
                     typedItem === 'code'
                       ? { fontFamily: 'monospace', fontSize: tokens.typography.fontSizeXs }
                       : null,
@@ -363,9 +370,7 @@ export function RichTextEditorBase({
       />
 
       <View style={footerSurface.style as ViewStyle | undefined}>
-        <Text style={mergeTextStyle(sharedTextStyle, footerTextSurface)}>
-          Markdown supported
-        </Text>
+        <Text style={mergeTextStyle(sharedTextStyle, footerTextSurface)}>Markdown supported</Text>
         <Text style={mergeTextStyle(sharedTextStyle, footerTextSurface)}>
           {`${currentValue.length} chars`}
         </Text>

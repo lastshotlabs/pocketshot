@@ -81,10 +81,7 @@ export function FormFieldBase({
   }
 
   return (
-    <View
-      style={[containerSurface.style as ViewStyle | undefined, style]}
-      testID={testID ?? id}
-    >
+    <View style={[containerSurface.style as ViewStyle | undefined, style]} testID={testID ?? id}>
       {label != null ? (
         <Text style={mergeText(labelSurface)} accessibilityRole="text">
           {label}

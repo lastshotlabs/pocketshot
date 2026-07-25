@@ -19,9 +19,7 @@ export function InlineEdit({ config }: { config: InlineEditConfig }) {
   const suffix =
     config.suffix != null ? String(resolveFromRef(config.suffix, values) ?? '') : undefined
   const emptyText =
-    config.emptyText != null
-      ? String(resolveFromRef(config.emptyText, values) ?? '')
-      : undefined
+    config.emptyText != null ? String(resolveFromRef(config.emptyText, values) ?? '') : undefined
 
   const handleSave = useCallback(
     (next: string) => {

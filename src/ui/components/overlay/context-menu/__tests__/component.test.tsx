@@ -9,8 +9,17 @@ const CONFIG = {
   id: 'file-menu',
   triggerLabel: 'File actions',
   items: [
-    { id: 'open', label: 'Open', onPress: { type: 'set-value' as const, target: 'menu.open', value: true } },
-    { id: 'delete', label: 'Delete', destructive: true, onPress: { type: 'set-value' as const, target: 'menu.delete', value: true } },
+    {
+      id: 'open',
+      label: 'Open',
+      onPress: { type: 'set-value' as const, target: 'menu.open', value: true },
+    },
+    {
+      id: 'delete',
+      label: 'Delete',
+      destructive: true,
+      onPress: { type: 'set-value' as const, target: 'menu.delete', value: true },
+    },
   ],
   testID: 'file-menu',
 }
@@ -24,7 +33,8 @@ describe('ContextMenu', () => {
     )
 
     const trigger = result.instance.root.find(
-      (node) => node.props.testID === 'file-menu-trigger' && typeof node.props.onLongPress === 'function',
+      (node) =>
+        node.props.testID === 'file-menu-trigger' && typeof node.props.onLongPress === 'function',
     )
     act(() => {
       trigger.props.onLongPress()

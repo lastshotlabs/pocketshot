@@ -9,9 +9,7 @@ export function Slider({ config }: { config: SliderConfig }) {
   const { setValue, dispatch, values } = useScreenContext()
 
   const resolvedValue =
-    config.value != null
-      ? (resolveFromRef(config.value, values) as number | undefined)
-      : undefined
+    config.value != null ? (resolveFromRef(config.value, values) as number | undefined) : undefined
 
   const handleValueChange = useCallback(
     (next: number) => {

@@ -54,7 +54,8 @@ export function PriceDisplayBase({
   const tokens = useTokens()
   const sharedTextStyle = resolveNativeTextStyle({}, tokens)
   const formattedPrice = formatPrice(amount, currency, locale)
-  const formattedOriginal = originalAmount != null ? formatPrice(originalAmount, currency, locale) : null
+  const formattedOriginal =
+    originalAmount != null ? formatPrice(originalAmount, currency, locale) : null
 
   const containerSurface = resolveSurfacePresentation({
     tokens,
@@ -103,10 +104,7 @@ export function PriceDisplayBase({
   })
 
   return (
-    <View
-      style={[containerSurface.style as ViewStyle | undefined, style]}
-      testID={testID ?? id}
-    >
+    <View style={[containerSurface.style as ViewStyle | undefined, style]} testID={testID ?? id}>
       <View style={priceRowSurface.style as ViewStyle | undefined}>
         {formattedOriginal != null ? (
           <Text
@@ -120,14 +118,18 @@ export function PriceDisplayBase({
         <Text
           style={{ ...sharedTextStyle, ...(priceSurface.style as TextStyle | undefined) }}
           accessibilityLabel={
-            formattedOriginal != null ? `${formattedPrice}, was ${formattedOriginal}` : formattedPrice
+            formattedOriginal != null
+              ? `${formattedPrice}, was ${formattedOriginal}`
+              : formattedPrice
           }
         >
           {formattedPrice}
         </Text>
         {badge != null ? (
           <View style={badgeSurface.style as ViewStyle | undefined}>
-            <Text style={{ ...sharedTextStyle, ...(badgeTextSurface.style as TextStyle | undefined) }}>
+            <Text
+              style={{ ...sharedTextStyle, ...(badgeTextSurface.style as TextStyle | undefined) }}
+            >
               {badge}
             </Text>
           </View>

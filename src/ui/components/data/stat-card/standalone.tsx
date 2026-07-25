@@ -56,8 +56,7 @@ export function StatCardBase({
       : trend?.direction === 'down'
         ? tokens.colors.error
         : tokens.colors.textMuted
-  const trendIcon =
-    trend?.direction === 'up' ? '↑' : trend?.direction === 'down' ? '↓' : '→'
+  const trendIcon = trend?.direction === 'up' ? '↑' : trend?.direction === 'down' ? '↓' : '→'
 
   const rootSurface = resolveSurfacePresentation({
     tokens,

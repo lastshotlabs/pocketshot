@@ -9,9 +9,7 @@ describe('QrScanner', () => {
   const onScan = { type: 'set-value', target: 'scan.value', value: true } as const
 
   it('renders the fallback scanner when expo-camera is unavailable', () => {
-    const { getByText } = renderWithProviders(
-      <QrScanner config={{ onScan }} />,
-    )
+    const { getByText } = renderWithProviders(<QrScanner config={{ onScan }} />)
 
     expect(getByText('Camera Not Available')).toBeTruthy()
     expect(getByText('npx expo install expo-camera')).toBeTruthy()
@@ -40,9 +38,7 @@ describe('QrScanner', () => {
   })
 
   it('renders the manual entry UI', () => {
-    const { getByText } = renderWithProviders(
-      <QrScanner config={{ onScan }} />,
-    )
+    const { getByText } = renderWithProviders(<QrScanner config={{ onScan }} />)
 
     expect(getByText('or enter manually')).toBeTruthy()
     expect(getByText('Submit')).toBeTruthy()

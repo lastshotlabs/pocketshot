@@ -18,7 +18,9 @@ describe('Body', () => {
 
   it('renders shared fontSize variants without crashing', () => {
     for (const fontSize of ['sm', 'base', 'lg', 'xl'] as const) {
-      const { getByText } = renderWithProviders(<Body config={{ text: String(fontSize), fontSize }} />)
+      const { getByText } = renderWithProviders(
+        <Body config={{ text: String(fontSize), fontSize }} />,
+      )
       expect(getByText(String(fontSize))).toBeTruthy()
     }
   })

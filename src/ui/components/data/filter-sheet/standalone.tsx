@@ -408,8 +408,7 @@ export function FilterSheetBase({
                 accessibilityRole="adjustable"
                 testID={`${baseTestID}-${section.id}-max`}
                 onPress={() => {
-                  const current =
-                    (value as { max?: number } | undefined)?.max ?? section.max ?? 100
+                  const current = (value as { max?: number } | undefined)?.max ?? section.max ?? 100
                   handleSectionChange(section.id, { ...(value as object), max: current })
                 }}
               >

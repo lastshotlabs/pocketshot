@@ -10,7 +10,8 @@ import type { DesignTokens, DeepPartial } from './types'
  * singletons, so multiple Pocketshot runtimes can coexist safely.
  */
 export function useTokenEditor() {
-  const { tokenOverrides, setTokenOverride, setTokenOverrides, clearTokenOverrides } = useAppContext()
+  const { tokenOverrides, setTokenOverride, setTokenOverrides, clearTokenOverrides } =
+    useAppContext()
 
   const setOverride = useCallback(
     <K1 extends keyof DesignTokens>(

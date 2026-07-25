@@ -193,9 +193,7 @@ function SelectField({ field, value, onChange, tokens, errorText, formId }: Fiel
                         paddingVertical: tokens.spacing[3],
                         paddingHorizontal: tokens.spacing[2],
                         borderRadius: tokens.radius.md,
-                        backgroundColor: isSelected
-                          ? tokens.colors.surfaceAlt
-                          : 'transparent',
+                        backgroundColor: isSelected ? tokens.colors.surfaceAlt : 'transparent',
                       }}
                       onPress={() => {
                         onChange(item.value)
@@ -262,9 +260,7 @@ function CheckboxField({ field, value, onChange, tokens, errorText, formId }: Fi
             borderRadius: tokens.radius.sm,
             borderWidth: 2,
             borderColor: checked ? tokens.colors.primary : tokens.colors.inputBorder,
-            backgroundColor: checked
-              ? tokens.colors.primary
-              : tokens.colors.inputBackground,
+            backgroundColor: checked ? tokens.colors.primary : tokens.colors.inputBackground,
             alignItems: 'center',
             justifyContent: 'center',
           }}

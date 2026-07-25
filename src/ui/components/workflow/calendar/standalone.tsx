@@ -1,12 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  type ViewStyle,
-} from 'react-native'
+import { Animated, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from 'react-native'
 import { useTokens } from '../../../context/AppContext'
 import type { DesignTokens } from '../../../tokens/types'
 
@@ -120,7 +113,7 @@ export function CalendarBase({
 
   const isControlled = controlledSelected !== undefined
   const [uncontrolled, setUncontrolled] = useState<string | null>(defaultDate ?? null)
-  const selectedDate = isControlled ? controlledSelected ?? null : uncontrolled
+  const selectedDate = isControlled ? (controlledSelected ?? null) : uncontrolled
 
   const today = useMemo(() => new Date(), [])
   const initialDate = useMemo(() => {
@@ -138,8 +131,7 @@ export function CalendarBase({
   const resolvedEvents = events ?? []
 
   const days = useMemo(
-    () =>
-      getMonthDays(displayMonth.year, displayMonth.month, selectedDate, today, resolvedEvents),
+    () => getMonthDays(displayMonth.year, displayMonth.month, selectedDate, today, resolvedEvents),
     [displayMonth.year, displayMonth.month, selectedDate, today, resolvedEvents],
   )
 
@@ -157,7 +149,9 @@ export function CalendarBase({
   const handlePrevMonth = useCallback(() => {
     animateTransition(() => {
       setDisplayMonth((prev) =>
-        prev.month === 0 ? { year: prev.year - 1, month: 11 } : { year: prev.year, month: prev.month - 1 },
+        prev.month === 0
+          ? { year: prev.year - 1, month: 11 }
+          : { year: prev.year, month: prev.month - 1 },
       )
     })
   }, [animateTransition])
@@ -165,7 +159,9 @@ export function CalendarBase({
   const handleNextMonth = useCallback(() => {
     animateTransition(() => {
       setDisplayMonth((prev) =>
-        prev.month === 11 ? { year: prev.year + 1, month: 0 } : { year: prev.year, month: prev.month + 1 },
+        prev.month === 11
+          ? { year: prev.year + 1, month: 0 }
+          : { year: prev.year, month: prev.month + 1 },
       )
     })
   }, [animateTransition])

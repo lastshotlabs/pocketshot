@@ -71,7 +71,11 @@ export function NotificationItemBase({
         if (shouldDismiss) {
           const direction = gestureState.dx > 0 ? SCREEN_WIDTH : -SCREEN_WIDTH
           Animated.parallel([
-            Animated.timing(translateX, { toValue: direction, duration: 200, useNativeDriver: true }),
+            Animated.timing(translateX, {
+              toValue: direction,
+              duration: 200,
+              useNativeDriver: true,
+            }),
             Animated.timing(itemOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
           ]).start(() => {
             onDismiss?.()

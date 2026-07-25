@@ -11,7 +11,14 @@ describe('RichTextEditorSchema', () => {
   it('applies defaults', () => {
     const result = RichTextEditorSchema.parse({ id: 'editor' })
 
-    expect(result.toolbar).toEqual(['heading', 'bold', 'italic', 'list-bullet', 'blockquote', 'code'])
+    expect(result.toolbar).toEqual([
+      'heading',
+      'bold',
+      'italic',
+      'list-bullet',
+      'blockquote',
+      'code',
+    ])
     expect(result.minHeight).toBe(120)
     expect(result.maxHeight).toBe(400)
   })

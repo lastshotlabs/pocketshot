@@ -102,7 +102,9 @@ describe('Timeline', () => {
 
   it('accepts shared text styling props without crashing', () => {
     const { toJSON } = renderWithProviders(
-      <Timeline config={{ items: BASIC_ITEMS, color: 'muted', fontSize: 'lg', textAlign: 'center' }} />,
+      <Timeline
+        config={{ items: BASIC_ITEMS, color: 'muted', fontSize: 'lg', textAlign: 'center' }}
+      />,
     )
     expect(toJSON()).toBeTruthy()
   })

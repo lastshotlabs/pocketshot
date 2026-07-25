@@ -161,7 +161,9 @@ function LikeButton({
         onPress={handlePress}
         style={{ flexDirection: 'row', alignItems: 'center', gap: tokens.spacing[1] }}
         accessibilityRole="button"
-        accessibilityLabel={liked ? `Unlike comment, ${count} likes` : `Like comment, ${count} likes`}
+        accessibilityLabel={
+          liked ? `Unlike comment, ${count} likes` : `Like comment, ${count} likes`
+        }
         accessibilityState={{ selected: liked }}
         testID={testID}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

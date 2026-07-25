@@ -172,7 +172,7 @@ export function ModalBase({
                 style,
               ]}
             >
-              {(title != null || showCloseButton) ? (
+              {title != null || showCloseButton ? (
                 <>
                   <View style={headerSurface.style as ViewStyle | undefined}>
                     {title != null ? (

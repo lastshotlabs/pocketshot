@@ -114,12 +114,7 @@ export function HighlightedTextBase({
   )
 
   return (
-    <Text
-      style={baseTextStyle}
-      accessibilityRole="text"
-      accessibilityLabel={text}
-      testID={testID}
-    >
+    <Text style={baseTextStyle} accessibilityRole="text" accessibilityLabel={text} testID={testID}>
       {segments.map((segment, index) =>
         segment.highlighted ? (
           <Text

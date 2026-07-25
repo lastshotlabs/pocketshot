@@ -93,9 +93,7 @@ export function SliderBase({
     [max, min, step, trackWidth],
   )
 
-  const containerStates: RuntimeSurfaceState[] | undefined = showValue
-    ? ['selected']
-    : undefined
+  const containerStates: RuntimeSurfaceState[] | undefined = showValue ? ['selected'] : undefined
   const trackStates: RuntimeSurfaceState[] | undefined = dragging ? ['active'] : undefined
 
   const containerSurface = resolveSurfacePresentation({
@@ -220,9 +218,7 @@ export function SliderBase({
     <View style={[containerSurface.style as ViewStyle | undefined, style]}>
       <View style={headerSurface.style as ViewStyle | undefined}>
         {label != null ? (
-          <Text
-            style={{ ...sharedTextStyle, ...(labelSurface.style as TextStyle | undefined) }}
-          >
+          <Text style={{ ...sharedTextStyle, ...(labelSurface.style as TextStyle | undefined) }}>
             {label}
           </Text>
         ) : null}
@@ -249,9 +245,7 @@ export function SliderBase({
         {...panResponder.panHandlers}
       >
         <View style={trackSurface.style as ViewStyle | undefined}>
-          <View
-            style={{ ...(fillSurface.style as ViewStyle | undefined), width: thumbPosition }}
-          />
+          <View style={{ ...(fillSurface.style as ViewStyle | undefined), width: thumbPosition }} />
         </View>
         <View
           style={{

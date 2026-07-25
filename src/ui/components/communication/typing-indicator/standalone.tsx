@@ -179,7 +179,9 @@ function makeStyles(
       lineHeight:
         typeof sharedTextStyle.lineHeight === 'number' ? sharedTextStyle.lineHeight : undefined,
       letterSpacing:
-        typeof sharedTextStyle.letterSpacing === 'number' ? sharedTextStyle.letterSpacing : undefined,
+        typeof sharedTextStyle.letterSpacing === 'number'
+          ? sharedTextStyle.letterSpacing
+          : undefined,
       textAlign:
         typeof sharedTextStyle.textAlign === 'string' ? sharedTextStyle.textAlign : undefined,
       marginTop: tokens.spacing[1],

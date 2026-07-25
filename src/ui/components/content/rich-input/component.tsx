@@ -8,8 +8,7 @@ import type { RichInputConfig, ToolbarItem } from './types'
 export function RichInput({ config }: { config: RichInputConfig }) {
   const { values, setValue, dispatch } = useScreenContext()
 
-  const resolvedValue =
-    config.value != null ? resolveFromRef(config.value, values) : undefined
+  const resolvedValue = config.value != null ? resolveFromRef(config.value, values) : undefined
   const resolvedLabel =
     config.label != null ? String(resolveFromRef(config.label, values) ?? '') : undefined
   const resolvedPlaceholder =

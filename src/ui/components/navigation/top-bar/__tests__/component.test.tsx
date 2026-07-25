@@ -12,7 +12,9 @@ describe('TopBar', () => {
   })
 
   it('renders title and subtitle', () => {
-    const result = renderWithProviders(<TopBar config={{ title: 'Home', subtitle: 'Welcome back' }} />)
+    const result = renderWithProviders(
+      <TopBar config={{ title: 'Home', subtitle: 'Welcome back' }} />,
+    )
     expect(result.getByText('Home')).toBeTruthy()
     expect(result.getByText('Welcome back')).toBeTruthy()
   })
@@ -25,7 +27,11 @@ describe('TopBar', () => {
           title: 'Home',
           leftAction: 'back',
           rightActions: [
-            { icon: 'Bell', onPress: { type: 'set-value', target: 'bell.open', value: true }, badge: 3 },
+            {
+              icon: 'Bell',
+              onPress: { type: 'set-value', target: 'bell.open', value: true },
+              badge: 3,
+            },
           ],
         }}
       />,

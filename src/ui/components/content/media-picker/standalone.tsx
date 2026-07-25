@@ -41,10 +41,7 @@ function tryDocumentPicker() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('expo-document-picker') as {
-      getDocumentAsync: (options: {
-        multiple: boolean
-        copyToCacheDirectory: boolean
-      }) => Promise<{
+      getDocumentAsync: (options: { multiple: boolean; copyToCacheDirectory: boolean }) => Promise<{
         canceled: boolean
         assets?: Array<{ uri: string; name: string; size?: number; mimeType?: string }>
       }>
@@ -253,18 +250,12 @@ export function MediaPickerBase({
     }
 
     if (needsImages && !needsDocuments && imagePicker == null) {
-      Alert.alert(
-        'Image picker required',
-        'Install expo-image-picker to select images and videos.',
-      )
+      Alert.alert('Image picker required', 'Install expo-image-picker to select images and videos.')
       return
     }
 
     if (needsDocuments && !needsImages && documentPicker == null) {
-      Alert.alert(
-        'Document picker required',
-        'Install expo-document-picker to select documents.',
-      )
+      Alert.alert('Document picker required', 'Install expo-document-picker to select documents.')
       return
     }
 

@@ -28,7 +28,9 @@ describe('CartItem', () => {
   })
 
   it('renders the quantity value (defaults to 1)', () => {
-    const { getByText } = renderWithProviders(<CartItem config={{ title: 'Widget', price: 10.0 }} />)
+    const { getByText } = renderWithProviders(
+      <CartItem config={{ title: 'Widget', price: 10.0 }} />,
+    )
     expect(getByText('1')).toBeTruthy()
   })
 

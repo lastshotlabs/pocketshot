@@ -1,11 +1,5 @@
 import React from 'react'
-import {
-  Text,
-  TouchableOpacity,
-  View,
-  type TextStyle,
-  type ViewStyle,
-} from 'react-native'
+import { Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native'
 import { resolveNativeTextStyle } from '../../_base/text-style'
 import { resolveSurfacePresentation } from '../../_base/style-surfaces'
 import { useTokens } from '../../../context/AppContext'

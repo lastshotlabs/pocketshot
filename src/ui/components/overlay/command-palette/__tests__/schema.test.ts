@@ -5,7 +5,13 @@ describe('CommandPaletteSchema', () => {
   it('parses a minimal valid config', () => {
     const result = CommandPaletteSchema.parse({
       id: 'commands',
-      items: [{ id: 'open', label: 'Open', onSelect: { type: 'set-value', target: 'cmd.open', value: true } }],
+      items: [
+        {
+          id: 'open',
+          label: 'Open',
+          onSelect: { type: 'set-value', target: 'cmd.open', value: true },
+        },
+      ],
     })
     expect(result.id).toBe('commands')
   })
@@ -17,7 +23,13 @@ describe('CommandPaletteSchema', () => {
   it('applies defaults', () => {
     const result = CommandPaletteSchema.parse({
       id: 'commands',
-      items: [{ id: 'open', label: 'Open', onSelect: { type: 'set-value', target: 'cmd.open', value: true } }],
+      items: [
+        {
+          id: 'open',
+          label: 'Open',
+          onSelect: { type: 'set-value', target: 'cmd.open', value: true },
+        },
+      ],
     })
     expect(result.placeholder).toBe('Type a command...')
     expect(result.maxResults).toBe(20)
@@ -26,7 +38,13 @@ describe('CommandPaletteSchema', () => {
   it('accepts slot surfaces', () => {
     const result = CommandPaletteSchema.parse({
       id: 'commands',
-      items: [{ id: 'open', label: 'Open', onSelect: { type: 'set-value', target: 'cmd.open', value: true } }],
+      items: [
+        {
+          id: 'open',
+          label: 'Open',
+          onSelect: { type: 'set-value', target: 'cmd.open', value: true },
+        },
+      ],
       slots: {
         panel: { bg: 'card' },
         searchInput: { color: 'foreground' },

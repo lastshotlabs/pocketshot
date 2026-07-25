@@ -15,9 +15,7 @@ export interface NotificationCenterPresetConfig {
 }
 
 /** Creates a notification center screen: Header + FilterBar (All/Unread/Mentions) + NotificationFeed. */
-export const notificationCenterPreset: PresetFactory<NotificationCenterPresetConfig> = (
-  config,
-) => {
+export const notificationCenterPreset: PresetFactory<NotificationCenterPresetConfig> = (config) => {
   const title = config.title ?? 'Notifications'
 
   const components: ComponentConfig[] = []
