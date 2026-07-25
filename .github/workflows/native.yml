@@ -1,0 +1,97 @@
+name: Native smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@lastshotlabs'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - run: npm ci --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install current package in showcase
+        run: |
+          npm run build
+          archive=$(npm pack --pack-destination "$RUNNER_TEMP" --silent)
+          npm ci --prefix showcase --legacy-peer-deps
+          npm install --prefix showcase "$RUNNER_TEMP/$archive" --no-save --package-lock=false --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --clean --no-install
+        working-directory: showcase
+      - name: Compile Android debug app
+        run: ./gradlew assembleDebug --no-daemon
+        working-directory: showcase/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pocketshot-showcase-android-debug
+          path: showcase/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@lastshotlabs'
+      - run: npm ci --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install current package in showcase
+        run: |
+          npm run build
+          archive=$(npm pack --pack-destination "$RUNNER_TEMP" --silent)
+          npm ci --prefix showcase --legacy-peer-deps
+          npm install --prefix showcase "$RUNNER_TEMP/$archive" --no-save --package-lock=false --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate iOS project
+        run: npx expo prebuild --platform ios --clean --no-install
+        working-directory: showcase
+      - name: Install CocoaPods
+        run: npx pod-install ios
+        working-directory: showcase
+      - name: Compile iOS simulator app
+        run: |
+          workspace=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
+          scheme=$(xcodebuild -workspace "$workspace" -list -json | jq -r '.workspace.schemes[0]')
+          xcodebuild \
+            -workspace "$workspace" \
+            -scheme "$scheme" \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath "$RUNNER_TEMP/pocketshot-derived-data" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+        working-directory: showcase
