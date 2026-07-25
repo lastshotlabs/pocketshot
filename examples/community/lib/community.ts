@@ -7,7 +7,7 @@ import {
   CommunityProfileController,
   SocialGraphController,
   type CommunityProfileVisibility,
-} from '@lastshotlabs/pocketshot/community'
+} from '@lastshotlabs/pocketshot/community/core'
 import { RealtimeReconciler, type RealtimeEvent } from '@lastshotlabs/pocketshot/realtime'
 import { z } from 'zod'
 

@@ -116,6 +116,11 @@
       "types": "./dist/types/community/index.d.ts",
       "import": "./dist/community.js",
       "require": "./dist/community.cjs"
+    },
+    "./community/core": {
+      "types": "./dist/types/community/core.d.ts",
+      "import": "./dist/community-core.js",
+      "require": "./dist/community-core.cjs"
     }
   },
   "scripts": {

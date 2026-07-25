@@ -14,6 +14,7 @@ const packageSourceAliases = {
   '@lastshotlabs/pocketshot/observability': path.resolve(__dirname, 'src/observability/index.ts'),
   '@lastshotlabs/pocketshot/accessibility': path.resolve(__dirname, 'src/accessibility/index.ts'),
   '@lastshotlabs/pocketshot/community': path.resolve(__dirname, 'src/community/index.ts'),
+  '@lastshotlabs/pocketshot/community/core': path.resolve(__dirname, 'src/community/core.ts'),
   '@lastshotlabs/pocketshot/drafts': path.resolve(__dirname, 'src/drafts/index.ts'),
   '@lastshotlabs/pocketshot/media': path.resolve(__dirname, 'src/media/index.ts'),
   '@lastshotlabs/pocketshot/realtime': path.resolve(__dirname, 'src/realtime/index.ts'),

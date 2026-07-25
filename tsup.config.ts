@@ -63,6 +63,7 @@ export default defineConfig([
       observability: 'src/observability/index.ts',
       accessibility: 'src/accessibility/index.ts',
       community: 'src/community/index.ts',
+      'community-core': 'src/community/core.ts',
     },
     format: ['esm', 'cjs'],
     sourcemap: true,

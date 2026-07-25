@@ -20,6 +20,7 @@ const entries = [
   'observability',
   'accessibility',
   'community',
+  'community-core',
 ]
 
 const failures = []
