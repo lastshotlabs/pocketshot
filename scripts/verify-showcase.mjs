@@ -30,6 +30,7 @@ try {
     showcaseDir,
   )
   run('npx', ['expo-doctor'], showcaseDir)
+  run('npx', ['pocketshot', 'doctor', '--json'], showcaseDir)
   run('npm', ['run', 'verify'], showcaseDir)
   run('npm', ['audit', '--omit=dev', '--audit-level=high'], showcaseDir)
 } finally {

@@ -5,6 +5,7 @@ import { runPrompts } from './prompts'
 import { scaffold } from './scaffold'
 import { runSync } from './sync'
 import { runManifestSync } from './manifest-sync'
+import { runDoctor } from './doctor'
 
 async function main() {
   const args = process.argv.slice(2)
@@ -78,6 +79,35 @@ async function main() {
     return
   }
 
+  // Subcommand: pocketshot doctor
+  if (positionals[0] === 'doctor') {
+    const result = runDoctor({
+      cwd: process.cwd(),
+      release: args.includes('--release'),
+    })
+    const json = args.includes('--json')
+
+    if (json) {
+      console.log(JSON.stringify(result, null, 2))
+    } else {
+      intro('@lastshotlabs/pocketshot doctor')
+      for (const check of result.checks) {
+        const message = `${check.id}: ${check.message}`
+        if (check.status === 'pass') log.success(message)
+        if (check.status === 'warn') log.warn(`${message}${check.fix ? ` Fix: ${check.fix}` : ''}`)
+        if (check.status === 'fail') log.error(`${message}${check.fix ? ` Fix: ${check.fix}` : ''}`)
+      }
+      outro(
+        result.ok
+          ? `Ready with ${result.warnings} warning${result.warnings === 1 ? '' : 's'}.`
+          : `${result.failures} release blocker${result.failures === 1 ? '' : 's'} found.`,
+      )
+    }
+
+    if (!result.ok) process.exitCode = 1
+    return
+  }
+
   // Help — must come before init, which catches the no-command case
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
@@ -89,6 +119,7 @@ Commands:
                                  Generate API client + hooks from OpenAPI spec
   manifest --api <url> [--out <dir>]
                                  Fetch and generate screens from a Slingshot manifest
+  doctor [--release] [--json]    Validate Expo and native release readiness
 
 Options:
   --yes, -y        Skip prompts, use defaults
