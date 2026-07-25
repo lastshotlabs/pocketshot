@@ -26,3 +26,22 @@ export type {
 export { communityContract } from './contract'
 export { createCommunityHooks } from './hooks'
 export type { CommunityHooks } from './hooks'
+export {
+  CursorFeedController,
+  DiscussionController,
+  NotificationInboxController,
+  MessagingController,
+  ModerationController,
+  PrivacyController,
+} from './controllers'
+export type {
+  CursorEntity,
+  CursorPage,
+  CursorFeedSnapshot,
+  DiscussionThread,
+  DiscussionReply,
+  CommunityNotification,
+  ConversationMessage,
+  ModerationReport,
+  ModerationAuditEntry,
+} from './controllers'

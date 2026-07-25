@@ -118,6 +118,25 @@ export type {
 } from './community/types'
 export { createCommunityHooks } from './community/hooks'
 export type { CommunityHooks } from './community/hooks'
+export {
+  CursorFeedController,
+  DiscussionController,
+  NotificationInboxController,
+  MessagingController,
+  ModerationController,
+  PrivacyController,
+} from './community/controllers'
+export type {
+  CursorEntity,
+  CursorPage,
+  CursorFeedSnapshot,
+  DiscussionThread,
+  DiscussionReply,
+  CommunityNotification,
+  ConversationMessage,
+  ModerationReport,
+  ModerationAuditEntry,
+} from './community/controllers'
 
 // ── SSE ───────────────────────────────────────────────────────────────────────
 export { SseManager, createSseHooks } from './sse/index'

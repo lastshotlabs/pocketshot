@@ -481,6 +481,30 @@ export const community = createCommunityHooks(api)
 export const { useListThreads, useCreateThread, useCheckBan } = community
 ```
 
+Community state controllers cover the mobile recovery and reconciliation layer
+that sits below screens and above generated hooks:
+
+| Controller                    | Guarantees                                                           |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `CursorFeedController`        | Stable cursor merge, dedupe, stale-page rejection, optimistic upsert |
+| `DiscussionController`        | Nested replies, tombstones, edit/delete, idempotent reactions        |
+| `NotificationInboxController` | Sequence dedupe, unread state, category preferences                  |
+| `MessagingController`         | Client-id dedupe, pending/ack/failure, authorization revocation      |
+| `ModerationController`        | Report assignment/resolution/dismissal with an audit trail           |
+| `PrivacyController`           | Block/mute plus export and deletion request lifecycles               |
+
+```ts
+import {
+  CursorFeedController,
+  DiscussionController,
+  NotificationInboxController,
+} from '@lastshotlabs/pocketshot'
+
+const feed = new CursorFeedController<ThreadResponse>()
+const discussion = new DiscussionController()
+const notifications = new NotificationInboxController()
+```
+
 **Webhooks** (call `createWebhookHooks(api)` to create)
 
 | Hook                                                  | Description                                                |

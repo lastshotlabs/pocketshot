@@ -1,0 +1,395 @@
+export interface CursorEntity {
+  id: string
+}
+
+export interface CursorPage<T> {
+  items: T[]
+  nextCursor: string | null
+  version: number
+}
+
+export interface CursorFeedSnapshot<T> {
+  items: T[]
+  nextCursor: string | null
+  version: number
+  isStale: boolean
+}
+
+export class CursorFeedController<T extends CursorEntity> {
+  private itemsValue: T[] = []
+  private nextCursorValue: string | null = null
+  private versionValue = 0
+  private staleValue = false
+
+  get snapshot(): CursorFeedSnapshot<T> {
+    return {
+      items: structuredClone(this.itemsValue),
+      nextCursor: this.nextCursorValue,
+      version: this.versionValue,
+      isStale: this.staleValue,
+    }
+  }
+
+  replace(page: CursorPage<T>): void {
+    if (page.version < this.versionValue) return
+    this.itemsValue = uniqueById(page.items)
+    this.nextCursorValue = page.nextCursor
+    this.versionValue = page.version
+    this.staleValue = false
+  }
+
+  append(page: CursorPage<T>, requestedCursor: string | null): void {
+    if (requestedCursor !== this.nextCursorValue || page.version < this.versionValue) {
+      this.staleValue = true
+      return
+    }
+    this.itemsValue = uniqueById([...this.itemsValue, ...page.items])
+    this.nextCursorValue = page.nextCursor
+    this.versionValue = page.version
+  }
+
+  upsert(item: T, position: 'start' | 'end' = 'start'): void {
+    const remaining = this.itemsValue.filter((candidate) => candidate.id !== item.id)
+    this.itemsValue = position === 'start' ? [item, ...remaining] : [...remaining, item]
+  }
+
+  remove(id: string): void {
+    this.itemsValue = this.itemsValue.filter((item) => item.id !== id)
+  }
+
+  markStale(): void {
+    this.staleValue = true
+  }
+}
+
+export interface DiscussionThread {
+  id: string
+  title: string
+  body: string
+  reactionCount: number
+  replyCount: number
+  deleted: boolean
+}
+
+export interface DiscussionReply {
+  id: string
+  threadId: string
+  parentId: string | null
+  body: string
+  reactionCount: number
+  deleted: boolean
+}
+
+export class DiscussionController {
+  private threads = new Map<string, DiscussionThread>()
+  private replies = new Map<string, DiscussionReply>()
+  private reactions = new Set<string>()
+
+  getThread(id: string): DiscussionThread | null {
+    const value = this.threads.get(id)
+    return value ? structuredClone(value) : null
+  }
+
+  listReplies(threadId: string): DiscussionReply[] {
+    return [...this.replies.values()]
+      .filter((reply) => reply.threadId === threadId)
+      .map((reply) => structuredClone(reply))
+  }
+
+  createThread(thread: Omit<DiscussionThread, 'reactionCount' | 'replyCount' | 'deleted'>): void {
+    if (this.threads.has(thread.id)) return
+    this.threads.set(thread.id, {
+      ...structuredClone(thread),
+      reactionCount: 0,
+      replyCount: 0,
+      deleted: false,
+    })
+  }
+
+  editThread(id: string, patch: Pick<Partial<DiscussionThread>, 'title' | 'body'>): void {
+    const thread = this.requireThread(id)
+    this.threads.set(id, { ...thread, ...structuredClone(patch) })
+  }
+
+  deleteThread(id: string): void {
+    const thread = this.requireThread(id)
+    this.threads.set(id, { ...thread, title: '', body: '', deleted: true })
+  }
+
+  createReply(reply: Omit<DiscussionReply, 'reactionCount' | 'deleted'>): void {
+    if (this.replies.has(reply.id)) return
+    const thread = this.requireThread(reply.threadId)
+    if (reply.parentId) {
+      const parent = this.replies.get(reply.parentId)
+      if (!parent || parent.threadId !== reply.threadId) {
+        throw new Error('Reply parent does not belong to this thread')
+      }
+    }
+    this.replies.set(reply.id, { ...structuredClone(reply), reactionCount: 0, deleted: false })
+    this.threads.set(thread.id, { ...thread, replyCount: thread.replyCount + 1 })
+  }
+
+  editReply(id: string, body: string): void {
+    const reply = this.requireReply(id)
+    this.replies.set(id, { ...reply, body })
+  }
+
+  deleteReply(id: string): void {
+    const reply = this.requireReply(id)
+    this.replies.set(id, { ...reply, body: '', deleted: true })
+  }
+
+  react(target: 'thread' | 'reply', id: string, emoji: string, actorId: string): void {
+    const key = `${target}:${id}:${emoji}:${actorId}`
+    if (this.reactions.has(key)) return
+    this.reactions.add(key)
+    if (target === 'thread') {
+      const thread = this.requireThread(id)
+      this.threads.set(id, { ...thread, reactionCount: thread.reactionCount + 1 })
+    } else {
+      const reply = this.requireReply(id)
+      this.replies.set(id, { ...reply, reactionCount: reply.reactionCount + 1 })
+    }
+  }
+
+  unreact(target: 'thread' | 'reply', id: string, emoji: string, actorId: string): void {
+    const key = `${target}:${id}:${emoji}:${actorId}`
+    if (!this.reactions.delete(key)) return
+    if (target === 'thread') {
+      const thread = this.requireThread(id)
+      this.threads.set(id, { ...thread, reactionCount: Math.max(0, thread.reactionCount - 1) })
+    } else {
+      const reply = this.requireReply(id)
+      this.replies.set(id, { ...reply, reactionCount: Math.max(0, reply.reactionCount - 1) })
+    }
+  }
+
+  private requireThread(id: string): DiscussionThread {
+    const value = this.threads.get(id)
+    if (!value) throw new Error(`Unknown thread: ${id}`)
+    return value
+  }
+
+  private requireReply(id: string): DiscussionReply {
+    const value = this.replies.get(id)
+    if (!value) throw new Error(`Unknown reply: ${id}`)
+    return value
+  }
+}
+
+export interface CommunityNotification {
+  id: string
+  sequence: number
+  category: string
+  text: string
+  read: boolean
+}
+
+export class NotificationInboxController {
+  private items = new Map<string, CommunityNotification>()
+  private lastSequence = 0
+  private preferences = new Map<string, boolean>()
+
+  get snapshot(): { items: CommunityNotification[]; unread: number; lastSequence: number } {
+    const items = [...this.items.values()]
+      .sort((left, right) => right.sequence - left.sequence)
+      .map((item) => structuredClone(item))
+    return {
+      items,
+      unread: items.filter((item) => !item.read).length,
+      lastSequence: this.lastSequence,
+    }
+  }
+
+  receive(item: Omit<CommunityNotification, 'read'>): void {
+    if (this.items.has(item.id) || item.sequence <= this.lastSequence) return
+    this.lastSequence = item.sequence
+    if (this.preferences.get(item.category) === false) return
+    this.items.set(item.id, { ...structuredClone(item), read: false })
+  }
+
+  markRead(id: string): void {
+    const item = this.items.get(id)
+    if (item) this.items.set(id, { ...item, read: true })
+  }
+
+  markAllRead(): void {
+    for (const [id, item] of this.items) this.items.set(id, { ...item, read: true })
+  }
+
+  setPreference(category: string, enabled: boolean): void {
+    this.preferences.set(category, enabled)
+  }
+}
+
+export interface ConversationMessage {
+  id: string
+  clientId: string
+  body: string
+  status: 'pending' | 'sent' | 'failed'
+}
+
+export class MessagingController {
+  private access: 'allowed' | 'revoked' = 'allowed'
+  private messages = new Map<string, ConversationMessage>()
+
+  get snapshot(): { access: 'allowed' | 'revoked'; messages: ConversationMessage[] } {
+    return {
+      access: this.access,
+      messages: [...this.messages.values()].map((message) => structuredClone(message)),
+    }
+  }
+
+  send(message: Omit<ConversationMessage, 'status'>): void {
+    if (this.access === 'revoked') throw new Error('Conversation access revoked')
+    if (this.messages.has(message.clientId)) return
+    this.messages.set(message.clientId, { ...structuredClone(message), status: 'pending' })
+  }
+
+  acknowledge(clientId: string, serverId: string): void {
+    const message = this.messages.get(clientId)
+    if (!message) return
+    this.messages.set(clientId, { ...message, id: serverId, status: 'sent' })
+  }
+
+  fail(clientId: string): void {
+    const message = this.messages.get(clientId)
+    if (message) this.messages.set(clientId, { ...message, status: 'failed' })
+  }
+
+  revokeAccess(): void {
+    this.access = 'revoked'
+    for (const [id, message] of this.messages) {
+      if (message.status === 'pending') this.messages.set(id, { ...message, status: 'failed' })
+    }
+  }
+}
+
+export interface ModerationReport {
+  id: string
+  targetId: string
+  reason: string
+  status: 'open' | 'assigned' | 'resolved' | 'dismissed'
+  assigneeId: string | null
+}
+
+export interface ModerationAuditEntry {
+  reportId: string
+  actorId: string
+  action: string
+  reason: string
+  timestamp: string
+}
+
+export class ModerationController {
+  private reports = new Map<string, ModerationReport>()
+  private audit: ModerationAuditEntry[] = []
+
+  constructor(private readonly now: () => string = () => new Date().toISOString()) {}
+
+  get snapshot(): { reports: ModerationReport[]; audit: ModerationAuditEntry[] } {
+    return {
+      reports: [...this.reports.values()].map((report) => structuredClone(report)),
+      audit: structuredClone(this.audit),
+    }
+  }
+
+  submit(report: Omit<ModerationReport, 'status' | 'assigneeId'>): void {
+    if (this.reports.has(report.id)) return
+    this.reports.set(report.id, { ...structuredClone(report), status: 'open', assigneeId: null })
+  }
+
+  assign(id: string, actorId: string): void {
+    const report = this.requireReport(id)
+    this.reports.set(id, { ...report, status: 'assigned', assigneeId: actorId })
+    this.record(id, actorId, 'assign', 'Claimed for review')
+  }
+
+  resolve(id: string, actorId: string, action: string, reason: string): void {
+    const report = this.requireReport(id)
+    if (report.status === 'resolved' || report.status === 'dismissed') return
+    this.reports.set(id, { ...report, status: 'resolved' })
+    this.record(id, actorId, action, reason)
+  }
+
+  dismiss(id: string, actorId: string, reason: string): void {
+    const report = this.requireReport(id)
+    if (report.status === 'resolved' || report.status === 'dismissed') return
+    this.reports.set(id, { ...report, status: 'dismissed' })
+    this.record(id, actorId, 'dismiss', reason)
+  }
+
+  private requireReport(id: string): ModerationReport {
+    const value = this.reports.get(id)
+    if (!value) throw new Error(`Unknown report: ${id}`)
+    return value
+  }
+
+  private record(reportId: string, actorId: string, action: string, reason: string): void {
+    this.audit.push({ reportId, actorId, action, reason, timestamp: this.now() })
+  }
+}
+
+export class PrivacyController {
+  private blocked = new Set<string>()
+  private muted = new Set<string>()
+  private exportState: 'idle' | 'requested' | 'ready' = 'idle'
+  private deletionState: 'idle' | 'requested' | 'scheduled' | 'cancelled' = 'idle'
+
+  get snapshot() {
+    return {
+      blocked: [...this.blocked],
+      muted: [...this.muted],
+      exportStatus: this.exportState,
+      deletionStatus: this.deletionState,
+    }
+  }
+
+  block(userId: string): void {
+    this.blocked.add(userId)
+  }
+
+  unblock(userId: string): void {
+    this.blocked.delete(userId)
+  }
+
+  mute(userId: string): void {
+    this.muted.add(userId)
+  }
+
+  unmute(userId: string): void {
+    this.muted.delete(userId)
+  }
+
+  requestExport(): void {
+    this.exportState = 'requested'
+  }
+
+  exportReady(): void {
+    if (this.exportState !== 'requested') throw new Error('No export request is active')
+    this.exportState = 'ready'
+  }
+
+  requestDeletion(): void {
+    this.deletionState = 'requested'
+  }
+
+  scheduleDeletion(): void {
+    if (this.deletionState !== 'requested') throw new Error('No deletion request is active')
+    this.deletionState = 'scheduled'
+  }
+
+  cancelDeletion(): void {
+    if (this.deletionState !== 'requested' && this.deletionState !== 'scheduled') return
+    this.deletionState = 'cancelled'
+  }
+}
+
+function uniqueById<T extends CursorEntity>(items: T[]): T[] {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false
+    seen.add(item.id)
+    return true
+  })
+}
