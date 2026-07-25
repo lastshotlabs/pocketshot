@@ -9,3 +9,5 @@ export type {
 export type { TokenStorage } from './storage'
 export { PasskeyLifecycleController } from './passkeys'
 export type { PasskeyAuthenticator, PasskeyTransport, PasskeyLifecycleSnapshot } from './passkeys'
+export { normalizeOAuthSystemPath, parseOAuthCallback } from './oauth-routing'
+export type { NativeOAuthCallback } from './oauth-routing'
