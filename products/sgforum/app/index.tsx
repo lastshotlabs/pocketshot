@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import * as SQLite from 'expo-sqlite'
 import { createSQLiteDraftStorage } from '@lastshotlabs/pocketshot/drafts'
@@ -86,6 +86,24 @@ export default function CommunityShell() {
       <ScrollView contentContainerStyle={styles.content}>
         {state.view === 'feed' && (
           <Card title="Trail Talk">
+            <Text style={styles.copy}>
+              Membership:{' '}
+              {state.memberships.find((membership) => membership.communityId === 'trail-talk')
+                ?.role ?? 'visitor'}
+            </Text>
+            {!state.memberships.some((membership) => membership.communityId === 'trail-talk') ? (
+              <Action
+                testID="join-community"
+                label="Join Trail Talk"
+                onPress={() => community.joinCommunity('trail-talk')}
+              />
+            ) : (
+              <Action
+                testID="leave-community"
+                label="Leave Trail Talk"
+                onPress={() => community.leaveCommunity('trail-talk')}
+              />
+            )}
             {state.threads.map((thread, index) => (
               <Pressable
                 key={thread.id}
@@ -169,6 +187,15 @@ export default function CommunityShell() {
         )}
         {state.view === 'thread' && selected && (
           <Card title={selected.title}>
+            {state.selectedReplyId && (
+              <Text
+                testID="selected-reply-anchor"
+                accessibilityLiveRegion="polite"
+                style={styles.copy}
+              >
+                Opened reply {state.selectedReplyId}
+              </Text>
+            )}
             <Text style={styles.copy}>{selected.body}</Text>
             <Text style={styles.copy}>
               Attachments: {selected.attachments.length} · Mentions: {selected.mentions.length}
@@ -232,6 +259,11 @@ export default function CommunityShell() {
               onPress={() =>
                 community.setSaved(selected.id, !state.savedThreadIds.includes(selected.id))
               }
+            />
+            <Action
+              testID="share-thread"
+              label="Share thread"
+              onPress={() => void Share.share(community.threadSharePayload(selected.id))}
             />
             <Action
               testID="edit-thread"

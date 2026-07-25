@@ -92,6 +92,7 @@ export interface CommunityState {
   threads: CommunityThread[]
   replies: CommunityReply[]
   selectedThreadId: string | null
+  selectedReplyId: string | null
   draftTitle: string
   searchResults: string[]
   savedThreadIds: string[]
@@ -127,6 +128,7 @@ export interface CommunityState {
   feedNextCursor: string | null
   feedStale: boolean
   feedAnchorId: string | null
+  memberships: Array<{ communityId: string; role: 'member' | 'moderator' | 'admin' }>
 }
 
 type Event =
@@ -158,6 +160,7 @@ const initial: CommunityState = {
   ],
   replies: [],
   selectedThreadId: null,
+  selectedReplyId: null,
   draftTitle: '',
   searchResults: [],
   savedThreadIds: [],
@@ -187,6 +190,7 @@ const initial: CommunityState = {
   feedNextCursor: 'feed-page-2',
   feedStale: false,
   feedAnchorId: null,
+  memberships: [],
 }
 
 export class CommunityDemoController {
@@ -480,8 +484,59 @@ export class CommunityDemoController {
 
   openThread(id: string): void {
     this.stateValue.selectedThreadId = id
+    this.stateValue.selectedReplyId = null
     this.stateValue.view = 'thread'
     this.emit()
+  }
+
+  openThreadAnchor(threadId: string, replyId?: string): void {
+    if (!this.stateValue.threads.some((thread) => thread.id === threadId)) {
+      throw new Error(`Unknown thread: ${threadId}`)
+    }
+    if (
+      replyId &&
+      !this.stateValue.replies.some(
+        (reply) => reply.id === replyId && reply.threadId === threadId && !reply.deleted,
+      )
+    ) {
+      throw new Error('Reply anchor does not belong to the thread')
+    }
+    this.stateValue.selectedThreadId = threadId
+    this.stateValue.selectedReplyId = replyId ?? null
+    this.stateValue.view = 'thread'
+    this.emit()
+  }
+
+  joinCommunity(communityId: string, role: 'member' | 'moderator' | 'admin' = 'member'): void {
+    if (!communityId.trim()) throw new Error('Community ID is required')
+    const memberships = this.stateValue.memberships.filter(
+      (membership) => membership.communityId !== communityId,
+    )
+    memberships.push({ communityId, role })
+    this.stateValue.memberships = memberships.sort((left, right) =>
+      left.communityId.localeCompare(right.communityId),
+    )
+    this.stateValue.notice = `Joined ${communityId}`
+    this.emit()
+  }
+
+  leaveCommunity(communityId: string): void {
+    this.stateValue.memberships = this.stateValue.memberships.filter(
+      (membership) => membership.communityId !== communityId,
+    )
+    this.stateValue.notice = `Left ${communityId}`
+    this.emit()
+  }
+
+  threadSharePayload(threadId: string): { title: string; message: string; url: string } {
+    const thread = this.stateValue.threads.find((candidate) => candidate.id === threadId)
+    if (!thread) throw new Error(`Unknown thread: ${threadId}`)
+    const url = `https://links.sgforum.app/threads/${encodeURIComponent(thread.id)}`
+    return {
+      title: thread.title,
+      message: `${thread.title} — ${url}`,
+      url,
+    }
   }
 
   loadMoreFeed(): void {
@@ -691,7 +746,8 @@ export class CommunityDemoController {
     this.stateValue.pushHandoffRoute = normalized
     const thread = /^\/threads\/([^/#?]+)/.exec(normalized)?.[1]
     if (thread && this.stateValue.threads.some((candidate) => candidate.id === thread)) {
-      this.openThread(thread)
+      const reply = /^\/threads\/[^/#?]+\/replies\/([^/#?]+)/.exec(normalized)?.[1]
+      this.openThreadAnchor(thread, reply)
     } else {
       this.emit()
     }

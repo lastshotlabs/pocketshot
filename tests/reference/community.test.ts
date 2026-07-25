@@ -59,6 +59,15 @@ describe('Community reference shell', () => {
     expect(community.state).toMatchObject({ onboarded: true, handle: 'alex' })
   })
 
+  it('joins and leaves communities with explicit membership roles', () => {
+    const community = new CommunityDemoController()
+    community.joinCommunity('trail-talk')
+    community.joinCommunity('trail-talk', 'moderator')
+    expect(community.state.memberships).toEqual([{ communityId: 'trail-talk', role: 'moderator' }])
+    community.leaveCommunity('trail-talk')
+    expect(community.state.memberships).toEqual([])
+  })
+
   it('persists and publishes a composed thread', async () => {
     const community = new CommunityDemoController()
     await community.updateDraft('Best trail?', 'Looking for local ideas.')
@@ -211,6 +220,23 @@ describe('Community reference shell', () => {
       view: 'thread',
       selectedThreadId: 'thread-welcome',
       unread: 0,
+    })
+  })
+
+  it('opens reply anchors and creates a native-safe thread share payload', () => {
+    const community = new CommunityDemoController()
+    community.openThread('thread-welcome')
+    community.reply('Anchored reply')
+    community.openThreadAnchor('thread-welcome', 'reply-1')
+    expect(community.state).toMatchObject({
+      selectedThreadId: 'thread-welcome',
+      selectedReplyId: 'reply-1',
+    })
+    expect(community.openPushHandoff('/threads/thread-welcome/replies/reply-1')).toBe(true)
+    expect(community.threadSharePayload('thread-welcome')).toEqual({
+      title: 'Welcome to Trail Talk',
+      message: 'Welcome to Trail Talk — https://links.sgforum.app/threads/thread-welcome',
+      url: 'https://links.sgforum.app/threads/thread-welcome',
     })
   })
 
