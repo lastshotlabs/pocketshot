@@ -44,6 +44,10 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
         )}
         {game.phase === 'entry' && section === 'play' && (
           <Card title="Choose how to play">
+            <Text style={styles.meta}>
+              Identity: {game.identityStatus}
+              {game.identityEmail ? ` · ${game.identityEmail}` : ''}
+            </Text>
             <Action
               testID="enter-phones"
               label="Everyone has a phone"
@@ -53,6 +57,11 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
               testID="enter-shared"
               label="Share this device"
               onPress={() => controller.enter('shared')}
+            />
+            <Action
+              testID="account-entry"
+              label="Continue with Apple"
+              onPress={() => void controller.signInOAuth('apple')}
             />
           </Card>
         )}

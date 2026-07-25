@@ -3,6 +3,19 @@ import { BurndownController } from '../../examples/burndown/lib/burndown'
 import { normalizeBurndownSystemPath } from '../../examples/burndown/lib/link'
 
 describe('Burndown native acceptance model', () => {
+  it('composes durable account OAuth independently from guest play', async () => {
+    const game = new BurndownController()
+    await game.signInOAuth('google')
+    expect(game.state).toMatchObject({
+      phase: 'lobby',
+      mode: 'phones',
+      identityStatus: 'account',
+      identityEmail: 'burn@example.com',
+    })
+    await game.signOutAccount()
+    expect(game.state.identityStatus).toBe('guest')
+  })
+
   it('normalizes cold native joins and rejects expired invites', () => {
     expect(normalizeBurndownSystemPath('pocketshot-burndown://join/BURN-42')).toBe('/join/BURN-42')
     expect(normalizeBurndownSystemPath('pocketshot-burndown://join/%E0%A4%A')).toBe('/')

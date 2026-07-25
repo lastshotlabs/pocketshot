@@ -13,6 +13,11 @@ import {
   type GameDashboardSnapshot,
   type PartyActivitySnapshot,
 } from '@lastshotlabs/pocketshot/party-session'
+import {
+  AccountAuthController,
+  type AccountAuthTransport,
+  type TokenStorage,
+} from '@lastshotlabs/pocketshot/auth'
 
 export type BurndownMode = 'phones' | 'shared'
 export type BurndownPhase =
@@ -49,6 +54,8 @@ export interface BurndownState {
   winnerId: string | null
   ended: boolean
   endConfirmationPending: boolean
+  identityStatus: 'guest' | 'account'
+  identityEmail: string | null
 }
 
 type BurndownRules = {
@@ -104,6 +111,8 @@ export class BurndownController {
     winnerId: null,
     ended: false,
     endConfirmationPending: false,
+    identityStatus: 'guest',
+    identityEmail: null,
   }
   private readonly listeners = new Set<(state: BurndownState) => void>()
   private readonly cues = new PersonalCuePolicy()
@@ -116,6 +125,7 @@ export class BurndownController {
     (item) => item.category,
   )
   readonly games: GameDashboardController
+  readonly account = createBurndownAccount()
 
   constructor(snapshot?: BurndownSnapshot) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
@@ -207,6 +217,24 @@ export class BurndownController {
     this.value.mode = mode
     this.value.phase = 'lobby'
     this.games.setStatus(this.currentGameId, 'lobby')
+    this.emit()
+  }
+
+  async signInOAuth(provider: 'apple' | 'google', mode: BurndownMode = 'phones'): Promise<void> {
+    await this.account.completeOAuth(
+      provider,
+      'demo-code',
+      `pocketshot-burndown://oauth/${provider}`,
+    )
+    this.value.identityStatus = 'account'
+    this.value.identityEmail = this.account.snapshot.user?.email ?? null
+    this.enter(mode)
+  }
+
+  async signOutAccount(): Promise<void> {
+    await this.account.logout()
+    this.value.identityStatus = 'guest'
+    this.value.identityEmail = null
     this.emit()
   }
 
@@ -593,6 +621,48 @@ export class BurndownController {
       createdAt: Date.now(),
     })
   }
+}
+
+function createBurndownAccount(): AccountAuthController {
+  let accessToken: string | null = null
+  let refreshToken: string | null = null
+  const storage: TokenStorage = {
+    getToken: async () => accessToken,
+    setToken: async (value) => {
+      accessToken = value
+    },
+    clearToken: async () => {
+      accessToken = null
+    },
+    getRefreshToken: async () => refreshToken,
+    setRefreshToken: async (value) => {
+      refreshToken = value
+    },
+    clearRefreshToken: async () => {
+      refreshToken = null
+    },
+  }
+  const authenticated = {
+    user: {
+      id: 'burndown-user',
+      email: 'burn@example.com',
+      emailVerified: true,
+      displayName: 'Alex',
+    },
+    accessToken: 'burndown-access',
+    refreshToken: 'burndown-refresh',
+  }
+  const transport: AccountAuthTransport = {
+    register: async () => authenticated,
+    verifyEmail: async () => authenticated,
+    login: async () => authenticated,
+    exchangeOAuth: async () => authenticated,
+    restore: async () => authenticated,
+    logout: async () => undefined,
+    forgotPassword: async () => undefined,
+    resetPassword: async () => undefined,
+  }
+  return new AccountAuthController(transport, storage)
 }
 
 function validateRules(rules: BurndownRules): void {
