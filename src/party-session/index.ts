@@ -500,3 +500,258 @@ export class PersonalCuePolicy {
       : hour >= startHour || hour < endHour
   }
 }
+
+export type ContentStatus = 'draft' | 'submitted' | 'approved' | 'published' | 'archived'
+
+export interface ContentCollection<Item> {
+  id: string
+  ownerId: string
+  title: string
+  description: string
+  status: ContentStatus
+  revision: number
+  items: Item[]
+  updatedAt: number
+  publishedAt: number | null
+}
+
+export interface ContentPage<Item> {
+  items: ContentCollection<Item>[]
+  nextCursor: string | null
+}
+
+export interface ContentProposal<Item> {
+  id: string
+  collectionId: string
+  items: Item[]
+  rationale: string
+  status: 'pending' | 'accepted' | 'rejected'
+}
+
+export class ContentLibraryController<Item> {
+  private collections = new Map<string, ContentCollection<Item>>()
+  private proposals = new Map<string, ContentProposal<Item>>()
+
+  constructor(
+    private readonly validateItem: (item: Item) => string[],
+    private readonly identity: (item: Item) => string,
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  get snapshot(): ContentCollection<Item>[] {
+    return [...this.collections.values()].map((collection) => structuredClone(collection))
+  }
+
+  create(id: string, ownerId: string, title: string, description = ''): void {
+    if (!id || !ownerId || !title.trim())
+      throw new Error('Collection identity and title are required')
+    if (this.collections.has(id)) throw new Error(`Collection already exists: ${id}`)
+    this.collections.set(id, {
+      id,
+      ownerId,
+      title: title.trim(),
+      description: description.trim(),
+      status: 'draft',
+      revision: 1,
+      items: [],
+      updatedAt: this.now(),
+      publishedAt: null,
+    })
+  }
+
+  browse(
+    options: {
+      viewerId?: string
+      scope?: 'all' | 'mine'
+      query?: string
+      sort?: 'updated' | 'title'
+      cursor?: string
+      limit?: number
+    } = {},
+  ): ContentPage<Item> {
+    const query = options.query?.trim().toLocaleLowerCase() ?? ''
+    const offset = decodeCursor(options.cursor)
+    const limit = Math.max(1, Math.min(options.limit ?? 20, 100))
+    const visible = this.snapshot
+      .filter((collection) =>
+        options.scope === 'mine' ? collection.ownerId === options.viewerId : true,
+      )
+      .filter(
+        (collection) =>
+          !query ||
+          collection.title.toLocaleLowerCase().includes(query) ||
+          collection.description.toLocaleLowerCase().includes(query) ||
+          collection.items.some((item) => JSON.stringify(item).toLocaleLowerCase().includes(query)),
+      )
+      .sort((a, b) =>
+        options.sort === 'title'
+          ? a.title.localeCompare(b.title)
+          : b.updatedAt - a.updatedAt || a.id.localeCompare(b.id),
+      )
+    const items = visible.slice(offset, offset + limit)
+    const nextOffset = offset + items.length
+    return { items, nextCursor: nextOffset < visible.length ? encodeCursor(nextOffset) : null }
+  }
+
+  updateMetadata(
+    id: string,
+    actorId: string,
+    revision: number,
+    patch: { title?: string; description?: string },
+  ): number {
+    const collection = this.requireEditable(id, actorId, revision)
+    if (patch.title !== undefined) {
+      if (!patch.title.trim()) throw new Error('Collection title is required')
+      collection.title = patch.title.trim()
+    }
+    if (patch.description !== undefined) collection.description = patch.description.trim()
+    return this.touch(collection)
+  }
+
+  replaceItems(id: string, actorId: string, revision: number, items: Item[]): number {
+    const collection = this.requireEditable(id, actorId, revision)
+    this.validateItems(items)
+    collection.items = deduplicate(items, this.identity)
+    return this.touch(collection)
+  }
+
+  appendItems(id: string, actorId: string, revision: number, items: Item[]): number {
+    const collection = this.requireEditable(id, actorId, revision)
+    this.validateItems(items)
+    collection.items = deduplicate([...collection.items, ...items], this.identity)
+    return this.touch(collection)
+  }
+
+  duplicate(sourceId: string, targetId: string, ownerId: string, title?: string): void {
+    const source = this.require(sourceId)
+    this.create(targetId, ownerId, title ?? `${source.title} copy`, source.description)
+    const target = this.require(targetId)
+    target.items = structuredClone(source.items)
+  }
+
+  health(id: string): { itemCount: number; errors: string[]; publishable: boolean } {
+    const collection = this.require(id)
+    const errors = collection.items.flatMap((item, index) =>
+      this.validateItem(item).map((error) => `Item ${index + 1}: ${error}`),
+    )
+    const identities = collection.items.map(this.identity)
+    if (new Set(identities).size !== identities.length)
+      errors.push('Duplicate items are not allowed')
+    if (collection.items.length === 0) errors.push('At least one item is required')
+    return { itemCount: collection.items.length, errors, publishable: errors.length === 0 }
+  }
+
+  submit(id: string, actorId: string): void {
+    const collection = this.requireOwner(id, actorId)
+    if (collection.status !== 'draft') throw new Error('Only drafts can be submitted')
+    if (!this.health(id).publishable) throw new Error('Collection health checks must pass')
+    collection.status = 'submitted'
+    this.touch(collection)
+  }
+
+  approve(id: string): void {
+    const collection = this.require(id)
+    if (collection.status !== 'submitted')
+      throw new Error('Only submitted collections can be approved')
+    collection.status = 'approved'
+    this.touch(collection)
+  }
+
+  publish(id: string): void {
+    const collection = this.require(id)
+    if (collection.status !== 'approved')
+      throw new Error('Only approved collections can be published')
+    collection.status = 'published'
+    collection.publishedAt = this.now()
+    this.touch(collection)
+  }
+
+  unpublish(id: string): void {
+    const collection = this.require(id)
+    if (collection.status !== 'published') throw new Error('Collection is not published')
+    collection.status = 'approved'
+    collection.publishedAt = null
+    this.touch(collection)
+  }
+
+  archive(id: string, actorId: string): void {
+    const collection = this.requireOwner(id, actorId)
+    collection.status = 'archived'
+    this.touch(collection)
+  }
+
+  addProposal(proposal: Omit<ContentProposal<Item>, 'status'>): void {
+    if (this.proposals.has(proposal.id)) return
+    this.validateItems(proposal.items)
+    this.requireOwner(proposal.collectionId, this.require(proposal.collectionId).ownerId)
+    this.proposals.set(proposal.id, { ...structuredClone(proposal), status: 'pending' })
+  }
+
+  reviewProposal(id: string, actorId: string, accept: boolean): void {
+    const proposal = this.proposals.get(id)
+    if (!proposal) throw new Error(`Unknown proposal: ${id}`)
+    const collection = this.requireOwner(proposal.collectionId, actorId)
+    if (proposal.status !== 'pending') throw new Error('Proposal has already been reviewed')
+    proposal.status = accept ? 'accepted' : 'rejected'
+    if (accept) {
+      collection.items = deduplicate([...collection.items, ...proposal.items], this.identity)
+      this.touch(collection)
+    }
+  }
+
+  proposalSnapshot(): ContentProposal<Item>[] {
+    return [...this.proposals.values()].map((proposal) => structuredClone(proposal))
+  }
+
+  private validateItems(items: Item[]): void {
+    const errors = items.flatMap(this.validateItem)
+    if (errors.length) throw new Error(`Invalid content: ${errors.join('; ')}`)
+  }
+
+  private touch(collection: ContentCollection<Item>): number {
+    collection.revision += 1
+    collection.updatedAt = this.now()
+    return collection.revision
+  }
+
+  private require(id: string): ContentCollection<Item> {
+    const collection = this.collections.get(id)
+    if (!collection) throw new Error(`Unknown collection: ${id}`)
+    return collection
+  }
+
+  private requireOwner(id: string, actorId: string): ContentCollection<Item> {
+    const collection = this.require(id)
+    if (collection.ownerId !== actorId) throw new Error('Collection owner authorization required')
+    return collection
+  }
+
+  private requireEditable(id: string, actorId: string, revision: number): ContentCollection<Item> {
+    const collection = this.requireOwner(id, actorId)
+    if (collection.status !== 'draft') throw new Error('Only draft collections can be edited')
+    if (collection.revision !== revision) {
+      throw new Error(`Revision conflict: expected ${collection.revision}, received ${revision}`)
+    }
+    return collection
+  }
+}
+
+function deduplicate<Item>(items: Item[], identity: (item: Item) => string): Item[] {
+  const found = new Map<string, Item>()
+  for (const item of items) {
+    const key = identity(item).trim().toLocaleLowerCase()
+    if (!found.has(key)) found.set(key, structuredClone(item))
+  }
+  return [...found.values()]
+}
+
+function encodeCursor(offset: number): string {
+  return `offset:${offset}`
+}
+
+function decodeCursor(cursor?: string): number {
+  if (!cursor) return 0
+  const match = /^offset:(\d+)$/.exec(cursor)
+  if (!match) throw new Error('Invalid content cursor')
+  return Number(match[1])
+}

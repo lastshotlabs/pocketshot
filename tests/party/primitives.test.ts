@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   BallotController,
+  ContentLibraryController,
   HostCorrectionController,
   PartySessionController,
   PersonalCuePolicy,
@@ -95,5 +96,35 @@ describe('party lifecycle primitives', () => {
     expect(cue.shouldDeliver({ ...request, eventId: 'other' }, 'suspended')).toBe(false)
     cue.setRoomMuted('room', true)
     expect(cue.shouldDeliver({ ...request, eventId: 'muted' }, 'active')).toBe(false)
+  })
+
+  it('provides versioned content browse, ownership, workflow, and AI review', () => {
+    let now = 1
+    const library = new ContentLibraryController<{ cue: string }>(
+      (item) => (item.cue.includes('___') ? [] : ['Cue must contain a blank']),
+      (item) => item.cue,
+      () => now++,
+    )
+    library.create('one', 'alex', 'Party prompts')
+    expect(library.appendItems('one', 'alex', 1, [{ cue: 'Birthday ___' }])).toBe(2)
+    expect(() => library.appendItems('one', 'sam', 2, [{ cue: 'Summer ___' }])).toThrow('owner')
+    expect(() => library.appendItems('one', 'alex', 1, [{ cue: 'Summer ___' }])).toThrow(
+      'Revision conflict',
+    )
+    library.addProposal({
+      id: 'proposal',
+      collectionId: 'one',
+      items: [{ cue: 'Summer ___' }],
+      rationale: 'Adds a seasonal cue',
+    })
+    library.reviewProposal('proposal', 'alex', true)
+    expect(library.browse({ query: 'summer' }).items).toHaveLength(1)
+    expect(library.health('one')).toMatchObject({ itemCount: 2, publishable: true })
+    library.submit('one', 'alex')
+    library.approve('one')
+    library.publish('one')
+    expect(library.snapshot[0].status).toBe('published')
+    library.unpublish('one')
+    expect(library.snapshot[0].status).toBe('approved')
   })
 })
