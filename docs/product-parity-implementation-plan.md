@@ -3,11 +3,11 @@
 Status: active  
 Updated: 2026-07-25  
 Targets: iPhone and Android  
-Reference products: Hitshot/Trivia Hitster, AICoach, SGForum
+Reference products: Hitshot/Trivia Hitster, AICoach, SGForum, Burndown, Blank Slate
 
 ## 1. Definition of done
 
-Pocketshot is ready when a consumer team can build the three reference experiences from
+Pocketshot is ready when a consumer team can build the five reference experiences from
 published package entry points without copying private application code, and signed iOS
 and Android candidates prove the critical journeys on physical devices.
 
@@ -16,7 +16,9 @@ only when all of the following exist:
 
 1. A documented, typed public API or a deliberately app-owned integration seam.
 2. Deterministic unit or contract tests for success, failure, retry, and recovery paths.
-3. A reference-shell journey that consumes a packed Pocketshot artifact.
+3. A reference-shell journey that consumes a packed Pocketshot artifact. All five products
+   require executable Expo shells; browser screenshots or headless-controller tests alone do not
+   count as mobile parity.
 4. Optimized Hermes exports for iOS and Android.
 5. Accessibility, privacy, security, observability, and performance evidence appropriate to
    the capability.
@@ -52,8 +54,8 @@ interaction patterns and must not carry browser-only assumptions into its public
   performance budgets, structured lifecycle telemetry, diagnostics, and rollback runbooks.
 - Security threat model, persisted-data inventory, redaction and authorization-revocation tests,
   dependency audit, CycloneDX SBOM, and build provenance.
-- Packed-artifact verification and optimized Hermes exports for all three shells on iOS and
-  Android.
+- Packed-artifact verification and optimized Hermes exports for the existing Party, Coach, and
+  Community shells on iOS and Android.
 
 ### Hosted certification complete
 
@@ -61,7 +63,8 @@ interaction patterns and must not carry browser-only assumptions into its public
 - Real application-target native compilation for iOS and Android; the iOS gate validates the app
   workspace scheme rather than accepting a dependency/pod scheme.
 - Release-mode iOS simulator and Android emulator Maestro jobs exist for Party, Coach, and
-  Community. The final six-job run for the current commit is the remaining hosted checkpoint.
+  Community. Burndown and Blank Slate shells and their four corresponding jobs remain to be
+  built. The current six-job run must be green before expanding the matrix to ten jobs.
 
 ### Remaining release work
 
@@ -203,6 +206,108 @@ interaction patterns and must not carry browser-only assumptions into its public
 - Block/mute privacy checks and data export/deletion.
 - Feed ranking determinism, cursor stability, and no duplicate items.
 
+### 3.4 Burndown
+
+The web implementation is the behavioral reference. The native application must preserve both
+separate-phone play and the one-shared-device/pass-the-phone mode.
+
+#### Entry, identity, and content
+
+- One-screen guest create/join, durable account sign-in, OAuth return, profile, invite code, QR,
+  deep/universal link, seat claim/handoff, spectator entry, and optional TV projection.
+- Quickplay and custom match setup with solo/table mode, lives, clock, warning threshold,
+  per-round speed-up, challenge mode/window, board-exhaustion policy, host participation,
+  admission policy, presets, and staged mid-game rules.
+- Games dashboard with active/history states, leave, refresh, rematch, and deterministic recovery.
+- Category-deck library and builder with browse/mine scopes, search, sort, create/edit/delete,
+  validation, publishing workflow, optimistic state, and AI-assisted category composition.
+
+#### Separate-phone gameplay
+
+- Round intro that exposes the category and letter for the configured dwell.
+- Viewer-relative turn state, actor-only “your turn” audio/haptic cue, visible action clock,
+  warning state, pause/resume, background/foreground recovery, and no queued audio burst.
+- Alphabet board with alive/burned/void semantics, typed burn submission, in-flight lock,
+  rejection/retry, duplicate/idempotency protection, and board-exhaustion behavior.
+- Overlap and serialized challenge paths, per-seat challenge affordance, visible challenge clock,
+  “Nobody” outcome, vote/verdict, score/life mutation, elimination, watcher transition, and
+  round summary.
+- Host controls for advance, pause/resume, rules, score/life adjustment, player removal,
+  end/cancel, absent-host takeover, and diagnostics.
+- Reactions, activity, connection grace, scoreboard, results, idempotent rematch, and share.
+
+#### Shared-device gameplay
+
+- Public anonymous setup that never calls authenticated endpoints.
+- Screen wake lock while a table match is active.
+- Full-screen pass-to-player handoff curtain with large identity, privacy shielding, explicit
+  tap-to-arm, and mute-independent haptic signaling.
+- Per-seat action surfaces sized for 6–8 players, shared challenge/vote grid, one authoritative
+  countdown, input locking, and safe restoration after refresh.
+- Landscape tablet and 1920×1080 shared/TV layouts in addition to phone portrait.
+
+#### Burndown release proof
+
+- Complete separate-phone match through elimination/results/rematch with two or more clients.
+- Complete shared-table match including pass-the-phone, serialized challenge, “Nobody,” and
+  board exhaustion.
+- Host disconnect/takeover, pause/resume, staged rule change, spectator/TV redaction, reconnect,
+  process restart, and seat handoff.
+- Actor-only sound/haptic verification and wake-lock/background lifecycle verification.
+
+### 3.5 Blank Slate
+
+The shipped web game and its native-track design specification are authoritative. Native is an
+Expo/React Native application on Pocketshot, not a WebView or Capacitor wrapper.
+
+#### Entry, identity, navigation, and content
+
+- One-screen guest create/join, Apple and Google sign-in, passkey, secure token storage, profile,
+  invite code, QR, deep/universal link, claim/handoff, spectator/TV, and host admission queue.
+- Bottom tabs: Play, Games, Library, Build, You. Lobby, Play, Host, Reveal, and Results remain
+  immersive full-screen routes without tabs.
+- Quickplay and custom setup with prompt decks, host participation, target-score/fixed-round
+  win modes, write timer, admission policy, presets, and staged mid-game rules.
+- Prompt-deck library and builder with browse/mine, cue-content search, sort, create/edit/delete,
+  prefix/suffix/infix blank validation, bulk input, autosave/versioning, publish workflow, and
+  capability-gated AI cue generation.
+
+#### Match gameplay
+
+- Prompt/blank reveal, private slate entry with OS autocorrect/autocapitalization/spellcheck
+  disabled, optimistic lock, five-second edit window, send failure/resend, reconnect draft
+  restoration, and strict pre-reveal word redaction.
+- Write-progress state that reveals participation but never words.
+- Reveal stage with stable grouping, exact scoring for pairs/groups/unique answers, score flash,
+  reaction overlay, payoff dwell, and reduced-motion equivalent.
+- Host fix-up on the real slates: arm, merge, split, confirm, undo, and restoration of absorbed
+  multi-member groups without changing scores incorrectly.
+- Merge-vote ballot with cumulative approvals, revote removal, empty state, authorization, audit,
+  and deterministic resolution.
+- Round leaderboard, sudden death, target/fixed-round completion, results, native share, and
+  idempotent rematch.
+- Host controls for advance, pause/resume, staged rules, score adjustment, kick/block/unblock,
+  seat handoff, end confirmation, absent-host takeover, and diagnostics.
+
+#### Mobile-specific Blank Slate behavior
+
+- Personal push only: turn-to-write, rematch, final score, and host knock. Per-room mute and quiet
+  hours; no reaction or ambient-lock spam.
+- Foreground rejoin restores socket and pending word; offline queue safely replays answer and
+  merge-vote commands with idempotency.
+- Haptics: light lock-in, success for a matched reveal, warning for rejected input.
+- 44pt iOS minimum and 48dp Android primary targets, safe-area thumb docks, dark chalkboard token
+  map, native status bar, icon/splash, and reveal-led store screenshots.
+
+#### Blank Slate release proof
+
+- Three-player round from join through private writing, reveal, host fix-up, merge vote, summary,
+  results, and rematch on iOS and Android.
+- Cross-client proof that no answer reaches another player or TV before reveal.
+- Offline lock/resend, five-second edit across lifecycle transitions, process restart, seat
+  handoff, host recovery, staged win-mode change, and signed-build push/deep-link journeys.
+- VoiceOver/TalkBack ordering across SlateInput, RevealStage, fix-up, ballot, and results.
+
 ## 4. Target architecture
 
 Pocketshot remains a layered package rather than an application framework:
@@ -238,7 +343,7 @@ Deliverables:
 
 - Keep package exports, packed-consumer verification, declaration budgets, formatting, typecheck,
   unit tests, audit, and clean iOS/Android Hermes export mandatory in CI.
-- Make Party, Coach, and Community shell verification first-class CI jobs.
+- Make all five product-shell verifiers first-class CI jobs as each shell lands.
 - Record bundle sizes and test counts as release evidence.
 
 Exit gate:
@@ -314,7 +419,7 @@ Deliverables:
 - Dynamic Type/font scaling, VoiceOver/TalkBack labels and order, reduced motion, contrast,
   touch-target, keyboard, focus restoration, and screen-reader announcements.
 - Light/dark/high-contrast token verification and safe-area/orientation behavior.
-- Snapshot/reference visual coverage for the three shells on representative phone sizes.
+- Snapshot/reference visual coverage for all five shells on representative phone sizes.
 
 Budgets:
 
@@ -486,7 +591,8 @@ Exit criteria:
 
 - Zero critical accessibility or reliability defects.
 - No unexplained performance regression or unowned conformance exception.
-- Party, Coach, and Community critical journeys pass on both physical platforms.
+- Hitshot, AICoach, SGForum, Burndown, and Blank Slate critical journeys pass on both physical
+  platforms.
 
 ### Gate C — Production service and signing configuration
 
@@ -581,3 +687,132 @@ Before Gate C, assign a named owner and due date for:
 - privacy/terms/support/deletion URLs and retention policy;
 - QA, security/privacy, operations, and final product acceptance;
 - rollout thresholds, observation window, rollback authority, and customer-support escalation.
+
+## 12. Five-product native delivery expansion
+
+This section records the 2026-07-25 source audit of Hitshot, Burndown, and Blank Slate. It expands
+the earlier three-reference certification program. Nothing in Sections 3.4–3.5 may be treated as
+optional simply because it began in a web application.
+
+### 12.1 Deliverable boundaries
+
+There are two distinct deliverables:
+
+1. **Pocketshot framework certification**
+   - Public typed controllers/adapters for the reusable behavior.
+   - Five clean-room Expo reference shells under `examples/`: Party/Hitshot, Coach, Community,
+     Burndown, and Blank Slate.
+   - Packed-artifact typechecking, optimized Hermes exports, contract tests, and Release-mode
+     Maestro journeys on iOS and Android.
+2. **Production product applications**
+   - Five branded Expo applications consuming the published Pocketshot package and the existing
+     Slingshot backends.
+   - Product-owned screens, copy, theme, policy, credentials, store identities, analytics, and
+     operational configuration.
+   - Signed TestFlight/Play candidates and product-specific acceptance evidence.
+
+A demo reference shell proves composition; it does not replace the production application.
+Likewise, a responsive web screen does not prove native lifecycle, push, permissions, deep links,
+secure storage, accessibility, or store behavior.
+
+### 12.2 New shared framework work
+
+Add public, domain-neutral primitives only where two or more products genuinely share behavior:
+
+- Party session lifecycle: join/claim/handoff, participant/spectator/emcee roles, host recovery,
+  admission queues, staged rules, pause/resume, idempotent rematch, and public projection.
+- Personal cue policy: actor-only audio/haptic/push, per-room mute, quiet hours, initial-mount
+  suppression, duplicate-event throttling, and suspended/interrupted audio dropping.
+- Timed phase controller: authoritative deadline, visible countdown, warning threshold,
+  background/foreground reconciliation, manual skip, and payoff-vs-dead-time dwell semantics.
+- Shared-device coordinator: pass-the-phone privacy curtain, active-seat handoff, wake lock,
+  in-flight lock, refresh restoration, and one-clock behavior.
+- Private submission controller: optimistic lock, edit window, draft persistence, rejection,
+  retry/resend, idempotency, and projection redaction.
+- Host correction workflow: arm/propose/confirm/cancel/undo with version and audit data.
+- Ballot/challenge controller: eligibility, cumulative decisions, revocation, deadline, outcome,
+  and reordered/duplicate event handling.
+- Game content library/editor primitives: cursor browse/search/sort, ownership/workflow,
+  autosave/conflict, validation health, bulk import, publish/unpublish, duplicate, and AI-reviewed
+  proposals.
+- Native shell primitives: bottom tabs outside immersive routes, safe-area thumb dock, platform
+  target sizing, orientation policy, and focus/screen-reader restoration.
+
+Do not create a generic “game engine” that erases product rules. Burndown letter/life/challenge
+rules and Blank Slate grouping/scoring/fix-up rules remain app-owned typed controllers built from
+the shared lifecycle primitives.
+
+### 12.3 Ordered implementation
+
+#### Expansion Wave 1 — close the existing six-job gate
+
+- Community iOS: assert the published feed entity by stable test ID.
+- Coach Android: center every scrolled target before tapping so system-navigation coordinates
+  cannot be selected.
+- Party Android: normalize custom-scheme system URLs through Expo Router native intent and prove
+  the cold join route.
+- Require all six existing Release-mode jobs plus CI and native smoke on one commit.
+
+#### Expansion Wave 2 — word-party framework primitives
+
+- Implement and export the shared controllers listed in 12.2.
+- Add adversarial tests for privacy, duplicate/reordered events, deadlines, backgrounding,
+  process restoration, offline replay, host loss, and simultaneous rematch.
+- Add observability, accessibility contracts, storage inventory, and redaction policy.
+
+#### Expansion Wave 3 — Burndown reference shell
+
+- Create `examples/burndown` with separate-phone and shared-table journeys.
+- Implement typed Burndown demo state for setup, intro, turn, challenge, resolution, elimination,
+  summary, results, rematch, host recovery, staged rules, and board exhaustion.
+- Consume only packed Pocketshot entry points.
+- Add iOS/Android optimized exports and two Release-mode Maestro matrix jobs; add a landscape
+  tablet/shared-device journey.
+
+#### Expansion Wave 4 — Blank Slate reference shell
+
+- Create `examples/blankslate` with bottom tabs and immersive match routes.
+- Implement typed Blank Slate demo state for setup, writing, retry/edit, reveal, grouping,
+  fix-up/undo, merge vote, summary, sudden death, results, and rematch.
+- Prove strict pre-reveal redaction across player and TV projections.
+- Add iOS/Android optimized exports and two Release-mode Maestro matrix jobs.
+
+#### Expansion Wave 5 — production application scaffolds
+
+- Scaffold product-native workspaces for Hitshot, AICoach, SGForum, Burndown, and Blank Slate
+  using `pocketshot init` and the production API schemas.
+- Establish product-owned navigation, themes, assets, environment manifests, backend transports,
+  OAuth/push/link configuration, and EAS profiles.
+- Port screens journey-by-journey, with reference-shell and web parity mapping attached to every
+  pull request.
+
+#### Expansion Wave 6 — ten-job automation and physical certification
+
+- Require five products × two platforms in Release mode without Metro.
+- Add multi-client simulations for all three party games and realtime forum/coach interactions.
+- Execute Section 6 on physical devices, including the shared-table landscape/wake-lock matrix.
+- Retain screenshots, recordings, logs, performance traces, accessibility results, and device/OS
+  identifiers in the release evidence ledger.
+
+#### Expansion Wave 7 — signed products and stores
+
+- Complete Gates C–E separately for each product; credentials and owner approval are
+  product-scoped rather than inherited from another app.
+- A product may roll out only when its own signed candidate, privacy declarations, support paths,
+  billing/push/link behavior, rollback drill, and owner acceptance are complete.
+
+### 12.4 Expanded automation minimum
+
+The hosted matrix becomes:
+
+```text
+Hitshot       iOS + Android
+AICoach       iOS + Android
+SGForum       iOS + Android
+Burndown      iOS + Android (+ shared-table landscape)
+Blank Slate   iOS + Android
+```
+
+Each job builds a Release application, installs it without Metro, runs a critical journey, and
+uploads diagnostics on failure. A passing web Playwright suite, simulator compile, or static flow
+parser cannot substitute for the corresponding native journey.
