@@ -15,7 +15,9 @@ import {
 } from '@lastshotlabs/pocketshot/party-session'
 import {
   AccountAuthController,
+  PasskeyLifecycleController,
   type AccountAuthTransport,
+  type PasskeyTransport,
   type TokenStorage,
 } from '@lastshotlabs/pocketshot/auth'
 
@@ -54,8 +56,9 @@ export interface BurndownState {
   winnerId: string | null
   ended: boolean
   endConfirmationPending: boolean
-  identityStatus: 'guest' | 'account'
+  identityStatus: 'guest' | 'account' | 'passkey'
   identityEmail: string | null
+  passkeyCount: number
 }
 
 type BurndownRules = {
@@ -113,6 +116,7 @@ export class BurndownController {
     endConfirmationPending: false,
     identityStatus: 'guest',
     identityEmail: null,
+    passkeyCount: 0,
   }
   private readonly listeners = new Set<(state: BurndownState) => void>()
   private readonly cues = new PersonalCuePolicy()
@@ -126,6 +130,7 @@ export class BurndownController {
   )
   readonly games: GameDashboardController
   readonly account = createBurndownAccount()
+  readonly passkeys = createBurndownPasskeys()
 
   constructor(snapshot?: BurndownSnapshot) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
@@ -238,6 +243,20 @@ export class BurndownController {
     this.emit()
   }
 
+  async registerPasskey(platform: 'ios' | 'android'): Promise<void> {
+    await this.passkeys.register('Burndown phone', platform)
+    this.value.passkeyCount = this.passkeys.snapshot.credentials.length
+    this.emit()
+  }
+
+  async signInPasskey(mode: BurndownMode = 'phones'): Promise<void> {
+    await this.passkeys.login()
+    this.value.identityStatus = 'passkey'
+    this.value.identityEmail = this.passkeys.snapshot.user?.email ?? null
+    this.value.passkeyCount = this.passkeys.snapshot.credentials.length
+    this.enter(mode)
+  }
+
   join(code: string, mode: BurndownMode = 'phones'): boolean {
     if (code.trim().toLocaleUpperCase() !== this.value.joinCode) {
       this.value.notice = 'That Burndown invite is invalid or expired'
@@ -246,6 +265,58 @@ export class BurndownController {
     }
     this.enter(mode)
     return true
+  }
+
+  setAdmissionPolicy(policy: 'open' | 'approval' | 'closed'): void {
+    this.session.setAdmissionPolicy(this.session.snapshot.hostId ?? 'p1', policy)
+    this.emit()
+  }
+
+  requestAdmission(
+    id: string,
+    displayName: string,
+    role: 'participant' | 'spectator' | 'emcee' = 'participant',
+  ): 'admitted' | 'pending' {
+    const result = this.session.requestAdmission({
+      id,
+      displayName,
+      role,
+      requestedAt: Date.now(),
+    })
+    this.value.notice =
+      result === 'pending'
+        ? `${displayName} is waiting for host approval`
+        : `${displayName} may join`
+    this.emit()
+    return result
+  }
+
+  decideAdmission(id: string, admit: boolean): void {
+    const request = this.session.snapshot.admissionQueue?.find((candidate) => candidate.id === id)
+    if (!request) throw new Error(`Unknown admission request: ${id}`)
+    this.session.decideAdmission(this.session.snapshot.hostId ?? 'p1', id, admit)
+    if (admit) {
+      this.session.join({
+        id: request.id,
+        displayName: request.displayName,
+        role: request.role,
+        seat:
+          request.role === 'spectator'
+            ? null
+            : Math.max(-1, ...this.session.snapshot.members.map((member) => member.seat ?? -1)) + 1,
+        connected: true,
+      })
+    }
+    this.value.notice = admit ? 'Waiting guest admitted' : 'Waiting guest declined'
+    this.emit()
+  }
+
+  admissionQueue() {
+    return this.session.snapshot.admissionQueue
+  }
+
+  lobbyProjection() {
+    return this.session.publicProjection()
   }
 
   start(): void {
@@ -663,6 +734,69 @@ function createBurndownAccount(): AccountAuthController {
     resetPassword: async () => undefined,
   }
   return new AccountAuthController(transport, storage)
+}
+
+function createBurndownPasskeys(): PasskeyLifecycleController {
+  const credentials: Awaited<ReturnType<PasskeyTransport['list']>> = []
+  const transport: PasskeyTransport = {
+    registrationOptions: async () => ({ challenge: 'register-burndown' }),
+    verifyRegistration: async ({ name, platform }) => {
+      const credential = {
+        id: 'burndown-passkey',
+        credentialId: 'burndown-credential',
+        name,
+        platform,
+        createdAt: '2026-07-25T12:00:00.000Z',
+      }
+      credentials.splice(0, credentials.length, credential)
+      return credential
+    },
+    loginOptions: async () => ({ challenge: 'login-burndown' }),
+    verifyLogin: async () => ({
+      user: {
+        id: 'burndown-user',
+        email: 'burn@example.com',
+        emailVerified: true,
+        displayName: 'Alex',
+      },
+      accessToken: 'burndown-passkey-access',
+      refreshToken: 'burndown-passkey-refresh',
+    }),
+    list: async () => structuredClone(credentials),
+    remove: async (credentialId) => {
+      const index = credentials.findIndex((credential) => credential.credentialId === credentialId)
+      if (index >= 0) credentials.splice(index, 1)
+    },
+  }
+  return new PasskeyLifecycleController(
+    transport,
+    {
+      create: async () => ({ credentialId: 'burndown-credential' }),
+      get: async () => ({ credentialId: 'burndown-credential' }),
+    },
+    createMemoryTokenStorage(),
+  )
+}
+
+function createMemoryTokenStorage(): TokenStorage {
+  let token: string | null = null
+  let refreshToken: string | null = null
+  return {
+    getToken: async () => token,
+    setToken: async (value) => {
+      token = value
+    },
+    clearToken: async () => {
+      token = null
+    },
+    getRefreshToken: async () => refreshToken,
+    setRefreshToken: async (value) => {
+      refreshToken = value
+    },
+    clearRefreshToken: async () => {
+      refreshToken = null
+    },
+  }
 }
 
 function validateRules(rules: BurndownRules): void {

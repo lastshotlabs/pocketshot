@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useKeepAwake } from 'expo-keep-awake'
+import QRCode from 'react-native-qrcode-svg'
 import { BurndownController, type BurndownState } from '../lib/burndown'
 
 export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
@@ -49,7 +50,11 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
             <Text style={styles.meta}>
               Identity: {game.identityStatus}
               {game.identityEmail ? ` · ${game.identityEmail}` : ''}
+              {` · ${game.passkeyCount} passkeys`}
             </Text>
+            <View accessibilityLabel={`QR join code ${game.joinCode}`} style={styles.qr}>
+              <QRCode value={`burndown://join/${game.joinCode}`} size={112} />
+            </View>
             <Action
               testID="enter-phones"
               label="Everyone has a phone"
@@ -64,6 +69,18 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
               testID="account-entry"
               label="Continue with Apple"
               onPress={() => void controller.signInOAuth('apple')}
+            />
+            <Action
+              testID="google-entry"
+              label="Continue with Google"
+              onPress={() => void controller.signInOAuth('google')}
+            />
+            <Action
+              testID="passkey-entry"
+              label="Create and use passkey"
+              onPress={() =>
+                void controller.registerPasskey('ios').then(() => controller.signInPasskey())
+              }
             />
           </Card>
         )}
@@ -127,6 +144,29 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
                 {player.name} · {player.lives} lives
               </Text>
             ))}
+            <Text style={styles.meta}>Waiting: {controller.admissionQueue().length}</Text>
+            <Action
+              testID="enable-admission"
+              label="Require host approval"
+              onPress={() => controller.setAdmissionPolicy('approval')}
+            />
+            <Action
+              testID="request-tv"
+              label="Request spectator TV"
+              onPress={() => controller.requestAdmission('tv', 'Living Room TV', 'spectator')}
+            />
+            {controller.admissionQueue().some((request) => request.status === 'pending') && (
+              <Action
+                testID="admit-tv"
+                label="Admit waiting spectator"
+                onPress={() =>
+                  controller.decideAdmission(
+                    controller.admissionQueue().find((request) => request.status === 'pending')!.id,
+                    true,
+                  )
+                }
+              />
+            )}
             <Action testID="start-match" label="Start match" onPress={() => controller.start()} />
           </Card>
         )}
@@ -329,6 +369,7 @@ const styles = StyleSheet.create({
   copy: { color: '#e8c9b5', fontSize: 17 },
   meta: { color: '#bd8f77', fontSize: 14 },
   libraryRow: { borderBottomColor: '#5f2d1c', borderBottomWidth: 1, paddingVertical: 10, gap: 4 },
+  qr: { alignSelf: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 12 },
   turn: { color: '#ffd166', fontSize: 32, fontWeight: '900' },
   notice: { color: '#fff', backgroundColor: '#8b1e1e', borderRadius: 10, padding: 12 },
   button: {

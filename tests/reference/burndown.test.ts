@@ -16,6 +16,22 @@ describe('Burndown native acceptance model', () => {
     expect(game.state.identityStatus).toBe('guest')
   })
 
+  it('composes passkey identity, host admission, and spectator TV entry', async () => {
+    const game = new BurndownController()
+    await game.registerPasskey('android')
+    await game.signInPasskey()
+    game.setAdmissionPolicy('approval')
+    game.requestAdmission('tv', 'Living Room TV', 'spectator')
+    expect(game.state).toMatchObject({ identityStatus: 'passkey', passkeyCount: 1 })
+    expect(game.admissionQueue()).toEqual([
+      expect.objectContaining({ id: 'tv', role: 'spectator', status: 'pending' }),
+    ])
+    game.decideAdmission('tv', true)
+    expect(game.lobbyProjection().members).toContainEqual(
+      expect.objectContaining({ id: 'tv', role: 'spectator' }),
+    )
+  })
+
   it('normalizes cold native joins and rejects expired invites', () => {
     expect(normalizeBurndownSystemPath('pocketshot-burndown://join/BURN-42')).toBe('/join/BURN-42')
     expect(normalizeBurndownSystemPath('pocketshot-burndown://join/%E0%A4%A')).toBe('/')
