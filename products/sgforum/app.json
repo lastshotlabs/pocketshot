@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "SGForum",
+    "slug": "sgforum",
+    "scheme": "sgforum",
+    "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.sgforum",
+      "buildNumber": "1",
+      "associatedDomains": ["applinks:links.sgforum.app"],
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      },
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Choose community attachments and a profile image."
+      }
+    },
+    "android": {
+      "package": "com.lastshotlabs.sgforum",
+      "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "links.sgforum.app" }, { "scheme": "sgforum" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": ["expo-router", "expo-secure-store", "expo-sqlite"]
+  }
+}

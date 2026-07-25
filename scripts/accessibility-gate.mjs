@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises'
 import ts from 'typescript'
 
-const shells = ['party', 'coach', 'community']
+const products = ['hitshot', 'aicoach', 'sgforum', 'burndown', 'blankslate']
 const failures = []
 let interactiveControls = 0
 
-for (const shell of shells) {
-  const name = `examples/${shell}/app/index.tsx`
+for (const product of products) {
+  const name = `products/${product}/app/index.tsx`
   const body = await readFile(new URL(`../${name}`, import.meta.url), 'utf8')
   const source = ts.createSourceFile(name, body, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
   walk(source, (node) => {

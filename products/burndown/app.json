@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Burndown",
+    "slug": "burndown",
+    "scheme": "burndown",
+    "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "platforms": ["ios", "android"],
+    "orientation": "default",
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.burndown",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "associatedDomains": ["applinks:links.burndown.app"],
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
+    },
+    "android": {
+      "package": "com.lastshotlabs.burndown",
+      "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "links.burndown.app" }, { "scheme": "burndown" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}

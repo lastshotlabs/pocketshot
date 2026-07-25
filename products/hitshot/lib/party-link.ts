@@ -1,5 +1,5 @@
 export function normalizePartySystemPath(path: string): string {
-  const join = /^pocketshot-party:\/\/join\/([^/?#]+)/i.exec(path)
+  const join = /^(?:hitshot|pocketshot-party):\/\/join\/([^/?#]+)/i.exec(path)
   if (!join) return path
 
   try {

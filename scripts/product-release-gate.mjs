@@ -1,15 +1,15 @@
 import { readFile } from 'node:fs/promises'
 
-const products = ['party', 'coach', 'community', 'burndown', 'blankslate']
+const products = ['hitshot', 'aicoach', 'sgforum', 'burndown', 'blankslate']
 const failures = []
 const identifiers = new Set()
 
 for (const product of products) {
   const app = JSON.parse(
-    await readFile(new URL(`../examples/${product}/app.json`, import.meta.url), 'utf8'),
+    await readFile(new URL(`../products/${product}/app.json`, import.meta.url), 'utf8'),
   ).expo
   const eas = JSON.parse(
-    await readFile(new URL(`../examples/${product}/eas.json`, import.meta.url), 'utf8'),
+    await readFile(new URL(`../products/${product}/eas.json`, import.meta.url), 'utf8'),
   )
   const iosId = app.ios?.bundleIdentifier
   const androidId = app.android?.package
@@ -44,6 +44,27 @@ for (const product of products) {
     failures.push(`${product} production build does not auto-increment on production channel`)
   }
   if (!eas.submit?.production) failures.push(`${product} has no production submission profile`)
+  const environment = await readFile(
+    new URL(`../products/${product}/.env.example`, import.meta.url),
+    'utf8',
+  )
+  for (const key of [
+    'EXPO_PUBLIC_API_URL',
+    'EXPO_PUBLIC_WS_ENDPOINT',
+    'EXPO_PUBLIC_LINK_HOST',
+    'EXPO_PUBLIC_ANALYTICS_WRITE_KEY',
+    'EXPO_PUBLIC_CRASH_DSN',
+  ]) {
+    if (!environment.includes(`${key}=`)) {
+      failures.push(`${product} environment manifest is missing ${key}`)
+    }
+  }
+  if (!app.ios?.associatedDomains?.some((value) => value.startsWith('applinks:'))) {
+    failures.push(`${product} has no iOS associated domain`)
+  }
+  if (!app.android?.intentFilters?.some((filter) => filter.autoVerify)) {
+    failures.push(`${product} has no verified Android App Link`)
+  }
 }
 
 if (failures.length) {

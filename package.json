@@ -145,6 +145,12 @@
     "verify:community": "npm run build && node scripts/verify-reference-shell.mjs community",
     "verify:burndown": "npm run build && node scripts/verify-reference-shell.mjs burndown",
     "verify:blankslate": "npm run build && node scripts/verify-reference-shell.mjs blankslate",
+    "verify:product:hitshot": "npm run build && node scripts/verify-product-app.mjs hitshot",
+    "verify:product:aicoach": "npm run build && node scripts/verify-product-app.mjs aicoach",
+    "verify:product:sgforum": "npm run build && node scripts/verify-product-app.mjs sgforum",
+    "verify:product:burndown": "npm run build && node scripts/verify-product-app.mjs burndown",
+    "verify:product:blankslate": "npm run build && node scripts/verify-product-app.mjs blankslate",
+    "verify:products": "npm run build && node scripts/verify-product-app.mjs hitshot && node scripts/verify-product-app.mjs aicoach && node scripts/verify-product-app.mjs sgforum && node scripts/verify-product-app.mjs burndown && node scripts/verify-product-app.mjs blankslate",
     "verify:release": "npm run build && npm run check:release-artifacts"
   },
   "peerDependencies": {

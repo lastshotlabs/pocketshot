@@ -13,11 +13,11 @@ const nativeWorkflow = await readFile(
   'utf8',
 )
 const partyJoinRoute = await readFile(
-  new URL('../examples/party/app/join/[code].tsx', import.meta.url),
+  new URL('../products/hitshot/app/join/[code].tsx', import.meta.url),
   'utf8',
 )
 const partyNativeIntent = await readFile(
-  new URL('../examples/party/app/+native-intent.ts', import.meta.url),
+  new URL('../products/hitshot/app/+native-intent.ts', import.meta.url),
   'utf8',
 )
 const coachFlow = await readFile(

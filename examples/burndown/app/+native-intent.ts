@@ -1,5 +1,1 @@
-import { normalizeBurndownSystemPath } from '../lib/link'
-
-export function redirectSystemPath({ path }: { path: string; initial: boolean }): string {
-  return normalizeBurndownSystemPath(path)
-}
+export * from '../../../products/burndown/app/+native-intent'

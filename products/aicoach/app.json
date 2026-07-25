@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "AICoach",
+    "slug": "aicoach",
+    "scheme": "aicoach",
+    "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.aicoach",
+      "buildNumber": "1",
+      "associatedDomains": ["applinks:links.aicoach.app"],
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "Capture progress photos for coaching analysis.",
+        "NSPhotoLibraryUsageDescription": "Choose progress photos for coaching analysis."
+      }
+    },
+    "android": {
+      "package": "com.lastshotlabs.aicoach",
+      "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "links.aicoach.app" }, { "scheme": "aicoach" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": ["expo-router", "expo-secure-store", "expo-sqlite", "expo-image-picker"]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Blank Slate",
+    "slug": "blank-slate",
+    "scheme": "blankslate",
+    "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.blankslate",
+      "buildNumber": "1",
+      "associatedDomains": ["applinks:links.blankslate.app"],
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
+    },
+    "android": {
+      "package": "com.lastshotlabs.blankslate",
+      "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "links.blankslate.app" },
+            { "scheme": "blankslate" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}
