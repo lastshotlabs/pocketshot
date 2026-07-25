@@ -39,6 +39,7 @@ export interface BlankSlateState {
   prompt: string
   players: SlatePlayer[]
   submittedIds: string[]
+  submissionStates: Record<string, { status: 'pending' | 'accepted' | 'rejected'; reason?: string }>
   groups: SlateGroup[]
   round: number
   targetScore: number
@@ -82,6 +83,7 @@ export class BlankSlateController {
       { id: 'p3', name: 'Jo', score: 0 },
     ],
     submittedIds: [],
+    submissionStates: {},
     groups: [],
     round: 0,
     targetScore: 12,
@@ -176,6 +178,7 @@ export class BlankSlateController {
     this.value.round += 1
     this.value.phase = 'write'
     this.value.submittedIds = []
+    this.value.submissionStates = {}
     this.value.groups = []
     this.submissions = new PrivateSubmissionController<string>(5_000)
     this.corrections = new HostCorrectionController<SlateGroup[]>([])
@@ -193,7 +196,40 @@ export class BlankSlateController {
     const accepted = this.submissions.submit(playerId, normalized, key)
     if (accepted && !this.value.submittedIds.includes(playerId))
       this.value.submittedIds.push(playerId)
+    if (accepted) this.value.submissionStates[playerId] = { status: 'pending' }
     this.emit()
+    return accepted
+  }
+
+  acknowledgeSubmission(playerId: string, key: string): void {
+    this.submissions.acknowledge(playerId, key)
+    const submission = this.submissions.snapshot.find((candidate) => candidate.actorId === playerId)
+    if (submission?.deliveryStatus === 'accepted') {
+      this.value.submissionStates[playerId] = { status: 'accepted' }
+      this.emit()
+    }
+  }
+
+  rejectSubmission(playerId: string, key: string, reason: string): void {
+    this.submissions.reject(playerId, key, reason)
+    const submission = this.submissions.snapshot.find((candidate) => candidate.actorId === playerId)
+    if (submission?.deliveryStatus === 'rejected') {
+      this.value.submissionStates[playerId] = {
+        status: 'rejected',
+        reason: submission.rejectionReason,
+      }
+      this.value.notice = `${this.player(playerId).name}'s slate needs to be resent`
+      this.emit()
+    }
+  }
+
+  resendSubmission(playerId: string, key: string): boolean {
+    const accepted = this.submissions.resend(playerId, key)
+    if (accepted) {
+      this.value.submissionStates[playerId] = { status: 'pending' }
+      this.value.notice = null
+      this.emit()
+    }
     return accepted
   }
 
@@ -206,6 +242,7 @@ export class BlankSlateController {
       phase: this.value.phase,
       prompt: this.value.prompt,
       submittedIds: [...this.value.submittedIds],
+      submittedCount: this.value.submittedIds.length,
       ...(this.value.phase === 'reveal' ||
       this.value.phase === 'summary' ||
       this.value.phase === 'results'

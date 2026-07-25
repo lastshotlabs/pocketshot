@@ -33,6 +33,24 @@ describe('Blank Slate native acceptance model', () => {
     expect(game.tvProjection()).not.toHaveProperty('groups')
   })
 
+  it('tracks optimistic lock, rejection, idempotent resend, and acknowledgement', () => {
+    const game = new BlankSlateController()
+    game.enter()
+    game.startRound()
+    game.submit('p1', 'cake', 'submit-1')
+    expect(game.state.submissionStates.p1.status).toBe('pending')
+    game.rejectSubmission('p1', 'submit-1', 'Connection lost')
+    expect(game.state.submissionStates.p1).toEqual({
+      status: 'rejected',
+      reason: 'Connection lost',
+    })
+    expect(game.resendSubmission('p1', 'submit-2')).toBe(true)
+    expect(game.resendSubmission('p1', 'submit-2')).toBe(false)
+    game.acknowledgeSubmission('p1', 'submit-2')
+    expect(game.state.submissionStates.p1.status).toBe('accepted')
+    expect(game.tvProjection()).not.toHaveProperty('submissionStates')
+  })
+
   it('groups reveal answers, scores matches, and supports voting', () => {
     const game = new BlankSlateController()
     submittedRound(game)
