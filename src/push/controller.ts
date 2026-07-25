@@ -1,9 +1,4 @@
-import type {
-  PersonalPush,
-  PushDisposition,
-  PushOpenRoute,
-  PushQuietHours,
-} from './types'
+import type { PersonalPush, PushDisposition, PushOpenRoute, PushQuietHours } from './types'
 
 export interface PersonalPushPolicyOptions {
   allowedCategories: string[]
@@ -130,7 +125,8 @@ export class PersonalPushPolicyController {
     }
     if (
       !this.options.allowedRoutePrefixes.some(
-        (prefix) => route === prefix || route.startsWith(`${prefix}/`) || route.startsWith(`${prefix}?`),
+        (prefix) =>
+          route === prefix || route.startsWith(`${prefix}/`) || route.startsWith(`${prefix}?`),
       )
     ) {
       throw new Error('[pocketshot] Push route is not allowlisted')
@@ -140,9 +136,7 @@ export class PersonalPushPolicyController {
 
   private inQuietHours(date: Date): boolean {
     if (!this.quietHours || this.quietHours.startMinute === this.quietHours.endMinute) return false
-    const shifted = new Date(
-      date.getTime() + (this.quietHours.timeZoneOffsetMinutes ?? 0) * 60_000,
-    )
+    const shifted = new Date(date.getTime() + (this.quietHours.timeZoneOffsetMinutes ?? 0) * 60_000)
     const minute = shifted.getUTCHours() * 60 + shifted.getUTCMinutes()
     const { startMinute, endMinute } = this.quietHours
     return startMinute < endMinute

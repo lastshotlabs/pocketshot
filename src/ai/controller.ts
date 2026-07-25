@@ -318,10 +318,7 @@ export class AiConversationController {
       )
   }
 
-  private async authorize(
-    operation: 'commit' | 'undo',
-    action: AiActionProposal,
-  ): Promise<void> {
+  private async authorize(operation: 'commit' | 'undo', action: AiActionProposal): Promise<void> {
     if (!this.options.authorization) return
     const allowed = await this.options.authorization.authorize({
       operation,

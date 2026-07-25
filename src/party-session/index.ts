@@ -105,9 +105,7 @@ export class PartySessionController<Rules extends object> {
     this.state.admissionPolicy = policy
   }
 
-  requestAdmission(
-    request: Omit<PartyAdmissionRequest, 'status'>,
-  ): 'admitted' | 'pending' {
+  requestAdmission(request: Omit<PartyAdmissionRequest, 'status'>): 'admitted' | 'pending' {
     if (this.blocked.has(request.id)) throw new Error('Member is blocked')
     if (this.state.admissionPolicy === 'closed') throw new Error('Party admission is closed')
     const status = this.state.admissionPolicy === 'open' ? 'admitted' : 'pending'
@@ -151,15 +149,13 @@ export class PartySessionController<Rules extends object> {
   } {
     return {
       hostId: this.state.hostId,
-      members: [...this.members.values()].map(
-        ({ id, displayName, role, seat, connected }) => ({
-          id,
-          displayName,
-          role,
-          seat,
-          connected,
-        }),
-      ),
+      members: [...this.members.values()].map(({ id, displayName, role, seat, connected }) => ({
+        id,
+        displayName,
+        role,
+        seat,
+        connected,
+      })),
       paused: this.state.paused,
     }
   }

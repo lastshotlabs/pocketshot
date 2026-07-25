@@ -37,6 +37,8 @@ export interface BurndownState {
   activePlayerId: string
   players: BurndownPlayer[]
   burned: string[]
+  burnedLetters: string[]
+  voidLetters: string[]
   round: number
   notice: string | null
   paused: boolean
@@ -44,7 +46,17 @@ export interface BurndownState {
   ended: boolean
 }
 
-type BurndownRules = { lives: number; turnMs: number; challenge: boolean }
+type BurndownRules = {
+  lives: number
+  turnMs: number
+  warningMs: number
+  speedUpMs: number
+  challenge: boolean
+  challengeMs: number
+  challengeMode: 'overlap' | 'serialized'
+  boardExhaustion: 'end' | 'reset'
+  hostParticipates: boolean
+}
 
 export interface BurndownSnapshot {
   state: BurndownState
@@ -74,6 +86,8 @@ export class BurndownController {
       { id: 'p2', name: 'Sam', seat: 1, lives: 3, eliminated: false },
     ],
     burned: [],
+    burnedLetters: [],
+    voidLetters: [],
     round: 0,
     notice: null,
     paused: false,
@@ -94,7 +108,17 @@ export class BurndownController {
   constructor(snapshot?: BurndownSnapshot) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
     this.session = new PartySessionController(
-      { lives: 3, turnMs: 20_000, challenge: true },
+      {
+        lives: 3,
+        turnMs: 20_000,
+        warningMs: 5_000,
+        speedUpMs: 1_000,
+        challenge: true,
+        challengeMs: 10_000,
+        challengeMode: 'serialized',
+        boardExhaustion: 'end',
+        hostParticipates: true,
+      },
       snapshot?.session,
     )
     this.shared = new SharedDeviceController(snapshot?.shared)
@@ -170,6 +194,13 @@ export class BurndownController {
   }
 
   start(): void {
+    this.session.applyStagedRules()
+    const rules = this.session.snapshot.rules
+    this.value.players = this.value.players.map((player) => ({
+      ...player,
+      lives: rules.lives,
+      eliminated: false,
+    }))
     this.value.round = 1
     this.value.letter = alphabet[0]
     this.beginTurn('p1')
@@ -198,17 +229,21 @@ export class BurndownController {
     if (this.value.mode === 'shared' && !this.shared.lockCommand(idempotencyKey)) return false
     this.commandKeys.add(idempotencyKey)
     this.value.burned.push(normalized)
+    if (!this.value.burnedLetters.includes(this.value.letter)) {
+      this.value.burnedLetters.push(this.value.letter)
+    }
     if (this.value.mode === 'shared') this.shared.settleCommand(idempotencyKey)
     this.advanceTurn()
     return true
   }
 
   openChallenge(): void {
+    if (!this.session.snapshot.rules.challenge) throw new Error('Challenges are disabled')
     this.challenge = new BallotController(
       this.value.players.filter((player) => !player.eliminated).map((player) => player.id),
     )
     this.value.phase = 'challenge'
-    this.timer = new TimedPhaseController('challenge', 10_000)
+    this.timer = new TimedPhaseController('challenge', this.session.snapshot.rules.challengeMs)
     this.emit()
   }
 
@@ -267,6 +302,8 @@ export class BurndownController {
       eliminated: false,
     }))
     this.value.burned = []
+    this.value.burnedLetters = []
+    this.value.voidLetters = []
     this.value.winnerId = null
     this.value.ended = false
     this.value.phase = 'lobby'
@@ -287,12 +324,14 @@ export class BurndownController {
         eliminated,
       })),
       burnedCount: this.value.burned.length,
+      board: this.board(),
       winnerId: this.value.winnerId,
       ended: this.value.ended,
     }
   }
 
-  stageRules(patch: Partial<{ lives: number; turnMs: number; challenge: boolean }>): void {
+  stageRules(patch: Partial<BurndownRules>): void {
+    validateRules({ ...this.session.snapshot.rules, ...patch })
     this.session.stageRules(this.session.snapshot.hostId ?? 'p1', patch)
     this.value.notice = 'Rule changes staged for the next round or rematch'
     this.emit()
@@ -300,6 +339,36 @@ export class BurndownController {
 
   get rules() {
     return structuredClone(this.session.snapshot.rules)
+  }
+
+  board(): Array<{ letter: string; status: 'alive' | 'active' | 'burned' | 'void' }> {
+    return alphabet.map((letter) => ({
+      letter,
+      status: this.value.voidLetters.includes(letter)
+        ? 'void'
+        : this.value.burnedLetters.includes(letter)
+          ? 'burned'
+          : letter === this.value.letter
+            ? 'active'
+            : 'alive',
+    }))
+  }
+
+  voidLetter(letter: string): void {
+    const normalized = letter.trim().toLocaleUpperCase()
+    if (!alphabet.includes(normalized)) throw new Error('Letter must be A through Z')
+    if (!this.value.voidLetters.includes(normalized)) this.value.voidLetters.push(normalized)
+    this.value.burnedLetters = this.value.burnedLetters.filter((item) => item !== normalized)
+    if (this.value.letter === normalized) this.advanceLetter()
+    this.emit()
+  }
+
+  isWarning(): boolean {
+    return this.timer.isWarning(this.session.snapshot.rules.warningMs)
+  }
+
+  remainingMs(): number {
+    return this.timer.remainingMs()
   }
 
   adjustLives(playerId: string, delta: number): void {
@@ -344,7 +413,9 @@ export class BurndownController {
 
   private beginTurn(id: string): void {
     this.value.activePlayerId = id
-    this.timer = new TimedPhaseController('turn', 20_000)
+    const rules = this.session.snapshot.rules
+    const duration = Math.max(3_000, rules.turnMs - (this.value.round - 1) * rules.speedUpMs)
+    this.timer = new TimedPhaseController('turn', duration)
     if (this.value.mode === 'shared') {
       this.shared.begin(this.player(id).seat)
       this.value.phase = 'handoff'
@@ -373,16 +444,44 @@ export class BurndownController {
       this.emit()
       return
     }
+    if (!this.advanceLetter()) return
     const index = alive.findIndex((player) => player.id === this.value.activePlayerId)
     const next = alive[(index + 1) % alive.length]
     if (next.id === alive[0].id) {
       this.value.round += 1
-      const available = alphabet.filter(
-        (letter) => !this.value.burned.includes(letter.toLowerCase()),
-      )
-      this.value.letter = available[(this.value.round - 1) % available.length] ?? 'A'
     }
     this.beginTurn(next.id)
+  }
+
+  private advanceLetter(): boolean {
+    const currentIndex = alphabet.indexOf(this.value.letter)
+    for (let offset = 1; offset <= alphabet.length; offset += 1) {
+      const candidate = alphabet[(currentIndex + offset) % alphabet.length]
+      if (
+        !this.value.burnedLetters.includes(candidate) &&
+        !this.value.voidLetters.includes(candidate)
+      ) {
+        this.value.letter = candidate
+        return true
+      }
+    }
+    if (this.session.snapshot.rules.boardExhaustion === 'reset') {
+      this.value.burnedLetters = []
+      this.value.voidLetters = []
+      this.value.round += 1
+      this.value.letter = 'A'
+      this.value.notice = 'Board reset for a new round'
+      return true
+    }
+    this.value.ended = true
+    this.value.phase = 'results'
+    const alive = this.value.players.filter((player) => !player.eliminated)
+    this.value.winnerId =
+      [...alive].sort((left, right) => right.lives - left.lives || left.seat - right.seat)[0]?.id ??
+      null
+    this.shared.end()
+    this.emit()
+    return false
   }
 
   private loseLife(id: string): void {
@@ -404,4 +503,17 @@ export class BurndownController {
   private emit(): void {
     for (const listener of this.listeners) listener(this.state)
   }
+}
+
+function validateRules(rules: BurndownRules): void {
+  if (!Number.isInteger(rules.lives) || rules.lives < 1 || rules.lives > 20) {
+    throw new Error('Lives must be between 1 and 20')
+  }
+  if (rules.turnMs < 3_000 || rules.warningMs < 0 || rules.warningMs >= rules.turnMs) {
+    throw new Error('Turn and warning timing is invalid')
+  }
+  if (rules.speedUpMs < 0 || rules.speedUpMs >= rules.turnMs) {
+    throw new Error('Round speed-up timing is invalid')
+  }
+  if (rules.challengeMs < 1_000) throw new Error('Challenge window must be at least one second')
 }

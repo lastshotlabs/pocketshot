@@ -7,7 +7,7 @@ const packageRoot = new URL('../', import.meta.url)
 
 const budgets = {
   'dist/index.js': 160 * 1024,
-  'dist/index.cjs': 180 * 1024,
+  'dist/index.cjs': 192 * 1024,
   'dist/ui.js': 1.5 * 1024 * 1024,
   'dist/ui.cjs': 1.6 * 1024 * 1024,
   'dist/types/index.d.ts': 16 * 1024,

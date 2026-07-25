@@ -326,9 +326,7 @@ describe('projectAiConversation', () => {
       id: 'message-1',
       role: 'user',
       text: '[redacted user message]',
-      citations: [
-        { id: 'citation-1', title: 'Source', url: 'https://example.com/private' },
-      ],
+      citations: [{ id: 'citation-1', title: 'Source', url: 'https://example.com/private' }],
       actions: [{ id: 'action-1', kind: 'log_metric', status: 'confirmed' }],
       status: 'failed',
       createdAt: '2026-01-01T00:00:00.000Z',

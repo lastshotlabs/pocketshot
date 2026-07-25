@@ -73,6 +73,36 @@ describe('Burndown native acceptance model', () => {
     expect(game.rules).toMatchObject({ lives: 5, turnMs: 15_000 })
   })
 
+  it('tracks alive, burned, and void letters and deterministically resets exhaustion', () => {
+    const game = new BurndownController()
+    game.enter('phones')
+    game.stageRules({ boardExhaustion: 'reset', speedUpMs: 500, warningMs: 4_000 })
+    game.start()
+    expect(game.board()[0]).toEqual({ letter: 'A', status: 'active' })
+    expect(game.burn('Apple', 'a')).toBe(true)
+    expect(game.board()[0].status).toBe('burned')
+    expect(game.state.letter).toBe('B')
+    game.voidLetter('C')
+    expect(game.board()[2].status).toBe('void')
+    for (const letter of 'DEFGHIJKLMNOPQRSTUVWXYZ') game.voidLetter(letter)
+    game.voidLetter('B')
+    expect(game.state).toMatchObject({
+      letter: 'A',
+      notice: 'Board reset for a new round',
+      phase: 'turn',
+    })
+    expect(game.board().filter((entry) => entry.status === 'void')).toHaveLength(0)
+  })
+
+  it('validates advanced timing and challenge rules', () => {
+    const game = new BurndownController()
+    expect(() => game.stageRules({ warningMs: 20_000 })).toThrow('timing')
+    game.stageRules({ challenge: false })
+    game.enter('phones')
+    game.start()
+    expect(() => game.openChallenge()).toThrow('disabled')
+  })
+
   it('restores shared-device privacy and deduplication after process death', () => {
     const game = new BurndownController()
     game.enter('shared')

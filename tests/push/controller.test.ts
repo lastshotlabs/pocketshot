@@ -41,9 +41,9 @@ describe('PersonalPushPolicyController', () => {
     expect(disabled.evaluate(notification()).status).toBe('suppressed')
 
     const expired = policy()
-    expect(
-      expired.evaluate(notification({ expiresAt: '2026-07-25T11:59:59.000Z' })),
-    ).toMatchObject({ reason: 'expired' })
+    expect(expired.evaluate(notification({ expiresAt: '2026-07-25T11:59:59.000Z' }))).toMatchObject(
+      { reason: 'expired' },
+    )
 
     const quiet = policy(23)
     quiet.setQuietHours({ startMinute: 22 * 60, endMinute: 7 * 60 })

@@ -385,19 +385,18 @@ export class MessagingController {
     this.messages.set(clientId, { ...message, status: 'pending' })
   }
 
-  history(options: {
-    conversationId?: string
-    before?: number
-    limit?: number
-  } = {}): { items: ConversationMessage[]; nextBefore: number | null } {
+  history(
+    options: {
+      conversationId?: string
+      before?: number
+      limit?: number
+    } = {},
+  ): { items: ConversationMessage[]; nextBefore: number | null } {
     const messages = [...this.messages.values()]
       .filter(
-        (message) =>
-          !options.conversationId || message.conversationId === options.conversationId,
+        (message) => !options.conversationId || message.conversationId === options.conversationId,
       )
-      .sort((left, right) =>
-        (left.createdAt ?? '').localeCompare(right.createdAt ?? ''),
-      )
+      .sort((left, right) => (left.createdAt ?? '').localeCompare(right.createdAt ?? ''))
     const end = Math.min(options.before ?? messages.length, messages.length)
     const start = Math.max(0, end - (options.limit ?? 50))
     return {
