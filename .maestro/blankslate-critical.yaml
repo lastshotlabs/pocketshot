@@ -1,4 +1,4 @@
-appId: com.lastshotlabs.pocketshot.blankslate
+appId: com.lastshotlabs.blankslate
 name: Blank Slate private write, reveal, vote, score, and next round
 ---
 - launchApp:
@@ -11,6 +11,9 @@ name: Blank Slate private write, reveal, vote, score, and next round
 - assertVisible: Lobby
 - tapOn:
     id: start-round
+- tapOn:
+    id: private-slate-input
+- inputText: cake
 - tapOn:
     id: submit-alex
 - tapOn:

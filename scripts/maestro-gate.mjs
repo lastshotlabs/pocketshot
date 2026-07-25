@@ -31,11 +31,11 @@ const communityFlow = await readFile(
 const failures = []
 
 const appIds = [
-  'com.lastshotlabs.pocketshot.party',
-  'com.lastshotlabs.pocketshot.coach',
-  'com.lastshotlabs.pocketshot.community',
-  'com.lastshotlabs.pocketshot.burndown',
-  'com.lastshotlabs.pocketshot.blankslate',
+  'com.lastshotlabs.hitshot',
+  'com.lastshotlabs.aicoach',
+  'com.lastshotlabs.sgforum',
+  'com.lastshotlabs.burndown',
+  'com.lastshotlabs.blankslate',
 ]
 for (const appId of appIds) {
   if (!all.includes(`appId: ${appId}`)) failures.push(`missing flow for ${appId}`)
@@ -80,11 +80,11 @@ const requiredIds = [
 for (const id of requiredIds) {
   if (!all.includes(`id: ${id}`)) failures.push(`critical control ${id} is not exercised`)
 }
-if (!all.includes('openLink: pocketshot-party://join/')) {
+if (!all.includes('openLink: hitshot://join/')) {
   failures.push('Party cold deep-link journey is missing')
 }
 for (const product of ['burndown', 'blankslate']) {
-  if (!all.includes(`openLink: pocketshot-${product}://join/`)) {
+  if (!all.includes(`openLink: ${product}://join/`)) {
     failures.push(`${product} cold deep-link journey is missing`)
   }
 }
@@ -111,11 +111,14 @@ for (const [index, body] of bodies.entries()) {
 for (const job of ['android-maestro:', 'ios-maestro:']) {
   if (!workflow.includes(job)) failures.push(`device workflow is missing ${job.slice(0, -1)}`)
 }
-for (const shell of ['party', 'coach', 'community', 'burndown', 'blankslate']) {
-  const occurrences = workflow.split(`shell: ${shell}`).length - 1
+for (const product of ['hitshot', 'aicoach', 'sgforum', 'burndown', 'blankslate']) {
+  const occurrences = workflow.split(`product: ${product}`).length - 1
   if (occurrences < 2) {
-    failures.push(`device workflow does not matrix ${shell} on both mobile platforms`)
+    failures.push(`device workflow does not matrix ${product} on both mobile platforms`)
   }
+}
+if (workflow.includes('working-directory: examples/')) {
+  failures.push('device workflow still builds a reference shell instead of production apps')
 }
 if (!workflow.includes('maestro" --device "$DEVICE_ID" test')) {
   failures.push('iOS workflow does not target its isolated simulator')

@@ -1,8 +1,8 @@
-appId: com.lastshotlabs.pocketshot.burndown
+appId: com.lastshotlabs.burndown
 name: Burndown cold invite link
 ---
 - stopApp
-- openLink: pocketshot-burndown://join/BURN-42
+- openLink: burndown://join/BURN-42
 - tapOn:
     text: Open
     optional: true

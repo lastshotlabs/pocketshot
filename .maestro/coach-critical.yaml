@@ -1,4 +1,4 @@
-appId: com.lastshotlabs.pocketshot.coach
+appId: com.lastshotlabs.aicoach
 name: Coach conversation, metrics, workout, billing, and privacy
 ---
 - launchApp:

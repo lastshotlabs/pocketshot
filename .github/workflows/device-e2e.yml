@@ -22,15 +22,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - shell: party
+          - product: hitshot
             flow: .maestro/party-critical.yaml .maestro/party-deep-link.yaml
-          - shell: coach
+          - product: aicoach
             flow: .maestro/coach-critical.yaml
-          - shell: community
+          - product: sgforum
             flow: .maestro/community-critical.yaml
-          - shell: burndown
+          - product: burndown
             flow: .maestro/burndown-critical.yaml .maestro/burndown-deep-link.yaml
-          - shell: blankslate
+          - product: blankslate
             flow: .maestro/blankslate-critical.yaml .maestro/blankslate-deep-link.yaml
     steps:
       - uses: actions/checkout@v4
@@ -54,18 +54,18 @@ jobs:
       - run: npm ci --legacy-peer-deps
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install current package in reference shell
+      - name: Install current package in production app
         run: |
           npm run build
           archive=$(npm pack --pack-destination "$RUNNER_TEMP" --silent)
-          npm install --prefix "examples/${{ matrix.shell }}" \
+          npm install --prefix "products/${{ matrix.product }}" \
             --legacy-peer-deps --package-lock=false
-          npm install --prefix "examples/${{ matrix.shell }}" "$RUNNER_TEMP/$archive" \
+          npm install --prefix "products/${{ matrix.product }}" "$RUNNER_TEMP/$archive" \
             --no-save --package-lock=false --legacy-peer-deps
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate and compile Android app
-        working-directory: examples/${{ matrix.shell }}
+        working-directory: products/${{ matrix.product }}
         run: |
           npx expo prebuild --platform android --clean --no-install
           ./android/gradlew -p android assembleRelease --no-daemon
@@ -85,12 +85,12 @@ jobs:
           script: |
             adb wait-for-device
             adb shell settings put global hide_error_dialogs 1
-            adb install -r "examples/${{ matrix.shell }}/android/app/build/outputs/apk/release/app-release.apk"
+            adb install -r "products/${{ matrix.product }}/android/app/build/outputs/apk/release/app-release.apk"
             "$HOME/.maestro/bin/maestro" test ${{ matrix.flow }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: maestro-${{ matrix.shell }}-failure
+          name: maestro-${{ matrix.product }}-failure
           path: ~/.maestro/tests
           if-no-files-found: ignore
 
@@ -101,15 +101,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - shell: party
+          - product: hitshot
             flow: .maestro/party-critical.yaml .maestro/party-deep-link.yaml
-          - shell: coach
+          - product: aicoach
             flow: .maestro/coach-critical.yaml
-          - shell: community
+          - product: sgforum
             flow: .maestro/community-critical.yaml
-          - shell: burndown
+          - product: burndown
             flow: .maestro/burndown-critical.yaml .maestro/burndown-deep-link.yaml
-          - shell: blankslate
+          - product: blankslate
             flow: .maestro/blankslate-critical.yaml .maestro/blankslate-deep-link.yaml
     steps:
       - uses: actions/checkout@v4
@@ -122,18 +122,18 @@ jobs:
       - run: npm ci --legacy-peer-deps
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install current package in reference shell
+      - name: Install current package in production app
         run: |
           npm run build
           archive=$(npm pack --pack-destination "$RUNNER_TEMP" --silent)
-          npm install --prefix "examples/${{ matrix.shell }}" \
+          npm install --prefix "products/${{ matrix.product }}" \
             --legacy-peer-deps --package-lock=false
-          npm install --prefix "examples/${{ matrix.shell }}" "$RUNNER_TEMP/$archive" \
+          npm install --prefix "products/${{ matrix.product }}" "$RUNNER_TEMP/$archive" \
             --no-save --package-lock=false --legacy-peer-deps
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate iOS app
-        working-directory: examples/${{ matrix.shell }}
+        working-directory: products/${{ matrix.product }}
         run: |
           npx expo prebuild --platform ios --clean --no-install
           npx pod-install ios
@@ -143,7 +143,7 @@ jobs:
           runtime=$(xcrun simctl list runtimes available -j |
             jq -r '[.runtimes[] | select(.name | startswith("iOS"))] | last | .identifier')
           device=$(xcrun simctl create \
-            "Pocketshot-${{ matrix.shell }}-${{ github.run_id }}" \
+            "Pocketshot-${{ matrix.product }}-${{ github.run_id }}" \
             com.apple.CoreSimulator.SimDeviceType.iPhone-16 \
             "$runtime")
           echo "id=$device" >> "$GITHUB_OUTPUT"
@@ -151,7 +151,7 @@ jobs:
           open -a Simulator
           xcrun simctl bootstatus "$device" -b
       - name: Compile iOS simulator app
-        working-directory: examples/${{ matrix.shell }}
+        working-directory: products/${{ matrix.product }}
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
         run: |
@@ -165,7 +165,7 @@ jobs:
             -sdk iphonesimulator \
             -configuration Release \
             -destination "platform=iOS Simulator,id=$DEVICE_ID" \
-            -derivedDataPath "$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data" \
+            -derivedDataPath "$RUNNER_TEMP/pocketshot-${{ matrix.product }}-derived-data" \
             CODE_SIGNING_ALLOWED=NO \
             build
       - name: Install Maestro CLI
@@ -174,7 +174,7 @@ jobs:
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
         run: |
-          products="$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data/Build/Products/Release-iphonesimulator"
+          products="$RUNNER_TEMP/pocketshot-${{ matrix.product }}-derived-data/Build/Products/Release-iphonesimulator"
           app=$(find "$products" -maxdepth 1 -type d -name '*.app' -print -quit)
           test -n "$app"
           echo "Installing $app on simulator $DEVICE_ID"
@@ -183,7 +183,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: maestro-ios-${{ matrix.shell }}-failure
+          name: maestro-ios-${{ matrix.product }}-failure
           path: ~/.maestro/tests
           if-no-files-found: ignore
       - name: Delete iOS simulator

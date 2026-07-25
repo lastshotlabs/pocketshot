@@ -1,4 +1,4 @@
-appId: com.lastshotlabs.pocketshot.burndown
+appId: com.lastshotlabs.burndown
 name: Burndown shared-device turn, challenge, and privacy handoff
 ---
 - launchApp:

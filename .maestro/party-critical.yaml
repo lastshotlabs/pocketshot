@@ -1,4 +1,4 @@
-appId: com.lastshotlabs.pocketshot.party
+appId: com.lastshotlabs.hitshot
 name: Party match, reconnect, rematch, and deck
 ---
 - launchApp:

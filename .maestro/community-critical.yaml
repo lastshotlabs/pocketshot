@@ -1,4 +1,4 @@
-appId: com.lastshotlabs.pocketshot.community
+appId: com.lastshotlabs.sgforum
 name: Community post, message, moderation, privacy, and reconnect
 ---
 - launchApp:
