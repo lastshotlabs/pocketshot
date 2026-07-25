@@ -556,7 +556,8 @@ Inputs: current repository commit and GitHub-hosted runners
 Target: same day
 
 1. Require green CI and native-smoke runs for the exact release commit.
-2. Require all six Release-mode Maestro jobs: Party, Coach, and Community on iOS and Android.
+2. Require all ten Release-mode Maestro jobs: Hitshot, AICoach, SGForum, Burndown, and Blank
+   Slate on iOS and Android, plus the Burndown shared-table landscape journey.
 3. Inspect failure screenshots, view hierarchies, native logs, and test artifacts rather than
    accepting reruns without root-cause analysis.
 4. Re-run the full local suite after any corrective commit and repeat all hosted checks.

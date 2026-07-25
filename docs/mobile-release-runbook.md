@@ -1,7 +1,7 @@
 # PocketShot mobile release runbook
 
-This runbook promotes the `showcase` application through internal preview,
-TestFlight, and Google Play internal testing. It is deliberately explicit about
+This runbook promotes the five production applications under `products/` through internal
+preview, TestFlight, and Google Play internal testing. It is deliberately explicit about
 the external values that cannot be committed to the repository.
 
 ## Release ownership and prerequisites
@@ -38,6 +38,9 @@ npm run verify:showcase
 npm run verify:party
 npm run verify:coach
 npm run verify:community
+npm run verify:burndown
+npm run verify:blankslate
+npm run verify:products
 npm run check:release-artifacts
 npm run check:security
 npm run check:accessibility
@@ -55,23 +58,29 @@ there are no critical/high production audit findings and review every medium fin
    `appVersion` runtime policy so incompatible native changes require a new app version/build.
 2. Verify `development`, `preview`, and `production` EAS environments contain the intended
    non-secret and secret values. Never promote by copying local `.env` files.
-3. Build internal previews:
+3. Build an internal preview for each product:
 
    ```sh
-   cd showcase
-   npx eas-cli build --platform all --profile preview --non-interactive
+   for product in hitshot aicoach sgforum burndown blankslate; do
+     (cd "products/$product" &&
+       npx eas-cli build --platform all --profile preview --non-interactive)
+   done
    ```
 
 4. Install the previews on the physical-device matrix and complete the acceptance record below.
-5. Build store candidates from the same immutable commit:
+5. Build product-scoped store candidates from the same immutable commit:
 
    ```sh
-   npx eas-cli build --platform all --profile production --non-interactive
+   for product in hitshot aicoach sgforum burndown blankslate; do
+     (cd "products/$product" &&
+       npx eas-cli build --platform all --profile production --non-interactive)
+   done
    ```
 
-6. Submit only the accepted build IDs:
+6. Submit only the accepted build IDs from within the matching product workspace:
 
    ```sh
+   cd products/PRODUCT
    npx eas-cli submit --platform ios --profile production --id IOS_BUILD_ID --non-interactive
    npx eas-cli submit --platform android --profile production --id ANDROID_BUILD_ID --non-interactive
    ```
@@ -93,6 +102,10 @@ timestamp, and evidence for:
   conflict, charts/goals, workout interruption/resume, purchase/restore/revoke, and privacy export;
 - Community feed/thread/attachment/mention/poll, notification deep link, offline publish/reconnect,
   DM typing/read/revocation, report/moderation, block, privacy export/deletion;
+- Burndown separate-phone and 2–8-player shared-table matches, handoff curtain, wake lock,
+  challenge grid, “Nobody,” elimination, board exhaustion, host recovery, TV, and rematch;
+- Blank Slate private write/edit/resend, strict pre-reveal redaction, grouping/scoring,
+  correction/undo, merge ballot, offline replay, quiet hours, haptics, host recovery, and rematch;
 - VoiceOver/TalkBack order and names, 200% text, high contrast, reduced motion, rotation/safe area;
 - denied/limited permissions, airplane/poor network, battery/thermal state, and long-session memory.
 
@@ -101,13 +114,17 @@ follow-up.
 
 ## Store material
 
-Before submission, archive:
+Before each product submission, archive:
 
 - app icon, splash, phone-size screenshots, description, keywords/category, release/review notes;
 - privacy/data-safety declarations matched to the persisted-data inventory;
 - privacy/terms/support/deletion URLs and reviewer credentials/instructions;
 - encryption/export-compliance response, age/content rating, billing products and pricing;
 - bundle IDs, associated domains, push configuration, version/build numbers, and build checksums.
+
+The code-owned copy and capture requirements live in `products/<product>/store/metadata.json` and
+`products/<product>/store/screenshots.json`. Capture the requested screenshots from the exact
+accepted signed build; do not substitute simulator images from another product or commit.
 
 ## Rollback and recovery drill
 

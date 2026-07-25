@@ -1,0 +1,23 @@
+appId: com.lastshotlabs.burndown
+name: Burndown six-player landscape shared table
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    text: Wait
+    optional: true
+- tapOn:
+    id: setup-six-player-table
+- assertVisible:
+    id: burndown-lobby-title
+- assertVisible: Jo · 3 lives
+- assertVisible: Rae · 3 lives
+- setOrientation: LANDSCAPE
+- tapOn:
+    id: start-match
+- assertVisible:
+    id: shared-handoff-curtain
+- tapOn:
+    id: arm-seat
+- assertVisible: Your turn
+- setOrientation: PORTRAIT

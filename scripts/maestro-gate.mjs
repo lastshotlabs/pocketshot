@@ -97,6 +97,13 @@ if (!partyNativeIntent.includes('redirectSystemPath')) {
 if (!communityFlow.includes('id: feed-first-thread')) {
   failures.push('Community journey does not use a regex-safe thread assertion')
 }
+if (
+  !all.includes('id: setup-six-player-table') ||
+  !all.includes('setOrientation: LANDSCAPE') ||
+  !workflow.includes('.maestro/burndown-landscape.yaml')
+) {
+  failures.push('Burndown six-player landscape journey is missing')
+}
 const coachScrollCount = coachFlow.split('scrollUntilVisible:').length - 1
 const centeredCoachScrollCount = coachFlow.split('centerElement: true').length - 1
 if (coachScrollCount === 0 || centeredCoachScrollCount !== coachScrollCount) {
