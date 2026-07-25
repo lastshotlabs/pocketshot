@@ -159,6 +159,16 @@ export class BurndownController {
     this.emit()
   }
 
+  join(code: string, mode: BurndownMode = 'phones'): boolean {
+    if (code.trim().toLocaleUpperCase() !== this.value.joinCode) {
+      this.value.notice = 'That Burndown invite is invalid or expired'
+      this.emit()
+      return false
+    }
+    this.enter(mode)
+    return true
+  }
+
   start(): void {
     this.value.round = 1
     this.value.letter = alphabet[0]

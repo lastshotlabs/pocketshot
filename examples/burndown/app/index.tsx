@@ -3,12 +3,15 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 import { StatusBar } from 'expo-status-bar'
 import { BurndownController, type BurndownState } from '../lib/burndown'
 
-export default function BurndownApp() {
+export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
   const controller = useMemo(() => new BurndownController(), [])
   const [game, setGame] = useState<BurndownState>(controller.state)
   const [section, setSection] = useState<'play' | 'library' | 'build'>('play')
   const [contentRevision, setContentRevision] = useState(0)
   useEffect(() => controller.subscribe(setGame), [controller])
+  useEffect(() => {
+    if (initialJoinCode) controller.join(initialJoinCode)
+  }, [controller, initialJoinCode])
 
   return (
     <SafeAreaView style={styles.screen}>

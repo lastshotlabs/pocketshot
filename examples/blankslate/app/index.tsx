@@ -5,12 +5,15 @@ import { BlankSlateController, type BlankSlateState } from '../lib/blankslate'
 
 type AppSection = 'Play' | 'Games' | 'Library' | 'Build' | 'You'
 
-export default function BlankSlateApp() {
+export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
   const controller = useMemo(() => new BlankSlateController(), [])
   const [game, setGame] = useState<BlankSlateState>(controller.state)
   const [section, setSection] = useState<AppSection>('Play')
   const [contentRevision, setContentRevision] = useState(0)
   useEffect(() => controller.subscribe(setGame), [controller])
+  useEffect(() => {
+    if (initialJoinCode) controller.join(initialJoinCode)
+  }, [controller, initialJoinCode])
   const collections = controller.prompts.browse({
     scope: section === 'Library' ? 'all' : 'mine',
     viewerId: 'p1',

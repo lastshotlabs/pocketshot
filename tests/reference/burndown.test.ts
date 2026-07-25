@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { BurndownController } from '../../examples/burndown/lib/burndown'
+import { normalizeBurndownSystemPath } from '../../examples/burndown/lib/link'
 
 describe('Burndown native acceptance model', () => {
+  it('normalizes cold native joins and rejects expired invites', () => {
+    expect(normalizeBurndownSystemPath('pocketshot-burndown://join/BURN-42')).toBe('/join/BURN-42')
+    expect(normalizeBurndownSystemPath('pocketshot-burndown://join/%E0%A4%A')).toBe('/')
+    const game = new BurndownController()
+    expect(game.join('expired')).toBe(false)
+    expect(game.join('burn-42')).toBe(true)
+    expect(game.state.phase).toBe('lobby')
+  })
+
   it('plays a separate-phone turn, challenge, elimination, and rematch', () => {
     const game = new BurndownController()
     game.enter('phones')

@@ -83,6 +83,11 @@ for (const id of requiredIds) {
 if (!all.includes('openLink: pocketshot-party://join/')) {
   failures.push('Party cold deep-link journey is missing')
 }
+for (const product of ['burndown', 'blankslate']) {
+  if (!all.includes(`openLink: pocketshot-${product}://join/`)) {
+    failures.push(`${product} cold deep-link journey is missing`)
+  }
+}
 if (!partyJoinRoute.includes('initialJoinCode')) {
   failures.push('Party shell does not route cold join links into the application')
 }

@@ -145,6 +145,16 @@ export class BlankSlateController {
     this.emit()
   }
 
+  join(code: string): boolean {
+    if (code.trim().toLocaleUpperCase() !== 'SLATE-42') {
+      this.value.notice = 'That Blank Slate invite is invalid or expired'
+      this.emit()
+      return false
+    }
+    this.enter()
+    return true
+  }
+
   startRound(): void {
     this.value.round += 1
     this.value.phase = 'write'

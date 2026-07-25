@@ -1,0 +1,14 @@
+appId: com.lastshotlabs.pocketshot.blankslate
+name: Blank Slate cold invite link
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- openLink: pocketshot-blankslate://join/SLATE-42
+- tapOn:
+    text: Open
+    optional: true
+- tapOn:
+    text: Wait
+    optional: true
+- assertVisible: Lobby

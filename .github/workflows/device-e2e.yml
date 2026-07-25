@@ -29,9 +29,9 @@ jobs:
           - shell: community
             flow: .maestro/community-critical.yaml
           - shell: burndown
-            flow: .maestro/burndown-critical.yaml
+            flow: .maestro/burndown-critical.yaml .maestro/burndown-deep-link.yaml
           - shell: blankslate
-            flow: .maestro/blankslate-critical.yaml
+            flow: .maestro/blankslate-critical.yaml .maestro/blankslate-deep-link.yaml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -108,9 +108,9 @@ jobs:
           - shell: community
             flow: .maestro/community-critical.yaml
           - shell: burndown
-            flow: .maestro/burndown-critical.yaml
+            flow: .maestro/burndown-critical.yaml .maestro/burndown-deep-link.yaml
           - shell: blankslate
-            flow: .maestro/blankslate-critical.yaml
+            flow: .maestro/blankslate-critical.yaml .maestro/blankslate-deep-link.yaml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

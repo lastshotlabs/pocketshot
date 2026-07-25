@@ -1,0 +1,14 @@
+appId: com.lastshotlabs.pocketshot.burndown
+name: Burndown cold invite link
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- openLink: pocketshot-burndown://join/BURN-42
+- tapOn:
+    text: Open
+    optional: true
+- tapOn:
+    text: Wait
+    optional: true
+- assertVisible: Lobby.*

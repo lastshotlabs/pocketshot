@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BlankSlateController } from '../../examples/blankslate/lib/blankslate'
+import { normalizeBlankSlateSystemPath } from '../../examples/blankslate/lib/link'
 
 function submittedRound(game: BlankSlateController) {
   game.enter()
@@ -10,6 +11,17 @@ function submittedRound(game: BlankSlateController) {
 }
 
 describe('Blank Slate native acceptance model', () => {
+  it('normalizes cold native joins and rejects expired invites', () => {
+    expect(normalizeBlankSlateSystemPath('pocketshot-blankslate://join/SLATE-42')).toBe(
+      '/join/SLATE-42',
+    )
+    expect(normalizeBlankSlateSystemPath('pocketshot-blankslate://join/%E0%A4%A')).toBe('/')
+    const game = new BlankSlateController()
+    expect(game.join('expired')).toBe(false)
+    expect(game.join('slate-42')).toBe(true)
+    expect(game.state.phase).toBe('lobby')
+  })
+
   it('redacts every other private word before reveal', () => {
     const game = new BlankSlateController()
     submittedRound(game)
