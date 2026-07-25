@@ -46,4 +46,5 @@ jobs:
       - run: npm run check:security
       - run: npm run check:accessibility
       - run: npm run check:performance
+      - run: npm run check:maestro
       - run: npm audit --omit=dev --audit-level=high

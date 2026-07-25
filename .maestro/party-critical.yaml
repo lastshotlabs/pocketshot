@@ -1,0 +1,27 @@
+appId: com.lastshotlabs.pocketshot.party
+name: Party match, reconnect, rematch, and deck
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: guest-entry
+- assertVisible: Lobby
+- tapOn:
+    id: ready
+- tapOn:
+    id: simulate-reconnect
+- assertVisible:
+    id: connection-state
+- tapOn:
+    id: start-round
+- assertVisible: Name this song
+- tapOn:
+    id: submit-answer
+- assertVisible: 3 points
+- tapOn:
+    id: rematch
+- tapOn:
+    id: edit-deck
+- tapOn:
+    id: import-track
+- assertVisible: 1 playable.*

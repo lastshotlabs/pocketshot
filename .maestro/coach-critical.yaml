@@ -1,0 +1,32 @@
+appId: com.lastshotlabs.pocketshot.coach
+name: Coach conversation, metrics, workout, billing, and privacy
+---
+- launchApp:
+    clearState: true
+- assertVisible: PocketShot Coach
+- tapOn:
+    id: ask-coach
+- extendedWaitUntil:
+    visible:
+      id: confirm-action
+    timeout: 10000
+- tapOn:
+    id: confirm-action
+- tapOn:
+    id: log-weight
+- tapOn:
+    id: set-goal
+- assertVisible: Goal progress.*
+- tapOn:
+    id: start-workout
+- tapOn:
+    id: log-set
+- tapOn:
+    id: complete-workout
+- assertVisible: 'Workout: complete'
+- tapOn:
+    id: restore-pro
+- assertVisible: 'Access: active'
+- tapOn:
+    id: request-export
+- assertVisible: 'Export: ready'

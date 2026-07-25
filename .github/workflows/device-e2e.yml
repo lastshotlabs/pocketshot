@@ -1,0 +1,78 @@
+name: Device E2E
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: device-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-maestro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shell: party
+            flow: .maestro/party-critical.yaml .maestro/party-deep-link.yaml
+          - shell: coach
+            flow: .maestro/coach-critical.yaml
+          - shell: community
+            flow: .maestro/community-critical.yaml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@lastshotlabs'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - run: npm ci --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install current package in reference shell
+        run: |
+          npm run build
+          archive=$(npm pack --pack-destination "$RUNNER_TEMP" --silent)
+          npm ci --prefix "examples/${{ matrix.shell }}" --legacy-peer-deps
+          npm install --prefix "examples/${{ matrix.shell }}" "$RUNNER_TEMP/$archive" \
+            --no-save --package-lock=false --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate and compile Android app
+        working-directory: examples/${{ matrix.shell }}
+        run: |
+          npx expo prebuild --platform android --clean --no-install
+          ./android/gradlew -p android assembleDebug --no-daemon
+      - name: Install Maestro CLI
+        run: curl -fsSL "https://get.maestro.mobile.dev" | bash
+      - name: Run critical journeys
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r "examples/${{ matrix.shell }}/android/app/build/outputs/apk/debug/app-debug.apk"
+            "$HOME/.maestro/bin/maestro" test ${{ matrix.flow }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: maestro-${{ matrix.shell }}-failure
+          path: ~/.maestro/tests
+          if-no-files-found: ignore
