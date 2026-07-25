@@ -3,6 +3,7 @@ import {
   LocalProductionServiceHarness,
   ProductionServiceRegistry,
   ReleaseControlPlane,
+  createProductServiceRegistry,
   type ProductReleaseManifest,
 } from '../../src/release'
 
@@ -89,5 +90,27 @@ describe('production release services', () => {
     expect(harness.snapshot()).toHaveLength(1)
     harness.clear()
     expect(harness.snapshot()).toEqual([])
+  })
+
+  it('defines code-complete service and entitlement catalogs for all five products', () => {
+    const environment = {
+      apiUrl: 'https://api.example.test',
+      privacyUrl: 'https://example.test/privacy',
+      termsUrl: 'https://example.test/terms',
+      supportUrl: 'https://example.test/support',
+      deletionUrl: 'https://example.test/delete',
+      associatedDomains: ['applinks:example.test'],
+    }
+    for (const product of ['hitshot', 'aicoach', 'sgforum', 'burndown', 'blankslate'] as const) {
+      const registry = createProductServiceRegistry(product, '1.0.0', 1, environment)
+      expect(registry.readiness()).toMatchObject({ codeReady: true, externalReady: false })
+      expect(registry.get('billing')?.products?.length).toBeGreaterThan(0)
+    }
+    expect(
+      createProductServiceRegistry('hitshot', '1.0.0', 1, environment).get('spotify'),
+    ).toMatchObject({ enabled: true })
+    expect(
+      createProductServiceRegistry('blankslate', '1.0.0', 1, environment).get('spotify'),
+    ).toBeNull()
   })
 })

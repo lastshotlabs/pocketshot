@@ -50,6 +50,7 @@ const credentialServices = new Set<ProductionService>([
   'apple_oauth',
   'google_oauth',
   'spotify',
+  'audius',
   'apns',
   'fcm',
   'billing',
@@ -240,6 +241,193 @@ export class LocalProductionServiceHarness {
   clear(): void {
     this.events = []
   }
+}
+
+export interface ProductEnvironment {
+  apiUrl: string
+  webSocketUrl?: string
+  privacyUrl: string
+  termsUrl: string
+  supportUrl: string
+  deletionUrl: string
+  associatedDomains: string[]
+  appleClientId?: string
+  googleClientId?: string
+  spotifyClientId?: string
+  audiusClientId?: string
+  analyticsEndpoint?: string
+  crashEndpoint?: string
+  featureFlagEndpoint?: string
+}
+
+interface ProductCatalogEntry {
+  bundleIdentifier: string
+  androidPackage: string
+  requiredServices: ProductionService[]
+  products: string[]
+}
+
+const productCatalog: Record<ProductId, ProductCatalogEntry> = {
+  hitshot: {
+    bundleIdentifier: 'com.lastshotlabs.pocketshot.party',
+    androidPackage: 'com.lastshotlabs.pocketshot.party',
+    requiredServices: [
+      'api',
+      'auth',
+      'apple_oauth',
+      'google_oauth',
+      'spotify',
+      'audius',
+      'apns',
+      'fcm',
+      'billing',
+      'analytics',
+      'crash_reporting',
+      'feature_flags',
+    ],
+    products: ['hitshot.pro.monthly', 'hitshot.pro.yearly'],
+  },
+  aicoach: {
+    bundleIdentifier: 'com.lastshotlabs.pocketshot.coach',
+    androidPackage: 'com.lastshotlabs.pocketshot.coach',
+    requiredServices: [
+      'api',
+      'auth',
+      'apple_oauth',
+      'google_oauth',
+      'apns',
+      'fcm',
+      'billing',
+      'analytics',
+      'crash_reporting',
+      'feature_flags',
+    ],
+    products: ['aicoach.pro.monthly', 'aicoach.pro.yearly'],
+  },
+  sgforum: {
+    bundleIdentifier: 'com.lastshotlabs.pocketshot.community',
+    androidPackage: 'com.lastshotlabs.pocketshot.community',
+    requiredServices: [
+      'api',
+      'auth',
+      'apple_oauth',
+      'google_oauth',
+      'apns',
+      'fcm',
+      'billing',
+      'analytics',
+      'crash_reporting',
+      'feature_flags',
+    ],
+    products: ['sgforum.supporter.monthly'],
+  },
+  burndown: {
+    bundleIdentifier: 'com.lastshotlabs.pocketshot.burndown',
+    androidPackage: 'com.lastshotlabs.pocketshot.burndown',
+    requiredServices: [
+      'api',
+      'auth',
+      'apple_oauth',
+      'google_oauth',
+      'apns',
+      'fcm',
+      'billing',
+      'analytics',
+      'crash_reporting',
+      'feature_flags',
+    ],
+    products: ['burndown.plus.lifetime'],
+  },
+  blankslate: {
+    bundleIdentifier: 'com.lastshotlabs.pocketshot.blankslate',
+    androidPackage: 'com.lastshotlabs.pocketshot.blankslate',
+    requiredServices: [
+      'api',
+      'auth',
+      'apple_oauth',
+      'google_oauth',
+      'apns',
+      'fcm',
+      'billing',
+      'analytics',
+      'crash_reporting',
+      'feature_flags',
+    ],
+    products: ['blankslate.plus.lifetime'],
+  },
+}
+
+export function createProductServiceRegistry(
+  product: ProductId,
+  version: string,
+  build: number,
+  environment: ProductEnvironment,
+): ProductionServiceRegistry {
+  const catalog = productCatalog[product]
+  const registry = new ProductionServiceRegistry({
+    product,
+    version,
+    build,
+    bundleIdentifier: catalog.bundleIdentifier,
+    androidPackage: catalog.androidPackage,
+    apiUrl: environment.apiUrl,
+    webSocketUrl: environment.webSocketUrl,
+    privacyUrl: environment.privacyUrl,
+    termsUrl: environment.termsUrl,
+    supportUrl: environment.supportUrl,
+    deletionUrl: environment.deletionUrl,
+    associatedDomains: environment.associatedDomains,
+    requiredServices: catalog.requiredServices,
+  })
+  registry.configure({ service: 'api', enabled: true, endpoint: environment.apiUrl })
+  registry.configure({
+    service: 'auth',
+    enabled: true,
+    endpoint: new URL('/auth', environment.apiUrl).toString(),
+  })
+  registry.configure({
+    service: 'apple_oauth',
+    enabled: true,
+    publicClientId: environment.appleClientId,
+  })
+  registry.configure({
+    service: 'google_oauth',
+    enabled: true,
+    publicClientId: environment.googleClientId,
+  })
+  registry.configure({ service: 'apns', enabled: true })
+  registry.configure({ service: 'fcm', enabled: true })
+  registry.configure({ service: 'billing', enabled: true, products: catalog.products })
+  registry.configure({
+    service: 'analytics',
+    enabled: true,
+    endpoint: environment.analyticsEndpoint,
+  })
+  registry.configure({
+    service: 'crash_reporting',
+    enabled: true,
+    endpoint: environment.crashEndpoint,
+  })
+  registry.configure({
+    service: 'feature_flags',
+    enabled: true,
+    endpoint: environment.featureFlagEndpoint,
+  })
+  if (catalog.requiredServices.includes('spotify')) {
+    registry.configure({
+      service: 'spotify',
+      enabled: true,
+      publicClientId: environment.spotifyClientId,
+    })
+  }
+  if (catalog.requiredServices.includes('audius')) {
+    registry.configure({
+      service: 'audius',
+      enabled: true,
+      publicClientId: environment.audiusClientId,
+    })
+  }
+  return registry
 }
 
 function validateManifest(manifest: ProductReleaseManifest): void {
