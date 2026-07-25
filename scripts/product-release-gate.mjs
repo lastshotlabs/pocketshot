@@ -71,6 +71,21 @@ for (const product of products) {
   if (!app.android?.intentFilters?.some((filter) => filter.autoVerify)) {
     failures.push(`${product} has no verified Android App Link`)
   }
+  const productSources = await Promise.all(
+    (product === 'hitshot'
+      ? ['lib/party.ts']
+      : product === 'aicoach'
+        ? ['lib/coach.ts']
+        : product === 'sgforum'
+          ? ['lib/community.ts']
+          : product === 'burndown'
+            ? ['lib/burndown.ts']
+            : ['lib/blankslate.ts']
+    ).map((path) => readFile(new URL(`../products/${product}/${path}`, import.meta.url), 'utf8')),
+  )
+  if (!productSources.some((source) => source.includes(`${app.scheme}://oauth/`))) {
+    failures.push(`${product} OAuth return does not use its registered production scheme`)
+  }
   const metadata = JSON.parse(
     await readFile(new URL(`../products/${product}/store/metadata.json`, import.meta.url), 'utf8'),
   )

@@ -230,11 +230,7 @@ export class BurndownController {
   }
 
   async signInOAuth(provider: 'apple' | 'google', mode: BurndownMode = 'phones'): Promise<void> {
-    await this.account.completeOAuth(
-      provider,
-      'demo-code',
-      `pocketshot-burndown://oauth/${provider}`,
-    )
+    await this.account.completeOAuth(provider, 'demo-code', `burndown://oauth/${provider}`)
     this.value.identityStatus = 'account'
     this.value.identityEmail = this.account.snapshot.user?.email ?? null
     this.enter(mode)

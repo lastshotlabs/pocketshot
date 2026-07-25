@@ -348,11 +348,7 @@ export class CommunityDemoController {
   }
 
   async signInOAuth(provider: 'apple' | 'google'): Promise<void> {
-    await this.account.completeOAuth(
-      provider,
-      'demo-code',
-      `pocketshot-community://oauth/${provider}`,
-    )
+    await this.account.completeOAuth(provider, 'demo-code', `sgforum://oauth/${provider}`)
     this.syncAccount()
     this.completeOnboarding('alex')
   }

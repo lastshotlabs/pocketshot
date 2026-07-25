@@ -258,11 +258,7 @@ export class BlankSlateController {
   }
 
   async signInOAuth(provider: 'apple' | 'google'): Promise<void> {
-    await this.account.completeOAuth(
-      provider,
-      'demo-code',
-      `pocketshot-blankslate://oauth/${provider}`,
-    )
+    await this.account.completeOAuth(provider, 'demo-code', `blankslate://oauth/${provider}`)
     this.value.identityStatus = 'account'
     this.value.identityEmail = this.account.snapshot.user?.email ?? null
     this.enter()

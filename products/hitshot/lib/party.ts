@@ -371,7 +371,7 @@ export class PartyDemoController {
   }
 
   async completeAccountOAuth(provider: 'apple' | 'google'): Promise<void> {
-    await this.account.completeOAuth(provider, 'demo-code', `pocketshot-party://oauth/${provider}`)
+    await this.account.completeOAuth(provider, 'demo-code', `hitshot://oauth/${provider}`)
     this.syncAccount()
     this.guest(this.account.snapshot.user?.displayName ?? 'Account player')
   }

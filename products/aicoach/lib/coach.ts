@@ -197,11 +197,7 @@ export class CoachDemoController {
 
   async completeDemoOAuth(provider: 'apple' | 'google'): Promise<void> {
     try {
-      await this.account.completeOAuth(
-        provider,
-        'demo-code',
-        `pocketshot-coach://oauth/${provider}`,
-      )
+      await this.account.completeOAuth(provider, 'demo-code', `aicoach://oauth/${provider}`)
     } finally {
       this.syncAccount()
     }

@@ -47,7 +47,7 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
         <Panel title="Join a party">
           <Text style={styles.code}>Code {party.joinCode}</Text>
           <View accessibilityLabel={`QR join code ${party.joinCode}`} style={styles.qr}>
-            <QRCode value={`pocketshot-party://join/${party.joinCode}`} size={112} />
+            <QRCode value={`hitshot://join/${party.joinCode}`} size={112} />
           </View>
           <Action
             testID="guest-entry"
