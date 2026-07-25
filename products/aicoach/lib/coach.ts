@@ -15,6 +15,8 @@ import {
   GoalController,
   MetricLogController,
   WorkoutController,
+  type WorkoutProgram,
+  type WorkoutSession,
 } from '@lastshotlabs/pocketshot/coach'
 import {
   createCoachConversation,
@@ -50,6 +52,24 @@ export interface CoachState {
   activeProgramName: string | null
   restStatus: 'idle' | 'running' | 'paused' | 'complete'
   restRemainingMs: number
+  lifecycle: 'active' | 'background' | 'suspended'
+  connection: 'online' | 'offline' | 'reconnecting'
+}
+
+export interface CoachSnapshot {
+  state: Pick<
+    CoachState,
+    | 'massUnit'
+    | 'distanceUnit'
+    | 'timeZone'
+    | 'activeProgramName'
+    | 'workoutStatus'
+    | 'workoutSync'
+    | 'restStatus'
+    | 'restRemainingMs'
+  >
+  programs: WorkoutProgram[]
+  session: WorkoutSession | null
 }
 
 export class CoachDemoController {
@@ -80,6 +100,8 @@ export class CoachDemoController {
     activeProgramName: null,
     restStatus: 'idle',
     restRemainingMs: 0,
+    lifecycle: 'active',
+    connection: 'online',
   }
   private readonly listeners = new Set<(state: CoachState) => void>()
 
@@ -142,8 +164,15 @@ export class CoachDemoController {
       },
     ],
   )
-  constructor(capture: MediaCaptureAdapter = defaultCoachCapture()) {
+  constructor(capture: MediaCaptureAdapter = defaultCoachCapture(), snapshot?: CoachSnapshot) {
     this.media = createCoachMedia(capture)
+    if (snapshot) {
+      Object.assign(this.stateValue, structuredClone(snapshot.state))
+      for (const program of snapshot.programs) this.workouts.saveProgram(program)
+      if (snapshot.session) this.workouts.restore(snapshot.session)
+      this.stateValue.workoutStatus = snapshot.session?.status ?? snapshot.state.workoutStatus
+      this.syncWorkout()
+    }
   }
 
   private facts: AiMemoryFact[] = []
@@ -157,6 +186,44 @@ export class CoachDemoController {
     this.listeners.add(listener)
     listener(this.state)
     return () => this.listeners.delete(listener)
+  }
+
+  exportSnapshot(): CoachSnapshot {
+    const { programs, session } = this.workouts.snapshot
+    return {
+      state: {
+        massUnit: this.stateValue.massUnit,
+        distanceUnit: this.stateValue.distanceUnit,
+        timeZone: this.stateValue.timeZone,
+        activeProgramName: this.stateValue.activeProgramName,
+        workoutStatus: this.stateValue.workoutStatus,
+        workoutSync: this.stateValue.workoutSync,
+        restStatus: this.stateValue.restStatus,
+        restRemainingMs: this.stateValue.restRemainingMs,
+      },
+      programs,
+      session,
+    }
+  }
+
+  setLifecycle(lifecycle: CoachState['lifecycle']): void {
+    this.stateValue.lifecycle = lifecycle
+    if (lifecycle !== 'active') {
+      this.stateValue.connection = 'offline'
+      this.emit()
+      return
+    }
+    this.stateValue.connection = 'reconnecting'
+    if (this.workouts.snapshot.session?.status === 'active') {
+      const completed = this.workouts.reconcileRest()
+      this.stateValue.restRemainingMs = this.workouts.restRemainingMs()
+      if (completed) this.stateValue.restStatus = 'complete'
+    }
+    this.emit()
+    queueMicrotask(() => {
+      this.stateValue.connection = 'online'
+      this.emit()
+    })
   }
 
   async initialize(): Promise<void> {

@@ -194,22 +194,37 @@ describe('Coach clean-room acceptance model', () => {
     ).toThrow('Time zone')
   })
 
-  it('builds and completes a restart-safe workout session', () => {
+  it('builds, restores, and completes a restart-safe workout session', async () => {
     const coach = new CoachDemoController()
     coach.startWorkout()
     coach.logWorkoutSet()
     coach.logWorkoutSet()
     expect(coach.workouts.snapshot.session?.sets).toHaveLength(1)
-    coach.completeWorkout()
-    expect(coach.state.workoutStatus).toBe('complete')
-    expect(coach.workouts.snapshot.session?.status).toBe('complete')
-    expect(coach.state.workoutSync).toBe('pending')
-    coach.simulateWorkoutSyncConflict()
-    expect(coach.state.workoutSync).toBe('conflict')
-    coach.resolveWorkoutConflict('keep-local')
-    expect(coach.workouts.snapshot.session?.sets).toHaveLength(1)
-    coach.acknowledgeWorkoutSync()
-    expect(coach.state.workoutSync).toBe('synced')
+    coach.updatePreferences({ massUnit: 'lb', distanceUnit: 'mi', timeZone: 'America/New_York' })
+    coach.startRest(60_000)
+    coach.setLifecycle('background')
+    const restored = new CoachDemoController(undefined, coach.exportSnapshot())
+    expect(restored.state).toMatchObject({
+      workoutStatus: 'active',
+      massUnit: 'lb',
+      distanceUnit: 'mi',
+      timeZone: 'America/New_York',
+    })
+    expect(restored.workouts.snapshot.session?.sets).toHaveLength(1)
+    restored.setLifecycle('active')
+    expect(restored.state.connection).toBe('reconnecting')
+    await Promise.resolve()
+    expect(restored.state.connection).toBe('online')
+    restored.completeWorkout()
+    expect(restored.state.workoutStatus).toBe('complete')
+    expect(restored.workouts.snapshot.session?.status).toBe('complete')
+    expect(restored.state.workoutSync).toBe('pending')
+    restored.simulateWorkoutSyncConflict()
+    expect(restored.state.workoutSync).toBe('conflict')
+    restored.resolveWorkoutConflict('keep-local')
+    expect(restored.workouts.snapshot.session?.sets).toHaveLength(1)
+    restored.acknowledgeWorkoutSync()
+    expect(restored.state.workoutSync).toBe('synced')
   })
 
   it('supports purchase and restore entitlement paths', async () => {

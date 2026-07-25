@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { AppState, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import * as ImagePicker from 'expo-image-picker'
 import * as Linking from 'expo-linking'
@@ -23,6 +23,15 @@ export default function CoachShell() {
     void coach.initialize()
     return unsubscribe
   }, [coach])
+  useEffect(
+    () =>
+      AppState.addEventListener('change', (next) =>
+        coach.setLifecycle(
+          next === 'active' ? 'active' : next === 'background' ? 'background' : 'suspended',
+        ),
+      ).remove,
+    [coach],
+  )
 
   const assistantMessages =
     state.conversation?.messages.filter((message) => message.role === 'assistant') ?? []
@@ -33,6 +42,9 @@ export default function CoachShell() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.title}>
           PocketShot Coach
+        </Text>
+        <Text testID="coach-connection" accessibilityLiveRegion="polite" style={styles.copy}>
+          {state.connection} · {state.lifecycle}
         </Text>
         <Card title="Account">
           <Text style={styles.copy}>
