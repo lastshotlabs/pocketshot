@@ -23,6 +23,11 @@ import {
   type PasskeyTransport,
   type TokenStorage,
 } from '@lastshotlabs/pocketshot/auth'
+import {
+  OfflineQueue,
+  createMemoryOfflineQueueStorage,
+  type QueuedOperation,
+} from '@lastshotlabs/pocketshot/offline'
 
 export type BlankSlatePhase =
   | 'entry'
@@ -68,6 +73,11 @@ export interface BlankSlateState {
   passkeyCount: number
   roomMuted: boolean
   deliveredPushes: string[]
+  profile: { displayName: string; avatarUrl: string | null } | null
+  preset: 'quickplay' | 'classic' | 'marathon' | 'custom'
+  selectedDeckId: string
+  hostParticipates: boolean
+  writeMs: number
 }
 
 type BlankSlateRules = {
@@ -75,6 +85,8 @@ type BlankSlateRules = {
   writeMs: number
   winMode: 'target-score' | 'fixed-rounds'
   fixedRounds: number
+  hostParticipates: boolean
+  selectedDeckId: string
 }
 
 export interface BlankSlateSnapshot {
@@ -87,6 +99,7 @@ export interface BlankSlateSnapshot {
   dashboard: GameDashboardSnapshot
   activity?: PartyActivitySnapshot
   currentGameId: string
+  offlineCommands?: QueuedOperation[]
 }
 
 export class BlankSlateController {
@@ -99,6 +112,8 @@ export class BlankSlateController {
   private currentGameId: string
   private readonly activity: PartyActivityController
   private readonly cues = new PersonalCuePolicy()
+  private readonly offline: OfflineQueue
+  private offlineCommands: QueuedOperation[]
   private readonly initialState: BlankSlateState = {
     phase: 'entry',
     prompt: 'Birthday ___',
@@ -125,6 +140,11 @@ export class BlankSlateController {
     passkeyCount: 0,
     roomMuted: false,
     deliveredPushes: [],
+    profile: null,
+    preset: 'quickplay',
+    selectedDeckId: 'starter',
+    hostParticipates: true,
+    writeMs: 30_000,
   }
   private readonly listeners = new Set<(state: BlankSlateState) => void>()
   readonly prompts = new ContentLibraryController<{ cue: string }>(validateCue, (item) => item.cue)
@@ -135,7 +155,14 @@ export class BlankSlateController {
   constructor(snapshot?: BlankSlateSnapshot) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
     this.session = new PartySessionController(
-      { targetScore: 12, writeMs: 30_000, winMode: 'target-score', fixedRounds: 5 },
+      {
+        targetScore: 12,
+        writeMs: 30_000,
+        winMode: 'target-score',
+        fixedRounds: 5,
+        hostParticipates: true,
+        selectedDeckId: 'starter',
+      },
       snapshot?.session,
     )
     this.submissions = new PrivateSubmissionController(5_000, Date.now, snapshot?.submissions)
@@ -152,6 +179,11 @@ export class BlankSlateController {
     this.currentGameId = snapshot?.currentGameId ?? 'blankslate-game-1'
     this.games = new GameDashboardController(snapshot?.dashboard)
     this.activity = new PartyActivityController(snapshot?.activity)
+    this.offlineCommands = structuredClone(snapshot?.offlineCommands ?? [])
+    this.offline = new OfflineQueue({
+      storage: createMemoryOfflineQueueStorage(this.offlineCommands),
+      createId: () => `blankslate-offline-${this.offlineCommands.length + 1}`,
+    })
     if (!snapshot) {
       this.value.players.forEach((player, seat) =>
         this.session.join({
@@ -194,6 +226,7 @@ export class BlankSlateController {
       dashboard: this.games.snapshot,
       currentGameId: this.currentGameId,
       activity: this.activity.snapshot,
+      offlineCommands: structuredClone(this.offlineCommands),
     }
   }
 
@@ -239,6 +272,81 @@ export class BlankSlateController {
     if (!credential) return
     await this.passkeys.remove(credential.credentialId)
     this.value.passkeyCount = this.passkeys.snapshot.credentials.length
+    this.emit()
+  }
+
+  updateProfile(displayName: string, avatarUrl: string | null): void {
+    if (!displayName.trim()) throw new Error('Display name is required')
+    this.value.profile = { displayName: displayName.trim(), avatarUrl }
+    const player = this.value.players.find((candidate) => candidate.id === 'p1')
+    if (player) player.name = displayName.trim()
+    this.emit()
+  }
+
+  applyPreset(preset: 'quickplay' | 'classic' | 'marathon'): void {
+    const values = {
+      quickplay: {
+        targetScore: 8,
+        fixedRounds: 3,
+        winMode: 'target-score' as const,
+        writeMs: 20_000,
+      },
+      classic: {
+        targetScore: 12,
+        fixedRounds: 5,
+        winMode: 'target-score' as const,
+        writeMs: 30_000,
+      },
+      marathon: {
+        targetScore: 20,
+        fixedRounds: 10,
+        winMode: 'fixed-rounds' as const,
+        writeMs: 45_000,
+      },
+    }[preset]
+    this.configureSetup({ ...values, preset })
+  }
+
+  configureSetup(input: {
+    preset?: BlankSlateState['preset']
+    targetScore?: number
+    fixedRounds?: number
+    winMode?: BlankSlateState['winMode']
+    writeMs?: number
+    hostParticipates?: boolean
+    selectedDeckId?: string
+  }): void {
+    if (this.value.phase !== 'entry' && this.value.phase !== 'lobby') {
+      throw new Error('Setup changes must be staged after play begins')
+    }
+    const next = {
+      targetScore: input.targetScore ?? this.value.targetScore,
+      fixedRounds: input.fixedRounds ?? this.value.fixedRounds,
+      winMode: input.winMode ?? this.value.winMode,
+      writeMs: input.writeMs ?? this.value.writeMs,
+      hostParticipates: input.hostParticipates ?? this.value.hostParticipates,
+      selectedDeckId: input.selectedDeckId ?? this.value.selectedDeckId,
+    }
+    if (!Number.isInteger(next.targetScore) || next.targetScore < 1 || next.targetScore > 100) {
+      throw new Error('Target score must be between 1 and 100')
+    }
+    if (!Number.isInteger(next.fixedRounds) || next.fixedRounds < 1 || next.fixedRounds > 50) {
+      throw new Error('Fixed rounds must be between 1 and 50')
+    }
+    if (next.writeMs < 5_000 || next.writeMs > 120_000) {
+      throw new Error('Write timer must be between 5 and 120 seconds')
+    }
+    if (
+      !this.prompts.browse({ scope: 'all' }).items.some((deck) => deck.id === next.selectedDeckId)
+    ) {
+      throw new Error(`Unknown prompt deck: ${next.selectedDeckId}`)
+    }
+    this.session.stageRules(this.session.snapshot.hostId ?? 'p1', next)
+    this.value = {
+      ...this.value,
+      ...next,
+      preset: input.preset ?? 'custom',
+    }
     this.emit()
   }
 
@@ -409,6 +517,69 @@ export class BlankSlateController {
       this.emit()
     }
     return accepted
+  }
+
+  async queueAnswer(playerId: string, answer: string, key: string): Promise<void> {
+    await this.offline.enqueue({
+      method: 'POST',
+      path: '/blankslate/answers',
+      idempotencyKey: key,
+      body: { playerId, answer, key },
+      optimisticContext: { round: this.value.round, playerId },
+    })
+    await this.syncOfflineCommands()
+    this.value.notice = 'Answer saved offline'
+    this.emit()
+  }
+
+  async queueMergeVote(
+    playerId: string,
+    groupId: string,
+    approved: boolean,
+    key: string,
+  ): Promise<void> {
+    await this.offline.enqueue({
+      method: 'POST',
+      path: '/blankslate/merge-votes',
+      idempotencyKey: key,
+      body: { playerId, groupId, approved },
+      optimisticContext: { round: this.value.round, playerId },
+    })
+    await this.syncOfflineCommands()
+    this.value.notice = 'Merge vote saved offline'
+    this.emit()
+  }
+
+  async replayOfflineCommands(): Promise<number> {
+    let replayed = 0
+    for (const operation of await this.offline.getReady()) {
+      const body = operation.body as Record<string, unknown>
+      if (operation.path === '/blankslate/answers') {
+        const accepted = this.submit(
+          String(body.playerId),
+          String(body.answer),
+          String(body.key ?? operation.idempotencyKey),
+        )
+        if (!accepted && !this.value.submittedIds.includes(String(body.playerId))) continue
+      } else if (operation.path === '/blankslate/merge-votes') {
+        this.vote(String(body.playerId), String(body.groupId), Boolean(body.approved))
+      } else {
+        await this.offline.moveToDeadLetter(operation.id, 'Unsupported Blank Slate command')
+        continue
+      }
+      await this.offline.dequeue(operation.id)
+      replayed += 1
+    }
+    await this.syncOfflineCommands()
+    this.value.notice = replayed
+      ? `${replayed} offline command${replayed === 1 ? '' : 's'} synced`
+      : null
+    this.emit()
+    return replayed
+  }
+
+  get pendingOfflineCommandCount(): number {
+    return this.offlineCommands.filter((command) => command.status !== 'dead_letter').length
   }
 
   privateProjection(viewerId: string) {
@@ -717,6 +888,13 @@ export class BlankSlateController {
       text,
       createdAt: Date.now(),
     })
+  }
+
+  private async syncOfflineCommands(): Promise<void> {
+    this.offlineCommands = [
+      ...(await this.offline.getAll()),
+      ...(await this.offline.getDeadLetters()),
+    ]
   }
 }
 

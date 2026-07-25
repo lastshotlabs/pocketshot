@@ -11,6 +11,68 @@ function submittedRound(game: BlankSlateController) {
 }
 
 describe('Blank Slate native acceptance model', () => {
+  it('composes player profile, quickplay, and validated custom setup', () => {
+    const game = new BlankSlateController()
+    game.updateProfile('Alex Rivera', 'https://cdn.example.test/alex.jpg')
+    game.applyPreset('marathon')
+    expect(game.state).toMatchObject({
+      profile: {
+        displayName: 'Alex Rivera',
+        avatarUrl: 'https://cdn.example.test/alex.jpg',
+      },
+      preset: 'marathon',
+      winMode: 'fixed-rounds',
+      fixedRounds: 10,
+      writeMs: 45_000,
+      hostParticipates: true,
+      selectedDeckId: 'starter',
+    })
+    game.configureSetup({
+      targetScore: 18,
+      winMode: 'target-score',
+      writeMs: 35_000,
+      hostParticipates: false,
+    })
+    expect(game.state).toMatchObject({
+      preset: 'custom',
+      targetScore: 18,
+      winMode: 'target-score',
+      writeMs: 35_000,
+      hostParticipates: false,
+    })
+    expect(() => game.configureSetup({ writeMs: 1_000 })).toThrow('Write timer')
+    expect(() => game.configureSetup({ selectedDeckId: 'missing' })).toThrow('Unknown prompt deck')
+  })
+
+  it('durably replays offline answers and merge votes once after process restoration', async () => {
+    const writing = new BlankSlateController()
+    writing.enter()
+    writing.startRound()
+    await writing.queueAnswer('p1', 'cake', 'offline-answer')
+    await writing.queueAnswer('p1', 'cake', 'offline-answer')
+    expect(writing.pendingOfflineCommandCount).toBe(1)
+    const restoredWriting = new BlankSlateController(writing.exportSnapshot())
+    expect(restoredWriting.pendingOfflineCommandCount).toBe(1)
+    expect(await restoredWriting.replayOfflineCommands()).toBe(1)
+    expect(restoredWriting.state.submittedIds).toEqual(['p1'])
+    expect(restoredWriting.pendingOfflineCommandCount).toBe(0)
+    expect(await restoredWriting.replayOfflineCommands()).toBe(0)
+
+    const voting = new BlankSlateController()
+    voting.enter()
+    voting.startRound()
+    voting.submit('p1', 'cake', 'one')
+    voting.submit('p2', 'cake', 'two')
+    voting.submit('p3', 'party', 'three')
+    voting.reveal()
+    voting.openMergeVote()
+    const groupId = voting.state.groups[0].id
+    await voting.queueMergeVote('p1', groupId, true, 'offline-vote')
+    const restoredVoting = new BlankSlateController(voting.exportSnapshot())
+    expect(await restoredVoting.replayOfflineCommands()).toBe(1)
+    expect(restoredVoting.closeVote().get(groupId)).toBe(1)
+  })
+
   it('composes Apple/Google OAuth and passkey entry without native-module coupling', async () => {
     const account = new BlankSlateController()
     await account.signInOAuth('apple')

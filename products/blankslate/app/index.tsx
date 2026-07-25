@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import QRCode from 'react-native-qrcode-svg'
 import { BlankSlateController, type BlankSlateState } from '../lib/blankslate'
 
 type AppSection = 'Play' | 'Games' | 'Library' | 'Build' | 'You'
@@ -34,6 +35,29 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
         )}
         {game.phase === 'entry' && section === 'Play' && (
           <Card title="Match your friends">
+            <View accessibilityLabel="QR join code SLATE-42" style={styles.qr}>
+              <QRCode value="blankslate://join/SLATE-42" size={112} />
+            </View>
+            <Text style={styles.meta}>
+              {game.preset} · {game.winMode} · {Math.round(game.writeMs / 1000)} second timer
+            </Text>
+            <Action
+              testID="quickplay"
+              label="Use quickplay setup"
+              onPress={() => controller.applyPreset('quickplay')}
+            />
+            <Action
+              testID="custom-setup"
+              label="Configure custom fixed-round match"
+              onPress={() =>
+                controller.configureSetup({
+                  fixedRounds: 7,
+                  winMode: 'fixed-rounds',
+                  writeMs: 40_000,
+                  hostParticipates: false,
+                })
+              }
+            />
             <Action
               testID="guest-entry"
               label="Continue as guest"
@@ -110,9 +134,19 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
         {game.phase === 'entry' && section === 'You' && (
           <Card title="You">
             <Text style={styles.copy}>
-              Alex · {game.identityStatus}
+              {game.profile?.displayName ?? 'Alex'} · {game.identityStatus}
               {game.identityEmail ? ` · ${game.identityEmail}` : ''}
             </Text>
+            <Text style={styles.meta}>
+              {game.profile?.avatarUrl ? 'Profile image set' : 'No profile image'}
+            </Text>
+            <Action
+              testID="edit-profile"
+              label="Complete player profile"
+              onPress={() =>
+                controller.updateProfile('Alex Rivera', 'https://cdn.example.test/alex.jpg')
+              }
+            />
             <Text style={styles.meta}>Passkeys: {game.passkeyCount}</Text>
             <Text testID="personal-push-status" style={styles.meta}>
               Push: personal turns only · {game.roomMuted ? 'Room muted' : 'Room active'} ·{' '}
@@ -191,6 +225,21 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
             <Text style={styles.copy}>
               {game.submittedIds.length}/{game.players.length} slates locked
             </Text>
+            <Text testID="offline-command-count" style={styles.meta}>
+              Offline commands: {controller.pendingOfflineCommandCount}
+            </Text>
+            <Action
+              testID="queue-alex-offline"
+              label="Save Alex’s slate offline"
+              onPress={() => void controller.queueAnswer('p1', 'cake', `offline-p1-${game.round}`)}
+            />
+            {controller.pendingOfflineCommandCount > 0 && (
+              <Action
+                testID="sync-offline-commands"
+                label="Reconnect and sync"
+                onPress={() => void controller.replayOfflineCommands()}
+              />
+            )}
             <Action
               testID="submit-alex"
               label="Alex writes cake"
@@ -254,6 +303,28 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
         )}
         {game.phase === 'vote' && (
           <Card title="Merge vote">
+            <Text style={styles.meta}>
+              Offline commands: {controller.pendingOfflineCommandCount}
+            </Text>
+            <Action
+              testID="queue-vote-offline"
+              label="Save merge vote offline"
+              onPress={() =>
+                void controller.queueMergeVote(
+                  'p1',
+                  game.groups[0]?.id ?? '',
+                  true,
+                  `offline-vote-${game.round}`,
+                )
+              }
+            />
+            {controller.pendingOfflineCommandCount > 0 && (
+              <Action
+                testID="sync-vote-commands"
+                label="Reconnect and sync votes"
+                onPress={() => void controller.replayOfflineCommands()}
+              />
+            )}
             <Action
               testID="approve-merge"
               label="Approve first group"
@@ -417,6 +488,7 @@ const styles = StyleSheet.create({
   copy: { color: '#c8dfd5', fontSize: 17 },
   meta: { color: '#8fb5a5', fontSize: 14 },
   libraryRow: { borderBottomColor: '#376c59', borderBottomWidth: 1, paddingVertical: 10, gap: 4 },
+  qr: { alignSelf: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 12 },
   notice: { color: '#fff', backgroundColor: '#8b1e1e', padding: 12, borderRadius: 10 },
   slate: { backgroundColor: '#f5e7c6', borderRadius: 10, padding: 14 },
   answer: { color: '#10251e', fontSize: 28, fontWeight: '900' },
