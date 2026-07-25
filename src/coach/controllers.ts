@@ -287,6 +287,14 @@ export class WorkoutController {
     return true
   }
 
+  completeRest(): void {
+    const rest = this.requireActive().rest
+    if (!rest || rest.completed) return
+    rest.completed = true
+    rest.deadline = null
+    rest.pausedRemainingMs = null
+  }
+
   complete(at: string): void {
     const session = this.requireActive()
     this.sessionValue = { ...session, status: 'complete', completedAt: at }

@@ -183,6 +183,20 @@ export default function CoachShell() {
           )}
         </Card>
         <Card title="Goals and charts">
+          <Text style={styles.copy}>
+            Units: {state.massUnit} · {state.distanceUnit} · {state.timeZone}
+          </Text>
+          <Action
+            testID="update-preferences"
+            label="Use US units and New York time"
+            onPress={() =>
+              coach.updatePreferences({
+                massUnit: 'lb',
+                distanceUnit: 'mi',
+                timeZone: 'America/New_York',
+              })
+            }
+          />
           <Text style={styles.copy}>Weight points: {state.chartPoints.join(', ') || 'none'}</Text>
           <Text style={styles.copy}>Goal progress: {Math.round(state.goalProgress * 100)}%</Text>
           <Action
@@ -199,12 +213,60 @@ export default function CoachShell() {
         <Card title="Training">
           <Text style={styles.copy}>Workout: {state.workoutStatus}</Text>
           <Text style={styles.copy}>Sync: {state.workoutSync}</Text>
+          <Text style={styles.copy}>
+            Program: {state.activeProgramName ?? 'none'} · Rest: {state.restStatus}
+          </Text>
+          <Action
+            testID="build-program"
+            label="Build progressive strength program"
+            onPress={() => coach.buildWorkoutProgram()}
+          />
           <Action
             testID="start-workout"
             label="Start workout"
             onPress={() => coach.startWorkout()}
           />
           <Action testID="log-set" label="Log squat set" onPress={() => coach.logWorkoutSet()} />
+          {coach.workouts.snapshot.session?.sets.length ? (
+            <>
+              <Action
+                testID="edit-set"
+                label="Edit squat set"
+                onPress={() => coach.editWorkoutSet(6, 45)}
+              />
+              <Action
+                testID="remove-set"
+                label="Remove squat set"
+                onPress={() => coach.removeWorkoutSet()}
+              />
+              <Action
+                testID="start-rest"
+                label="Start rest timer"
+                onPress={() => coach.startRest()}
+              />
+            </>
+          ) : null}
+          {state.restStatus === 'running' && (
+            <Action
+              testID="pause-rest"
+              label="Pause rest timer"
+              onPress={() => coach.pauseRest()}
+            />
+          )}
+          {state.restStatus === 'paused' && (
+            <Action
+              testID="resume-rest"
+              label="Resume rest timer"
+              onPress={() => coach.resumeRest()}
+            />
+          )}
+          {(state.restStatus === 'running' || state.restStatus === 'paused') && (
+            <Action
+              testID="complete-rest"
+              label="Finish rest"
+              onPress={() => coach.completeRest()}
+            />
+          )}
           <Action
             testID="complete-workout"
             label="Complete workout"

@@ -158,6 +158,42 @@ describe('Coach clean-room acceptance model', () => {
     })
   })
 
+  it('persists unit/time-zone preferences and composes program, set editing, and rest lifecycle', () => {
+    const coach = new CoachDemoController()
+    coach.updatePreferences({
+      massUnit: 'lb',
+      distanceUnit: 'mi',
+      timeZone: 'America/New_York',
+    })
+    coach.buildWorkoutProgram()
+    coach.startWorkout()
+    coach.logWorkoutSet()
+    coach.editWorkoutSet(6, 100, 'lb')
+    coach.startRest(60_000)
+    coach.pauseRest()
+    expect(coach.state).toMatchObject({
+      massUnit: 'lb',
+      distanceUnit: 'mi',
+      timeZone: 'America/New_York',
+      activeProgramName: 'Progressive strength',
+      restStatus: 'paused',
+      restRemainingMs: 60_000,
+    })
+    expect(coach.workouts.snapshot.session?.sets[0]).toMatchObject({
+      reps: 6,
+      load: 100,
+      unit: 'lb',
+    })
+    coach.resumeRest()
+    coach.completeRest()
+    expect(coach.state).toMatchObject({ restStatus: 'complete', restRemainingMs: 0 })
+    coach.removeWorkoutSet()
+    expect(coach.workouts.snapshot.session?.sets).toEqual([])
+    expect(() =>
+      coach.updatePreferences({ massUnit: 'kg', distanceUnit: 'km', timeZone: 'invalid-zone' }),
+    ).toThrow('Time zone')
+  })
+
   it('builds and completes a restart-safe workout session', () => {
     const coach = new CoachDemoController()
     coach.startWorkout()

@@ -44,6 +44,12 @@ export interface CoachState {
   customerPortalUrl: string | null
   accountStatus: 'anonymous' | 'verification-required' | 'authenticated' | 'error'
   accountEmail: string | null
+  massUnit: 'kg' | 'lb'
+  distanceUnit: 'km' | 'mi'
+  timeZone: string
+  activeProgramName: string | null
+  restStatus: 'idle' | 'running' | 'paused' | 'complete'
+  restRemainingMs: number
 }
 
 export class CoachDemoController {
@@ -68,6 +74,12 @@ export class CoachDemoController {
     customerPortalUrl: null,
     accountStatus: 'anonymous',
     accountEmail: null,
+    massUnit: 'kg',
+    distanceUnit: 'km',
+    timeZone: 'UTC',
+    activeProgramName: null,
+    restStatus: 'idle',
+    restRemainingMs: 0,
   }
   private readonly listeners = new Set<(state: CoachState) => void>()
 
@@ -361,13 +373,40 @@ export class CoachDemoController {
     this.emit()
   }
 
-  startWorkout(): void {
+  updatePreferences(input: {
+    massUnit: 'kg' | 'lb'
+    distanceUnit: 'km' | 'mi'
+    timeZone: string
+  }): void {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: input.timeZone }).format()
+    } catch {
+      throw new Error('Time zone is invalid')
+    }
+    this.stateValue.massUnit = input.massUnit
+    this.stateValue.distanceUnit = input.distanceUnit
+    this.stateValue.timeZone = input.timeZone
+    this.emit()
+  }
+
+  buildWorkoutProgram(name = 'Progressive strength'): void {
     this.workouts.saveProgram({
-      id: 'starter',
-      name: 'Starter strength',
-      exercises: [{ id: 'squat', name: 'Squat', targetSets: 3, targetReps: 5 }],
+      id: 'custom',
+      name,
+      exercises: [
+        { id: 'squat', name: 'Squat', targetSets: 3, targetReps: 5 },
+        { id: 'press', name: 'Press', targetSets: 3, targetReps: 8 },
+      ],
     })
-    this.workouts.start('workout-1', 'starter', '2026-07-25T12:00:00.000Z')
+    this.stateValue.activeProgramName = name
+    this.emit()
+  }
+
+  startWorkout(): void {
+    if (!this.workouts.snapshot.programs.some((program) => program.id === 'custom')) {
+      this.buildWorkoutProgram('Starter strength')
+    }
+    this.workouts.start('workout-1', 'custom', '2026-07-25T12:00:00.000Z')
     this.stateValue.workoutStatus = 'active'
     this.syncWorkout()
     this.emit()
@@ -383,6 +422,50 @@ export class CoachDemoController {
       completedAt: '2026-07-25T12:05:00.000Z',
     })
     this.syncWorkout()
+    this.emit()
+  }
+
+  editWorkoutSet(reps: number, load: number, unit: 'kg' | 'lb' = this.stateValue.massUnit): void {
+    const set = this.workouts.snapshot.session?.sets[0]
+    if (!set) throw new Error('Log a set before editing it')
+    this.workouts.editSet(set.id, { reps, load, unit })
+    this.syncWorkout()
+    this.emit()
+  }
+
+  removeWorkoutSet(): void {
+    const set = this.workouts.snapshot.session?.sets[0]
+    if (!set) return
+    this.workouts.removeSet(set.id)
+    this.syncWorkout()
+    this.emit()
+  }
+
+  startRest(durationMs = 90_000): void {
+    this.workouts.startRest(durationMs)
+    this.stateValue.restStatus = 'running'
+    this.stateValue.restRemainingMs = this.workouts.restRemainingMs()
+    this.emit()
+  }
+
+  pauseRest(): void {
+    this.workouts.pauseRest()
+    this.stateValue.restStatus = 'paused'
+    this.stateValue.restRemainingMs = this.workouts.restRemainingMs()
+    this.emit()
+  }
+
+  resumeRest(): void {
+    this.workouts.resumeRest()
+    this.stateValue.restStatus = 'running'
+    this.stateValue.restRemainingMs = this.workouts.restRemainingMs()
+    this.emit()
+  }
+
+  completeRest(): void {
+    this.workouts.completeRest()
+    this.stateValue.restStatus = 'complete'
+    this.stateValue.restRemainingMs = 0
     this.emit()
   }
 
