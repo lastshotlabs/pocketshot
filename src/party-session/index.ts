@@ -508,49 +508,102 @@ export interface CorrectionSnapshot<State> {
   armed: boolean
   proposal: State | null
   history: State[]
+  version?: number
+  actorId?: string | null
+  audit?: CorrectionAuditEntry[]
+}
+
+export interface CorrectionAuditEntry {
+  operation: 'arm' | 'propose' | 'cancel' | 'confirm' | 'undo'
+  actorId: string
+  version: number
+  at: number
 }
 
 export class HostCorrectionController<State> {
   private state: CorrectionSnapshot<State>
 
-  constructor(initial: State, snapshot?: CorrectionSnapshot<State>) {
+  constructor(
+    initial: State,
+    snapshot?: CorrectionSnapshot<State>,
+    private readonly now: () => number = Date.now,
+  ) {
     this.state = snapshot
-      ? structuredClone(snapshot)
-      : { state: structuredClone(initial), armed: false, proposal: null, history: [] }
+      ? {
+          ...structuredClone(snapshot),
+          version: snapshot.version ?? 0,
+          actorId: snapshot.actorId ?? null,
+          audit: structuredClone(snapshot.audit ?? []),
+        }
+      : {
+          state: structuredClone(initial),
+          armed: false,
+          proposal: null,
+          history: [],
+          version: 0,
+          actorId: null,
+          audit: [],
+        }
   }
 
   get snapshot(): CorrectionSnapshot<State> {
     return structuredClone(this.state)
   }
 
-  arm(): void {
+  arm(actorId = 'host'): void {
+    if (!actorId) throw new Error('Correction actor is required')
     this.state.armed = true
+    this.state.actorId = actorId
+    this.record('arm')
   }
 
-  propose(next: State): void {
+  propose(next: State, expectedVersion = this.state.version ?? 0): void {
     if (!this.state.armed) throw new Error('Correction must be armed')
+    if (expectedVersion !== this.state.version) throw new Error('Correction version conflict')
     this.state.proposal = structuredClone(next)
+    this.record('propose')
   }
 
   cancel(): void {
+    if (this.state.armed) this.record('cancel')
     this.state.armed = false
     this.state.proposal = null
+    this.state.actorId = null
   }
 
-  confirm(): void {
+  confirm(expectedVersion = this.state.version ?? 0): number {
     if (!this.state.armed || this.state.proposal === null) {
       throw new Error('No armed correction proposal')
     }
+    if (expectedVersion !== this.state.version) throw new Error('Correction version conflict')
     this.state.history.push(structuredClone(this.state.state))
     this.state.state = structuredClone(this.state.proposal)
-    this.cancel()
+    this.state.version = (this.state.version ?? 0) + 1
+    this.record('confirm')
+    this.state.armed = false
+    this.state.proposal = null
+    this.state.actorId = null
+    return this.state.version
   }
 
-  undo(): boolean {
+  undo(actorId = 'host'): boolean {
     const previous = this.state.history.pop()
     if (previous === undefined) return false
     this.state.state = previous
+    this.state.actorId = actorId
+    this.state.version = (this.state.version ?? 0) + 1
+    this.record('undo')
+    this.state.actorId = null
     return true
+  }
+
+  private record(operation: CorrectionAuditEntry['operation']): void {
+    ;(this.state.audit ??= []).push({
+      operation,
+      actorId: this.state.actorId ?? 'host',
+      version: this.state.version ?? 0,
+      at: this.now(),
+    })
   }
 }
 

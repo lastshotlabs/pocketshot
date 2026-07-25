@@ -134,13 +134,32 @@ describe('party lifecycle primitives', () => {
   })
 
   it('requires arm/propose/confirm and restores correction history', () => {
-    const correction = new HostCorrectionController({ groups: [['a'], ['b']] })
-    correction.arm()
+    const correction = new HostCorrectionController(
+      { groups: [['a'], ['b']] },
+      undefined,
+      () => 100,
+    )
+    correction.arm('moderator-1')
     correction.propose({ groups: [['a', 'b']] })
-    correction.confirm()
+    expect(correction.confirm()).toBe(1)
     expect(correction.snapshot.state.groups).toEqual([['a', 'b']])
     expect(correction.undo()).toBe(true)
     expect(correction.snapshot.state.groups).toEqual([['a'], ['b']])
+    expect(correction.snapshot.version).toBe(2)
+    expect(correction.snapshot.audit).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ operation: 'confirm', actorId: 'moderator-1' }),
+        expect.objectContaining({ operation: 'undo', version: 2 }),
+      ]),
+    )
+  })
+
+  it('rejects stale correction proposals and confirmations', () => {
+    const correction = new HostCorrectionController({ score: 1 })
+    correction.arm()
+    expect(() => correction.propose({ score: 2 }, 1)).toThrow('version conflict')
+    correction.propose({ score: 2 }, 0)
+    expect(() => correction.confirm(1)).toThrow('version conflict')
   })
 
   it('protects pass-the-phone handoff and in-flight commands', () => {
