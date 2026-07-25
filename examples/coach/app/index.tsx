@@ -128,11 +128,23 @@ export default function CoachShell() {
             onPress={() => void coach.analyzePhoto()}
           />
           {state.mediaHistory[0] && (
-            <Action
-              testID="delete-photo"
-              label="Delete latest photo"
-              onPress={() => void coach.deletePhoto(state.mediaHistory[0].id)}
-            />
+            <>
+              <Action
+                testID="retry-photo"
+                label="Retry latest photo"
+                onPress={() => void coach.retryLatestPhoto()}
+              />
+              <Action
+                testID="cancel-photo"
+                label="Cancel latest photo"
+                onPress={() => void coach.cancelLatestPhoto()}
+              />
+              <Action
+                testID="delete-photo"
+                label="Delete latest photo"
+                onPress={() => void coach.deletePhoto(state.mediaHistory[0].id)}
+              />
+            </>
           )}
         </Card>
         <Card title="History and memory">
