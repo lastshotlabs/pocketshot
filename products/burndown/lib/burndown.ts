@@ -389,7 +389,7 @@ export class BurndownController {
   }
 
   admissionQueue() {
-    return this.session.snapshot.admissionQueue
+    return this.session.snapshot.admissionQueue ?? []
   }
 
   lobbyProjection() {

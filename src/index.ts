@@ -209,12 +209,7 @@ export type {
 } from './device/index'
 
 // ── Push notifications ────────────────────────────────────────────────────────
-export {
-  createPushHooks,
-  createExpoPushAdapter,
-  PushLifecycleController,
-  PersonalPushPolicyController,
-} from './push/index'
+export { createPushHooks } from './push/index'
 export type {
   PushHooks,
   PushPermissionStatus,
@@ -224,11 +219,6 @@ export type {
   PushRegistrationOptions,
   PushTokenRegistrationPayload,
   PushTokenRegistrationResponse,
-  ExpoNotificationModule,
-  NativePushAdapter,
-  PushLifecycleState,
-  PushLifecycleControllerOptions,
-  PersonalPushPolicyOptions,
 } from './push/index'
 
 // ── Deep links ────────────────────────────────────────────────────────────────
@@ -314,7 +304,7 @@ export type {
 } from './search/index'
 
 // ── Upload ────────────────────────────────────────────────────────────────────
-export { createUploadHooks, UploadAuthorizationController } from './upload/index'
+export { createUploadHooks } from './upload/index'
 export type {
   UploadHooks,
   UploadFile,
@@ -323,9 +313,6 @@ export type {
   UploadResult,
   PresignedUploadOptions,
   DirectUploadOptions,
-  AcceptedUpload,
-  UploadAuthorizationPolicy,
-  UploadAuthorizationReceipt,
 } from './upload/index'
 
 // ── Biometrics ────────────────────────────────────────────────────────────────
