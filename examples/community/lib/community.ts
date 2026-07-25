@@ -13,6 +13,11 @@ import {
   type AccountAuthTransport,
   type TokenStorage,
 } from '@lastshotlabs/pocketshot/auth'
+import {
+  AccountDataController,
+  type DeletionStatus,
+  type ExportStatus,
+} from '@lastshotlabs/pocketshot/privacy'
 import { RealtimeReconciler, type RealtimeEvent } from '@lastshotlabs/pocketshot/realtime'
 import { z } from 'zod'
 
@@ -92,7 +97,9 @@ export interface CommunityState {
   } | null
   followingUsers: string[]
   mutedUsers: string[]
-  exportStatus: 'idle' | 'requested' | 'ready'
+  exportStatus: ExportStatus
+  deletionStatus: DeletionStatus
+  localDataCleared: boolean
   notice: string | null
 }
 
@@ -139,6 +146,8 @@ const initial: CommunityState = {
   followingUsers: [],
   mutedUsers: [],
   exportStatus: 'idle',
+  deletionStatus: 'idle',
+  localDataCleared: false,
   notice: null,
 }
 
@@ -160,6 +169,41 @@ export class CommunityDemoController {
   readonly profiles = new CommunityProfileController()
   readonly social = new SocialGraphController()
   readonly account = createCommunityAccount()
+  readonly accountData = new AccountDataController(
+    {
+      requestExport: async () => ({ requestId: 'community-export-1' }),
+      getExport: async () => ({
+        status: 'ready',
+        downloadUrl: 'https://downloads.example.test/community-export.zip',
+      }),
+      requestDeletion: async () => ({
+        requestId: 'community-deletion-1',
+        scheduledAt: '2026-08-01T12:00:00.000Z',
+      }),
+      cancelDeletion: async () => undefined,
+      getDeletion: async () => ({ status: 'completed' }),
+      revokeAuthorization: async () => this.account.logout(),
+    },
+    [
+      {
+        name: 'community-messages',
+        clear: () => {
+          this.stateValue.messages = []
+          this.stateValue.notifications = []
+          this.stateValue.unread = 0
+        },
+      },
+      {
+        name: 'community-drafts-and-profile',
+        clear: () => {
+          this.stateValue.draftTitle = ''
+          this.stateValue.profile = null
+          this.stateValue.onboarded = false
+          this.stateValue.handle = null
+        },
+      },
+    ],
+  )
 
   constructor(storage: DraftStorage = createMemoryDraftStorage()) {
     this.composer = createDurableDraft({
@@ -498,13 +542,30 @@ export class CommunityDemoController {
     }
   }
 
-  requestExport(): void {
-    this.stateValue.exportStatus = 'requested'
-    this.emit()
-    queueMicrotask(() => {
-      this.stateValue.exportStatus = 'ready'
-      this.emit()
-    })
+  async requestExport(): Promise<void> {
+    await this.accountData.requestExport()
+    this.syncAccountData()
+  }
+
+  async refreshExport(): Promise<void> {
+    await this.accountData.refreshExport()
+    this.syncAccountData()
+  }
+
+  async requestDeletion(): Promise<void> {
+    await this.accountData.requestDeletion()
+    this.syncAccountData()
+  }
+
+  async cancelDeletion(): Promise<void> {
+    await this.accountData.cancelDeletion()
+    this.syncAccountData()
+  }
+
+  async completeDeletion(): Promise<void> {
+    await this.accountData.refreshDeletion()
+    this.syncAccountData()
+    this.syncAccount()
   }
 
   reconnect(): void {
@@ -558,6 +619,15 @@ export class CommunityDemoController {
           ? 'verification-required'
           : 'anonymous'
     this.stateValue.accountEmail = snapshot.user?.email ?? snapshot.pendingEmail
+    this.emit()
+  }
+
+  private syncAccountData(): void {
+    const snapshot = this.accountData.snapshot
+    this.stateValue.exportStatus = snapshot.exportStatus
+    this.stateValue.deletionStatus = snapshot.deletionStatus
+    this.stateValue.localDataCleared =
+      snapshot.authorizationRevoked && snapshot.clearedStores.length === 2
     this.emit()
   }
 }

@@ -170,11 +170,36 @@ describe('Community reference shell', () => {
     community.subscribe(listener)
     community.block('morgan')
     community.block('morgan')
-    community.requestExport()
-    await Promise.resolve()
+    await community.requestExport()
+    expect(community.state.exportStatus).toBe('requested')
+    await community.refreshExport()
     expect(community.state.blockedUsers).toEqual(['morgan'])
     expect(community.state.exportStatus).toBe('ready')
     expect(listener).toHaveBeenCalled()
+  })
+
+  it('cancels and completes account deletion with authorization revocation and cleanup', async () => {
+    const community = new CommunityDemoController()
+    await community.signInOAuth('apple')
+    community.sendMessage('private message')
+    community.notify('private notification')
+    await community.requestDeletion()
+    expect(community.state.deletionStatus).toBe('scheduled')
+    await community.cancelDeletion()
+    expect(community.state).toMatchObject({
+      deletionStatus: 'cancelled',
+      accountStatus: 'authenticated',
+    })
+    await community.requestDeletion()
+    await community.completeDeletion()
+    expect(community.state).toMatchObject({
+      deletionStatus: 'completed',
+      localDataCleared: true,
+      accountStatus: 'anonymous',
+      onboarded: false,
+      messages: [],
+      notifications: [],
+    })
   })
 
   it('recovers its visible connection state after reconnect', async () => {

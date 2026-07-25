@@ -285,6 +285,10 @@ export default function CommunityShell() {
           <Card title="Privacy">
             <Text style={styles.copy}>Blocked: {state.blockedUsers.length}</Text>
             <Text style={styles.copy}>Export: {state.exportStatus}</Text>
+            <Text style={styles.copy}>Deletion: {state.deletionStatus}</Text>
+            <Text style={styles.copy}>
+              Local cleanup: {state.localDataCleared ? 'complete' : 'not started'}
+            </Text>
             <Action
               testID="block-user"
               label="Block Morgan"
@@ -293,8 +297,36 @@ export default function CommunityShell() {
             <Action
               testID="privacy-export"
               label="Request export"
-              onPress={() => community.requestExport()}
+              onPress={() => void community.requestExport()}
             />
+            {state.exportStatus === 'requested' && (
+              <Action
+                testID="refresh-export"
+                label="Refresh export"
+                onPress={() => void community.refreshExport()}
+              />
+            )}
+            {state.deletionStatus !== 'scheduled' && state.deletionStatus !== 'completed' && (
+              <Action
+                testID="request-deletion"
+                label="Schedule account deletion"
+                onPress={() => void community.requestDeletion()}
+              />
+            )}
+            {state.deletionStatus === 'scheduled' && (
+              <>
+                <Action
+                  testID="cancel-deletion"
+                  label="Cancel account deletion"
+                  onPress={() => void community.cancelDeletion()}
+                />
+                <Action
+                  testID="complete-deletion"
+                  label="Confirm server deletion"
+                  onPress={() => void community.completeDeletion()}
+                />
+              </>
+            )}
           </Card>
         )}
       </ScrollView>
