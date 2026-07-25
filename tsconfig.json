@@ -27,6 +27,7 @@
       "@lastshotlabs/pocketshot/community/core": ["./src/community/core.ts"],
       "@lastshotlabs/pocketshot/community": ["./src/community/index.ts"],
       "@lastshotlabs/pocketshot/drafts": ["./src/drafts/index.ts"],
+      "@lastshotlabs/pocketshot/offline": ["./src/offline/index.ts"],
       "@lastshotlabs/pocketshot/media": ["./src/media/index.ts"],
       "@lastshotlabs/pocketshot/realtime": ["./src/realtime/index.ts"],
       "@lastshotlabs/hitshot-mobile/lib": ["./products/hitshot/lib/party.ts"],
