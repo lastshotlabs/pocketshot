@@ -278,10 +278,7 @@ dead-letter state. The SQLite backend automatically recovers commands left in
 `processing` after process death and migrates the original PocketShot queue.
 
 ```ts
-import {
-  OfflineCommandProcessor,
-  OfflineQueue,
-} from '@lastshotlabs/pocketshot/offline'
+import { OfflineCommandProcessor, OfflineQueue } from '@lastshotlabs/pocketshot/offline'
 
 const queue = new OfflineQueue()
 const command = await queue.enqueue({
@@ -304,6 +301,46 @@ Replay sends `Idempotency-Key` on every attempt and preserves strict FIFO
 ordering. Retryable failures use bounded exponential delay; terminal failures
 remain visible through `queue.getDeadLetters()` until explicitly retried or
 removed.
+
+### Durable drafts and conflict-safe autosave
+
+`@lastshotlabs/pocketshot/drafts` persists every accepted edit before scheduling
+remote autosave. Local durability is separate from publish validation, so an
+incomplete draft survives navigation or process death while `publishBlocks`
+prevents an invalid publish.
+
+```ts
+import {
+  bindDraftLifecycle,
+  createDurableDraft,
+  createSQLiteDraftStorage,
+} from '@lastshotlabs/pocketshot/drafts'
+import { z } from 'zod'
+
+const draft = createDurableDraft({
+  id: 'deck:123',
+  initialValue: { title: '', cards: [] as string[] },
+  initialServerVersion: 'etag-1',
+  storage: createSQLiteDraftStorage(),
+  publishSchema: z.object({
+    title: z.string().min(1),
+    cards: z.array(z.string()).min(1),
+  }),
+  saveRemote: async ({ value, expectedVersion, idempotencyKey }) => {
+    return saveDeck(value, { expectedVersion, idempotencyKey })
+  },
+})
+
+const unbindLifecycle = bindDraftLifecycle(draft, pocketshot.appStateManager)
+await draft.initialize()
+await draft.update((current) => ({ ...current, title: 'Party mix' }))
+```
+
+The snapshot exposes independent `isDirty`, `isSaving`, `health`,
+`publishBlocks`, history, undo/redo and three-way conflict state. Resolve a
+conflict with `keep_mine`, `use_server`, or a field-merge function. The drafts
+entry point also includes import review with row-level errors/truncation and
+bounded-concurrency bulk mutation utilities.
 
 **Community** (call `createCommunityHooks(api)` to create)
 

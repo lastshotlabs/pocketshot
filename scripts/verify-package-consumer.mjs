@@ -88,6 +88,7 @@ import {
 } from '@lastshotlabs/pocketshot/ui'
 import { createRealtimeChannel, MemoryRealtimeStorage } from '@lastshotlabs/pocketshot/realtime'
 import { OfflineQueue, createMemoryOfflineQueueStorage } from '@lastshotlabs/pocketshot/offline'
+import { createDurableDraft, createMemoryDraftStorage } from '@lastshotlabs/pocketshot/drafts'
 import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
@@ -113,6 +114,15 @@ void realtime
 
 const offline = new OfflineQueue({ storage: createMemoryOfflineQueueStorage() })
 void offline
+
+const draft = createDurableDraft({
+  id: 'consumer-draft',
+  initialValue: { title: '' },
+  storage: createMemoryDraftStorage(),
+  publishSchema: z.object({ title: z.string().min(1) }),
+  saveRemote: async ({ value }) => ({ value, version: '1' }),
+})
+void draft
 
 export const Consumer = () => <ButtonBase {...button} />
 `,

@@ -41,6 +41,11 @@
       "types": "./dist/types/offline/index.d.ts",
       "import": "./dist/offline.js",
       "require": "./dist/offline.cjs"
+    },
+    "./drafts": {
+      "types": "./dist/types/drafts/index.d.ts",
+      "import": "./dist/drafts.js",
+      "require": "./dist/drafts.cjs"
     }
   },
   "scripts": {

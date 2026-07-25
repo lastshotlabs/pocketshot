@@ -16,6 +16,8 @@ const budgets = {
   'dist/realtime.cjs': 36 * 1024,
   'dist/offline.js': 32 * 1024,
   'dist/offline.cjs': 36 * 1024,
+  'dist/drafts.js': 32 * 1024,
+  'dist/drafts.cjs': 36 * 1024,
 }
 
 async function filesUnder(directory) {
@@ -62,6 +64,7 @@ for (const target of [
   packageJson.exports?.['./ui']?.types,
   packageJson.exports?.['./realtime']?.types,
   packageJson.exports?.['./offline']?.types,
+  packageJson.exports?.['./drafts']?.types,
   packageJson.bin?.pocketshot,
 ]) {
   if (!target) {

@@ -5,6 +5,34 @@ export type { TokenStorage } from './auth/storage'
 export { ApiClient, ApiError } from './api/client'
 export { PocketshotWS, createWsHooks } from './ws/index'
 export {
+  DurableDraftController,
+  DraftConflictError,
+  bindDraftLifecycle,
+  createDurableDraft,
+  createMemoryDraftStorage,
+  createSQLiteDraftStorage,
+  DraftBulkSelection,
+  reviewDraftImport,
+  runBulkDraftMutation,
+  useAutosave,
+  useDurableDraft,
+} from './drafts/index'
+export type {
+  DraftConflict,
+  DraftHealth,
+  DraftListener,
+  DraftStorage,
+  DraftVersion,
+  DurableDraftOptions,
+  DurableDraftRecord,
+  DurableDraftSnapshot,
+  SaveDraftInput,
+  SaveDraftResult,
+  BulkMutationResult,
+  DraftImportIssue,
+  DraftImportReview,
+} from './drafts/index'
+export {
   RealtimeChannel,
   RealtimeReconciler,
   MemoryRealtimeStorage,
