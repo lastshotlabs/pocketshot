@@ -115,6 +115,25 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
         {game.phase === 'turn' && (
           <Card title={`${game.category} · ${game.letter}`}>
             <Text style={styles.turn}>Your turn</Text>
+            <View accessibilityLabel="Alphabet board" style={styles.board}>
+              {controller.board().map((entry) => (
+                <Text
+                  key={entry.letter}
+                  accessibilityLabel={`${entry.letter} ${entry.status}`}
+                  style={[
+                    styles.letter,
+                    entry.status === 'active' && styles.activeLetter,
+                    (entry.status === 'burned' || entry.status === 'void') && styles.inactiveLetter,
+                  ]}
+                >
+                  {entry.letter}
+                </Text>
+              ))}
+            </View>
+            <Text style={styles.copy}>
+              {Math.ceil(controller.remainingMs() / 1000)} seconds
+              {controller.isWarning() ? ' · warning' : ''}
+            </Text>
             <Action
               testID="burn-word"
               label={`Burn “${game.letter}nswer”`}
@@ -131,6 +150,11 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
               testID="timeout"
               label="Simulate timeout"
               onPress={() => controller.timeout()}
+            />
+            <Action
+              testID={game.paused ? 'resume-match' : 'pause-match'}
+              label={game.paused ? 'Resume match' : 'Pause match'}
+              onPress={() => (game.paused ? controller.resume() : controller.pause())}
             />
             <Text style={styles.copy}>Burned: {game.burned.join(', ') || 'none'}</Text>
           </Card>
@@ -238,4 +262,21 @@ const styles = StyleSheet.create({
   },
   selectedSection: { backgroundColor: '#5f2d1c' },
   sectionText: { color: '#fff4e8', fontWeight: '800' },
+  board: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
+  letter: {
+    color: '#fff4e8',
+    borderColor: '#5f2d1c',
+    borderWidth: 1,
+    borderRadius: 6,
+    minWidth: 30,
+    minHeight: 30,
+    textAlign: 'center',
+    paddingTop: 5,
+    fontWeight: '800',
+  },
+  activeLetter: { backgroundColor: '#d9481c', borderColor: '#ffd166' },
+  inactiveLetter: {
+    color: '#765443',
+    textDecorationLine: 'line-through',
+  },
 })

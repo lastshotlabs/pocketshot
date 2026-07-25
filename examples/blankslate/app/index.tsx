@@ -133,6 +133,27 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
                 </Text>
               </View>
             ))}
+            {game.groups.length >= 2 && (
+              <Action
+                testID="merge-groups"
+                label="Merge first two groups"
+                onPress={() => controller.merge([game.groups[0].id, game.groups[1].id])}
+              />
+            )}
+            {game.groups.some((group) => group.playerIds.length > 1) && (
+              <Action
+                testID="split-group"
+                label="Split first matched group"
+                onPress={() =>
+                  controller.split(game.groups.find((group) => group.playerIds.length > 1)!.id)
+                }
+              />
+            )}
+            <Action
+              testID="undo-fix"
+              label="Undo host fix"
+              onPress={() => controller.undoCorrection()}
+            />
             <Action
               testID="merge-vote"
               label="Open merge vote"
@@ -155,8 +176,8 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
             <Action testID="close-vote" label="Close vote" onPress={() => controller.closeVote()} />
           </Card>
         )}
-        {game.phase === 'summary' && (
-          <Card title="Scoreboard">
+        {(game.phase === 'summary' || game.phase === 'sudden-death') && (
+          <Card title={game.phase === 'sudden-death' ? 'Sudden death' : 'Scoreboard'}>
             {game.players.map((player) => (
               <Text key={player.id} style={styles.copy}>
                 {player.name} · {player.score}
