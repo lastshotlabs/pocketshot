@@ -10,6 +10,7 @@ export type {
   DraftConflict,
   DraftHealth,
   DraftListener,
+  DraftLifecycle,
   DraftStorage,
   DraftVersion,
   DurableDraftOptions,

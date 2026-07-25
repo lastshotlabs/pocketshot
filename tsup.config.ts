@@ -48,6 +48,7 @@ export default defineConfig([
       realtime: 'src/realtime/index.ts',
       offline: 'src/offline/index.ts',
       drafts: 'src/drafts/index.ts',
+      testing: 'src/testing/index.ts',
     },
     format: ['esm', 'cjs'],
     external: peerDeps,

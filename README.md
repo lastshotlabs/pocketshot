@@ -342,6 +342,37 @@ conflict with `keep_mine`, `use_server`, or a field-merge function. The drafts
 entry point also includes import review with row-level errors/truncation and
 bounded-concurrency bulk mutation utilities.
 
+### Deterministic reliability testing
+
+`@lastshotlabs/pocketshot/testing` provides a shared, sleep-free harness for
+reproducing mobile failure modes in controller and reference-shell tests:
+
+```ts
+import {
+  ReliabilityHarness,
+  createRestartableOfflineStorage,
+  disorderEvents,
+} from '@lastshotlabs/pocketshot/testing'
+
+const harness = new ReliabilityHarness({ online: true })
+const storage = createRestartableOfflineStorage(harness.processStore)
+
+await harness.network.flap(3)
+harness.lifecycle.transition('background')
+harness.restartProcess()
+
+const delivery = disorderEvents(events, {
+  order: [2, 0, 1],
+  duplicate: [2],
+})
+```
+
+The harness includes deterministic time, lifecycle transitions, network
+generations, scripted resolve/reject/defer outcomes, persistent restartable
+stores, event disorder, and interruptible transfers. The realtime, offline, and
+draft adapters let the exact same failure scripts run against SDK controllers
+and the Party, Coach, and Community acceptance shells.
+
 **Community** (call `createCommunityHooks(api)` to create)
 
 | Hook                                         | Description                                     |

@@ -90,3 +90,8 @@ export type RealtimeStateListener<TState> = (
   state: TState | null,
   diagnostics: RealtimeDiagnostics,
 ) => void
+
+export interface RealtimeLifecycle {
+  onForeground(callback: () => void): () => void
+  onBackground(callback: () => void): () => void
+}

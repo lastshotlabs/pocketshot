@@ -89,6 +89,7 @@ import {
 import { createRealtimeChannel, MemoryRealtimeStorage } from '@lastshotlabs/pocketshot/realtime'
 import { OfflineQueue, createMemoryOfflineQueueStorage } from '@lastshotlabs/pocketshot/offline'
 import { createDurableDraft, createMemoryDraftStorage } from '@lastshotlabs/pocketshot/drafts'
+import { ReliabilityHarness } from '@lastshotlabs/pocketshot/testing'
 import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
@@ -123,6 +124,7 @@ const draft = createDurableDraft({
   saveRemote: async ({ value }) => ({ value, version: '1' }),
 })
 void draft
+void new ReliabilityHarness()
 
 export const Consumer = () => <ButtonBase {...button} />
 `,

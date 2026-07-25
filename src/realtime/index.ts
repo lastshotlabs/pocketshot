@@ -14,5 +14,6 @@ export type {
   RealtimeSocket,
   RealtimeSocketFactory,
   RealtimeStateListener,
+  RealtimeLifecycle,
 } from './types'
 export type { ReconcilerResult } from './reconciler'

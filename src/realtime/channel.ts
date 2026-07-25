@@ -7,8 +7,8 @@ import type {
   RealtimeEvent,
   RealtimeSocket,
   RealtimeStateListener,
+  RealtimeLifecycle,
 } from './types'
-import type { AppStateManager } from '../app-state/manager'
 
 const SOCKET_OPEN = 1
 
@@ -389,7 +389,7 @@ export function createRealtimeChannel<TPayload, TState>(
  */
 export function bindRealtimeLifecycle<TPayload, TState>(
   channel: RealtimeChannel<TPayload, TState>,
-  appStateManager: AppStateManager,
+  appStateManager: RealtimeLifecycle,
 ): () => void {
   const unsubscribeBackground = appStateManager.onBackground(() => channel.pause())
   const unsubscribeForeground = appStateManager.onForeground(() => {

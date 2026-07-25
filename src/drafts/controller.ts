@@ -3,11 +3,11 @@ import type {
   DraftConflict,
   DraftListener,
   DraftVersion,
+  DraftLifecycle,
   DurableDraftOptions,
   DurableDraftRecord,
   DurableDraftSnapshot,
 } from './types'
-import type { AppStateManager } from '../app-state/manager'
 
 export class DurableDraftController<T> {
   private record: DurableDraftRecord<T> | null = null
@@ -345,7 +345,7 @@ export function createDurableDraft<T>(options: DurableDraftOptions<T>): DurableD
 
 export function bindDraftLifecycle<T>(
   controller: DurableDraftController<T>,
-  appStateManager: AppStateManager,
+  appStateManager: DraftLifecycle,
 ): () => void {
   return appStateManager.onBackground(() => {
     void controller.flush().catch(() => undefined)

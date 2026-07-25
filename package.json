@@ -46,6 +46,11 @@
       "types": "./dist/types/drafts/index.d.ts",
       "import": "./dist/drafts.js",
       "require": "./dist/drafts.cjs"
+    },
+    "./testing": {
+      "types": "./dist/types/testing/index.d.ts",
+      "import": "./dist/testing.js",
+      "require": "./dist/testing.cjs"
     }
   },
   "scripts": {

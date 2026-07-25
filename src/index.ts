@@ -21,6 +21,7 @@ export type {
   DraftConflict,
   DraftHealth,
   DraftListener,
+  DraftLifecycle,
   DraftStorage,
   DraftVersion,
   DurableDraftOptions,
@@ -53,6 +54,7 @@ export type {
   RealtimeSocket,
   RealtimeSocketFactory,
   RealtimeStateListener,
+  RealtimeLifecycle,
   ReconcilerResult,
 } from './realtime/index'
 export { createAuthHooks } from './auth/hooks'

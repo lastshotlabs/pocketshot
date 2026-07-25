@@ -90,3 +90,7 @@ export interface DurableDraftSnapshot<T> {
 }
 
 export type DraftListener = () => void
+
+export interface DraftLifecycle {
+  onBackground(callback: () => void): () => void
+}
