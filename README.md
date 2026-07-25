@@ -202,6 +202,43 @@ These hooks retain the original unversioned room protocol. New applications that
 need reconnect correctness, cursor resume, ordered delivery, or offline recovery
 should use the reliable realtime channel below.
 
+### Durable media pipeline
+
+Import `MediaPipelineController` from `@lastshotlabs/pocketshot/media` for a
+single recoverable capture-to-analysis workflow shared by iOS and Android. It
+supports contextual camera/library permission results (including an app-settings
+recovery action), metadata and quota validation, injected resize/compression and
+orientation normalization, direct/presigned/resumable upload strategies,
+progress persisted by byte offset, pause/cancel/retry, relaunch recovery,
+idempotent analysis jobs, and temporary-file cleanup.
+
+The native picker is deliberately injected so applications retain control of
+their Expo dependency versions:
+
+```ts
+import * as ImagePicker from 'expo-image-picker'
+import * as Linking from 'expo-linking'
+import {
+  createExpoMediaCaptureAdapter,
+  createSQLiteMediaStorage,
+  MediaPipelineController,
+} from '@lastshotlabs/pocketshot/media'
+
+const media = new MediaPipelineController({
+  capture: createExpoMediaCaptureAdapter({
+    imagePicker: ImagePicker,
+    openSettings: Linking.openSettings,
+  }),
+  storage: createSQLiteMediaStorage(),
+  upload: resumableUploadAdapter,
+  transform: imageAndVideoTransformAdapter,
+  analysis: coachAnalysisAdapter,
+})
+
+const item = await media.acquire('camera')
+if (item) await media.run(item.id)
+```
+
 ### Reliable realtime channels
 
 Import the headless API from `@lastshotlabs/pocketshot/realtime`. Each channel

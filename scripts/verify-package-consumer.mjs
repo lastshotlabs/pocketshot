@@ -90,6 +90,11 @@ import { createRealtimeChannel, MemoryRealtimeStorage } from '@lastshotlabs/pock
 import { OfflineQueue, createMemoryOfflineQueueStorage } from '@lastshotlabs/pocketshot/offline'
 import { createDurableDraft, createMemoryDraftStorage } from '@lastshotlabs/pocketshot/drafts'
 import { ReliabilityHarness } from '@lastshotlabs/pocketshot/testing'
+import {
+  MediaPipelineController,
+  createMemoryMediaStorage,
+  type MediaAsset,
+} from '@lastshotlabs/pocketshot/media'
 import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
@@ -125,6 +130,27 @@ const draft = createDurableDraft({
 })
 void draft
 void new ReliabilityHarness()
+const mediaAsset: MediaAsset = {
+  uri: 'file:///photo.jpg',
+  name: 'photo.jpg',
+  mimeType: 'image/jpeg',
+  kind: 'image',
+  size: 1,
+}
+const media = new MediaPipelineController({
+  capture: {
+    requestPermission: async () => ({ state: 'granted', canAskAgain: true }),
+    acquire: async () => mediaAsset,
+  },
+  upload: {
+    createSession: async () => ({ id: '1', offset: 0, chunkSize: 1 }),
+    getOffset: async () => 0,
+    uploadChunk: async ({ offset, length }) => ({ offset: offset + length }),
+    complete: async () => ({ fileUrl: 'https://cdn.example.test/photo.jpg' }),
+  },
+  storage: createMemoryMediaStorage(),
+})
+void media
 
 export const Consumer = () => <ButtonBase {...button} />
 `,

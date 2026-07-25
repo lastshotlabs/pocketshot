@@ -51,6 +51,11 @@
       "types": "./dist/types/testing/index.d.ts",
       "import": "./dist/testing.js",
       "require": "./dist/testing.cjs"
+    },
+    "./media": {
+      "types": "./dist/types/media/index.d.ts",
+      "import": "./dist/media.js",
+      "require": "./dist/media.cjs"
     }
   },
   "scripts": {
