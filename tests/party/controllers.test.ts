@@ -57,6 +57,35 @@ describe('DeckLibraryController', () => {
     expect(library.health('deck')).toMatchObject({ missingYear: 1, isPublishable: false })
     expect(() => library.submit('deck')).toThrow('health checks')
   })
+
+  it('supports rated discovery, featured ordering, version history, and JSON/CSV transfer', () => {
+    const library = new DeckLibraryController()
+    library.create('source', 'Friday Favorites')
+    library.add('source', track('1', 'Blue Monday'))
+    library.submit('source')
+    library.approve('source')
+    library.publish('source', '2026-07-25T12:00:00.000Z')
+    library.rate('source', 'alex', 5)
+    library.rate('source', 'sam', 3)
+    library.rate('source', 'alex', 4)
+    library.setFeatured('source', true)
+    expect(library.discover({ query: 'blue', sort: 'rating' })[0]).toMatchObject({
+      featured: true,
+      averageRating: 3.5,
+      ratingCount: 2,
+      deck: { id: 'source', status: 'published' },
+    })
+    expect(library.history('source').length).toBeGreaterThanOrEqual(5)
+
+    const json = library.exportData('source', 'json')
+    const csv = library.exportData('source', 'csv')
+    expect(csv).toContain('Blue Monday')
+    const target = new DeckLibraryController()
+    target.create('target', 'Imported')
+    target.importJson('target', json)
+    expect(target.snapshot[0].tracks).toEqual([track('1', 'Blue Monday')])
+    expect(() => target.importJson('target', '{bad')).toThrow('invalid')
+  })
 })
 
 describe('PlaybackProviderController', () => {

@@ -25,8 +25,18 @@ export interface DeckHealth {
   isPublishable: boolean
 }
 
+export interface PartyDeckCatalogEntry {
+  deck: PartyDeck
+  featured: boolean
+  averageRating: number | null
+  ratingCount: number
+}
+
 export class DeckLibraryController {
   private decks = new Map<string, PartyDeck>()
+  private versions = new Map<string, PartyDeck[]>()
+  private ratings = new Map<string, Map<string, number>>()
+  private featured = new Set<string>()
 
   get snapshot(): PartyDeck[] {
     return [...this.decks.values()].map((deck) => structuredClone(deck))
@@ -43,6 +53,7 @@ export class DeckLibraryController {
       revision: 1,
       publishedAt: null,
     })
+    this.recordVersion(id)
   }
 
   import(id: string, tracks: PartyTrack[], mode: 'replace' | 'append' = 'append'): void {
@@ -69,6 +80,7 @@ export class DeckLibraryController {
     if (!deck.tracks.some((candidate) => trackIdentity(candidate) === key)) {
       deck.tracks.push(structuredClone(track))
       deck.revision += 1
+      this.recordVersion(id)
     }
   }
 
@@ -79,12 +91,14 @@ export class DeckLibraryController {
     if (index < 0) throw new Error(`Unknown track: ${trackId}`)
     deck.tracks[index] = structuredClone(replacement)
     deck.revision += 1
+    this.recordVersion(id)
   }
 
   remove(id: string, trackId: string): void {
     const deck = this.requireEditable(id)
     deck.tracks = deck.tracks.filter((track) => track.id !== trackId)
     deck.revision += 1
+    this.recordVersion(id)
   }
 
   health(id: string): DeckHealth {
@@ -115,12 +129,14 @@ export class DeckLibraryController {
       throw new Error('Deck health checks must pass before submission')
     }
     deck.status = 'submitted'
+    this.recordVersion(id)
   }
 
   approve(id: string): void {
     const deck = this.require(id)
     if (deck.status !== 'submitted') throw new Error('Only submitted decks can be approved')
     deck.status = 'approved'
+    this.recordVersion(id)
   }
 
   publish(id: string, at: string): void {
@@ -128,10 +144,98 @@ export class DeckLibraryController {
     if (deck.status !== 'approved') throw new Error('Only approved decks can be published')
     deck.status = 'published'
     deck.publishedAt = at
+    this.recordVersion(id)
   }
 
   archive(id: string): void {
     this.require(id).status = 'archived'
+    this.recordVersion(id)
+  }
+
+  rate(id: string, userId: string, rating: number): void {
+    const deck = this.require(id)
+    if (deck.status !== 'published') throw new Error('Only published decks can be rated')
+    if (!userId.trim() || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new Error('Deck ratings require a user and an integer from 1 to 5')
+    }
+    const ratings = this.ratings.get(id) ?? new Map<string, number>()
+    ratings.set(userId, rating)
+    this.ratings.set(id, ratings)
+  }
+
+  setFeatured(id: string, featured: boolean): void {
+    this.require(id)
+    if (featured) this.featured.add(id)
+    else this.featured.delete(id)
+  }
+
+  discover(
+    input: {
+      query?: string
+      status?: DeckStatus
+      sort?: 'rating' | 'title' | 'updated'
+    } = {},
+  ): PartyDeckCatalogEntry[] {
+    const query = input.query?.trim().toLocaleLowerCase() ?? ''
+    const entries = this.snapshot
+      .filter(
+        (deck) =>
+          (!query ||
+            deck.title.toLocaleLowerCase().includes(query) ||
+            deck.tracks.some(
+              (track) =>
+                track.title.toLocaleLowerCase().includes(query) ||
+                track.artist.toLocaleLowerCase().includes(query),
+            )) &&
+          (!input.status || deck.status === input.status),
+      )
+      .map((deck) => this.catalogEntry(deck))
+    return entries.sort((left, right) => {
+      if (left.featured !== right.featured) return left.featured ? -1 : 1
+      if (input.sort === 'rating') {
+        return (right.averageRating ?? -1) - (left.averageRating ?? -1)
+      }
+      if (input.sort === 'title') return left.deck.title.localeCompare(right.deck.title)
+      return (
+        right.deck.revision - left.deck.revision || left.deck.title.localeCompare(right.deck.title)
+      )
+    })
+  }
+
+  history(id: string): PartyDeck[] {
+    this.require(id)
+    return structuredClone(this.versions.get(id) ?? [])
+  }
+
+  exportData(id: string, format: 'json' | 'csv'): string {
+    const deck = this.require(id)
+    if (format === 'json') return JSON.stringify(deck, null, 2)
+    return [
+      'title,artist,year,previewUrl,spotifyId,audiusId',
+      ...deck.tracks.map((track) =>
+        [
+          track.title,
+          track.artist,
+          track.year ?? '',
+          track.previewUrl ?? '',
+          track.providerIds.spotify ?? '',
+          track.providerIds.audius ?? '',
+        ]
+          .map(csvCell)
+          .join(','),
+      ),
+    ].join('\n')
+  }
+
+  importJson(targetId: string, input: string, mode: 'replace' | 'append' = 'append'): void {
+    let value: unknown
+    try {
+      value = JSON.parse(input)
+    } catch {
+      throw new Error('Deck JSON is invalid')
+    }
+    if (!isPartyDeckTransfer(value)) throw new Error('Deck JSON has an invalid shape')
+    this.import(targetId, value.tracks, mode)
   }
 
   private require(id: string): PartyDeck {
@@ -144,6 +248,26 @@ export class DeckLibraryController {
     const deck = this.require(id)
     if (deck.status !== 'draft') throw new Error('Only draft decks can be edited')
     return deck
+  }
+
+  private recordVersion(id: string): void {
+    const deck = this.decks.get(id)
+    if (!deck) return
+    const versions = this.versions.get(id) ?? []
+    versions.push(structuredClone(deck))
+    this.versions.set(id, versions)
+  }
+
+  private catalogEntry(deck: PartyDeck): PartyDeckCatalogEntry {
+    const values = [...(this.ratings.get(deck.id)?.values() ?? [])]
+    return {
+      deck,
+      featured: this.featured.has(deck.id),
+      averageRating: values.length
+        ? values.reduce((total, value) => total + value, 0) / values.length
+        : null,
+      ratingCount: values.length,
+    }
   }
 }
 
@@ -252,6 +376,34 @@ function validateTrack(track: PartyTrack): void {
 
 function trackIdentity(track: PartyTrack): string {
   return `${track.title.trim().toLocaleLowerCase()}::${track.artist.trim().toLocaleLowerCase()}`
+}
+
+function csvCell(value: string | number): string {
+  const text = String(value)
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+}
+
+function isPartyDeckTransfer(value: unknown): value is Pick<PartyDeck, 'tracks'> {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !Array.isArray((value as { tracks?: unknown }).tracks)
+  ) {
+    return false
+  }
+  return (value as { tracks: unknown[] }).tracks.every((track) => {
+    if (!track || typeof track !== 'object') return false
+    const candidate = track as Partial<PartyTrack>
+    return (
+      typeof candidate.id === 'string' &&
+      typeof candidate.title === 'string' &&
+      typeof candidate.artist === 'string' &&
+      (candidate.year === null || typeof candidate.year === 'number') &&
+      !!candidate.providerIds &&
+      typeof candidate.providerIds === 'object' &&
+      (candidate.previewUrl === null || typeof candidate.previewUrl === 'string')
+    )
+  })
 }
 
 function parseDelimitedTracks(input: string): PartyTrack[] {
