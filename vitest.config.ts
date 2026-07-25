@@ -6,6 +6,7 @@ const packageSourceAliases = {
   '@lastshotlabs/pocketshot/audio': path.resolve(__dirname, 'src/audio/index.ts'),
   '@lastshotlabs/pocketshot/coach': path.resolve(__dirname, 'src/coach/index.ts'),
   '@lastshotlabs/pocketshot/party': path.resolve(__dirname, 'src/party/index.ts'),
+  '@lastshotlabs/pocketshot/observability': path.resolve(__dirname, 'src/observability/index.ts'),
   '@lastshotlabs/pocketshot/drafts': path.resolve(__dirname, 'src/drafts/index.ts'),
   '@lastshotlabs/pocketshot/media': path.resolve(__dirname, 'src/media/index.ts'),
   '@lastshotlabs/pocketshot/realtime': path.resolve(__dirname, 'src/realtime/index.ts'),

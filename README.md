@@ -317,6 +317,32 @@ const workouts = new WorkoutController()
 const entitlements = new EntitlementController(storeAdapter)
 ```
 
+### Observability, diagnostics, and rollout safety
+
+`@lastshotlabs/pocketshot/observability` is an analytics-vendor-neutral
+operations layer. `OperationTelemetry` emits correlated, duration-bearing
+started/succeeded/failed/cancelled lifecycle events across app launch, auth,
+deep links, realtime, offline work, media, AI, audio, billing, notifications,
+and moderation. All attributes pass through a strict primitive-only scrubber;
+tokens, receipts, answers, contact details, and bearer credentials are
+redacted.
+
+`DiagnosticsBuffer` provides a bounded, privacy-safe support export and
+`FeatureFlagController` provides deterministic staged rollout plus an immediate
+kill switch. Applications inject their crash/analytics provider as a
+`TelemetrySink`, keeping vendor SDKs and credentials app-owned.
+
+```ts
+import { FeatureFlagController, OperationTelemetry } from '@lastshotlabs/pocketshot/observability'
+
+const telemetry = new OperationTelemetry(sentryTelemetrySink, clock, sessionId)
+const reconnect = await telemetry.start('realtime', 'reconnect', { attempt: 1 })
+await reconnect.succeed()
+
+const flags = new FeatureFlagController()
+flags.replace(remoteFlags)
+```
+
 ### Reliable realtime channels
 
 Import the headless API from `@lastshotlabs/pocketshot/realtime`. Each channel

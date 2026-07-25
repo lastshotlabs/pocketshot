@@ -76,6 +76,11 @@
       "types": "./dist/types/party/index.d.ts",
       "import": "./dist/party.js",
       "require": "./dist/party.cjs"
+    },
+    "./observability": {
+      "types": "./dist/types/observability/index.d.ts",
+      "import": "./dist/observability.js",
+      "require": "./dist/observability.cjs"
     }
   },
   "scripts": {
