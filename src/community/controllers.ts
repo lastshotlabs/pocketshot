@@ -80,10 +80,19 @@ export interface DiscussionReply {
   deleted: boolean
 }
 
+export interface DiscussionPoll {
+  threadId: string
+  options: Array<{ id: string; label: string; votes: number }>
+  selections: Array<{ actorId: string; optionId: string }>
+  closed: boolean
+}
+
 export class DiscussionController {
   private threads = new Map<string, DiscussionThread>()
   private replies = new Map<string, DiscussionReply>()
   private reactions = new Set<string>()
+  private saves = new Set<string>()
+  private polls = new Map<string, DiscussionPoll>()
 
   getThread(id: string): DiscussionThread | null {
     const value = this.threads.get(id)
@@ -164,6 +173,84 @@ export class DiscussionController {
     }
   }
 
+  setSaved(threadId: string, actorId: string, saved: boolean): void {
+    this.requireThread(threadId)
+    const key = `${threadId}:${actorId}`
+    if (saved) this.saves.add(key)
+    else this.saves.delete(key)
+  }
+
+  isSaved(threadId: string, actorId: string): boolean {
+    return this.saves.has(`${threadId}:${actorId}`)
+  }
+
+  createPoll(threadId: string, options: Array<{ id: string; label: string }>): void {
+    this.requireThread(threadId)
+    if (this.polls.has(threadId)) throw new Error('Thread already has a poll')
+    const valid = options.map((option) => ({ ...option, label: option.label.trim() }))
+    if (
+      valid.length < 2 ||
+      valid.some((option) => !option.id || !option.label) ||
+      new Set(valid.map((option) => option.id)).size !== valid.length
+    ) {
+      throw new Error('Poll requires at least two unique labeled options')
+    }
+    this.polls.set(threadId, {
+      threadId,
+      options: valid.map((option) => ({ ...option, votes: 0 })),
+      selections: [],
+      closed: false,
+    })
+  }
+
+  votePoll(threadId: string, actorId: string, optionId: string): void {
+    const poll = this.requirePoll(threadId)
+    if (poll.closed) throw new Error('Poll is closed')
+    if (!poll.options.some((option) => option.id === optionId)) {
+      throw new Error(`Unknown poll option: ${optionId}`)
+    }
+    const previous = poll.selections.find((selection) => selection.actorId === actorId)
+    if (previous?.optionId === optionId) return
+    if (previous) {
+      const option = poll.options.find((candidate) => candidate.id === previous.optionId)!
+      option.votes = Math.max(0, option.votes - 1)
+      previous.optionId = optionId
+    } else {
+      poll.selections.push({ actorId, optionId })
+    }
+    poll.options.find((option) => option.id === optionId)!.votes += 1
+  }
+
+  closePoll(threadId: string): void {
+    this.requirePoll(threadId).closed = true
+  }
+
+  getPoll(threadId: string): DiscussionPoll | null {
+    const poll = this.polls.get(threadId)
+    return poll ? structuredClone(poll) : null
+  }
+
+  resolveAnchor(
+    threadId: string,
+    replyId?: string,
+  ): { thread: DiscussionThread; reply: DiscussionReply | null; ancestors: DiscussionReply[] } {
+    const thread = structuredClone(this.requireThread(threadId))
+    if (!replyId) return { thread, reply: null, ancestors: [] }
+    const reply = this.requireReply(replyId)
+    if (reply.threadId !== threadId) throw new Error('Reply anchor does not belong to thread')
+    const ancestors: DiscussionReply[] = []
+    const seen = new Set<string>([reply.id])
+    let parentId = reply.parentId
+    while (parentId) {
+      if (seen.has(parentId)) throw new Error('Reply graph contains a cycle')
+      seen.add(parentId)
+      const parent = this.requireReply(parentId)
+      ancestors.unshift(structuredClone(parent))
+      parentId = parent.parentId
+    }
+    return { thread, reply: structuredClone(reply), ancestors }
+  }
+
   private requireThread(id: string): DiscussionThread {
     const value = this.threads.get(id)
     if (!value) throw new Error(`Unknown thread: ${id}`)
@@ -173,6 +260,12 @@ export class DiscussionController {
   private requireReply(id: string): DiscussionReply {
     const value = this.replies.get(id)
     if (!value) throw new Error(`Unknown reply: ${id}`)
+    return value
+  }
+
+  private requirePoll(threadId: string): DiscussionPoll {
+    const value = this.polls.get(threadId)
+    if (!value) throw new Error(`Thread has no poll: ${threadId}`)
     return value
   }
 }

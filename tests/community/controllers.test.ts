@@ -81,6 +81,39 @@ describe('DiscussionController', () => {
     ])
   })
 
+  it('supports saves, poll revotes, and nested deep-link anchors', () => {
+    const discussion = new DiscussionController()
+    discussion.createThread({ id: 'thread', title: 'Topic', body: 'Body' })
+    discussion.createReply({
+      id: 'parent',
+      threadId: 'thread',
+      parentId: null,
+      body: 'Parent',
+    })
+    discussion.createReply({
+      id: 'child',
+      threadId: 'thread',
+      parentId: 'parent',
+      body: 'Child',
+    })
+    discussion.setSaved('thread', 'alex', true)
+    expect(discussion.isSaved('thread', 'alex')).toBe(true)
+    discussion.createPoll('thread', [
+      { id: 'one', label: 'One' },
+      { id: 'two', label: 'Two' },
+    ])
+    discussion.votePoll('thread', 'alex', 'one')
+    discussion.votePoll('thread', 'alex', 'two')
+    expect(discussion.getPoll('thread')?.options).toEqual([
+      expect.objectContaining({ id: 'one', votes: 0 }),
+      expect.objectContaining({ id: 'two', votes: 1 }),
+    ])
+    expect(discussion.resolveAnchor('thread', 'child')).toMatchObject({
+      reply: { id: 'child' },
+      ancestors: [{ id: 'parent' }],
+    })
+  })
+
   it('rejects a parent from another thread', () => {
     const discussion = new DiscussionController()
     discussion.createThread({ id: 'one', title: 'One', body: 'One' })
