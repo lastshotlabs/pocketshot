@@ -1,4 +1,10 @@
-import { AccessibilityController, type AccessibilityAdapter } from '../../src/accessibility'
+import {
+  AccessibilityController,
+  MobileShellController,
+  conformTouchTarget,
+  safeAreaThumbDock,
+  type AccessibilityAdapter,
+} from '../../src/accessibility'
 import { describe, expect, it, vi } from 'vitest'
 
 function adapter(): AccessibilityAdapter {
@@ -30,5 +36,53 @@ describe('AccessibilityController', () => {
     expect(native.announce).toHaveBeenCalledOnce()
     expect(native.announce).toHaveBeenCalledWith('Saved')
     expect(native.focus).toHaveBeenCalledWith('save-button')
+  })
+})
+
+describe('MobileShellController', () => {
+  it('shows tabs only outside immersive routes and restores route focus', async () => {
+    const focus = vi.fn()
+    const shell = new MobileShellController(
+      [
+        { name: 'play', immersive: false, focusTarget: 'play-heading' },
+        {
+          name: 'match',
+          immersive: true,
+          orientation: 'landscape',
+          focusTarget: 'match-heading',
+        },
+      ],
+      'play',
+      focus,
+    )
+    await shell.navigate('match')
+    expect(shell.snapshot).toMatchObject({
+      route: 'match',
+      tabsVisible: false,
+      orientation: 'landscape',
+    })
+    expect(focus).toHaveBeenLastCalledWith('match-heading')
+    expect(await shell.back()).toBe(true)
+    expect(shell.snapshot.tabsVisible).toBe(true)
+    expect(focus).toHaveBeenLastCalledWith('play-heading')
+  })
+
+  it('enforces platform touch targets and keyboard-safe thumb docks', () => {
+    expect(conformTouchTarget('ios', { width: 20, height: 60 })).toEqual({
+      width: 44,
+      height: 60,
+    })
+    expect(conformTouchTarget('android', { width: 20, height: 20 })).toEqual({
+      width: 48,
+      height: 48,
+    })
+    expect(
+      safeAreaThumbDock({
+        viewportHeight: 800,
+        bottomInset: 34,
+        keyboardHeight: 300,
+        contentHeight: 80,
+      }),
+    ).toEqual({ bottom: 300, top: 420 })
   })
 })
