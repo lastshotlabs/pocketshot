@@ -281,6 +281,34 @@ describe('ModerationController', () => {
       expect.objectContaining({ action: 'remove', reason: 'Confirmed spam' }),
     ])
   })
+
+  it('requires explicit confirmation for proposed actions and retains moderator notes', () => {
+    const moderation = new ModerationController(() => '2026-07-25T12:00:00.000Z')
+    moderation.submit({ id: 'report', targetId: 'thread', reason: 'Review' })
+    moderation.addNote('report', 'mod', 'Waiting for context')
+    moderation.proposeAction('action-1', {
+      reportId: 'report',
+      actorId: 'mod',
+      action: 'remove',
+      reason: 'Confirmed violation',
+    })
+    expect(moderation.snapshot.reports[0].status).toBe('open')
+    expect(moderation.snapshot.pendingActions).toHaveLength(1)
+    moderation.confirmAction('action-1')
+    expect(moderation.snapshot).toMatchObject({
+      reports: [expect.objectContaining({ status: 'resolved' })],
+      pendingActions: [],
+      notes: {
+        report: [
+          {
+            actorId: 'mod',
+            text: 'Waiting for context',
+            timestamp: '2026-07-25T12:00:00.000Z',
+          },
+        ],
+      },
+    })
+  })
 })
 
 describe('community authorization and automod', () => {

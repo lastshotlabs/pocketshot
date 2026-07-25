@@ -595,13 +595,34 @@ export interface ModerationAuditEntry {
 export class ModerationController {
   private reports = new Map<string, ModerationReport>()
   private audit: ModerationAuditEntry[] = []
+  private pending = new Map<
+    string,
+    { reportId: string; actorId: string; action: string; reason: string }
+  >()
+  private notes = new Map<string, Array<{ actorId: string; text: string; timestamp: string }>>()
 
   constructor(private readonly now: () => string = () => new Date().toISOString()) {}
 
-  get snapshot(): { reports: ModerationReport[]; audit: ModerationAuditEntry[] } {
+  get snapshot(): {
+    reports: ModerationReport[]
+    audit: ModerationAuditEntry[]
+    pendingActions: Array<{
+      id: string
+      reportId: string
+      actorId: string
+      action: string
+      reason: string
+    }>
+    notes: Record<string, Array<{ actorId: string; text: string; timestamp: string }>>
+  } {
     return {
       reports: [...this.reports.values()].map((report) => structuredClone(report)),
       audit: structuredClone(this.audit),
+      pendingActions: [...this.pending].map(([id, action]) => ({
+        id,
+        ...structuredClone(action),
+      })),
+      notes: structuredClone(Object.fromEntries(this.notes)),
     }
   }
 
@@ -628,6 +649,37 @@ export class ModerationController {
     if (report.status === 'resolved' || report.status === 'dismissed') return
     this.reports.set(id, { ...report, status: 'dismissed' })
     this.record(id, actorId, 'dismiss', reason)
+  }
+
+  addNote(reportId: string, actorId: string, text: string): void {
+    this.requireReport(reportId)
+    if (!text.trim()) throw new Error('Moderator note cannot be empty')
+    const notes = this.notes.get(reportId) ?? []
+    notes.push({ actorId, text: text.trim(), timestamp: this.now() })
+    this.notes.set(reportId, notes)
+  }
+
+  proposeAction(
+    id: string,
+    input: { reportId: string; actorId: string; action: string; reason: string },
+  ): void {
+    this.requireReport(input.reportId)
+    if (!id || !input.action.trim() || !input.reason.trim()) {
+      throw new Error('Moderation proposal requires action and reason')
+    }
+    if (this.pending.has(id)) return
+    this.pending.set(id, structuredClone(input))
+  }
+
+  confirmAction(id: string): void {
+    const pending = this.pending.get(id)
+    if (!pending) throw new Error(`Unknown moderation action proposal: ${id}`)
+    this.resolve(pending.reportId, pending.actorId, pending.action, pending.reason)
+    this.pending.delete(id)
+  }
+
+  cancelAction(id: string): void {
+    this.pending.delete(id)
   }
 
   private requireReport(id: string): ModerationReport {
