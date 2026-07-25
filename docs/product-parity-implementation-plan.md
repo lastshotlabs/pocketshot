@@ -29,7 +29,7 @@ interaction patterns and must not carry browser-only assumptions into its public
 
 ## 2. Current baseline
 
-### Complete and certified locally
+### Implemented and certified locally
 
 - Package foundation, generated API consumption, authentication storage, deep-link parsing,
   permissions, device state, sharing, haptics, search, uploads, organizations, and push hooks.
@@ -41,19 +41,39 @@ interaction patterns and must not carry browser-only assumptions into its public
 - AI streaming conversations, citations, reviewed actions, undo, usage budgets, and trusted
   memory primitives.
 - Native audio playback and second-screen redaction/projection primitives.
-- Party and Coach clean-room reference shells with acceptance tests.
+- Party, Coach, and Community clean-room reference shells with acceptance tests.
+- Party session/timeline/token/challenge/host/deck/provider/replay controllers and projection
+  redaction.
+- Coach metrics, goals, training, offline conflict, entitlement, store-adapter, privacy, and
+  reviewed AI-action controllers.
+- Community feed, thread/reply, notifications, messaging, moderation, privacy, administration,
+  feature-flag, and rollout controllers.
+- Shared loading/error/empty/offline/stale/permission/removed states, accessibility contracts,
+  performance budgets, structured lifecycle telemetry, diagnostics, and rollback runbooks.
+- Security threat model, persisted-data inventory, redaction and authorization-revocation tests,
+  dependency audit, CycloneDX SBOM, and build provenance.
+- Packed-artifact verification and optimized Hermes exports for all three shells on iOS and
+  Android.
 
-### Awaiting hosted certification
+### Hosted certification complete
 
-- Party clean-room shell on a clean runner.
-- Coach clean-room shell with optimized Hermes bytecode on both platforms.
+- Clean hosted CI, package tests, security gates, SBOM generation, and optimized exports.
+- Real application-target native compilation for iOS and Android; the iOS gate validates the app
+  workspace scheme rather than accepting a dependency/pod scheme.
+- Release-mode iOS simulator and Android emulator Maestro jobs exist for Party, Coach, and
+  Community. The final six-job run for the current commit is the remaining hosted checkpoint.
 
-### Not yet complete
+### Remaining release work
 
-- Community clean-room shell and the remaining SGForum parity primitives.
-- Full moderation, privacy, billing, and cross-product UI conformance.
-- Device E2E automation, accessibility certification, performance budgets, security review,
-  observability/release operations, signed store candidates, and owner acceptance.
+- Close any failure found by the final six-job Release-mode Maestro run and retain its artifacts.
+- Run cross-product visual, Dynamic Type, VoiceOver, TalkBack, reduced-motion, orientation, and
+  recovery certification on the physical-device matrix.
+- Configure real Expo, Apple, Google, push, OAuth, associated-domain, billing, analytics, and
+  production API credentials.
+- Produce signed TestFlight and Play internal-testing candidates.
+- Complete store privacy/data-safety declarations, metadata, screenshots, and review notes.
+- Obtain product-owner acceptance, execute rollback/hotfix drills against the signed candidates,
+  and approve staged production rollout.
 
 ## 3. Capability inventory
 
@@ -420,20 +440,144 @@ These do not block package-level implementation, but they block final production
 - Error/analytics provider credentials and release ownership.
 - Product-owner decisions for supported OS versions, pricing, branding, and final acceptance.
 
-## 9. Immediate ordered backlog
+## 9. Release execution plan
 
-1. Obtain green hosted CI for Party and Coach; close the Hermes compiler incident with evidence.
-2. Build and certify the Community clean-room shell.
-3. Implement feed/thread/notification/messaging/moderation/privacy controllers.
-4. Complete Party engine/deck-builder/provider depth.
-5. Complete Coach metrics/training/offline-conflict/billing depth.
-6. Run UI-state and accessibility conformance across all three shells.
-7. Complete threat model, redaction/authz tests, dependency audit, and privacy inventory.
-8. Add observability contracts, budgets, runbooks, flags, and rollback drills.
-9. Add Maestro and platform-specific device suites.
-10. Configure signing/store services, generate signed candidates, execute the device matrix, and
-    obtain owner acceptance.
+### Gate A — Current-commit hosted proof
 
-Work may proceed across independent items, but the exit gates remain sequential: shared contracts
-before reference journeys, reference journeys before device certification, and certification before
-store release.
+Owner: engineering
+
+Inputs: current repository commit and GitHub-hosted runners
+
+Target: same day
+
+1. Require green CI and native-smoke runs for the exact release commit.
+2. Require all six Release-mode Maestro jobs: Party, Coach, and Community on iOS and Android.
+3. Inspect failure screenshots, view hierarchies, native logs, and test artifacts rather than
+   accepting reruns without root-cause analysis.
+4. Re-run the full local suite after any corrective commit and repeat all hosted checks.
+5. Attach commit, run URLs, test count, SBOM, provenance, and export sizes to the evidence ledger.
+
+Exit criteria:
+
+- No failed, skipped, or silently substituted application target.
+- Release apps launch without Metro and complete every automated critical journey.
+- Packed consumers cannot import unpublished source.
+
+### Gate B — Conformance and physical-device certification
+
+Owner: mobile engineering and QA
+
+Inputs: supported-device policy and physical devices
+
+Target: one focused certification cycle after Gate A
+
+1. Execute the Section 6 matrix on current and previous iOS/Android major versions.
+2. Exercise compact and modern iPhones, a Pixel-class Android device, and one constrained Android
+   device.
+3. Certify 200% text, VoiceOver, TalkBack, reduced motion, light/dark appearance, safe areas,
+   rotation, keyboard/focus order, and minimum touch targets.
+4. Exercise background/foreground, process death, low storage, offline/poor network, permission
+   denial, camera/library, audio interruption/route change, deep links, and push-open behavior.
+5. Measure cold launch, interactive readiness, dropped frames, memory, queue/database growth, and
+   long-session stability against recorded budgets.
+6. Capture screenshots/recordings and file every deviation with severity, owner, and disposition.
+
+Exit criteria:
+
+- Zero critical accessibility or reliability defects.
+- No unexplained performance regression or unowned conformance exception.
+- Party, Coach, and Community critical journeys pass on both physical platforms.
+
+### Gate C — Production service and signing configuration
+
+Owner: release engineering with account owners
+
+Inputs: the credentials and decisions listed in Section 8
+
+Target: immediately when external access is supplied
+
+1. Allocate production bundle/application IDs and configure Apple/Google signing.
+2. Configure APNs/FCM, associated domains/App Links, OAuth redirects, Spotify playback, billing
+   products, API environments, analytics/error reporting, and feature-flag ownership.
+3. Publish privacy, terms, support, and account/data-deletion URLs.
+4. Populate EAS development, preview, and production profiles through managed secrets; never
+   commit credentials.
+5. Run the release doctor and reject missing, placeholder, expired, or mismatched configuration.
+6. Produce signed TestFlight and Play internal-testing candidates from the certified commit.
+
+Exit criteria:
+
+- Installable signed candidates use production-like services and pass entitlement/deep-link/push
+  validation.
+- Secret inventory has an owner and rotation procedure.
+
+### Gate D — Signed-candidate acceptance
+
+Owner: QA, security/privacy, operations, and product owner
+
+Inputs: Gate C candidates
+
+Target: one acceptance cycle plus defect remediation
+
+1. Re-run the complete critical-journey and physical-device matrices on signed candidates.
+2. Run billing sandbox purchase, restore, grace, cancel, and entitlement-refresh scenarios.
+3. Run export/deletion, block/mute, moderation audit, AI action confirmation, projection
+   redaction, account revocation, and local-data cleanup scenarios.
+4. Validate privacy manifest/data-safety declarations against the storage and telemetry inventory.
+5. Run rollback, kill-switch, hotfix, diagnostics, support escalation, and data-recovery drills.
+6. Obtain named sign-offs for product, QA, security/privacy, and operations.
+
+Exit criteria:
+
+- Every requirement in Section 3 is linked to automated evidence, manual evidence, or an explicit
+  app-owned acceptance record.
+- No critical/high defect is open; every accepted lower-severity issue has an owner and release
+  decision.
+
+### Gate E — Store submission and controlled rollout
+
+Owner: release manager and product owner
+
+Inputs: accepted signed candidates and store accounts
+
+1. Finalize icons, splash, screenshots, descriptions, keywords, release notes, age/content
+   ratings, privacy answers, support information, and reviewer instructions.
+2. Submit the exact accepted binaries; archive version/build identifiers and source commit.
+3. Start with internal testers, then a limited external/beta cohort, then phased production.
+4. Monitor crash-free sessions, launch/join/reconnect/queue/stream/upload/push metrics and support
+   volume at every stage.
+5. Pause or roll back when an agreed threshold is breached; do not promote on schedule alone.
+
+Exit criteria:
+
+- Stable staged-production metrics through the agreed observation window.
+- Evidence ledger, known limitations, rollback target, and hotfix branch are complete.
+
+## 10. Critical path and sequencing
+
+The engineering implementation is substantially complete. The shortest credible path is:
+
+```text
+current-commit hosted proof
+  → physical-device and accessibility/performance certification
+  → credentials, signing, and production service configuration
+  → signed-candidate acceptance
+  → store submission and phased rollout
+```
+
+Gate B preparation may run while external accounts for Gate C are assembled. Gates D and E cannot
+start without signed candidates. A green simulator suite is necessary evidence, but it does not
+replace physical-device, store-billing, push, media, audio, or owner acceptance.
+
+## 11. Required decision and ownership register
+
+Before Gate C, assign a named owner and due date for:
+
+- supported iOS/Android versions and device matrix;
+- Apple Developer/App Store Connect and Google Play Console access;
+- Expo project/account and signing-secret custody;
+- production API, OAuth, Spotify, APNs/FCM, billing, analytics, and error-reporting configuration;
+- pricing, entitlement mapping, product naming, icons, screenshots, and store copy;
+- privacy/terms/support/deletion URLs and retention policy;
+- QA, security/privacy, operations, and final product acceptance;
+- rollout thresholds, observation window, rollback authority, and customer-support escalation.
