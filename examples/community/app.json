@@ -4,9 +4,21 @@
     "slug": "pocketshot-community",
     "scheme": "pocketshot-community",
     "version": "0.0.1",
+    "runtimeVersion": { "policy": "appVersion" },
     "platforms": ["ios", "android"],
-    "ios": { "bundleIdentifier": "com.lastshotlabs.pocketshot.community" },
-    "android": { "package": "com.lastshotlabs.pocketshot.community" },
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.pocketshot.community",
+      "buildNumber": "1",
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
+    },
+    "android": { "package": "com.lastshotlabs.pocketshot.community", "versionCode": 1 },
     "plugins": ["expo-router", "expo-sqlite"]
   }
 }

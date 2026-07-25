@@ -1,9 +1,15 @@
 import {
   BallotController,
+  ContentLibraryController,
   HostCorrectionController,
   PartySessionController,
   PrivateSubmissionController,
   TimedPhaseController,
+  type BallotSnapshot,
+  type CorrectionSnapshot,
+  type PartySessionSnapshot,
+  type PrivateSubmission,
+  type TimedPhaseSnapshot,
 } from '@lastshotlabs/pocketshot/party-session'
 
 export type BlankSlatePhase =
@@ -37,10 +43,28 @@ export interface BlankSlateState {
   targetScore: number
   winnerIds: string[]
   notice: string | null
+  ended: boolean
+}
+
+type BlankSlateRules = { targetScore: number; writeMs: number }
+
+export interface BlankSlateSnapshot {
+  state: BlankSlateState
+  session: PartySessionSnapshot<BlankSlateRules>
+  submissions: PrivateSubmission<string>[]
+  corrections: CorrectionSnapshot<SlateGroup[]>
+  ballot: BallotSnapshot<string> | null
+  timer: TimedPhaseSnapshot
 }
 
 export class BlankSlateController {
-  private value: BlankSlateState = {
+  private value: BlankSlateState
+  private readonly session: PartySessionController<BlankSlateRules>
+  private submissions: PrivateSubmissionController<string>
+  private corrections: HostCorrectionController<SlateGroup[]>
+  private ballot: BallotController<string> | null
+  private timer: TimedPhaseController
+  private readonly initialState: BlankSlateState = {
     phase: 'entry',
     prompt: 'Birthday ___',
     players: [
@@ -54,28 +78,60 @@ export class BlankSlateController {
     targetScore: 12,
     winnerIds: [],
     notice: null,
+    ended: false,
   }
   private readonly listeners = new Set<(state: BlankSlateState) => void>()
-  private readonly session = new PartySessionController({ targetScore: 12, writeMs: 30_000 })
-  private submissions = new PrivateSubmissionController<string>(5_000)
-  private corrections = new HostCorrectionController<SlateGroup[]>([])
-  private ballot: BallotController<string> | null = null
-  private timer = new TimedPhaseController('idle', 0)
+  readonly prompts = new ContentLibraryController<{ cue: string }>(validateCue, (item) => item.cue)
 
-  constructor() {
-    this.value.players.forEach((player, seat) =>
-      this.session.join({
-        id: player.id,
-        displayName: player.name,
-        role: seat === 0 ? 'host' : 'participant',
-        seat,
-        connected: true,
-      }),
+  constructor(snapshot?: BlankSlateSnapshot) {
+    this.value = structuredClone(snapshot?.state ?? this.initialState)
+    this.session = new PartySessionController(
+      { targetScore: 12, writeMs: 30_000 },
+      snapshot?.session,
     )
+    this.submissions = new PrivateSubmissionController(5_000, Date.now, snapshot?.submissions)
+    this.corrections = new HostCorrectionController([], snapshot?.corrections)
+    this.ballot = snapshot?.ballot
+      ? new BallotController(snapshot.ballot.eligible, snapshot.ballot)
+      : null
+    this.timer = new TimedPhaseController(
+      snapshot?.timer.phase ?? 'idle',
+      0,
+      Date.now,
+      snapshot?.timer,
+    )
+    if (!snapshot) {
+      this.value.players.forEach((player, seat) =>
+        this.session.join({
+          id: player.id,
+          displayName: player.name,
+          role: seat === 0 ? 'host' : 'participant',
+          seat,
+          connected: true,
+        }),
+      )
+    }
+    this.prompts.create('starter', 'p1', 'Starter prompts')
+    this.prompts.appendItems('starter', 'p1', 1, [
+      { cue: 'Birthday ___' },
+      { cue: '___ room' },
+      { cue: 'Super ___ hero' },
+    ])
   }
 
   get state(): BlankSlateState {
     return structuredClone(this.value)
+  }
+
+  exportSnapshot(): BlankSlateSnapshot {
+    return {
+      state: this.state,
+      session: this.session.snapshot,
+      submissions: this.submissions.snapshot,
+      corrections: this.corrections.snapshot,
+      ballot: this.ballot?.snapshot ?? null,
+      timer: this.timer.snapshot,
+    }
   }
 
   subscribe(listener: (state: BlankSlateState) => void): () => void {
@@ -236,11 +292,61 @@ export class BlankSlateController {
   rematch(key: string): boolean {
     const accepted = this.session.startRematch('p1', key)
     if (!accepted) return false
+    this.value.targetScore = this.session.snapshot.rules.targetScore
     this.value.players = this.value.players.map((player) => ({ ...player, score: 0 }))
     this.value.winnerIds = []
+    this.value.ended = false
     this.value.phase = 'lobby'
     this.emit()
     return true
+  }
+
+  proposePrompts(id: string, cues: string[], rationale: string): void {
+    this.prompts.addProposal({
+      id,
+      collectionId: 'starter',
+      items: cues.map((cue) => ({ cue })),
+      rationale,
+    })
+  }
+
+  reviewPromptProposal(id: string, accept: boolean): void {
+    this.prompts.reviewProposal(id, 'p1', accept)
+  }
+
+  publishPrompts(): void {
+    this.prompts.submit('starter', 'p1')
+    this.prompts.approve('starter')
+    this.prompts.publish('starter')
+  }
+
+  stageWinRules(patch: Partial<{ targetScore: number; writeMs: number }>): void {
+    this.session.stageRules('p1', patch)
+    this.value.notice = 'Win rules staged for the next round or rematch'
+    this.emit()
+  }
+
+  adjustScore(playerId: string, delta: number): void {
+    const player = this.player(playerId)
+    player.score = Math.max(0, player.score + delta)
+    this.emit()
+  }
+
+  removePlayer(playerId: string): void {
+    if (this.value.players.length <= 3)
+      throw new Error('Blank Slate requires at least three players')
+    this.value.players = this.value.players.filter((player) => player.id !== playerId)
+    this.emit()
+  }
+
+  endMatch(): void {
+    this.value.ended = true
+    this.value.phase = 'results'
+    const highScore = Math.max(...this.value.players.map((player) => player.score))
+    this.value.winnerIds = this.value.players
+      .filter((player) => player.score === highScore)
+      .map((player) => player.id)
+    this.emit()
   }
 
   private player(id: string): SlatePlayer {
@@ -252,4 +358,13 @@ export class BlankSlateController {
   private emit(): void {
     for (const listener of this.listeners) listener(this.state)
   }
+}
+
+function validateCue(item: { cue: string }): string[] {
+  const blanks = item.cue.match(/___/g)?.length ?? 0
+  if (blanks !== 1) return ['Cue must contain exactly one blank']
+  if (item.cue.trim().length < 5 || item.cue.trim().length > 100) {
+    return ['Cue must be between 5 and 100 characters']
+  }
+  return []
 }

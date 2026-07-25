@@ -4,10 +4,23 @@
     "slug": "pocketshot-burndown",
     "scheme": "pocketshot-burndown",
     "version": "0.0.1",
+    "runtimeVersion": { "policy": "appVersion" },
     "platforms": ["ios", "android"],
     "orientation": "default",
-    "ios": { "bundleIdentifier": "com.lastshotlabs.pocketshot.burndown" },
-    "android": { "package": "com.lastshotlabs.pocketshot.burndown" },
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.pocketshot.burndown",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
+    },
+    "android": { "package": "com.lastshotlabs.pocketshot.burndown", "versionCode": 1 },
     "plugins": ["expo-router"]
   }
 }

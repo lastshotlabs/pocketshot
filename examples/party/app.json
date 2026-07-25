@@ -4,9 +4,21 @@
     "slug": "pocketshot-party",
     "scheme": "pocketshot-party",
     "version": "0.0.1",
+    "runtimeVersion": { "policy": "appVersion" },
     "platforms": ["ios", "android"],
-    "ios": { "bundleIdentifier": "com.lastshotlabs.pocketshot.party" },
-    "android": { "package": "com.lastshotlabs.pocketshot.party" },
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.pocketshot.party",
+      "buildNumber": "1",
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
+    },
+    "android": { "package": "com.lastshotlabs.pocketshot.party", "versionCode": 1 },
     "plugins": ["expo-router", ["expo-audio", { "enableBackgroundPlayback": true }]]
   }
 }

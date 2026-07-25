@@ -111,6 +111,7 @@
     "check:accessibility": "node scripts/accessibility-gate.mjs",
     "check:performance": "node scripts/performance-gate.mjs",
     "check:maestro": "node scripts/maestro-gate.mjs",
+    "check:product-release": "node scripts/product-release-gate.mjs",
     "release:doctor": "node scripts/release-doctor.mjs",
     "verify:consumer": "npm run build && node scripts/verify-package-consumer.mjs",
     "verify:showcase": "node scripts/verify-showcase.mjs",

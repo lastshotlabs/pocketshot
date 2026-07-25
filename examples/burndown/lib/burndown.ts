@@ -1,9 +1,13 @@
 import {
   BallotController,
+  ContentLibraryController,
   PartySessionController,
   PersonalCuePolicy,
   SharedDeviceController,
   TimedPhaseController,
+  type PartySessionSnapshot,
+  type SharedDeviceSnapshot,
+  type TimedPhaseSnapshot,
 } from '@lastshotlabs/pocketshot/party-session'
 
 export type BurndownMode = 'phones' | 'shared'
@@ -37,12 +41,28 @@ export interface BurndownState {
   notice: string | null
   paused: boolean
   winnerId: string | null
+  ended: boolean
+}
+
+type BurndownRules = { lives: number; turnMs: number; challenge: boolean }
+
+export interface BurndownSnapshot {
+  state: BurndownState
+  session: PartySessionSnapshot<BurndownRules>
+  shared: SharedDeviceSnapshot
+  timer: TimedPhaseSnapshot
+  commandKeys: string[]
 }
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 export class BurndownController {
-  private value: BurndownState = {
+  private value: BurndownState
+  private readonly session: PartySessionController<BurndownRules>
+  private readonly shared: SharedDeviceController
+  private timer: TimedPhaseController
+  private commandKeys: Set<string>
+  private readonly initialState: BurndownState = {
     phase: 'entry',
     mode: 'phones',
     joinCode: 'BURN-42',
@@ -58,34 +78,55 @@ export class BurndownController {
     notice: null,
     paused: false,
     winnerId: null,
+    ended: false,
   }
   private readonly listeners = new Set<(state: BurndownState) => void>()
-  private readonly session = new PartySessionController({
-    lives: 3,
-    turnMs: 20_000,
-    challenge: true,
-  })
-  private readonly shared = new SharedDeviceController()
   private readonly cues = new PersonalCuePolicy()
-  private timer = new TimedPhaseController('idle', 0)
   private challenge: BallotController<'valid' | 'invalid' | 'nobody'> | null = null
-  private commandKeys = new Set<string>()
+  readonly categories = new ContentLibraryController<{ category: string }>(
+    (item) =>
+      item.category.trim().length >= 3 && item.category.trim().length <= 80
+        ? []
+        : ['Category must be between 3 and 80 characters'],
+    (item) => item.category,
+  )
 
-  constructor() {
-    this.session.join({
-      id: 'p1',
-      displayName: 'Alex',
-      role: 'host',
-      seat: 0,
-      connected: true,
-    })
-    this.session.join({
-      id: 'p2',
-      displayName: 'Sam',
-      role: 'participant',
-      seat: 1,
-      connected: true,
-    })
+  constructor(snapshot?: BurndownSnapshot) {
+    this.value = structuredClone(snapshot?.state ?? this.initialState)
+    this.session = new PartySessionController(
+      { lives: 3, turnMs: 20_000, challenge: true },
+      snapshot?.session,
+    )
+    this.shared = new SharedDeviceController(snapshot?.shared)
+    this.timer = new TimedPhaseController(
+      snapshot?.timer.phase ?? 'idle',
+      0,
+      Date.now,
+      snapshot?.timer,
+    )
+    this.commandKeys = new Set(snapshot?.commandKeys ?? [])
+    if (!snapshot) {
+      this.session.join({
+        id: 'p1',
+        displayName: 'Alex',
+        role: 'host',
+        seat: 0,
+        connected: true,
+      })
+      this.session.join({
+        id: 'p2',
+        displayName: 'Sam',
+        role: 'participant',
+        seat: 1,
+        connected: true,
+      })
+    }
+    this.categories.create('starter', 'p1', 'Starter categories')
+    this.categories.appendItems('starter', 'p1', 1, [
+      { category: 'Things at the beach' },
+      { category: 'Movie titles' },
+      { category: 'Foods in a kitchen' },
+    ])
   }
 
   get state(): BurndownState {
@@ -94,6 +135,16 @@ export class BurndownController {
 
   get sharedState() {
     return this.shared.snapshot
+  }
+
+  exportSnapshot(): BurndownSnapshot {
+    return {
+      state: this.state,
+      session: this.session.snapshot,
+      shared: this.shared.snapshot,
+      timer: this.timer.snapshot,
+      commandKeys: [...this.commandKeys],
+    }
   }
 
   subscribe(listener: (state: BurndownState) => void): () => void {
@@ -199,13 +250,15 @@ export class BurndownController {
     const hostId = this.session.snapshot.hostId ?? 'p1'
     const started = this.session.startRematch(hostId, key)
     if (!started) return false
+    const { lives } = this.session.snapshot.rules
     this.value.players = this.value.players.map((player) => ({
       ...player,
-      lives: 3,
+      lives,
       eliminated: false,
     }))
     this.value.burned = []
     this.value.winnerId = null
+    this.value.ended = false
     this.value.phase = 'lobby'
     this.value.notice = null
     this.emit()
@@ -225,7 +278,58 @@ export class BurndownController {
       })),
       burnedCount: this.value.burned.length,
       winnerId: this.value.winnerId,
+      ended: this.value.ended,
     }
+  }
+
+  stageRules(patch: Partial<{ lives: number; turnMs: number; challenge: boolean }>): void {
+    this.session.stageRules(this.session.snapshot.hostId ?? 'p1', patch)
+    this.value.notice = 'Rule changes staged for the next round or rematch'
+    this.emit()
+  }
+
+  get rules() {
+    return structuredClone(this.session.snapshot.rules)
+  }
+
+  adjustLives(playerId: string, delta: number): void {
+    const player = this.player(playerId)
+    player.lives = Math.max(0, player.lives + delta)
+    player.eliminated = player.lives === 0
+    this.emit()
+  }
+
+  removePlayer(playerId: string): void {
+    if (this.value.players.length <= 2) throw new Error('A match requires at least two players')
+    this.value.players = this.value.players.filter((player) => player.id !== playerId)
+    if (this.value.activePlayerId === playerId) this.beginTurn(this.value.players[0].id)
+    else this.emit()
+  }
+
+  endMatch(): void {
+    this.value.ended = true
+    this.value.phase = 'results'
+    this.shared.end()
+    this.emit()
+  }
+
+  proposeCategories(id: string, categories: string[], rationale: string): void {
+    this.categories.addProposal({
+      id,
+      collectionId: 'starter',
+      items: categories.map((category) => ({ category })),
+      rationale,
+    })
+  }
+
+  reviewCategoryProposal(id: string, accept: boolean): void {
+    this.categories.reviewProposal(id, 'p1', accept)
+  }
+
+  publishCategories(): void {
+    this.categories.submit('starter', 'p1')
+    this.categories.approve('starter')
+    this.categories.publish('starter')
   }
 
   private beginTurn(id: string): void {

@@ -46,4 +46,38 @@ describe('Blank Slate native acceptance model', () => {
     expect(game.undoCorrection()).toBe(true)
     expect(game.state.groups).toEqual(original)
   })
+
+  it('enforces cue structure and publishes reviewed prompt proposals', () => {
+    const game = new BlankSlateController()
+    expect(() => game.proposePrompts('bad', ['No blank here'], 'Invalid proposal')).toThrow(
+      'exactly one blank',
+    )
+    game.proposePrompts('good', ['Summer ___'], 'Adds a seasonal cue')
+    game.reviewPromptProposal('good', true)
+    expect(game.prompts.browse({ query: 'summer' }).items).toHaveLength(1)
+    game.publishPrompts()
+    expect(game.prompts.snapshot[0].status).toBe('published')
+  })
+
+  it('supports staged win rules, score correction, and host termination', () => {
+    const game = new BlankSlateController()
+    game.stageWinRules({ targetScore: 20 })
+    game.adjustScore('p1', 4)
+    game.endMatch()
+    expect(game.state).toMatchObject({ phase: 'results', ended: true, winnerIds: ['p1'] })
+    game.rematch('new-rules')
+    expect(game.state).toMatchObject({ phase: 'lobby', ended: false, targetScore: 20 })
+  })
+
+  it('restores private drafts and ballots without projection leakage after process death', () => {
+    const game = new BlankSlateController()
+    submittedRound(game)
+    const writing = new BlankSlateController(game.exportSnapshot())
+    expect(writing.privateProjection('p1')[1]).not.toHaveProperty('value')
+    writing.reveal()
+    writing.openMergeVote()
+    writing.vote('p1', writing.state.groups[0].id, true)
+    const voting = new BlankSlateController(writing.exportSnapshot())
+    expect(voting.closeVote().get(writing.state.groups[0].id)).toBe(1)
+  })
 })

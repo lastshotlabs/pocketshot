@@ -12,6 +12,7 @@ const entries = [
   'audio',
   'coach',
   'party',
+  'party-session',
   'observability',
   'accessibility',
   'community',
