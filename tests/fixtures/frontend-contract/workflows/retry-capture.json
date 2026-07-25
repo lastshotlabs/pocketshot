@@ -1,0 +1,54 @@
+{
+  "workflows": {
+    "users.save": [
+      {
+        "type": "capture",
+        "as": "request",
+        "action": {
+          "type": "api",
+          "method": "POST",
+          "endpoint": "/api/users",
+          "body": {
+            "name": {
+              "from": "form.name"
+            }
+          }
+        }
+      },
+      {
+        "type": "if",
+        "condition": {
+          "left": {
+            "from": "request.ok"
+          },
+          "operator": "truthy"
+        },
+        "then": {
+          "type": "toast",
+          "message": "Saved {form.name}",
+          "variant": "success"
+        },
+        "else": {
+          "type": "retry",
+          "attempts": 3,
+          "delayMs": 150,
+          "step": {
+            "type": "api",
+            "method": "POST",
+            "endpoint": "/api/users/retry",
+            "body": {
+              "name": {
+                "from": "form.name"
+              }
+            }
+          },
+          "onFailure": {
+            "type": "toast",
+            "message": "Save failed",
+            "variant": "error"
+          }
+        }
+      }
+    ]
+  }
+}

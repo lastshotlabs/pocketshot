@@ -13,7 +13,7 @@ import { executeAction, type ActionExecutorDeps } from '../../src/ui/actions/exe
 function readSharedFixture<T>(relativePath: string): T {
   return JSON.parse(
     readFileSync(
-      fileURLToPath(new URL(`../../../frontend-contract/fixtures/${relativePath}`, import.meta.url).href),
+      fileURLToPath(new URL(`../fixtures/frontend-contract/${relativePath}`, import.meta.url).href),
       'utf8',
     ),
   ) as T

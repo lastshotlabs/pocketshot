@@ -1,0 +1,47 @@
+{
+  "theme": {
+    "flavor": "ocean",
+    "mode": "system",
+    "overrides": {
+      "colors": {
+        "primary": "#1e3a5f",
+        "background": "#f8fafc"
+      },
+      "spacing": "comfortable"
+    }
+  },
+  "resources": {
+    "users.list": {
+      "method": "GET",
+      "endpoint": "/api/orgs/{orgId}/users",
+      "params": {
+        "limit": 20
+      },
+      "cacheMs": 30000,
+      "invalidates": ["dashboard.summary"]
+    },
+    "users.create": {
+      "method": "POST",
+      "endpoint": "/api/orgs/{orgId}/users",
+      "invalidates": ["users.list"]
+    }
+  },
+  "actions": {
+    "load-users": {
+      "type": "api",
+      "method": "GET",
+      "endpoint": {
+        "resource": "users.list",
+        "params": {
+          "orgId": {
+            "from": "filters.orgId"
+          }
+        }
+      }
+    },
+    "refresh-users": {
+      "type": "refresh",
+      "target": "resource:users.list"
+    }
+  }
+}
