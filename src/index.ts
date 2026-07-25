@@ -2,6 +2,14 @@ export { createPocketshot } from './create-pocketshot'
 export type { PocketshotConfig } from './create-pocketshot'
 export { createSecureStoreStorage } from './auth/storage'
 export type { TokenStorage } from './auth/storage'
+export { AccountAuthController } from './auth/lifecycle'
+export type {
+  AccountAuthStatus,
+  AccountIdentity,
+  AccountAuthSnapshot,
+  AccountAuthResult,
+  AccountAuthTransport,
+} from './auth/lifecycle'
 export { ApiClient, ApiError } from './api/client'
 export { PocketshotWS, createWsHooks } from './ws/index'
 export {
@@ -124,6 +132,8 @@ export {
   NotificationInboxController,
   MessagingController,
   ModerationController,
+  CommunityAuthorizationController,
+  AutomodController,
   PrivacyController,
 } from './community/controllers'
 
@@ -160,6 +170,11 @@ export type {
   ConversationMessage,
   ModerationReport,
   ModerationAuditEntry,
+  DiscussionPoll,
+  CommunityRole,
+  CommunityPermission,
+  AutomodPolicy,
+  AutomodDecision,
 } from './community/controllers'
 
 // ── SSE ───────────────────────────────────────────────────────────────────────
