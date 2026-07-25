@@ -36,6 +36,11 @@
       "types": "./dist/types/realtime/index.d.ts",
       "import": "./dist/realtime.js",
       "require": "./dist/realtime.cjs"
+    },
+    "./offline": {
+      "types": "./dist/types/offline/index.d.ts",
+      "import": "./dist/offline.js",
+      "require": "./dist/offline.cjs"
     }
   },
   "scripts": {

@@ -2,8 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ApiClient } from '../api/client'
 import type { AppStateManager } from '../app-state/manager'
 import { OfflineQueue } from './queue'
+import { OfflineCommandProcessor } from './processor'
 import { checkNetworkStatus, useNetworkStatus } from './network'
-import type { QueuedOperation, OfflineQueueOptions } from './types'
+import type {
+  NewQueuedOperation,
+  OfflineFlushResult,
+  QueuedOperation,
+  OfflineQueueOptions,
+} from './types'
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
@@ -19,42 +25,19 @@ interface CreateOfflineHooksOpts {
 export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
   const { api, appStateManager } = opts
   const queue = new OfflineQueue(opts.queueOptions)
+  const processor = new OfflineCommandProcessor(queue, api)
 
   // Start flushing when the app comes to foreground
   appStateManager.onForeground(() => {
     void flushQueue()
   })
 
-  async function flushQueue(): Promise<{ flushed: number; failed: number }> {
+  async function flushQueue(): Promise<OfflineFlushResult> {
     const status = await checkNetworkStatus()
-    if (!status.isConnected) return { flushed: 0, failed: 0 }
-
-    const ops = await queue.getAll()
-    let flushed = 0
-    let failed = 0
-
-    for (const op of ops) {
-      if (op.attempts >= queue.maxAttemptCount) {
-        await queue.dequeue(op.id)
-        failed++
-        continue
-      }
-
-      try {
-        if (op.method === 'POST') await api.post(op.path, op.body)
-        else if (op.method === 'PUT') await api.put(op.path, op.body)
-        else if (op.method === 'PATCH') await api.patch(op.path, op.body)
-        else if (op.method === 'DELETE') await api.delete(op.path, op.body)
-
-        await queue.dequeue(op.id)
-        flushed++
-      } catch {
-        await queue.incrementAttempts(op.id)
-        failed++
-      }
+    if (!status.isConnected) {
+      return { flushed: 0, failed: 0, deadLettered: 0, deferred: 0 }
     }
-
-    return { flushed, failed }
+    return processor.flush()
   }
 
   /**
@@ -96,9 +79,7 @@ export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
     }, [networkStatus.isConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const enqueue = useCallback(
-      async (
-        op: Omit<QueuedOperation, 'id' | 'queuedAt' | 'attempts'>,
-      ): Promise<QueuedOperation> => {
+      async (op: NewQueuedOperation): Promise<QueuedOperation> => {
         const queued = await queue.enqueue(op)
         await refreshQueue()
         return queued
@@ -106,7 +87,7 @@ export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
       [refreshQueue],
     )
 
-    const flush = useCallback(async (): Promise<{ flushed: number; failed: number }> => {
+    const flush = useCallback(async (): Promise<OfflineFlushResult> => {
       setIsFlushing(true)
       try {
         const result = await flushQueue()
@@ -122,6 +103,14 @@ export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
       setQueuedOps([])
     }, [])
 
+    const retryDeadLetter = useCallback(
+      async (id: string) => {
+        await queue.retryDeadLetter(id)
+        await refreshQueue()
+      },
+      [refreshQueue],
+    )
+
     return {
       queuedOps,
       queueCount: queuedOps.length,
@@ -131,6 +120,8 @@ export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
       enqueue,
       flush,
       clearQueue,
+      retryDeadLetter,
+      getDeadLetters: () => queue.getDeadLetters(),
     }
   }
 

@@ -5,7 +5,8 @@ vi.mock('expo-sqlite', () => {
   throw new Error('not installed')
 })
 
-import { OfflineQueue } from '../../src/offline/queue'
+import { OfflineQueue, createMemoryOfflineQueueStorage } from '../../src/offline/queue'
+import type { QueuedOperation } from '../../src/offline/types'
 
 describe('OfflineQueue (in-memory fallback)', () => {
   let queue: OfflineQueue
@@ -31,6 +32,9 @@ describe('OfflineQueue (in-memory fallback)', () => {
     expect(op.method).toBe('POST')
     expect(op.path).toBe('/api/posts')
     expect(op.attempts).toBe(0)
+    expect(op.schemaVersion).toBe(2)
+    expect(op.idempotencyKey).toBe(op.id)
+    expect(op.status).toBe('queued')
     expect(op.queuedAt).toBeDefined()
   })
 
@@ -38,6 +42,34 @@ describe('OfflineQueue (in-memory fallback)', () => {
     const op1 = await queue.enqueue({ method: 'POST', path: '/a', body: {} })
     const op2 = await queue.enqueue({ method: 'POST', path: '/b', body: {} })
     expect(op1.id).not.toBe(op2.id)
+  })
+
+  it('deduplicates commands with the same caller idempotency key', async () => {
+    const first = await queue.enqueue({
+      method: 'POST',
+      path: '/charge',
+      body: { amount: 10 },
+      idempotencyKey: 'charge-1',
+    })
+    const duplicate = await queue.enqueue({
+      method: 'POST',
+      path: '/charge',
+      body: { amount: 10 },
+      idempotencyKey: 'charge-1',
+    })
+    expect(duplicate.id).toBe(first.id)
+    expect(await queue.getAll()).toHaveLength(1)
+  })
+
+  it('serializes concurrent enqueues without dropping commands', async () => {
+    await Promise.all(
+      Array.from({ length: 20 }, (_, index) =>
+        queue.enqueue({ method: 'POST', path: `/commands/${index}`, body: { index } }),
+      ),
+    )
+    const operations = await queue.getAll()
+    expect(operations).toHaveLength(20)
+    expect(new Set(operations.map((operation) => operation.id)).size).toBe(20)
   })
 
   it('getAll returns all queued operations in order', async () => {
@@ -93,5 +125,45 @@ describe('OfflineQueue (in-memory fallback)', () => {
     const q = new OfflineQueue({ maxAttempts: 3, retryDelay: 500 })
     // maxAttempts is stored internally — verify it doesn't throw on construction
     expect(q).toBeDefined()
+  })
+
+  it('recovers an interrupted processing command after process restart', async () => {
+    const interrupted: QueuedOperation = {
+      schemaVersion: 2,
+      id: 'operation-1',
+      idempotencyKey: 'operation-1',
+      method: 'POST',
+      path: '/resume',
+      body: {},
+      queuedAt: '2026-07-25T00:00:00.000Z',
+      attempts: 0,
+      status: 'processing',
+      nextAttemptAt: null,
+      lastError: null,
+    }
+    const storage = createMemoryOfflineQueueStorage([interrupted])
+    const restarted = new OfflineQueue({ storage })
+
+    const recovered = await restarted.getAll()
+    expect(recovered[0]?.status).toBe('queued')
+    expect(recovered[0]?.lastError).toContain('process interruption')
+  })
+
+  it('persists retry scheduling and explicit dead-letter recovery', async () => {
+    let now = new Date('2026-07-25T00:00:00.000Z')
+    const storage = createMemoryOfflineQueueStorage()
+    const durable = new OfflineQueue({ storage, now: () => now, retryDelay: 1_000 })
+    const operation = await durable.enqueue({ method: 'POST', path: '/retry', body: {} })
+
+    await durable.markRetry(operation.id, 'offline')
+    expect(await durable.getReady()).toHaveLength(0)
+    now = new Date('2026-07-25T00:00:01.000Z')
+    expect(await durable.getReady()).toHaveLength(1)
+
+    await durable.moveToDeadLetter(operation.id, 'invalid')
+    expect(await durable.getAll()).toHaveLength(0)
+    expect(await durable.getDeadLetters()).toHaveLength(1)
+    await durable.retryDeadLetter(operation.id)
+    expect(await durable.getReady()).toHaveLength(1)
   })
 })

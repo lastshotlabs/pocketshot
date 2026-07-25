@@ -146,6 +146,9 @@ export type { ParsedDeepLink, DeepLinkRoute, DeepLinkRouterOptions } from './dee
 // ── Offline ───────────────────────────────────────────────────────────────────
 export {
   OfflineQueue,
+  OfflineCommandProcessor,
+  OptimisticOfflineMutations,
+  createMemoryOfflineQueueStorage,
   checkNetworkStatus,
   useNetworkStatus,
   createOfflineHooks,
@@ -154,8 +157,13 @@ export type {
   OfflineHooks,
   NetworkStatus,
   QueuedOperation,
+  NewQueuedOperation,
   OfflineQueueOptions,
+  OfflineQueueStorage,
+  OfflineFlushResult,
 } from './offline/index'
+export type { OfflineCommandProcessorOptions } from './offline/index'
+export type { OptimisticMutationAdapter } from './offline/index'
 
 // ── Share / Clipboard ─────────────────────────────────────────────────────────
 export {

@@ -1,5 +1,16 @@
-export { OfflineQueue } from './queue'
+export { OfflineQueue, createMemoryOfflineQueueStorage } from './queue'
+export { OfflineCommandProcessor } from './processor'
+export type { OfflineCommandProcessorOptions } from './processor'
+export { OptimisticOfflineMutations } from './optimistic'
+export type { OptimisticMutationAdapter } from './optimistic'
 export { checkNetworkStatus, useNetworkStatus } from './network'
 export { createOfflineHooks } from './hooks'
 export type { OfflineHooks } from './hooks'
-export type { NetworkStatus, QueuedOperation, OfflineQueueOptions } from './types'
+export type {
+  NetworkStatus,
+  QueuedOperation,
+  NewQueuedOperation,
+  OfflineQueueOptions,
+  OfflineQueueStorage,
+  OfflineFlushResult,
+} from './types'

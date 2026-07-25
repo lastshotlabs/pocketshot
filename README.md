@@ -269,6 +269,42 @@ session is destroyed.
 > **SSE (Server-Sent Events):** PocketShot also exports `SseManager` for
 > one-way streams through the optional `react-native-sse` peer dependency.
 
+### Durable offline commands
+
+`@lastshotlabs/pocketshot/offline` provides a schema-versioned FIFO mutation
+queue and replay processor. Every command has a stable idempotency key, retry
+schedule, processing state, optional optimistic context, and recoverable
+dead-letter state. The SQLite backend automatically recovers commands left in
+`processing` after process death and migrates the original PocketShot queue.
+
+```ts
+import {
+  OfflineCommandProcessor,
+  OfflineQueue,
+} from '@lastshotlabs/pocketshot/offline'
+
+const queue = new OfflineQueue()
+const command = await queue.enqueue({
+  method: 'POST',
+  path: '/community/threads',
+  body: { title: 'Offline draft' },
+  idempotencyKey: 'create-thread:local-123',
+  optimisticContext: { localId: 'local-123' },
+})
+
+const processor = new OfflineCommandProcessor(queue, pocketshot.api, {
+  onDeadLetter: async (failed) => {
+    // Roll back or reconcile optimistic state using failed.optimisticContext.
+  },
+})
+await processor.flush()
+```
+
+Replay sends `Idempotency-Key` on every attempt and preserves strict FIFO
+ordering. Retryable failures use bounded exponential delay; terminal failures
+remain visible through `queue.getDeadLetters()` until explicitly retried or
+removed.
+
 **Community** (call `createCommunityHooks(api)` to create)
 
 | Hook                                         | Description                                     |

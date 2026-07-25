@@ -42,7 +42,12 @@ export default defineConfig([
     outDir: 'dist',
   },
   {
-    entry: { index: 'src/index.ts', ui: 'src/ui.ts', realtime: 'src/realtime/index.ts' },
+    entry: {
+      index: 'src/index.ts',
+      ui: 'src/ui.ts',
+      realtime: 'src/realtime/index.ts',
+      offline: 'src/offline/index.ts',
+    },
     format: ['esm', 'cjs'],
     external: peerDeps,
     outDir: 'dist',

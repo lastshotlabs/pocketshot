@@ -7,8 +7,12 @@ export interface NetworkStatus {
 
 /** A single queued operation waiting to be replayed. */
 export interface QueuedOperation {
+  /** Storage schema version for forward migrations. */
+  schemaVersion: 2
   /** Unique ID for this queued operation. */
   id: string
+  /** Stable key sent with every replay so the server can deduplicate writes. */
+  idempotencyKey: string
   /** HTTP method: 'POST', 'PUT', 'PATCH', 'DELETE'. */
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   /** API path, e.g. '/community/threads'. */
@@ -19,6 +23,20 @@ export interface QueuedOperation {
   queuedAt: string
   /** Number of retry attempts so far. */
   attempts: number
+  /** Current durable processing state. */
+  status: 'queued' | 'processing' | 'dead_letter'
+  /** Earliest ISO timestamp at which this command may be retried. */
+  nextAttemptAt: string | null
+  /** Last replay error, retained for diagnostics and dead-letter recovery. */
+  lastError: string | null
+  /** Optional durable metadata used to reconcile optimistic UI after restart. */
+  optimisticContext?: unknown
+}
+
+export interface OfflineQueueStorage {
+  load(): Promise<QueuedOperation[]>
+  save(operations: QueuedOperation[]): Promise<void>
+  clear(): Promise<void>
 }
 
 /** Options for the offline queue. */
@@ -27,4 +45,22 @@ export interface OfflineQueueOptions {
   maxAttempts?: number
   /** Retry delay in ms (doubles with each attempt, capped at 30s). Default: 1000. */
   retryDelay?: number
+  /** Maximum retry delay. Default: 30000. */
+  maxRetryDelay?: number
+  /** Inject storage for tests or a custom durable backend. */
+  storage?: OfflineQueueStorage
+  /** Injectable clock used for deterministic replay. */
+  now?: () => Date
+  /** Injectable ID factory. The same ID is used as the idempotency key by default. */
+  createId?: () => string
+}
+
+export type NewQueuedOperation = Pick<QueuedOperation, 'method' | 'path' | 'body'> &
+  Partial<Pick<QueuedOperation, 'idempotencyKey' | 'optimisticContext'>>
+
+export interface OfflineFlushResult {
+  flushed: number
+  failed: number
+  deadLettered: number
+  deferred: number
 }

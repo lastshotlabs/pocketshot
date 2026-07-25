@@ -87,6 +87,7 @@ import {
   type ManifestConfig,
 } from '@lastshotlabs/pocketshot/ui'
 import { createRealtimeChannel, MemoryRealtimeStorage } from '@lastshotlabs/pocketshot/realtime'
+import { OfflineQueue, createMemoryOfflineQueueStorage } from '@lastshotlabs/pocketshot/offline'
 import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
@@ -109,6 +110,9 @@ const realtime = createRealtimeChannel({
   storage: new MemoryRealtimeStorage(),
 })
 void realtime
+
+const offline = new OfflineQueue({ storage: createMemoryOfflineQueueStorage() })
+void offline
 
 export const Consumer = () => <ButtonBase {...button} />
 `,
