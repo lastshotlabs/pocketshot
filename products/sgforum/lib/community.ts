@@ -4,7 +4,9 @@ import {
   type DraftStorage,
 } from '@lastshotlabs/pocketshot/drafts'
 import {
+  CommunityAdminController,
   CommunityProfileController,
+  RoomStateController,
   SocialGraphController,
   type CommunityProfileVisibility,
 } from '@lastshotlabs/pocketshot/community/core'
@@ -105,6 +107,12 @@ export interface CommunityState {
   deletionStatus: DeletionStatus
   localDataCleared: boolean
   notice: string | null
+  notificationPreferences: Record<'reply' | 'mention' | 'message' | 'moderation', boolean>
+  pushHandoffRoute: string | null
+  rooms: { id: string; name: string; memberIds: string[]; unread: number }[]
+  activeRoomId: string | null
+  adminFlags: Record<string, boolean>
+  adminAuditCount: number
 }
 
 type Event =
@@ -154,6 +162,12 @@ const initial: CommunityState = {
   deletionStatus: 'idle',
   localDataCleared: false,
   notice: null,
+  notificationPreferences: { reply: true, mention: true, message: true, moderation: true },
+  pushHandoffRoute: null,
+  rooms: [{ id: 'trail-room', name: 'Trail Room', memberIds: ['alex', 'morgan'], unread: 0 }],
+  activeRoomId: null,
+  adminFlags: {},
+  adminAuditCount: 0,
 }
 
 export class CommunityDemoController {
@@ -173,6 +187,8 @@ export class CommunityDemoController {
   readonly composer
   readonly profiles = new CommunityProfileController()
   readonly social = new SocialGraphController()
+  readonly rooms = new RoomStateController()
+  readonly admin = new CommunityAdminController(() => '2026-07-25T12:00:00.000Z')
   readonly account = createCommunityAccount()
   readonly accountData = new AccountDataController(
     {
@@ -227,6 +243,13 @@ export class CommunityDemoController {
       cursor: 0,
       state: this.stateValue,
     })
+    this.rooms.openRoom('trail-room')
+    for (const ability of ['ban', 'broadcast', 'manage_flags', 'view_audit'] as const) {
+      this.admin.grant('system', 'alex', ability)
+    }
+    const admin = this.admin.snapshot
+    this.stateValue.adminFlags = admin.flags
+    this.stateValue.adminAuditCount = admin.audit.length
   }
 
   get state(): CommunityState {
@@ -537,13 +560,104 @@ export class CommunityDemoController {
     this.emit()
   }
 
-  notify(text: string, targetId: string | null = null): void {
+  notify(
+    text: string,
+    targetId: string | null = null,
+    category: keyof CommunityState['notificationPreferences'] = 'reply',
+  ): void {
+    if (!this.stateValue.notificationPreferences[category]) return
     this.event({
       kind: 'notification',
       id: `notification-${this.cursor + 1}`,
       text,
       targetId,
     })
+  }
+
+  setNotificationPreference(
+    category: keyof CommunityState['notificationPreferences'],
+    enabled: boolean,
+  ): void {
+    this.stateValue.notificationPreferences[category] = enabled
+    this.emit()
+  }
+
+  openPushHandoff(route: string): boolean {
+    let url: URL
+    try {
+      url = new URL(route, 'https://links.sgforum.app')
+    } catch {
+      return false
+    }
+    const isRelative = route.startsWith('/')
+    const isUniversalLink = url.protocol === 'https:' && url.hostname === 'links.sgforum.app'
+    const isCustomScheme = url.protocol === 'sgforum:'
+    if (!isRelative && !isUniversalLink && !isCustomScheme) return false
+    const pathname =
+      isCustomScheme && url.hostname ? `/${url.hostname}${url.pathname}` : url.pathname
+    const normalized = `${pathname}${url.search}${url.hash}`
+    if (!/^\/(?:threads|messages|rooms|moderation)(?:\/|$)/.test(normalized)) return false
+    this.stateValue.pushHandoffRoute = normalized
+    const thread = /^\/threads\/([^/#?]+)/.exec(normalized)?.[1]
+    if (thread && this.stateValue.threads.some((candidate) => candidate.id === thread)) {
+      this.openThread(thread)
+    } else {
+      this.emit()
+    }
+    return true
+  }
+
+  createRoom(id: string, name: string, memberIds: string[]): void {
+    if (!id.trim() || !name.trim() || memberIds.length < 2) {
+      throw new Error('Room requires an id, name, and at least two members')
+    }
+    if (this.stateValue.rooms.some((room) => room.id === id)) return
+    this.rooms.openRoom(id)
+    this.stateValue.rooms.push({
+      id,
+      name: name.trim(),
+      memberIds: [...new Set(memberIds)],
+      unread: 0,
+    })
+    this.emit()
+  }
+
+  openRoom(id: string): void {
+    const room = this.stateValue.rooms.find((candidate) => candidate.id === id)
+    if (!room) throw new Error(`Unknown room: ${id}`)
+    this.rooms.openRoom(id)
+    this.rooms.markRead(id, this.rooms.snapshot.latestSequence)
+    room.unread = 0
+    this.stateValue.activeRoomId = id
+    this.emit()
+  }
+
+  receiveRoomMessage(id: string, sequence: number): void {
+    const room = this.stateValue.rooms.find((candidate) => candidate.id === id)
+    if (!room) throw new Error(`Unknown room: ${id}`)
+    this.rooms.receive(sequence)
+    if (this.stateValue.activeRoomId !== id) room.unread += 1
+    this.emit()
+  }
+
+  setAdminFlag(key: string, enabled: boolean): void {
+    this.admin.setFlag('alex', key, enabled, '2026-07-25T11:59:00.000Z')
+    this.syncAdmin()
+  }
+
+  publishAdminBroadcast(body: string): void {
+    this.admin.broadcast(
+      'alex',
+      `broadcast-${this.admin.snapshot.broadcasts.length + 1}`,
+      body,
+      '2026-07-25T11:59:00.000Z',
+    )
+    this.syncAdmin()
+  }
+
+  banUser(userId: string, reason: string): void {
+    this.admin.ban('alex', userId, reason, '2026-07-25T11:59:00.000Z')
+    this.syncAdmin()
   }
 
   openNotification(id: string): void {
@@ -718,6 +832,13 @@ export class CommunityDemoController {
     this.stateValue.deletionStatus = snapshot.deletionStatus
     this.stateValue.localDataCleared =
       snapshot.authorizationRevoked && snapshot.clearedStores.length === 2
+    this.emit()
+  }
+
+  private syncAdmin(): void {
+    const snapshot = this.admin.snapshot
+    this.stateValue.adminFlags = snapshot.flags
+    this.stateValue.adminAuditCount = snapshot.audit.length
     this.emit()
   }
 }

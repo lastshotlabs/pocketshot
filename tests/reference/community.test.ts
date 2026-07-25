@@ -196,6 +196,53 @@ describe('Community reference shell', () => {
     })
   })
 
+  it('honors notification categories and safely routes push handoffs', () => {
+    const community = new CommunityDemoController()
+    community.setNotificationPreference('reply', false)
+    community.notify('Muted reply', 'thread-welcome', 'reply')
+    community.notify('Important mention', 'thread-welcome', 'mention')
+    expect(community.state.notifications.map((item) => item.text)).toEqual(['Important mention'])
+    expect(community.openPushHandoff('/threads/thread-welcome?source=push')).toBe(true)
+    expect(community.state).toMatchObject({
+      view: 'thread',
+      selectedThreadId: 'thread-welcome',
+      pushHandoffRoute: '/threads/thread-welcome?source=push',
+    })
+    expect(community.openPushHandoff('/account/export')).toBe(false)
+    expect(community.openPushHandoff('https://attacker.invalid/account')).toBe(false)
+    expect(community.openPushHandoff('https://attacker.invalid/threads/thread-welcome')).toBe(false)
+    expect(community.openPushHandoff('sgforum://threads/thread-welcome')).toBe(true)
+  })
+
+  it('creates rooms and reconciles unread room messages on open', () => {
+    const community = new CommunityDemoController()
+    community.createRoom('ridge-crew', 'Ridge Crew', ['alex', 'morgan', 'alex'])
+    community.receiveRoomMessage('ridge-crew', 1)
+    expect(community.state.rooms).toContainEqual({
+      id: 'ridge-crew',
+      name: 'Ridge Crew',
+      memberIds: ['alex', 'morgan'],
+      unread: 1,
+    })
+    community.openRoom('ridge-crew')
+    expect(community.state).toMatchObject({ activeRoomId: 'ridge-crew' })
+    expect(community.state.rooms.find((room) => room.id === 'ridge-crew')?.unread).toBe(0)
+  })
+
+  it('performs privileged admin changes with a visible audit trail', () => {
+    const community = new CommunityDemoController()
+    const baseline = community.state.adminAuditCount
+    community.setAdminFlag('slow-mode', true)
+    community.publishAdminBroadcast('Please review the community rules.')
+    community.banUser('reported-user', 'Repeated harassment')
+    expect(community.state.adminFlags).toEqual({ 'slow-mode': true })
+    expect(community.state.adminAuditCount).toBe(baseline + 3)
+    expect(community.admin.snapshot).toMatchObject({
+      bans: { 'reported-user': { reason: 'Repeated harassment', expiresAt: null } },
+      broadcasts: [expect.objectContaining({ body: 'Please review the community rules.' })],
+    })
+  })
+
   it('stops message sends when membership is revoked', () => {
     const community = new CommunityDemoController()
     community.sendMessage('Before')

@@ -230,11 +230,31 @@ export default function CommunityShell() {
         )}
         {state.view === 'notifications' && (
           <Card title="Notifications">
+            <Text style={styles.copy}>
+              Reply alerts: {state.notificationPreferences.reply ? 'on' : 'off'} · Mention alerts:{' '}
+              {state.notificationPreferences.mention ? 'on' : 'off'}
+            </Text>
             {state.notifications.map((item) => (
               <Text key={item.id} style={styles.copy}>
                 {item.read ? 'Read' : 'New'} · {item.text}
               </Text>
             ))}
+            <Action
+              testID="toggle-reply-notifications"
+              label={
+                state.notificationPreferences.reply
+                  ? 'Disable reply notifications'
+                  : 'Enable reply notifications'
+              }
+              onPress={() =>
+                community.setNotificationPreference('reply', !state.notificationPreferences.reply)
+              }
+            />
+            <Action
+              testID="open-notification-handoff"
+              label="Open welcome thread from push"
+              onPress={() => community.openPushHandoff('/threads/thread-welcome?source=push')}
+            />
             <Action testID="read-all" label="Mark all read" onPress={() => community.readAll()} />
           </Card>
         )}
@@ -248,6 +268,28 @@ export default function CommunityShell() {
                 {message.body}
               </Text>
             ))}
+            {state.rooms.map((room) => (
+              <View key={room.id} style={styles.thread}>
+                <Text style={styles.copy}>
+                  {room.name} · {room.memberIds.length} members · {room.unread} unread
+                </Text>
+                <Action
+                  testID={`open-room-${room.id}`}
+                  label={`Open ${room.name}`}
+                  onPress={() => community.openRoom(room.id)}
+                />
+              </View>
+            ))}
+            <Action
+              testID="create-room"
+              label="Create Ridge Crew room"
+              onPress={() => community.createRoom('ridge-crew', 'Ridge Crew', ['alex', 'morgan'])}
+            />
+            <Action
+              testID="receive-room-message"
+              label="Receive Trail Room message"
+              onPress={() => community.receiveRoomMessage('trail-room', Date.now())}
+            />
             <Action
               testID="typing"
               label="Simulate typing"
@@ -272,6 +314,10 @@ export default function CommunityShell() {
         )}
         {state.view === 'moderation' && (
           <Card title="Moderator queue">
+            <Text style={styles.copy}>Admin audit events: {state.adminAuditCount}</Text>
+            <Text style={styles.copy}>
+              Slow mode: {state.adminFlags['slow-mode'] ? 'enabled' : 'disabled'}
+            </Text>
             {state.reports.map((report) => (
               <View key={report.id} style={styles.thread}>
                 <Text style={styles.copy}>
@@ -286,6 +332,21 @@ export default function CommunityShell() {
                 )}
               </View>
             ))}
+            <Action
+              testID="toggle-admin-flag"
+              label="Enable slow mode"
+              onPress={() => community.setAdminFlag('slow-mode', true)}
+            />
+            <Action
+              testID="publish-admin-broadcast"
+              label="Publish safety broadcast"
+              onPress={() => community.publishAdminBroadcast('Please review the community rules.')}
+            />
+            <Action
+              testID="admin-ban-user"
+              label="Ban reported account"
+              onPress={() => community.banUser('reported-user', 'Repeated harassment')}
+            />
           </Card>
         )}
         {state.view === 'profile' && (
