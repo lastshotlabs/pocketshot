@@ -52,6 +52,23 @@ describe('Blank Slate native acceptance model', () => {
     expect(game.lobbyProjection()).not.toHaveProperty('admissionQueue')
   })
 
+  it('delivers only personal push categories with room mute and duplicate suppression', () => {
+    const game = new BlankSlateController()
+    expect(game.deliverPersonalPush('turn-to-write', 'p1', 'turn-1', 'background', 1_000)).toBe(
+      true,
+    )
+    expect(game.deliverPersonalPush('turn-to-write', 'p1', 'turn-1', 'background', 2_000)).toBe(
+      false,
+    )
+    expect(game.deliverPersonalPush('reaction', 'p1', 'reaction-1')).toBe(false)
+    expect(game.deliverPersonalPush('rematch', 'p1', 'rematch-1', 'suspended')).toBe(false)
+    game.setRoomMuted(true)
+    expect(game.deliverPersonalPush('host-knock', 'p1', 'knock-1')).toBe(false)
+    game.setRoomMuted(false)
+    expect(game.deliverPersonalPush('final-score', 'p1', 'score-1')).toBe(true)
+    expect(game.state.deliveredPushes).toEqual(['turn-to-write:turn-1', 'final-score:score-1'])
+  })
+
   it('normalizes cold native joins and rejects expired invites', () => {
     expect(normalizeBlankSlateSystemPath('pocketshot-blankslate://join/SLATE-42')).toBe(
       '/join/SLATE-42',

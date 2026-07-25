@@ -114,7 +114,31 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
               {game.identityEmail ? ` · ${game.identityEmail}` : ''}
             </Text>
             <Text style={styles.meta}>Passkeys: {game.passkeyCount}</Text>
-            <Text style={styles.meta}>Push: personal turns only · Room mute available</Text>
+            <Text testID="personal-push-status" style={styles.meta}>
+              Push: personal turns only · {game.roomMuted ? 'Room muted' : 'Room active'} ·{' '}
+              {game.deliveredPushes.length} delivered
+            </Text>
+            <Action
+              testID="toggle-room-mute"
+              label={game.roomMuted ? 'Unmute room notifications' : 'Mute room notifications'}
+              onPress={() => controller.setRoomMuted(!game.roomMuted)}
+            />
+            <Action
+              testID="preview-turn-push"
+              label="Preview personal turn notification"
+              onPress={() =>
+                controller.deliverPersonalPush(
+                  'turn-to-write',
+                  'p1',
+                  `turn-preview-${game.deliveredPushes.length + 1}`,
+                )
+              }
+            />
+            <Action
+              testID="enable-quiet-hours"
+              label="Enable overnight quiet hours"
+              onPress={() => controller.setQuietHours({ startHour: 22, endHour: 8 })}
+            />
             <Action
               testID="account-settings"
               label="Account and privacy"

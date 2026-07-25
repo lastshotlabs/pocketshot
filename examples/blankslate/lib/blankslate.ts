@@ -4,6 +4,7 @@ import {
   GameDashboardController,
   HostCorrectionController,
   PartyActivityController,
+  PersonalCuePolicy,
   PartySessionController,
   PrivateSubmissionController,
   TimedPhaseController,
@@ -65,6 +66,8 @@ export interface BlankSlateState {
   identityStatus: 'guest' | 'account' | 'passkey'
   identityEmail: string | null
   passkeyCount: number
+  roomMuted: boolean
+  deliveredPushes: string[]
 }
 
 type BlankSlateRules = {
@@ -95,6 +98,7 @@ export class BlankSlateController {
   private timer: TimedPhaseController
   private currentGameId: string
   private readonly activity: PartyActivityController
+  private readonly cues = new PersonalCuePolicy()
   private readonly initialState: BlankSlateState = {
     phase: 'entry',
     prompt: 'Birthday ___',
@@ -119,6 +123,8 @@ export class BlankSlateController {
     identityStatus: 'guest',
     identityEmail: null,
     passkeyCount: 0,
+    roomMuted: false,
+    deliveredPushes: [],
   }
   private readonly listeners = new Set<(state: BlankSlateState) => void>()
   readonly prompts = new ContentLibraryController<{ cue: string }>(validateCue, (item) => item.cue)
@@ -234,6 +240,40 @@ export class BlankSlateController {
     await this.passkeys.remove(credential.credentialId)
     this.value.passkeyCount = this.passkeys.snapshot.credentials.length
     this.emit()
+  }
+
+  setRoomMuted(muted: boolean): void {
+    this.cues.setRoomMuted('SLATE-42', muted)
+    this.value.roomMuted = muted
+    this.emit()
+  }
+
+  setQuietHours(value: { startHour: number; endHour: number } | null): void {
+    this.cues.setQuietHours(value)
+    this.emit()
+  }
+
+  deliverPersonalPush(
+    kind: 'turn-to-write' | 'rematch' | 'final-score' | 'host-knock' | 'reaction',
+    recipientId: string,
+    eventId: string,
+    lifecycle: 'active' | 'background' | 'suspended' = 'background',
+    at = Date.now(),
+  ): boolean {
+    if (kind === 'reaction') return false
+    const delivered = this.cues.shouldDeliver(
+      {
+        roomId: 'SLATE-42',
+        eventId,
+        actorId: recipientId,
+        recipientId,
+        at,
+      },
+      lifecycle,
+    )
+    if (delivered) this.value.deliveredPushes.push(`${kind}:${eventId}`)
+    this.emit()
+    return delivered
   }
 
   join(code: string): boolean {
