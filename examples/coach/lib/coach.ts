@@ -223,6 +223,26 @@ export class CoachDemoController {
     this.emit()
   }
 
+  async stopAdvice(): Promise<void> {
+    const conversation = this.stateValue.conversation
+    if (!conversation) return
+    await this.ai.stop(conversation.id)
+    this.stateValue.conversation = this.ai.get(conversation.id)
+    this.emit()
+  }
+
+  async retryAdvice(): Promise<void> {
+    const conversation = this.stateValue.conversation
+    if (!conversation) return
+    try {
+      this.stateValue.conversation = await this.ai.retry(conversation.id)
+      this.stateValue.error = null
+    } catch (error) {
+      this.stateValue.error = error instanceof Error ? error.message : String(error)
+    }
+    this.emit()
+  }
+
   async confirmLatestAction(value = 8): Promise<void> {
     const conversation = this.stateValue.conversation!
     const action = conversation.messages[conversation.messages.length - 1]?.actions[0]

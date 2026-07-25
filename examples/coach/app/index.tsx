@@ -83,6 +83,10 @@ export default function CoachShell() {
         </Card>
         <Card title="Conversation">
           <Text style={styles.copy}>{assistant?.text || 'Ready for your first check-in.'}</Text>
+          <Text style={styles.copy}>
+            Status: {assistant?.status ?? 'idle'} · Citations: {assistant?.citations.length ?? 0} ·
+            Remaining: {state.conversation?.usage?.remaining ?? 'unknown'}
+          </Text>
           <Action
             testID="ask-coach"
             label="Ask coach"
@@ -100,6 +104,20 @@ export default function CoachShell() {
             label="Undo latest log"
             onPress={() => void coach.undoLatestAction()}
           />
+          {assistant?.status === 'streaming' && (
+            <Action
+              testID="stop-advice"
+              label="Stop response"
+              onPress={() => void coach.stopAdvice()}
+            />
+          )}
+          {(assistant?.status === 'failed' || assistant?.status === 'stopped') && (
+            <Action
+              testID="retry-advice"
+              label="Retry response"
+              onPress={() => void coach.retryAdvice()}
+            />
+          )}
         </Card>
         <Card title="Photo analysis">
           <Text style={styles.copy}>{state.mediaStatus ?? 'No analysis yet.'}</Text>

@@ -46,11 +46,26 @@ describe('Coach clean-room acceptance model', () => {
     expect(assistant).toMatchObject({
       text: 'Try a short walk after lunch.',
       status: 'complete',
+      citations: [{ id: 'source-1', title: 'Activity evidence' }],
       actions: [expect.objectContaining({ status: 'proposed' })],
     })
+    expect(coach.state.conversation?.usage?.remaining).toBe(88)
     expect(coach.state.logs).toHaveLength(0)
     await coach.confirmLatestAction(8)
     expect(coach.state.logs).toEqual([expect.objectContaining({ value: 8, undone: false })])
+  })
+
+  it('retries the latest advice turn without duplicating streamed text', async () => {
+    const coach = new CoachDemoController()
+    await coach.initialize()
+    await coach.ask('What should I do?')
+    await coach.retryAdvice()
+    const assistant = coach.state.conversation?.messages.at(-1)
+    expect(assistant).toMatchObject({
+      text: 'Try a short walk after lunch.',
+      status: 'complete',
+    })
+    expect(assistant?.text.match(/Try a short walk/g)).toHaveLength(1)
   })
 
   it('supports audit-friendly undo', async () => {
