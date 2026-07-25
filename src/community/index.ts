@@ -34,6 +34,20 @@ export {
   ModerationController,
   PrivacyController,
 } from './controllers'
+export {
+  CommunityComposerController,
+  SocialGraphController,
+  RoomStateController,
+  CommunityAdminController,
+} from './presets'
+export type {
+  CommunityAttachment,
+  CommunityPoll,
+  CommunityDraft,
+  RoomPresence,
+  CommunityAbility,
+  AdminAuditEvent,
+} from './presets'
 export type {
   CursorEntity,
   CursorPage,

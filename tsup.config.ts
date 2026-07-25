@@ -57,6 +57,7 @@ export default defineConfig([
       party: 'src/party/index.ts',
       observability: 'src/observability/index.ts',
       accessibility: 'src/accessibility/index.ts',
+      community: 'src/community/index.ts',
     },
     format: ['esm', 'cjs'],
     sourcemap: true,

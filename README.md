@@ -571,7 +571,9 @@ export const { useListThreads, useCreateThread, useCheckBan } = community
 ```
 
 Community state controllers cover the mobile recovery and reconciliation layer
-that sits below screens and above generated hooks:
+that sits below screens and above generated hooks. The complete kit is available
+from `@lastshotlabs/pocketshot/community`; the original generated hooks and core
+controllers remain available from the root entry for compatibility:
 
 | Controller                    | Guarantees                                                           |
 | ----------------------------- | -------------------------------------------------------------------- |
@@ -581,6 +583,10 @@ that sits below screens and above generated hooks:
 | `MessagingController`         | Client-id dedupe, pending/ack/failure, authorization revocation      |
 | `ModerationController`        | Report assignment/resolution/dismissal with an audit trail           |
 | `PrivacyController`           | Block/mute plus export and deletion request lifecycles               |
+| `CommunityComposerController` | Mentions, attachments, validated polls, upload readiness, voting     |
+| `SocialGraphController`       | Idempotent user follows and channel subscriptions                    |
+| `RoomStateController`         | Monotonic read cursors, unread totals, presence, typing              |
+| `CommunityAdminController`    | Consent, abilities, bans, flags, broadcasts, legal docs, fresh auth  |
 
 ```ts
 import {

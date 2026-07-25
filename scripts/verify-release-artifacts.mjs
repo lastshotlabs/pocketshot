@@ -14,6 +14,7 @@ const entries = [
   'party',
   'observability',
   'accessibility',
+  'community',
 ]
 
 const failures = []
