@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -13,8 +13,18 @@ if (!shell || !['party', 'coach', 'community', 'burndown', 'blankslate'].include
 const root = new URL('..', import.meta.url).pathname
 const shellDir = resolve(root, 'examples', shell)
 const output = await mkdtemp(join(tmpdir(), `pocketshot-${shell}-`))
+const productByShell = {
+  party: 'hitshot',
+  coach: 'aicoach',
+  community: 'sgforum',
+  burndown: 'burndown',
+  blankslate: 'blankslate',
+}
+const product = productByShell[shell]
+const productDir = resolve(root, 'products', product)
+const workingShell = join(output, 'shell')
 
-function run(command, args, cwd = shellDir) {
+function run(command, args, cwd = workingShell) {
   return execFileSync(command, args, {
     cwd,
     stdio: 'inherit',
@@ -23,24 +33,36 @@ function run(command, args, cwd = shellDir) {
 }
 
 try {
-  const archive = String(
+  const pocketshotArchive = String(
     execFileSync('npm', ['pack', '--pack-destination', output, '--silent'], {
       cwd: root,
       encoding: 'utf8',
     }),
   ).trim()
+  const productArchive = String(
+    execFileSync('npm', ['pack', '--pack-destination', output, '--silent'], {
+      cwd: productDir,
+      encoding: 'utf8',
+    }),
+  ).trim()
+  await cp(shellDir, workingShell, {
+    recursive: true,
+    filter: (source) => !/(?:^|\/)(?:node_modules|dist)(?:\/|$)/.test(source),
+  })
+  const manifestPath = join(workingShell, 'package.json')
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+  const productPackage = {
+    party: '@lastshotlabs/hitshot-mobile',
+    coach: '@lastshotlabs/aicoach-mobile',
+    community: '@lastshotlabs/sgforum-mobile',
+    burndown: '@lastshotlabs/burndown-mobile',
+    blankslate: '@lastshotlabs/blankslate-mobile',
+  }[shell]
+  manifest.dependencies['@lastshotlabs/pocketshot'] = `file:${join(output, pocketshotArchive)}`
+  manifest.dependencies[productPackage] = `file:${join(output, productArchive)}`
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   run('npm', [
     'install',
-    '--legacy-peer-deps',
-    '--ignore-scripts',
-    '--no-audit',
-    '--no-fund',
-    '--package-lock=false',
-  ])
-  run('npm', [
-    'install',
-    join(output, archive),
-    '--no-save',
     '--legacy-peer-deps',
     '--ignore-scripts',
     '--no-audit',
