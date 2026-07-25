@@ -320,21 +320,49 @@ export interface ConversationMessage {
   clientId: string
   body: string
   status: 'pending' | 'sent' | 'failed'
+  conversationId?: string
+  attachments?: Array<{ id: string; url: string; mediaType: string }>
+  createdAt?: string
 }
 
 export class MessagingController {
   private access: 'allowed' | 'revoked' = 'allowed'
   private messages = new Map<string, ConversationMessage>()
+  private members = new Set<string>()
+  private typing = new Set<string>()
+  private presence = new Map<string, 'online' | 'offline'>()
+  private connection: 'online' | 'reconnecting' | 'offline' = 'online'
 
-  get snapshot(): { access: 'allowed' | 'revoked'; messages: ConversationMessage[] } {
+  get snapshot(): {
+    access: 'allowed' | 'revoked'
+    messages: ConversationMessage[]
+    members: string[]
+    typing: string[]
+    presence: Record<string, 'online' | 'offline'>
+    connection: 'online' | 'reconnecting' | 'offline'
+  } {
     return {
       access: this.access,
       messages: [...this.messages.values()].map((message) => structuredClone(message)),
+      members: [...this.members].sort(),
+      typing: [...this.typing].sort(),
+      presence: Object.fromEntries(this.presence),
+      connection: this.connection,
     }
+  }
+
+  configureMembers(memberIds: string[]): void {
+    this.members = new Set(memberIds)
+    for (const id of [...this.typing]) if (!this.members.has(id)) this.typing.delete(id)
+    for (const id of [...this.presence.keys()]) if (!this.members.has(id)) this.presence.delete(id)
   }
 
   send(message: Omit<ConversationMessage, 'status'>): void {
     if (this.access === 'revoked') throw new Error('Conversation access revoked')
+    if (this.connection === 'offline') throw new Error('Conversation is offline')
+    if (!message.body.trim() && !(message.attachments?.length ?? 0)) {
+      throw new Error('Message requires text or an attachment')
+    }
     if (this.messages.has(message.clientId)) return
     this.messages.set(message.clientId, { ...structuredClone(message), status: 'pending' })
   }
@@ -350,11 +378,62 @@ export class MessagingController {
     if (message) this.messages.set(clientId, { ...message, status: 'failed' })
   }
 
+  retry(clientId: string): void {
+    if (this.access === 'revoked') throw new Error('Conversation access revoked')
+    const message = this.messages.get(clientId)
+    if (!message || message.status !== 'failed') return
+    this.messages.set(clientId, { ...message, status: 'pending' })
+  }
+
+  history(options: {
+    conversationId?: string
+    before?: number
+    limit?: number
+  } = {}): { items: ConversationMessage[]; nextBefore: number | null } {
+    const messages = [...this.messages.values()]
+      .filter(
+        (message) =>
+          !options.conversationId || message.conversationId === options.conversationId,
+      )
+      .sort((left, right) =>
+        (left.createdAt ?? '').localeCompare(right.createdAt ?? ''),
+      )
+    const end = Math.min(options.before ?? messages.length, messages.length)
+    const start = Math.max(0, end - (options.limit ?? 50))
+    return {
+      items: structuredClone(messages.slice(start, end)),
+      nextBefore: start > 0 ? start : null,
+    }
+  }
+
+  setTyping(memberId: string, active: boolean): void {
+    if (this.members.size && !this.members.has(memberId)) {
+      throw new Error('Typing member is not in the conversation')
+    }
+    if (active) this.typing.add(memberId)
+    else this.typing.delete(memberId)
+  }
+
+  setPresence(memberId: string, value: 'online' | 'offline'): void {
+    if (this.members.size && !this.members.has(memberId)) {
+      throw new Error('Presence member is not in the conversation')
+    }
+    this.presence.set(memberId, value)
+  }
+
+  setConnection(value: 'online' | 'reconnecting' | 'offline'): void {
+    this.connection = value
+  }
+
   revokeAccess(): void {
     this.access = 'revoked'
     for (const [id, message] of this.messages) {
       if (message.status === 'pending') this.messages.set(id, { ...message, status: 'failed' })
     }
+  }
+
+  grantAccess(): void {
+    this.access = 'allowed'
   }
 }
 

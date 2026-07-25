@@ -157,6 +157,34 @@ describe('MessagingController', () => {
       'revoked',
     )
   })
+
+  it('supports room membership, attachments, history, retry, presence, and reconnect', () => {
+    const messages = new MessagingController()
+    messages.configureMembers(['alex', 'sam'])
+    messages.setTyping('sam', true)
+    messages.setPresence('sam', 'online')
+    messages.send({
+      id: 'local-1',
+      clientId: 'client-1',
+      body: '',
+      conversationId: 'room-1',
+      attachments: [{ id: 'image-1', url: 'https://example.com/a.jpg', mediaType: 'image/jpeg' }],
+      createdAt: '2026-07-25T12:00:00.000Z',
+    })
+    messages.fail('client-1')
+    messages.retry('client-1')
+    expect(messages.history({ conversationId: 'room-1', limit: 1 }).items[0]).toMatchObject({
+      status: 'pending',
+      attachments: [{ id: 'image-1' }],
+    })
+    messages.setConnection('reconnecting')
+    expect(messages.snapshot).toMatchObject({
+      members: ['alex', 'sam'],
+      typing: ['sam'],
+      presence: { sam: 'online' },
+      connection: 'reconnecting',
+    })
+  })
 })
 
 describe('ModerationController', () => {
