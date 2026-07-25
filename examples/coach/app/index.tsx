@@ -79,11 +79,19 @@ export default function CoachShell() {
         </Card>
         <Card title="Photo analysis">
           <Text style={styles.copy}>{state.mediaStatus ?? 'No analysis yet.'}</Text>
+          <Text style={styles.copy}>Photo history: {state.mediaHistory.length}</Text>
           <Action
             testID="analyze-photo"
             label="Capture and analyze"
             onPress={() => void coach.analyzePhoto()}
           />
+          {state.mediaHistory[0] && (
+            <Action
+              testID="delete-photo"
+              label="Delete latest photo"
+              onPress={() => void coach.deletePhoto(state.mediaHistory[0].id)}
+            />
+          )}
         </Card>
         <Card title="History and memory">
           <Text style={styles.copy}>

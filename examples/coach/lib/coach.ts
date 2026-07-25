@@ -23,6 +23,7 @@ export interface CoachState {
   conversation: AiConversation | null
   logs: { id: string; value: number; undone: boolean }[]
   mediaStatus: string | null
+  mediaHistory: { id: string; status: string; result: string | null }[]
   memory: AiMemoryFact[]
   exportStatus: 'idle' | 'requested' | 'ready'
   error: string | null
@@ -40,6 +41,7 @@ export class CoachDemoController {
     conversation: null,
     logs: [],
     mediaStatus: null,
+    mediaHistory: [],
     memory: [],
     exportStatus: 'idle',
     error: null,
@@ -166,6 +168,37 @@ export class CoachDemoController {
     const result = await this.media.run(media.id)
     this.stateValue.mediaStatus =
       result.status === 'complete' ? 'Balanced meal · analysis complete' : result.status
+    this.syncMediaHistory()
+    this.emit()
+  }
+
+  async retryLatestPhoto(): Promise<void> {
+    const latest = this.media.list().at(-1)
+    if (!latest) return
+    this.stateValue.mediaStatus = 'retrying'
+    this.emit()
+    const result = await this.media.retry(latest.id)
+    this.stateValue.mediaStatus =
+      result.status === 'complete' ? 'Balanced meal · analysis complete' : result.status
+    this.syncMediaHistory()
+    this.emit()
+  }
+
+  async cancelLatestPhoto(): Promise<void> {
+    const latest = this.media.list().at(-1)
+    if (!latest) return
+    await this.media.cancel(latest.id)
+    this.stateValue.mediaStatus = 'cancelled'
+    this.syncMediaHistory()
+    this.emit()
+  }
+
+  async deletePhoto(id: string): Promise<void> {
+    await this.media.remove(id)
+    this.syncMediaHistory()
+    this.stateValue.mediaStatus = this.stateValue.mediaHistory.length
+      ? this.stateValue.mediaStatus
+      : 'No analysis yet.'
     this.emit()
   }
 
@@ -269,6 +302,19 @@ export class CoachDemoController {
             : 'anonymous'
     this.stateValue.accountEmail = snapshot.user?.email ?? snapshot.pendingEmail
     this.emit()
+  }
+
+  private syncMediaHistory(): void {
+    this.stateValue.mediaHistory = this.media.list().map((record) => ({
+      id: record.id,
+      status: record.status,
+      result:
+        record.analysisResult === null
+          ? null
+          : typeof record.analysisResult === 'string'
+            ? record.analysisResult
+            : JSON.stringify(record.analysisResult),
+    }))
   }
 }
 

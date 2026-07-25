@@ -46,6 +46,9 @@ describe('Coach clean-room acceptance model', () => {
     await coach.initialize()
     await coach.analyzePhoto()
     expect(coach.state.mediaStatus).toBe('Balanced meal · analysis complete')
+    expect(coach.state.mediaHistory).toEqual([expect.objectContaining({ status: 'complete' })])
+    await coach.deletePhoto(coach.state.mediaHistory[0].id)
+    expect(coach.state.mediaHistory).toEqual([])
   })
 
   it('keeps the app usable when camera permission is blocked', async () => {
