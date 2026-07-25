@@ -299,8 +299,11 @@ health and coaching products:
 - `GoalController` validates goals and computes bounded, unit-safe progress.
 - `WorkoutController` builds programs and restores, deduplicates, and completes
   interrupted workout sessions.
-- `EntitlementController` handles purchase, restore, refresh, active/grace/
-  expired access, loading, and store failures through a `BillingAdapter`.
+- `EntitlementController` handles purchase, restore, refresh, pending/active/
+  grace/expired/revoked access, loading, and store failures through a
+  `BillingAdapter`. Inject an `EntitlementVerifier` to make the backend response
+  authoritative before access is granted; raw verification tokens are never
+  required in application state after verification.
 
 ```ts
 import {

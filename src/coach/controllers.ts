@@ -206,12 +206,21 @@ export class WorkoutController {
   }
 }
 
-export type EntitlementState = 'unknown' | 'inactive' | 'active' | 'grace' | 'expired'
+export type EntitlementState =
+  | 'unknown'
+  | 'inactive'
+  | 'pending'
+  | 'active'
+  | 'grace'
+  | 'expired'
+  | 'revoked'
 
 export interface StoreEntitlement {
   productId: string
   state: Exclude<EntitlementState, 'unknown'>
   expiresAt: string | null
+  transactionId?: string
+  verificationToken?: string
 }
 
 export interface BillingAdapter {
@@ -220,12 +229,19 @@ export interface BillingAdapter {
   refresh(): Promise<StoreEntitlement[]>
 }
 
+export interface EntitlementVerifier {
+  verify(storeEntitlement: StoreEntitlement): Promise<StoreEntitlement>
+}
+
 export class EntitlementController {
   private entitlements = new Map<string, StoreEntitlement>()
   private loadingValue = false
   private errorValue: string | null = null
 
-  constructor(private readonly adapter: BillingAdapter) {}
+  constructor(
+    private readonly adapter: BillingAdapter,
+    private readonly verifier?: EntitlementVerifier,
+  ) {}
 
   get snapshot(): {
     entitlements: StoreEntitlement[]
@@ -260,7 +276,19 @@ export class EntitlementController {
     this.loadingValue = true
     this.errorValue = null
     try {
-      for (const entitlement of await operation()) {
+      for (const storeEntitlement of await operation()) {
+        this.entitlements.set(
+          storeEntitlement.productId,
+          structuredClone(
+            this.verifier ? { ...storeEntitlement, state: 'pending' } : storeEntitlement,
+          ),
+        )
+        const entitlement = this.verifier
+          ? await this.verifier.verify(structuredClone(storeEntitlement))
+          : storeEntitlement
+        if (this.verifier && entitlement.productId !== storeEntitlement.productId) {
+          throw new Error('Verified entitlement product does not match the store transaction')
+        }
         this.entitlements.set(entitlement.productId, structuredClone(entitlement))
       }
     } catch (error) {

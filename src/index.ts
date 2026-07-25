@@ -147,6 +147,7 @@ export type {
   EntitlementState,
   StoreEntitlement,
   BillingAdapter,
+  EntitlementVerifier,
 } from './coach/controllers'
 
 export type {

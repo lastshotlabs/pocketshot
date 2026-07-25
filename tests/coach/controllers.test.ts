@@ -6,6 +6,7 @@ import {
   WorkoutController,
   convertMeasurement,
   type BillingAdapter,
+  type EntitlementVerifier,
 } from '../../src/coach/controllers'
 
 describe('MetricLogController', () => {
@@ -186,6 +187,45 @@ describe('EntitlementController', () => {
     const billing = new EntitlementController(failing)
     await expect(billing.purchase('pro')).rejects.toThrow('Store unavailable')
     expect(billing.snapshot).toMatchObject({ isLoading: false, error: 'Store unavailable' })
+  })
+
+  it('keeps pending and revoked products locked', async () => {
+    const pending: BillingAdapter = {
+      purchase: async (productId) => ({ productId, state: 'pending', expiresAt: null }),
+      restore: async () => [{ productId: 'pro', state: 'revoked', expiresAt: null }],
+      refresh: async () => [],
+    }
+    const billing = new EntitlementController(pending)
+    await billing.purchase('pro')
+    expect(billing.canAccess('pro')).toBe(false)
+    await billing.restore()
+    expect(billing.snapshot.entitlements[0].state).toBe('revoked')
+    expect(billing.canAccess('pro')).toBe(false)
+  })
+
+  it('uses the server-verified entitlement as the access authority', async () => {
+    const store = adapter()
+    const verifier: EntitlementVerifier = {
+      verify: vi.fn(async (entitlement) => ({
+        ...entitlement,
+        state: 'revoked' as const,
+        verificationToken: undefined,
+      })),
+    }
+    const billing = new EntitlementController(store, verifier)
+    await billing.purchase('pro')
+    expect(verifier.verify).toHaveBeenCalledWith(expect.objectContaining({ state: 'active' }))
+    expect(billing.snapshot.entitlements[0].verificationToken).toBeUndefined()
+    expect(billing.canAccess('pro')).toBe(false)
+  })
+
+  it('rejects a verifier response for a different product', async () => {
+    const verifier: EntitlementVerifier = {
+      verify: async (entitlement) => ({ ...entitlement, productId: 'other' }),
+    }
+    const billing = new EntitlementController(adapter(), verifier)
+    await expect(billing.purchase('pro')).rejects.toThrow('does not match')
+    expect(billing.canAccess('pro')).toBe(false)
   })
 })
 
