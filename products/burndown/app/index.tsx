@@ -1,12 +1,31 @@
 import { useMemo, useState, useEffect } from 'react'
-import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
+import {
+  AppState,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useKeepAwake } from 'expo-keep-awake'
+import * as Haptics from 'expo-haptics'
 import QRCode from 'react-native-qrcode-svg'
 import { BurndownController, type BurndownState } from '../lib/burndown'
 
 export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
-  const controller = useMemo(() => new BurndownController(), [])
+  const controller = useMemo(
+    () =>
+      new BurndownController(undefined, {
+        turn: (_playerId, mode) =>
+          mode === 'shared'
+            ? Haptics.selectionAsync()
+            : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
+      }),
+    [],
+  )
   const [game, setGame] = useState<BurndownState>(controller.state)
   const [section, setSection] = useState<'play' | 'games' | 'library' | 'build'>('play')
   const [contentRevision, setContentRevision] = useState(0)
@@ -14,6 +33,15 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
   useEffect(() => {
     if (initialJoinCode) controller.join(initialJoinCode)
   }, [controller, initialJoinCode])
+  useEffect(
+    () =>
+      AppState.addEventListener('change', (next) =>
+        controller.setLifecycle(
+          next === 'active' ? 'active' : next === 'background' ? 'background' : 'suspended',
+        ),
+      ).remove,
+    [controller],
+  )
 
   return (
     <SafeAreaView style={styles.screen}>

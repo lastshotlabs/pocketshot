@@ -86,6 +86,14 @@ export interface BurndownSnapshot {
   currentGameId: string
 }
 
+export interface BurndownTurnFeedback {
+  turn(playerId: string, mode: BurndownMode): void | Promise<void>
+}
+
+const silentTurnFeedback: BurndownTurnFeedback = {
+  turn: () => undefined,
+}
+
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 export class BurndownController {
@@ -124,6 +132,7 @@ export class BurndownController {
   }
   private readonly listeners = new Set<(state: BurndownState) => void>()
   private readonly cues = new PersonalCuePolicy()
+  private lifecycle: 'active' | 'background' | 'suspended' = 'active'
   private challenge: BallotController<'valid' | 'invalid' | 'nobody'> | null = null
   readonly categories = new ContentLibraryController<{ category: string }>(
     (item) =>
@@ -136,7 +145,10 @@ export class BurndownController {
   readonly account = createBurndownAccount()
   readonly passkeys = createBurndownPasskeys()
 
-  constructor(snapshot?: BurndownSnapshot) {
+  constructor(
+    snapshot?: BurndownSnapshot,
+    private readonly feedback: BurndownTurnFeedback = silentTurnFeedback,
+  ) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
     this.session = new PartySessionController(
       {
@@ -602,6 +614,21 @@ export class BurndownController {
     return this.timer.remainingMs()
   }
 
+  setLifecycle(lifecycle: 'active' | 'background' | 'suspended'): void {
+    this.lifecycle = lifecycle
+    if (lifecycle === 'active' && this.timer.reconcile()) {
+      if (this.value.phase === 'turn' || this.value.phase === 'handoff') {
+        this.timeout()
+        return
+      }
+      if (this.value.phase === 'challenge' && this.challenge) {
+        this.resolveChallenge()
+        return
+      }
+    }
+    this.emit()
+  }
+
   adjustLives(playerId: string, delta: number): void {
     const player = this.player(playerId)
     player.lives = Math.max(0, player.lives + delta)
@@ -729,7 +756,7 @@ export class BurndownController {
     } else {
       this.value.phase = 'turn'
     }
-    this.cues.shouldDeliver(
+    const shouldDeliver = this.cues.shouldDeliver(
       {
         roomId: this.value.joinCode,
         eventId: `turn-${this.value.round}-${id}`,
@@ -737,8 +764,11 @@ export class BurndownController {
         recipientId: id,
         at: Date.now(),
       },
-      'active',
+      this.lifecycle,
     )
+    if (shouldDeliver && this.lifecycle === 'active') {
+      void this.feedback.turn(id, this.value.mode)
+    }
     this.emit()
   }
 

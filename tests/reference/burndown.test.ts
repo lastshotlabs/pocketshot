@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { BurndownController } from '../../examples/burndown/lib/burndown'
 import { normalizeBurndownSystemPath } from '../../examples/burndown/lib/link'
 
@@ -117,6 +117,40 @@ describe('Burndown native acceptance model', () => {
     expect(game.state.phase).toBe('turn')
     expect(game.burn('Answer', 'same-command')).toBe(true)
     expect(game.state.phase).toBe('handoff')
+  })
+
+  it('delivers actor-only turn haptics and drops background cues without replay', () => {
+    const feedback = { turn: vi.fn() }
+    const game = new BurndownController(undefined, feedback)
+    game.enter('phones')
+    game.setLifecycle('background')
+    game.start()
+    expect(feedback.turn).not.toHaveBeenCalled()
+    game.setLifecycle('active')
+    expect(feedback.turn).not.toHaveBeenCalled()
+    game.timeout()
+    expect(feedback.turn).toHaveBeenCalledWith('p2', 'phones')
+    expect(feedback.turn).toHaveBeenCalledTimes(1)
+  })
+
+  it('reconciles an expired authoritative turn when returning from background', () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-07-25T12:00:00.000Z'))
+      const game = new BurndownController()
+      game.enter('phones')
+      game.start()
+      game.setLifecycle('background')
+      vi.advanceTimersByTime(21_000)
+      game.setLifecycle('active')
+      expect(game.state).toMatchObject({
+        activePlayerId: 'p2',
+        phase: 'turn',
+      })
+      expect(game.state.players.find((player) => player.id === 'p1')?.lives).toBe(2)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('configures a 6–8 seat shared table with every player challenge-eligible', () => {
