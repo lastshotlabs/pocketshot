@@ -144,6 +144,7 @@ export default function CoachShell() {
         </Card>
         <Card title="Training">
           <Text style={styles.copy}>Workout: {state.workoutStatus}</Text>
+          <Text style={styles.copy}>Sync: {state.workoutSync}</Text>
           <Action
             testID="start-workout"
             label="Start workout"
@@ -155,6 +156,34 @@ export default function CoachShell() {
             label="Complete workout"
             onPress={() => coach.completeWorkout()}
           />
+          {state.workoutSync === 'pending' && (
+            <>
+              <Action
+                testID="sync-workout"
+                label="Sync pending workout"
+                onPress={() => coach.acknowledgeWorkoutSync()}
+              />
+              <Action
+                testID="conflict-workout"
+                label="Simulate workout conflict"
+                onPress={() => coach.simulateWorkoutSyncConflict()}
+              />
+            </>
+          )}
+          {state.workoutSync === 'conflict' && (
+            <>
+              <Action
+                testID="keep-local-workout"
+                label="Keep local workout"
+                onPress={() => coach.resolveWorkoutConflict('keep-local')}
+              />
+              <Action
+                testID="accept-server-workout"
+                label="Use server workout"
+                onPress={() => coach.resolveWorkoutConflict('accept-server')}
+              />
+            </>
+          )}
         </Card>
         <Card title="Coach Pro">
           <Text style={styles.copy}>Access: {state.proAccess ? 'active' : 'inactive'}</Text>

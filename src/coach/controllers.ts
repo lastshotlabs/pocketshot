@@ -152,16 +152,45 @@ export interface WorkoutSession {
   } | null
 }
 
+export interface WorkoutSyncSnapshot {
+  status: 'synced' | 'pending' | 'failed' | 'conflict'
+  pendingMutationIds: string[]
+  conflict: {
+    serverSession: WorkoutSession
+    reason: string
+  } | null
+  error: string | null
+}
+
 export class WorkoutController {
   private programs = new Map<string, WorkoutProgram>()
   private sessionValue: WorkoutSession | null = null
+  private pendingMutationIds = new Set<string>()
+  private conflictValue: WorkoutSyncSnapshot['conflict'] = null
+  private syncError: string | null = null
 
   constructor(private readonly now: () => number = Date.now) {}
 
-  get snapshot(): { programs: WorkoutProgram[]; session: WorkoutSession | null } {
+  get snapshot(): {
+    programs: WorkoutProgram[]
+    session: WorkoutSession | null
+    sync: WorkoutSyncSnapshot
+  } {
     return {
       programs: [...this.programs.values()].map((program) => structuredClone(program)),
       session: this.sessionValue ? structuredClone(this.sessionValue) : null,
+      sync: {
+        status: this.conflictValue
+          ? 'conflict'
+          : this.syncError
+            ? 'failed'
+            : this.pendingMutationIds.size
+              ? 'pending'
+              : 'synced',
+        pendingMutationIds: [...this.pendingMutationIds],
+        conflict: this.conflictValue ? structuredClone(this.conflictValue) : null,
+        error: this.syncError,
+      },
     }
   }
 
@@ -184,6 +213,7 @@ export class WorkoutController {
       sets: [],
       rest: null,
     }
+    this.stage(`start:${sessionId}`)
   }
 
   logSet(set: WorkoutSet): void {
@@ -195,6 +225,7 @@ export class WorkoutController {
     if (session.sets.some((candidate) => candidate.id === set.id)) return
     this.validateSet(set)
     session.sets.push(structuredClone(set))
+    this.stage(`set:${set.id}`)
   }
 
   editSet(setId: string, patch: Partial<Pick<WorkoutSet, 'reps' | 'load' | 'unit'>>): void {
@@ -204,11 +235,13 @@ export class WorkoutController {
     const next = { ...session.sets[index], ...structuredClone(patch) }
     this.validateSet(next)
     session.sets[index] = next
+    this.stage(`set:${setId}`)
   }
 
   removeSet(setId: string): void {
     const session = this.requireActive()
     session.sets = session.sets.filter((set) => set.id !== setId)
+    this.stage(`remove-set:${setId}`)
   }
 
   startRest(durationMs: number): void {
@@ -257,11 +290,42 @@ export class WorkoutController {
   complete(at: string): void {
     const session = this.requireActive()
     this.sessionValue = { ...session, status: 'complete', completedAt: at }
+    this.stage(`complete:${session.id}`)
   }
 
   restore(session: WorkoutSession): void {
     if (!this.programs.has(session.programId)) throw new Error('Cannot restore an unknown program')
     this.sessionValue = structuredClone(session)
+  }
+
+  acknowledgeMutation(mutationId: string): void {
+    this.pendingMutationIds.delete(mutationId)
+    if (this.pendingMutationIds.size === 0) this.syncError = null
+  }
+
+  failSync(message: string): void {
+    if (!message.trim()) throw new Error('Sync failure requires a message')
+    this.syncError = message
+  }
+
+  rejectWithConflict(serverSession: WorkoutSession, reason: string): void {
+    if (!this.programs.has(serverSession.programId)) {
+      throw new Error('Cannot reconcile an unknown program')
+    }
+    if (!reason.trim()) throw new Error('Workout conflict requires a reason')
+    this.conflictValue = { serverSession: structuredClone(serverSession), reason }
+    this.syncError = null
+  }
+
+  resolveConflict(strategy: 'keep-local' | 'accept-server', mutationId?: string): void {
+    if (!this.conflictValue) throw new Error('No workout conflict is active')
+    if (strategy === 'accept-server') {
+      this.sessionValue = structuredClone(this.conflictValue.serverSession)
+      this.pendingMutationIds.clear()
+    } else {
+      this.stage(mutationId ?? `resolve:${this.sessionValue?.id ?? 'workout'}`)
+    }
+    this.conflictValue = null
   }
 
   private requireActive(): WorkoutSession {
@@ -278,6 +342,11 @@ export class WorkoutController {
     if (!Number.isFinite(set.load) || set.load < 0) {
       throw new Error('Workout load must be non-negative')
     }
+  }
+
+  private stage(mutationId: string): void {
+    this.pendingMutationIds.add(mutationId)
+    this.syncError = null
   }
 }
 

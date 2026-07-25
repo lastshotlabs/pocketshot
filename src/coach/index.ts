@@ -14,6 +14,7 @@ export type {
   WorkoutProgram,
   WorkoutSet,
   WorkoutSession,
+  WorkoutSyncSnapshot,
   EntitlementState,
   StoreEntitlement,
   BillingAdapter,

@@ -130,6 +130,13 @@ describe('Coach clean-room acceptance model', () => {
     coach.completeWorkout()
     expect(coach.state.workoutStatus).toBe('complete')
     expect(coach.workouts.snapshot.session?.status).toBe('complete')
+    expect(coach.state.workoutSync).toBe('pending')
+    coach.simulateWorkoutSyncConflict()
+    expect(coach.state.workoutSync).toBe('conflict')
+    coach.resolveWorkoutConflict('keep-local')
+    expect(coach.workouts.snapshot.session?.sets).toHaveLength(1)
+    coach.acknowledgeWorkoutSync()
+    expect(coach.state.workoutSync).toBe('synced')
   })
 
   it('supports purchase and restore entitlement paths', async () => {

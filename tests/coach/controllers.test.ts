@@ -148,6 +148,65 @@ describe('WorkoutController', () => {
     expect(restarted.snapshot.session?.sets).toHaveLength(1)
   })
 
+  it('tracks offline mutations and resolves server conflicts without losing local work', () => {
+    const workouts = new WorkoutController()
+    workouts.saveProgram(program)
+    workouts.start('session', 'strength', '2026-07-25T12:00:00.000Z')
+    workouts.logSet({
+      id: 'set-1',
+      exerciseId: 'squat',
+      reps: 5,
+      load: 100,
+      unit: 'kg',
+      completedAt: '2026-07-25T12:05:00.000Z',
+    })
+    expect(workouts.snapshot.sync).toMatchObject({
+      status: 'pending',
+      pendingMutationIds: ['start:session', 'set:set-1'],
+    })
+    workouts.acknowledgeMutation('start:session')
+    workouts.failSync('Offline')
+    expect(workouts.snapshot.sync.status).toBe('failed')
+
+    workouts.rejectWithConflict(
+      {
+        id: 'session',
+        programId: 'strength',
+        status: 'active',
+        startedAt: '2026-07-25T12:00:00.000Z',
+        completedAt: null,
+        sets: [],
+        rest: null,
+      },
+      'Server version advanced',
+    )
+    expect(workouts.snapshot.sync.status).toBe('conflict')
+    workouts.resolveConflict('keep-local', 'resolve:session:v2')
+    expect(workouts.snapshot.session?.sets).toHaveLength(1)
+    expect(workouts.snapshot.sync).toMatchObject({
+      status: 'pending',
+      pendingMutationIds: ['set:set-1', 'resolve:session:v2'],
+    })
+
+    workouts.rejectWithConflict(
+      {
+        id: 'session',
+        programId: 'strength',
+        status: 'complete',
+        startedAt: '2026-07-25T12:00:00.000Z',
+        completedAt: '2026-07-25T12:20:00.000Z',
+        sets: [],
+        rest: null,
+      },
+      'Workout completed elsewhere',
+    )
+    workouts.resolveConflict('accept-server')
+    expect(workouts.snapshot).toMatchObject({
+      session: { status: 'complete', sets: [] },
+      sync: { status: 'synced', pendingMutationIds: [] },
+    })
+  })
+
   it('edits sets and reconciles a rest timer across background and pause', () => {
     let now = 1_000
     const workouts = new WorkoutController(() => now)

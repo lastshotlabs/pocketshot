@@ -38,6 +38,7 @@ export interface CoachState {
   goalProgress: number
   chartPoints: number[]
   workoutStatus: 'idle' | 'active' | 'complete'
+  workoutSync: 'synced' | 'pending' | 'failed' | 'conflict'
   proAccess: boolean
   accountStatus: 'anonymous' | 'verification-required' | 'authenticated' | 'error'
   accountEmail: string | null
@@ -59,6 +60,7 @@ export class CoachDemoController {
     goalProgress: 0,
     chartPoints: [],
     workoutStatus: 'idle',
+    workoutSync: 'synced',
     proAccess: false,
     accountStatus: 'anonymous',
     accountEmail: null,
@@ -307,6 +309,7 @@ export class CoachDemoController {
     })
     this.workouts.start('workout-1', 'starter', '2026-07-25T12:00:00.000Z')
     this.stateValue.workoutStatus = 'active'
+    this.syncWorkout()
     this.emit()
   }
 
@@ -319,12 +322,40 @@ export class CoachDemoController {
       unit: 'kg',
       completedAt: '2026-07-25T12:05:00.000Z',
     })
+    this.syncWorkout()
     this.emit()
   }
 
   completeWorkout(): void {
     this.workouts.complete('2026-07-25T12:30:00.000Z')
     this.stateValue.workoutStatus = 'complete'
+    this.syncWorkout()
+    this.emit()
+  }
+
+  simulateWorkoutSyncConflict(): void {
+    const session = this.workouts.snapshot.session
+    if (!session) return
+    this.workouts.rejectWithConflict(
+      { ...session, sets: [], status: 'active', completedAt: null },
+      'Workout changed on another device',
+    )
+    this.syncWorkout()
+    this.emit()
+  }
+
+  resolveWorkoutConflict(strategy: 'keep-local' | 'accept-server'): void {
+    this.workouts.resolveConflict(strategy, 'resolve:workout-1:v2')
+    this.stateValue.workoutStatus = this.workouts.snapshot.session?.status ?? 'idle'
+    this.syncWorkout()
+    this.emit()
+  }
+
+  acknowledgeWorkoutSync(): void {
+    for (const mutationId of this.workouts.snapshot.sync.pendingMutationIds) {
+      this.workouts.acknowledgeMutation(mutationId)
+    }
+    this.syncWorkout()
     this.emit()
   }
 
@@ -404,6 +435,10 @@ export class CoachDemoController {
     this.stateValue.localDataCleared =
       snapshot.authorizationRevoked && snapshot.clearedStores.length === 2
     this.emit()
+  }
+
+  private syncWorkout(): void {
+    this.stateValue.workoutSync = this.workouts.snapshot.sync.status
   }
 }
 
