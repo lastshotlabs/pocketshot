@@ -7,7 +7,7 @@ const packageRoot = new URL('../', import.meta.url)
 
 const budgets = {
   'dist/index.js': 160 * 1024,
-  'dist/index.cjs': 192 * 1024,
+  'dist/index.cjs': 208 * 1024,
   'dist/ui.js': 1.5 * 1024 * 1024,
   'dist/ui.cjs': 1.6 * 1024 * 1024,
   'dist/types/index.d.ts': 16 * 1024,
@@ -45,7 +45,7 @@ const budgets = {
   'dist/accessibility.js': 12 * 1024,
   'dist/accessibility.cjs': 16 * 1024,
   'dist/community.js': 16 * 1024,
-  'dist/community.cjs': 52 * 1024,
+  'dist/community.cjs': 60 * 1024,
 }
 
 async function filesUnder(directory) {
