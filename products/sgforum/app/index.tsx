@@ -3,7 +3,9 @@ import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } fr
 import { StatusBar } from 'expo-status-bar'
 import * as SQLite from 'expo-sqlite'
 import { createSQLiteDraftStorage } from '@lastshotlabs/pocketshot/drafts'
+import { inspectRuntimeServices } from '@lastshotlabs/pocketshot/release'
 import { CommunityDemoController, type CommunityState, type CommunityView } from '../lib/community'
+import { createSGForumServices } from '../lib/services'
 
 export default function CommunityShell() {
   const community = useMemo(
@@ -11,6 +13,14 @@ export default function CommunityShell() {
     [],
   )
   const [state, setState] = useState<CommunityState>(community.state)
+  const services = useMemo(
+    () =>
+      inspectRuntimeServices(
+        () => createSGForumServices('1.0.0', 1),
+        process.env.EXPO_PUBLIC_RELEASE_STRICT === 'true',
+      ),
+    [],
+  )
   useEffect(() => community.subscribe(setState), [community])
   useEffect(() => {
     void community.restoreAccount()
@@ -22,6 +32,9 @@ export default function CommunityShell() {
       <StatusBar style="dark" />
       <Text accessibilityRole="header" style={styles.title}>
         PocketShot Community
+      </Text>
+      <Text testID="service-readiness" style={styles.status}>
+        Services: {services.status}
       </Text>
       <Text accessibilityLiveRegion="polite" style={styles.status}>
         {state.connection === 'online' ? 'Connected' : 'Reconnecting…'} · {state.unread} unread

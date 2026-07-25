@@ -13,9 +13,19 @@ import { StatusBar } from 'expo-status-bar'
 import { useKeepAwake } from 'expo-keep-awake'
 import * as Haptics from 'expo-haptics'
 import QRCode from 'react-native-qrcode-svg'
+import { inspectRuntimeServices } from '@lastshotlabs/pocketshot/release'
 import { BurndownController, type BurndownState } from '../lib/burndown'
+import { createBurndownServices } from '../lib/services'
 
 export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
+  const services = useMemo(
+    () =>
+      inspectRuntimeServices(
+        () => createBurndownServices('1.0.0', 1),
+        process.env.EXPO_PUBLIC_RELEASE_STRICT === 'true',
+      ),
+    [],
+  )
   const controller = useMemo(
     () =>
       new BurndownController(undefined, {
@@ -50,6 +60,9 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.brand}>
           BURNDOWN
+        </Text>
+        <Text testID="service-readiness" style={styles.meta}>
+          Services: {services.status}
         </Text>
         {game.phase === 'entry' && (
           <View accessibilityRole="tablist" style={styles.sections}>

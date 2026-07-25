@@ -60,6 +60,7 @@ for (const product of products) {
     'EXPO_PUBLIC_ANALYTICS_ENDPOINT',
     'EXPO_PUBLIC_CRASH_ENDPOINT',
     'EXPO_PUBLIC_FEATURE_FLAG_ENDPOINT',
+    'EXPO_PUBLIC_RELEASE_STRICT',
   ]) {
     if (!environment.includes(`${key}=`)) {
       failures.push(`${product} environment manifest is missing ${key}`)
@@ -102,6 +103,17 @@ for (const product of products) {
             : ['lib/blankslate.ts']
     ).map((path) => readFile(new URL(`../products/${product}/${path}`, import.meta.url), 'utf8')),
   )
+  const appSource = await readFile(
+    new URL(`../products/${product}/app/index.tsx`, import.meta.url),
+    'utf8',
+  )
+  if (
+    !appSource.includes('inspectRuntimeServices') ||
+    !appSource.includes('EXPO_PUBLIC_RELEASE_STRICT') ||
+    !appSource.includes('testID="service-readiness"')
+  ) {
+    failures.push(`${product} does not expose strict runtime service readiness`)
+  }
   if (!productSources.some((source) => source.includes(`${app.scheme}://oauth/`))) {
     failures.push(`${product} OAuth return does not use its registered production scheme`)
   }

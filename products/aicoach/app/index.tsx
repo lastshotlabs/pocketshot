@@ -4,7 +4,9 @@ import { StatusBar } from 'expo-status-bar'
 import * as ImagePicker from 'expo-image-picker'
 import * as Linking from 'expo-linking'
 import { createExpoMediaCaptureAdapter } from '@lastshotlabs/pocketshot/media'
+import { inspectRuntimeServices } from '@lastshotlabs/pocketshot/release'
 import { CoachDemoController, type CoachState } from '../lib/coach'
+import { createAICoachServices } from '../lib/services'
 
 export default function CoachShell() {
   const coach = useMemo(
@@ -18,6 +20,14 @@ export default function CoachShell() {
     [],
   )
   const [state, setState] = useState<CoachState>(coach.state)
+  const services = useMemo(
+    () =>
+      inspectRuntimeServices(
+        () => createAICoachServices('1.0.0', 1),
+        process.env.EXPO_PUBLIC_RELEASE_STRICT === 'true',
+      ),
+    [],
+  )
   useEffect(() => {
     const unsubscribe = coach.subscribe(setState)
     void coach.initialize()
@@ -42,6 +52,9 @@ export default function CoachShell() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.title}>
           PocketShot Coach
+        </Text>
+        <Text testID="service-readiness" style={styles.copy}>
+          Services: {services.status}
         </Text>
         <Text testID="coach-connection" accessibilityLiveRegion="polite" style={styles.copy}>
           {state.connection} · {state.lifecycle}

@@ -4,6 +4,7 @@ import {
   ProductionServiceRegistry,
   ReleaseControlPlane,
   createProductServiceRegistry,
+  inspectRuntimeServices,
   productEnvironmentFromPublicConfig,
   type ProductReleaseManifest,
 } from '../../src/release'
@@ -140,5 +141,29 @@ describe('production release services', () => {
         EXPO_PUBLIC_LINK_HOST: 'https://bad.example.test',
       }),
     ).toThrow('hostname')
+  })
+
+  it('reports incomplete development configuration and fails fast in production', () => {
+    const create = () => {
+      throw new Error('EXPO_PUBLIC_API_URL is required')
+    }
+    expect(inspectRuntimeServices(create)).toMatchObject({
+      status: 'invalid',
+      codeReady: false,
+      failures: ['EXPO_PUBLIC_API_URL is required'],
+    })
+    expect(() => inspectRuntimeServices(create, true)).toThrow('EXPO_PUBLIC_API_URL')
+    expect(
+      inspectRuntimeServices(() =>
+        createProductServiceRegistry('aicoach', '1.0.0', 1, {
+          apiUrl: 'https://api.example.test',
+          privacyUrl: 'https://example.test/privacy',
+          termsUrl: 'https://example.test/terms',
+          supportUrl: 'https://example.test/support',
+          deletionUrl: 'https://example.test/delete',
+          associatedDomains: ['applinks:example.test'],
+        }),
+      ).status,
+    ).toBe('external-required')
   })
 })

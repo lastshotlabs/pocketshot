@@ -5,7 +5,9 @@ import * as Linking from 'expo-linking'
 import * as SQLite from 'expo-sqlite'
 import QRCode from 'react-native-qrcode-svg'
 import { createSQLiteDraftStorage } from '@lastshotlabs/pocketshot/drafts'
+import { inspectRuntimeServices } from '@lastshotlabs/pocketshot/release'
 import { PartyDemoController, type PartyState } from '../lib/party'
+import { createHitshotServices } from '../lib/services'
 
 export default function PartyShell({ initialJoinCode }: { initialJoinCode?: string } = {}) {
   const controller = useMemo(
@@ -13,6 +15,14 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
     [],
   )
   const [party, setParty] = useState<PartyState>(controller.state)
+  const services = useMemo(
+    () =>
+      inspectRuntimeServices(
+        () => createHitshotServices('1.0.0', 1),
+        process.env.EXPO_PUBLIC_RELEASE_STRICT === 'true',
+      ),
+    [],
+  )
   useEffect(() => controller.subscribe(setParty), [controller])
   useEffect(() => {
     void controller.restoreAccount()
@@ -33,6 +43,9 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
       <StatusBar style="light" />
       <Text accessibilityRole="header" style={styles.title}>
         PocketShot Party
+      </Text>
+      <Text testID="service-readiness" style={styles.status}>
+        Services: {services.status}
       </Text>
       <Text testID="connection-state" style={styles.status}>
         {party.connection === 'online' ? 'Connected' : 'Reconnecting…'}

@@ -46,6 +46,41 @@ export interface ReleaseReadiness {
   externalPrerequisites: string[]
 }
 
+export interface RuntimeServiceReadiness extends ReleaseReadiness {
+  status: 'code-ready' | 'external-required' | 'invalid'
+}
+
+export function inspectRuntimeServices(
+  createRegistry: () => ProductionServiceRegistry,
+  strict = false,
+): RuntimeServiceReadiness {
+  try {
+    const readiness = createRegistry().readiness()
+    const result: RuntimeServiceReadiness = {
+      ...readiness,
+      status: readiness.codeReady
+        ? readiness.externalReady
+          ? 'code-ready'
+          : 'external-required'
+        : 'invalid',
+    }
+    if (strict && !result.codeReady) {
+      throw new Error(`Production service configuration is invalid: ${result.failures.join(', ')}`)
+    }
+    return result
+  } catch (cause) {
+    if (strict) throw cause
+    const error = cause instanceof Error ? cause : new Error(String(cause))
+    return {
+      status: 'invalid',
+      codeReady: false,
+      externalReady: false,
+      failures: [error.message],
+      externalPrerequisites: [],
+    }
+  }
+}
+
 const credentialServices = new Set<ProductionService>([
   'apple_oauth',
   'google_oauth',

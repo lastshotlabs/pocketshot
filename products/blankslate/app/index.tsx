@@ -13,11 +13,21 @@ import {
 import * as Haptics from 'expo-haptics'
 import { StatusBar } from 'expo-status-bar'
 import QRCode from 'react-native-qrcode-svg'
+import { inspectRuntimeServices } from '@lastshotlabs/pocketshot/release'
 import { BlankSlateController, type BlankSlateState } from '../lib/blankslate'
+import { createBlankSlateServices } from '../lib/services'
 
 type AppSection = 'Play' | 'Games' | 'Library' | 'Build' | 'You'
 
 export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
+  const services = useMemo(
+    () =>
+      inspectRuntimeServices(
+        () => createBlankSlateServices('1.0.0', 1),
+        process.env.EXPO_PUBLIC_RELEASE_STRICT === 'true',
+      ),
+    [],
+  )
   const controller = useMemo(
     () =>
       new BlankSlateController(undefined, {
@@ -55,6 +65,9 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.brand}>
           BLANK SLATE
+        </Text>
+        <Text testID="service-readiness" style={styles.meta}>
+          Services: {services.status}
         </Text>
         <Text accessibilityLiveRegion="polite" style={styles.meta}>
           {game.connection === 'online' ? 'Connected' : game.connection}
