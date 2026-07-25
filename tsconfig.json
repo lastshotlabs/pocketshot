@@ -24,8 +24,8 @@
       "@lastshotlabs/pocketshot/privacy": ["./src/privacy/index.ts"],
       "@lastshotlabs/pocketshot/observability": ["./src/observability/index.ts"],
       "@lastshotlabs/pocketshot/accessibility": ["./src/accessibility/index.ts"],
-      "@lastshotlabs/pocketshot/community": ["./src/community/index.ts"],
       "@lastshotlabs/pocketshot/community/core": ["./src/community/core.ts"],
+      "@lastshotlabs/pocketshot/community": ["./src/community/index.ts"],
       "@lastshotlabs/pocketshot/drafts": ["./src/drafts/index.ts"],
       "@lastshotlabs/pocketshot/media": ["./src/media/index.ts"],
       "@lastshotlabs/pocketshot/realtime": ["./src/realtime/index.ts"]
