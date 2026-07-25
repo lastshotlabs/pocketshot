@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 const products = ['hitshot', 'aicoach', 'sgforum', 'burndown', 'blankslate']
 const failures = []
 const identifiers = new Set()
+const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8')
 
 for (const product of products) {
   const app = JSON.parse(
@@ -70,6 +71,13 @@ for (const product of products) {
   if (!app.android?.intentFilters?.some((filter) => filter.autoVerify)) {
     failures.push(`${product} has no verified Android App Link`)
   }
+}
+
+if (!ciWorkflow.includes(`product: [hitshot, aicoach, sgforum, burndown, blankslate]`)) {
+  failures.push('CI does not define the complete production-app export matrix')
+}
+if (!ciWorkflow.includes('verify:product:${{ matrix.product }}')) {
+  failures.push('CI does not independently typecheck and export production apps')
 }
 
 if (failures.length) {

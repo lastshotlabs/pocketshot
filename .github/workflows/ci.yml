@@ -64,3 +64,26 @@ jobs:
           name: pocketshot-production-sbom
           path: pocketshot-sbom.cdx.json
           if-no-files-found: error
+
+  production-app-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        product: [hitshot, aicoach, sgforum, burndown, blankslate]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@lastshotlabs'
+      - run: npm ci --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Typecheck and export production app for iOS and Android
+        run: npm run verify:product:${{ matrix.product }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
