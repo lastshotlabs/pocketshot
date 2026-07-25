@@ -179,11 +179,14 @@ describe('Coach clean-room acceptance model', () => {
   it('supports purchase and restore entitlement paths', async () => {
     const coach = new CoachDemoController()
     await coach.purchasePro()
-    expect(coach.state.proAccess).toBe(true)
+    expect(coach.state).toMatchObject({ proAccess: true, entitlementStatus: 'active' })
+    expect(coach.openCustomerPortal()).toBe('https://billing.example.test/customer-portal')
 
     const restored = new CoachDemoController()
     await restored.restorePro()
-    expect(restored.state.proAccess).toBe(true)
+    expect(restored.state).toMatchObject({ proAccess: true, entitlementStatus: 'grace' })
     expect(restored.billing.snapshot.entitlements[0].state).toBe('grace')
+    await restored.refreshPro()
+    expect(restored.state).toMatchObject({ proAccess: false, entitlementStatus: 'expired' })
   })
 })

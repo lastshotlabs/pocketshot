@@ -40,6 +40,8 @@ export interface CoachState {
   workoutStatus: 'idle' | 'active' | 'complete'
   workoutSync: 'synced' | 'pending' | 'failed' | 'conflict'
   proAccess: boolean
+  entitlementStatus: 'inactive' | 'pending' | 'active' | 'grace' | 'expired' | 'revoked'
+  customerPortalUrl: string | null
   accountStatus: 'anonymous' | 'verification-required' | 'authenticated' | 'error'
   accountEmail: string | null
 }
@@ -62,6 +64,8 @@ export class CoachDemoController {
     workoutStatus: 'idle',
     workoutSync: 'synced',
     proAccess: false,
+    entitlementStatus: 'inactive',
+    customerPortalUrl: null,
     accountStatus: 'anonymous',
     accountEmail: null,
   }
@@ -91,7 +95,7 @@ export class CoachDemoController {
       expiresAt: '2026-08-25',
     }),
     restore: async () => [{ productId: 'coach-pro', state: 'grace', expiresAt: '2026-07-28' }],
-    refresh: async () => [],
+    refresh: async () => [{ productId: 'coach-pro', state: 'expired', expiresAt: '2026-07-20' }],
   })
   readonly account = createDemoAccount()
   readonly privacy = new AccountDataController(
@@ -417,14 +421,27 @@ export class CoachDemoController {
 
   async purchasePro(): Promise<void> {
     await this.billing.purchase('coach-pro')
-    this.stateValue.proAccess = this.billing.canAccess('coach-pro')
+    this.syncEntitlement()
     this.emit()
   }
 
   async restorePro(): Promise<void> {
     await this.billing.restore()
-    this.stateValue.proAccess = this.billing.canAccess('coach-pro')
+    this.syncEntitlement()
     this.emit()
+  }
+
+  async refreshPro(): Promise<void> {
+    await this.billing.refresh()
+    this.syncEntitlement()
+    this.emit()
+  }
+
+  openCustomerPortal(): string {
+    const url = 'https://billing.example.test/customer-portal'
+    this.stateValue.customerPortalUrl = url
+    this.emit()
+    return url
   }
 
   async requestExport(): Promise<void> {
@@ -495,6 +512,14 @@ export class CoachDemoController {
 
   private syncWorkout(): void {
     this.stateValue.workoutSync = this.workouts.snapshot.sync.status
+  }
+
+  private syncEntitlement(): void {
+    const entitlement = this.billing.snapshot.entitlements.find(
+      (candidate) => candidate.productId === 'coach-pro',
+    )
+    this.stateValue.proAccess = this.billing.canAccess('coach-pro')
+    this.stateValue.entitlementStatus = entitlement?.state ?? 'inactive'
   }
 }
 

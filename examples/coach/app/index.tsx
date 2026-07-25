@@ -228,7 +228,12 @@ export default function CoachShell() {
           )}
         </Card>
         <Card title="Coach Pro">
-          <Text style={styles.copy}>Access: {state.proAccess ? 'active' : 'inactive'}</Text>
+          <Text style={styles.copy}>
+            Access: {state.proAccess ? 'available' : 'locked'} · {state.entitlementStatus}
+          </Text>
+          <Text style={styles.copy}>
+            Portal: {state.customerPortalUrl ? 'ready to open' : 'not opened'}
+          </Text>
           <Action
             testID="purchase-pro"
             label="Purchase Pro"
@@ -238,6 +243,16 @@ export default function CoachShell() {
             testID="restore-pro"
             label="Restore purchases"
             onPress={() => void coach.restorePro()}
+          />
+          <Action
+            testID="refresh-pro"
+            label="Refresh subscription"
+            onPress={() => void coach.refreshPro()}
+          />
+          <Action
+            testID="customer-portal"
+            label="Manage subscription"
+            onPress={() => coach.openCustomerPortal()}
           />
         </Card>
         <Card title="Privacy">
