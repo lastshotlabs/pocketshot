@@ -51,6 +51,12 @@
       ]
     },
     "web": { "favicon": "./assets/icon.png" },
-    "plugins": ["expo-router", "expo-secure-store", "expo-sqlite", "expo-image-picker"]
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sqlite",
+      ["expo-notifications", { "icon": "./assets/icon.png", "color": "#2F80ED" }],
+      "expo-image-picker"
+    ]
   }
 }

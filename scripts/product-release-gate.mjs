@@ -45,6 +45,19 @@ for (const product of products) {
     failures.push(`${product} production build does not auto-increment on production channel`)
   }
   if (!eas.submit?.production) failures.push(`${product} has no production submission profile`)
+  const packageManifest = JSON.parse(
+    await readFile(new URL(`../products/${product}/package.json`, import.meta.url), 'utf8'),
+  )
+  if (!packageManifest.dependencies?.['expo-notifications']) {
+    failures.push(`${product} does not declare the native notification dependency`)
+  }
+  if (
+    !app.plugins?.some(
+      (plugin) => (Array.isArray(plugin) ? plugin[0] : plugin) === 'expo-notifications',
+    )
+  ) {
+    failures.push(`${product} does not configure the native notification plugin`)
+  }
   const environment = await readFile(
     new URL(`../products/${product}/.env.example`, import.meta.url),
     'utf8',

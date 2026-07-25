@@ -51,6 +51,7 @@
       "expo-router",
       "expo-secure-store",
       "expo-sqlite",
+      ["expo-notifications", { "icon": "./assets/icon.png", "color": "#7C5CFC" }],
       ["expo-audio", { "enableBackgroundPlayback": true }]
     ]
   }
