@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Burndown",
+    "slug": "pocketshot-burndown",
+    "scheme": "pocketshot-burndown",
+    "version": "0.0.1",
+    "platforms": ["ios", "android"],
+    "orientation": "default",
+    "ios": { "bundleIdentifier": "com.lastshotlabs.pocketshot.burndown" },
+    "android": { "package": "com.lastshotlabs.pocketshot.burndown" },
+    "plugins": ["expo-router"]
+  }
+}

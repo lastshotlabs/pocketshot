@@ -117,6 +117,7 @@
     "verify:party": "npm run build && node scripts/verify-reference-shell.mjs party",
     "verify:coach": "npm run build && node scripts/verify-reference-shell.mjs coach",
     "verify:community": "npm run build && node scripts/verify-reference-shell.mjs community",
+    "verify:burndown": "npm run build && node scripts/verify-reference-shell.mjs burndown",
     "verify:release": "npm run build && npm run check:release-artifacts"
   },
   "peerDependencies": {

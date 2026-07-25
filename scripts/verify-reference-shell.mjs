@@ -4,8 +4,10 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 const shell = process.argv[2]
-if (!shell || !['party', 'coach', 'community'].includes(shell)) {
-  throw new Error('Usage: node scripts/verify-reference-shell.mjs <party|coach|community>')
+if (!shell || !['party', 'coach', 'community', 'burndown', 'blankslate'].includes(shell)) {
+  throw new Error(
+    'Usage: node scripts/verify-reference-shell.mjs <party|coach|community|burndown|blankslate>',
+  )
 }
 
 const root = new URL('..', import.meta.url).pathname
