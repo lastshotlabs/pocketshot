@@ -8,7 +8,8 @@ name: Burndown shared-device turn, challenge, and privacy handoff
     optional: true
 - tapOn:
     id: enter-shared
-- assertVisible: Lobby.*
+- assertVisible:
+    id: burndown-lobby-title
 - tapOn:
     id: start-match
 - assertVisible: Pass to Alex

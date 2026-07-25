@@ -110,7 +110,7 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
           </Card>
         )}
         {game.phase === 'lobby' && (
-          <Card title={`Lobby · ${game.joinCode}`}>
+          <Card title={`Lobby · ${game.joinCode}`} titleTestID="burndown-lobby-title">
             {game.players.map((player) => (
               <Text style={styles.copy} key={player.id}>
                 {player.name} · {player.lives} lives
@@ -207,10 +207,18 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
   )
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({
+  title,
+  titleTestID,
+  children,
+}: {
+  title: string
+  titleTestID?: string
+  children: React.ReactNode
+}) {
   return (
     <View style={styles.card}>
-      <Text accessibilityRole="header" style={styles.heading}>
+      <Text testID={titleTestID} accessibilityRole="header" style={styles.heading}>
         {title}
       </Text>
       {children}

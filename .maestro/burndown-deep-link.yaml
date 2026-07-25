@@ -9,4 +9,5 @@ name: Burndown cold invite link
 - tapOn:
     text: Wait
     optional: true
-- assertVisible: Lobby.*
+- assertVisible:
+    id: burndown-lobby-title
