@@ -23,6 +23,12 @@ export interface PartyState {
   connection: 'online' | 'reconnecting'
   hostId: string
   notice: string | null
+  timeline: { id: string; year: number; title: string }[]
+  activeCard: { id: string; year: number; title: string; artist: string } | null
+  revealed: boolean
+  tokens: number
+  challenge: { challengerId: string; index: number } | null
+  winner: boolean
 }
 
 type Event =
@@ -43,6 +49,15 @@ const initial: PartyState = {
   connection: 'online',
   hostId: 'host-1',
   notice: null,
+  timeline: [
+    { id: 'starter-1', year: 1972, title: 'Starter 1972' },
+    { id: 'starter-2', year: 1999, title: 'Starter 1999' },
+  ],
+  activeCard: null,
+  revealed: false,
+  tokens: 2,
+  challenge: null,
+  winner: false,
 }
 
 export class PartyDemoController {
@@ -120,6 +135,15 @@ export class PartyDemoController {
 
   startRound(): void {
     this.event({ kind: 'round', question: 'Name this song', answer: 'Private answer' })
+    this.stateValue.activeCard = {
+      id: `card-${this.stateValue.round}`,
+      year: 1984,
+      title: 'Private answer',
+      artist: 'Private artist',
+    }
+    this.stateValue.revealed = false
+    this.stateValue.challenge = null
+    this.emit()
   }
 
   answer(points: number): void {
@@ -131,7 +155,87 @@ export class PartyDemoController {
 
   rematch(): void {
     this.stateValue.phase = 'lobby'
+    this.stateValue.winner = false
+    this.stateValue.activeCard = null
+    this.stateValue.revealed = false
     this.emit()
+  }
+
+  placeCard(index: number): boolean {
+    const card = this.stateValue.activeCard
+    if (!card || this.stateValue.revealed) return false
+    const correct = isTimelinePlacementCorrect(this.stateValue.timeline, card.year, index)
+    this.stateValue.revealed = true
+    if (correct) {
+      this.stateValue.timeline = [
+        ...this.stateValue.timeline.slice(0, index),
+        { id: card.id, year: card.year, title: card.title },
+        ...this.stateValue.timeline.slice(index),
+      ]
+      this.stateValue.score += 1
+      this.stateValue.winner = this.stateValue.timeline.length >= 10
+    }
+    this.emit()
+    return correct
+  }
+
+  judgeNaming(correct: boolean): void {
+    if (!this.stateValue.activeCard) return
+    this.stateValue.tokens = Math.min(5, this.stateValue.tokens + (correct ? 1 : 0))
+    this.emit()
+  }
+
+  spendTokensForCard(): boolean {
+    const card = this.stateValue.activeCard
+    if (!card || this.stateValue.tokens < 3 || this.stateValue.revealed) return false
+    this.stateValue.tokens -= 3
+    const index = insertionIndex(this.stateValue.timeline, card.year)
+    this.stateValue.timeline = [
+      ...this.stateValue.timeline.slice(0, index),
+      { id: card.id, year: card.year, title: card.title },
+      ...this.stateValue.timeline.slice(index),
+    ]
+    this.stateValue.score += 1
+    this.stateValue.revealed = true
+    this.stateValue.winner = this.stateValue.timeline.length >= 10
+    this.emit()
+    return true
+  }
+
+  challengePlacement(challengerId: string, index: number): void {
+    if (!this.stateValue.activeCard || this.stateValue.revealed) return
+    this.stateValue.challenge = { challengerId, index }
+    this.emit()
+  }
+
+  resolveChallenge(originalIndex: number): 'original' | 'challenger' | 'neither' {
+    const card = this.stateValue.activeCard
+    const challenge = this.stateValue.challenge
+    if (!card || !challenge || this.stateValue.revealed) return 'neither'
+    const originalCorrect = isTimelinePlacementCorrect(
+      this.stateValue.timeline,
+      card.year,
+      originalIndex,
+    )
+    const challengerCorrect = isTimelinePlacementCorrect(
+      this.stateValue.timeline,
+      card.year,
+      challenge.index,
+    )
+    const winner = originalCorrect ? 'original' : challengerCorrect ? 'challenger' : 'neither'
+    if (winner !== 'neither') {
+      const index = winner === 'original' ? originalIndex : challenge.index
+      this.stateValue.timeline = [
+        ...this.stateValue.timeline.slice(0, index),
+        { id: card.id, year: card.year, title: card.title },
+        ...this.stateValue.timeline.slice(index),
+      ]
+      if (winner === 'original') this.stateValue.score += 1
+    }
+    this.stateValue.revealed = true
+    this.stateValue.challenge = null
+    this.emit()
+    return winner
   }
 
   reconnect(): void {
@@ -219,4 +323,20 @@ function reduceParty(state: PartyState, event: Event): PartyState {
   }
   if (event.kind === 'score') return { ...state, score: state.score + event.points }
   return { ...state, phase: 'results' }
+}
+
+export function isTimelinePlacementCorrect(
+  timeline: { year: number }[],
+  year: number,
+  index: number,
+): boolean {
+  if (index < 0 || index > timeline.length) return false
+  const before = timeline[index - 1]?.year
+  const after = timeline[index]?.year
+  return (before === undefined || before <= year) && (after === undefined || year <= after)
+}
+
+function insertionIndex(timeline: { year: number }[], year: number): number {
+  const index = timeline.findIndex((card) => card.year > year)
+  return index === -1 ? timeline.length : index
 }
