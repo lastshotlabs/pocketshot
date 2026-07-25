@@ -15,6 +15,13 @@ import {
   type TimedPhaseSnapshot,
   type GameDashboardSnapshot,
 } from '@lastshotlabs/pocketshot/party-session'
+import {
+  AccountAuthController,
+  PasskeyLifecycleController,
+  type AccountAuthTransport,
+  type PasskeyTransport,
+  type TokenStorage,
+} from '@lastshotlabs/pocketshot/auth'
 
 export type BlankSlatePhase =
   | 'entry'
@@ -55,6 +62,9 @@ export interface BlankSlateState {
   ended: boolean
   endConfirmationPending: boolean
   blockedPlayerIds: string[]
+  identityStatus: 'guest' | 'account' | 'passkey'
+  identityEmail: string | null
+  passkeyCount: number
 }
 
 type BlankSlateRules = {
@@ -106,10 +116,15 @@ export class BlankSlateController {
     ended: false,
     endConfirmationPending: false,
     blockedPlayerIds: [],
+    identityStatus: 'guest',
+    identityEmail: null,
+    passkeyCount: 0,
   }
   private readonly listeners = new Set<(state: BlankSlateState) => void>()
   readonly prompts = new ContentLibraryController<{ cue: string }>(validateCue, (item) => item.cue)
   readonly games: GameDashboardController
+  readonly account = createBlankSlateAccount()
+  readonly passkeys = createBlankSlatePasskeys()
 
   constructor(snapshot?: BlankSlateSnapshot) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
@@ -185,6 +200,39 @@ export class BlankSlateController {
   enter(): void {
     this.value.phase = 'lobby'
     this.games.setStatus(this.currentGameId, 'lobby')
+    this.emit()
+  }
+
+  async signInOAuth(provider: 'apple' | 'google'): Promise<void> {
+    await this.account.completeOAuth(
+      provider,
+      'demo-code',
+      `pocketshot-blankslate://oauth/${provider}`,
+    )
+    this.value.identityStatus = 'account'
+    this.value.identityEmail = this.account.snapshot.user?.email ?? null
+    this.enter()
+  }
+
+  async registerPasskey(platform: 'ios' | 'android'): Promise<void> {
+    await this.passkeys.register('Blank Slate phone', platform)
+    this.value.passkeyCount = this.passkeys.snapshot.credentials.length
+    this.emit()
+  }
+
+  async signInPasskey(): Promise<void> {
+    await this.passkeys.login()
+    this.value.identityStatus = 'passkey'
+    this.value.identityEmail = this.passkeys.snapshot.user?.email ?? null
+    this.value.passkeyCount = this.passkeys.snapshot.credentials.length
+    this.enter()
+  }
+
+  async removePasskey(): Promise<void> {
+    const credential = this.passkeys.snapshot.credentials[0]
+    if (!credential) return
+    await this.passkeys.remove(credential.credentialId)
+    this.value.passkeyCount = this.passkeys.snapshot.credentials.length
     this.emit()
   }
 
@@ -580,4 +628,91 @@ function validateCue(item: { cue: string }): string[] {
     return ['Cue must be between 5 and 100 characters']
   }
   return []
+}
+
+function createBlankSlateAccount(): AccountAuthController {
+  const authenticated = {
+    user: {
+      id: 'blankslate-user',
+      email: 'slate@example.com',
+      emailVerified: true,
+      displayName: 'Alex',
+    },
+    accessToken: 'blankslate-access',
+    refreshToken: 'blankslate-refresh',
+  }
+  const transport: AccountAuthTransport = {
+    register: async () => authenticated,
+    verifyEmail: async () => authenticated,
+    login: async () => authenticated,
+    exchangeOAuth: async () => authenticated,
+    restore: async () => authenticated,
+    logout: async () => undefined,
+    forgotPassword: async () => undefined,
+    resetPassword: async () => undefined,
+  }
+  return new AccountAuthController(transport, createMemoryTokenStorage())
+}
+
+function createBlankSlatePasskeys(): PasskeyLifecycleController {
+  const credentials: Awaited<ReturnType<PasskeyTransport['list']>> = []
+  const transport: PasskeyTransport = {
+    registrationOptions: async () => ({ challenge: 'register-blank-slate' }),
+    verifyRegistration: async ({ name, platform }) => {
+      const credential = {
+        id: 'blankslate-passkey',
+        credentialId: 'blankslate-credential',
+        name,
+        platform,
+        createdAt: '2026-07-25T12:00:00.000Z',
+      }
+      credentials.splice(0, credentials.length, credential)
+      return credential
+    },
+    loginOptions: async () => ({ challenge: 'login-blank-slate' }),
+    verifyLogin: async () => ({
+      user: {
+        id: 'blankslate-user',
+        email: 'slate@example.com',
+        emailVerified: true,
+        displayName: 'Alex',
+      },
+      accessToken: 'blankslate-passkey-access',
+      refreshToken: 'blankslate-passkey-refresh',
+    }),
+    list: async () => structuredClone(credentials),
+    remove: async (credentialId) => {
+      const index = credentials.findIndex((credential) => credential.credentialId === credentialId)
+      if (index >= 0) credentials.splice(index, 1)
+    },
+  }
+  return new PasskeyLifecycleController(
+    transport,
+    {
+      create: async () => ({ credentialId: 'blankslate-credential' }),
+      get: async () => ({ credentialId: 'blankslate-credential' }),
+    },
+    createMemoryTokenStorage(),
+  )
+}
+
+function createMemoryTokenStorage(): TokenStorage {
+  let token: string | null = null
+  let refreshToken: string | null = null
+  return {
+    getToken: async () => token,
+    setToken: async (value) => {
+      token = value
+    },
+    clearToken: async () => {
+      token = null
+    },
+    getRefreshToken: async () => refreshToken,
+    setRefreshToken: async (value) => {
+      refreshToken = value
+    },
+    clearRefreshToken: async () => {
+      refreshToken = null
+    },
+  }
 }

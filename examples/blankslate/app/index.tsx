@@ -39,6 +39,23 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
               label="Continue as guest"
               onPress={() => controller.enter()}
             />
+            <Action
+              testID="apple-entry"
+              label="Continue with Apple"
+              onPress={() => void controller.signInOAuth('apple')}
+            />
+            <Action
+              testID="google-entry"
+              label="Continue with Google"
+              onPress={() => void controller.signInOAuth('google')}
+            />
+            <Action
+              testID="passkey-entry"
+              label="Create and use passkey"
+              onPress={() =>
+                void controller.registerPasskey('ios').then(() => controller.signInPasskey())
+              }
+            />
           </Card>
         )}
         {game.phase === 'entry' && section === 'Games' && (
@@ -92,13 +109,24 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
         )}
         {game.phase === 'entry' && section === 'You' && (
           <Card title="You">
-            <Text style={styles.copy}>Alex · guest session</Text>
+            <Text style={styles.copy}>
+              Alex · {game.identityStatus}
+              {game.identityEmail ? ` · ${game.identityEmail}` : ''}
+            </Text>
+            <Text style={styles.meta}>Passkeys: {game.passkeyCount}</Text>
             <Text style={styles.meta}>Push: personal turns only · Room mute available</Text>
             <Action
               testID="account-settings"
               label="Account and privacy"
               onPress={() => undefined}
             />
+            {game.passkeyCount > 0 && (
+              <Action
+                testID="remove-passkey"
+                label="Remove passkey"
+                onPress={() => void controller.removePasskey()}
+              />
+            )}
           </Card>
         )}
         {game.phase === 'lobby' && (

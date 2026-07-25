@@ -11,6 +11,28 @@ function submittedRound(game: BlankSlateController) {
 }
 
 describe('Blank Slate native acceptance model', () => {
+  it('composes Apple/Google OAuth and passkey entry without native-module coupling', async () => {
+    const account = new BlankSlateController()
+    await account.signInOAuth('apple')
+    expect(account.state).toMatchObject({
+      phase: 'lobby',
+      identityStatus: 'account',
+      identityEmail: 'slate@example.com',
+    })
+
+    const passkey = new BlankSlateController()
+    await passkey.registerPasskey('android')
+    expect(passkey.state.passkeyCount).toBe(1)
+    await passkey.signInPasskey()
+    expect(passkey.state).toMatchObject({
+      phase: 'lobby',
+      identityStatus: 'passkey',
+      identityEmail: 'slate@example.com',
+    })
+    await passkey.removePasskey()
+    expect(passkey.state.passkeyCount).toBe(0)
+  })
+
   it('normalizes cold native joins and rejects expired invites', () => {
     expect(normalizeBlankSlateSystemPath('pocketshot-blankslate://join/SLATE-42')).toBe(
       '/join/SLATE-42',
