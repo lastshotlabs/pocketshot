@@ -98,11 +98,35 @@ export default function CoachShell() {
             Active logs: {state.logs.filter((log) => !log.undone).length}
           </Text>
           <Text style={styles.copy}>Trusted facts: {state.memory.length}</Text>
+          <Text style={styles.copy}>
+            Memory consent: {state.memoryConsent ? 'granted' : 'not granted'}
+          </Text>
+          <Action
+            testID="memory-consent"
+            label={state.memoryConsent ? 'Revoke memory consent' : 'Allow trusted memory'}
+            onPress={() => coach.setMemoryConsent(!state.memoryConsent)}
+          />
           <Action
             testID="remember"
             label="Remember morning preference"
             onPress={() => void coach.remember('Prefers mornings')}
           />
+          {state.memory[0] && (
+            <>
+              <Action
+                testID="edit-memory"
+                label="Edit morning preference"
+                onPress={() =>
+                  void coach.editMemory(state.memory[0].id, 'Prefers early morning workouts')
+                }
+              />
+              <Action
+                testID="delete-memory"
+                label="Delete morning preference"
+                onPress={() => void coach.deleteMemory(state.memory[0].id)}
+              />
+            </>
+          )}
         </Card>
         <Card title="Goals and charts">
           <Text style={styles.copy}>Weight points: {state.chartPoints.join(', ') || 'none'}</Text>
@@ -147,11 +171,43 @@ export default function CoachShell() {
         </Card>
         <Card title="Privacy">
           <Text style={styles.copy}>Export: {state.exportStatus}</Text>
+          <Text style={styles.copy}>Deletion: {state.deletionStatus}</Text>
+          <Text style={styles.copy}>
+            Local cleanup: {state.localDataCleared ? 'complete' : 'not started'}
+          </Text>
           <Action
             testID="request-export"
             label="Request privacy export"
-            onPress={() => coach.requestExport()}
+            onPress={() => void coach.requestExport()}
           />
+          {state.exportStatus === 'requested' && (
+            <Action
+              testID="refresh-export"
+              label="Refresh privacy export"
+              onPress={() => void coach.refreshExport()}
+            />
+          )}
+          {state.deletionStatus !== 'scheduled' && state.deletionStatus !== 'completed' && (
+            <Action
+              testID="request-deletion"
+              label="Schedule account deletion"
+              onPress={() => void coach.requestDeletion()}
+            />
+          )}
+          {state.deletionStatus === 'scheduled' && (
+            <>
+              <Action
+                testID="cancel-deletion"
+                label="Cancel account deletion"
+                onPress={() => void coach.cancelDeletion()}
+              />
+              <Action
+                testID="confirm-deletion"
+                label="Confirm server deletion"
+                onPress={() => void coach.completeDeletion()}
+              />
+            </>
+          )}
         </Card>
       </ScrollView>
     </SafeAreaView>

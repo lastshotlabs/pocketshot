@@ -69,14 +69,45 @@ describe('Coach clean-room acceptance model', () => {
 
   it('manages trusted memory and privacy export lifecycle', async () => {
     const coach = new CoachDemoController()
+    await expect(coach.remember('Prefers mornings')).rejects.toThrow('consent')
+    coach.setMemoryConsent(true)
     await coach.remember('Prefers mornings')
     expect(coach.state.memory).toEqual([
       expect.objectContaining({ content: 'Prefers mornings', trusted: true }),
     ])
-    coach.requestExport()
+    await coach.editMemory(coach.state.memory[0].id, 'Prefers early mornings')
+    expect(coach.state.memory[0].content).toBe('Prefers early mornings')
+    await coach.deleteMemory(coach.state.memory[0].id)
+    expect(coach.state.memory).toEqual([])
+
+    await coach.requestExport()
     expect(coach.state.exportStatus).toBe('requested')
-    await Promise.resolve()
+    await coach.refreshExport()
     expect(coach.state.exportStatus).toBe('ready')
+  })
+
+  it('schedules, cancels, and completes account deletion with local cleanup', async () => {
+    const coach = new CoachDemoController()
+    await coach.initialize()
+    coach.setMemoryConsent(true)
+    await coach.remember('Private fact')
+    coach.logWeight('private-metric', 80)
+
+    await coach.requestDeletion()
+    expect(coach.state.deletionStatus).toBe('scheduled')
+    await coach.cancelDeletion()
+    expect(coach.state.deletionStatus).toBe('cancelled')
+    expect(coach.state.memory).toHaveLength(1)
+
+    await coach.requestDeletion()
+    await coach.completeDeletion()
+    expect(coach.state).toMatchObject({
+      deletionStatus: 'completed',
+      localDataCleared: true,
+      accountStatus: 'anonymous',
+      memory: [],
+      chartPoints: [],
+    })
   })
 
   it('logs idempotent metrics and produces goal/chart state', () => {

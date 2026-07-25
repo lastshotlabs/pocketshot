@@ -6,6 +6,11 @@ import {
 } from '@lastshotlabs/pocketshot/auth'
 import { type MediaCaptureAdapter } from '@lastshotlabs/pocketshot/media'
 import {
+  AccountDataController,
+  type DeletionStatus,
+  type ExportStatus,
+} from '@lastshotlabs/pocketshot/privacy'
+import {
   EntitlementController,
   GoalController,
   MetricLogController,
@@ -25,7 +30,10 @@ export interface CoachState {
   mediaStatus: string | null
   mediaHistory: { id: string; status: string; result: string | null }[]
   memory: AiMemoryFact[]
-  exportStatus: 'idle' | 'requested' | 'ready'
+  memoryConsent: boolean
+  exportStatus: ExportStatus
+  deletionStatus: DeletionStatus
+  localDataCleared: boolean
   error: string | null
   goalProgress: number
   chartPoints: number[]
@@ -43,7 +51,10 @@ export class CoachDemoController {
     mediaStatus: null,
     mediaHistory: [],
     memory: [],
+    memoryConsent: false,
     exportStatus: 'idle',
+    deletionStatus: 'idle',
+    localDataCleared: false,
     error: null,
     goalProgress: 0,
     chartPoints: [],
@@ -81,6 +92,38 @@ export class CoachDemoController {
     refresh: async () => [],
   })
   readonly account = createDemoAccount()
+  readonly privacy = new AccountDataController(
+    {
+      requestExport: async () => ({ requestId: 'coach-export-1' }),
+      getExport: async () => ({
+        status: 'ready',
+        downloadUrl: 'https://downloads.example.test/coach-export.zip',
+      }),
+      requestDeletion: async () => ({
+        requestId: 'coach-deletion-1',
+        scheduledAt: '2026-08-01T12:00:00.000Z',
+      }),
+      cancelDeletion: async () => undefined,
+      getDeletion: async () => ({ status: 'completed' }),
+      revokeAuthorization: async () => this.account.logout(),
+    },
+    [
+      {
+        name: 'coach-memory',
+        clear: () => {
+          this.facts.splice(0)
+          this.stateValue.memory = []
+        },
+      },
+      {
+        name: 'coach-local-state',
+        clear: () => {
+          this.stateValue.logs = []
+          this.stateValue.chartPoints = []
+        },
+      },
+    ],
+  )
   constructor(capture: MediaCaptureAdapter = defaultCoachCapture()) {
     this.media = createCoachMedia(capture)
   }
@@ -203,7 +246,27 @@ export class CoachDemoController {
   }
 
   async remember(content: string): Promise<void> {
+    if (!this.stateValue.memoryConsent) {
+      throw new Error('Memory consent is required before saving a fact')
+    }
     await this.memory.create({ content, trusted: true, source: 'user' })
+    this.stateValue.memory = this.memory.list()
+    this.emit()
+  }
+
+  setMemoryConsent(consented: boolean): void {
+    this.stateValue.memoryConsent = consented
+    this.emit()
+  }
+
+  async editMemory(id: string, content: string): Promise<void> {
+    await this.memory.update(id, { content })
+    this.stateValue.memory = this.memory.list()
+    this.emit()
+  }
+
+  async deleteMemory(id: string): Promise<void> {
+    await this.memory.remove(id)
     this.stateValue.memory = this.memory.list()
     this.emit()
   }
@@ -277,13 +340,30 @@ export class CoachDemoController {
     this.emit()
   }
 
-  requestExport(): void {
-    this.stateValue.exportStatus = 'requested'
-    this.emit()
-    void Promise.resolve().then(() => {
-      this.stateValue.exportStatus = 'ready'
-      this.emit()
-    })
+  async requestExport(): Promise<void> {
+    await this.privacy.requestExport()
+    this.syncPrivacy()
+  }
+
+  async refreshExport(): Promise<void> {
+    await this.privacy.refreshExport()
+    this.syncPrivacy()
+  }
+
+  async requestDeletion(): Promise<void> {
+    await this.privacy.requestDeletion()
+    this.syncPrivacy()
+  }
+
+  async cancelDeletion(): Promise<void> {
+    await this.privacy.cancelDeletion()
+    this.syncPrivacy()
+  }
+
+  async completeDeletion(): Promise<void> {
+    await this.privacy.refreshDeletion()
+    this.syncPrivacy()
+    this.syncAccount()
   }
 
   private emit(): void {
@@ -315,6 +395,15 @@ export class CoachDemoController {
             ? record.analysisResult
             : JSON.stringify(record.analysisResult),
     }))
+  }
+
+  private syncPrivacy(): void {
+    const snapshot = this.privacy.snapshot
+    this.stateValue.exportStatus = snapshot.exportStatus
+    this.stateValue.deletionStatus = snapshot.deletionStatus
+    this.stateValue.localDataCleared =
+      snapshot.authorizationRevoked && snapshot.clearedStores.length === 2
+    this.emit()
   }
 }
 
