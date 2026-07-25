@@ -341,12 +341,18 @@ export default function CommunityShell() {
             {state.rooms.map((room) => (
               <View key={room.id} style={styles.thread}>
                 <Text style={styles.copy}>
-                  {room.name} · {room.memberIds.length} members · {room.unread} unread
+                  {room.name} · {room.memberIds.length} members · {room.unread} unread ·{' '}
+                  {room.muted ? 'muted' : room.access}
                 </Text>
                 <Action
                   testID={`open-room-${room.id}`}
                   label={`Open ${room.name}`}
                   onPress={() => community.openRoom(room.id)}
+                />
+                <Action
+                  testID={`mute-room-${room.id}`}
+                  label={room.muted ? `Unmute ${room.name}` : `Mute ${room.name}`}
+                  onPress={() => community.setRoomMuted(room.id, !room.muted)}
                 />
               </View>
             ))}

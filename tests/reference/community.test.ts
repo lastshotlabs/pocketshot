@@ -262,15 +262,43 @@ describe('Community reference shell', () => {
     const community = new CommunityDemoController()
     community.createRoom('ridge-crew', 'Ridge Crew', ['alex', 'morgan', 'alex'])
     community.receiveRoomMessage('ridge-crew', 1)
-    expect(community.state.rooms).toContainEqual({
-      id: 'ridge-crew',
-      name: 'Ridge Crew',
-      memberIds: ['alex', 'morgan'],
-      unread: 1,
-    })
+    expect(community.state.rooms).toContainEqual(
+      expect.objectContaining({
+        id: 'ridge-crew',
+        name: 'Ridge Crew',
+        memberIds: ['alex', 'morgan'],
+        unread: 1,
+      }),
+    )
     community.openRoom('ridge-crew')
     expect(community.state).toMatchObject({ activeRoomId: 'ridge-crew' })
     expect(community.state.rooms.find((room) => room.id === 'ridge-crew')?.unread).toBe(0)
+  })
+
+  it('applies room settings, membership changes, mute, and immediate authorization revocation', () => {
+    const community = new CommunityDemoController()
+    community.renameRoom('trail-room', 'Trail Leaders')
+    community.addRoomMember('trail-room', 'sam')
+    community.setRoomMuted('trail-room', true)
+    community.receiveRoomMessage('trail-room', 2)
+    expect(community.state.rooms[0]).toMatchObject({
+      name: 'Trail Leaders',
+      memberIds: ['alex', 'morgan', 'sam'],
+      muted: true,
+      unread: 0,
+    })
+    community.openRoom('trail-room')
+    community.removeRoomMember('trail-room', 'alex')
+    expect(community.state).toMatchObject({
+      activeRoomId: null,
+      notice: 'You no longer have access to this room.',
+      rooms: [expect.objectContaining({ access: 'revoked', unread: 0 })],
+    })
+    community.openRoom('trail-room')
+    expect(community.state.activeRoomId).toBeNull()
+    community.addRoomMember('trail-room', 'alex')
+    community.openRoom('trail-room')
+    expect(community.state.activeRoomId).toBe('trail-room')
   })
 
   it('performs privileged admin changes with a visible audit trail', () => {

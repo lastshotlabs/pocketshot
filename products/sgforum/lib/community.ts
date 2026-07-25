@@ -124,7 +124,14 @@ export interface CommunityState {
   notice: string | null
   notificationPreferences: Record<'reply' | 'mention' | 'message' | 'moderation', boolean>
   pushHandoffRoute: string | null
-  rooms: { id: string; name: string; memberIds: string[]; unread: number }[]
+  rooms: {
+    id: string
+    name: string
+    memberIds: string[]
+    unread: number
+    muted: boolean
+    access: 'allowed' | 'revoked'
+  }[]
   activeRoomId: string | null
   adminFlags: Record<string, boolean>
   adminAuditCount: number
@@ -188,7 +195,16 @@ const initial: CommunityState = {
   notice: null,
   notificationPreferences: { reply: true, mention: true, message: true, moderation: true },
   pushHandoffRoute: null,
-  rooms: [{ id: 'trail-room', name: 'Trail Room', memberIds: ['alex', 'morgan'], unread: 0 }],
+  rooms: [
+    {
+      id: 'trail-room',
+      name: 'Trail Room',
+      memberIds: ['alex', 'morgan'],
+      unread: 0,
+      muted: false,
+      access: 'allowed',
+    },
+  ],
   activeRoomId: null,
   adminFlags: {},
   adminAuditCount: 0,
@@ -830,6 +846,8 @@ export class CommunityDemoController {
       name: name.trim(),
       memberIds: [...new Set(memberIds)],
       unread: 0,
+      muted: false,
+      access: 'allowed',
     })
     this.emit()
   }
@@ -837,6 +855,11 @@ export class CommunityDemoController {
   openRoom(id: string): void {
     const room = this.stateValue.rooms.find((candidate) => candidate.id === id)
     if (!room) throw new Error(`Unknown room: ${id}`)
+    if (room.access === 'revoked' || !room.memberIds.includes('alex')) {
+      this.stateValue.notice = 'You no longer have access to this room.'
+      this.emit()
+      return
+    }
     this.rooms.openRoom(id)
     this.rooms.markRead(id, this.rooms.snapshot.latestSequence)
     room.unread = 0
@@ -848,7 +871,43 @@ export class CommunityDemoController {
     const room = this.stateValue.rooms.find((candidate) => candidate.id === id)
     if (!room) throw new Error(`Unknown room: ${id}`)
     this.rooms.receive(sequence)
-    if (this.stateValue.activeRoomId !== id) room.unread += 1
+    if (room.access === 'allowed' && !room.muted && this.stateValue.activeRoomId !== id) {
+      room.unread += 1
+    }
+    this.emit()
+  }
+
+  renameRoom(id: string, name: string): void {
+    const room = this.requireRoom(id)
+    if (!name.trim()) throw new Error('Room name is required')
+    room.name = name.trim()
+    this.emit()
+  }
+
+  setRoomMuted(id: string, muted: boolean): void {
+    const room = this.requireRoom(id)
+    room.muted = muted
+    if (muted) room.unread = 0
+    this.emit()
+  }
+
+  addRoomMember(id: string, memberId: string): void {
+    const room = this.requireRoom(id)
+    if (!memberId.trim()) throw new Error('Room member is required')
+    room.memberIds = [...new Set([...room.memberIds, memberId.trim()])]
+    if (memberId === 'alex') room.access = 'allowed'
+    this.emit()
+  }
+
+  removeRoomMember(id: string, memberId: string): void {
+    const room = this.requireRoom(id)
+    room.memberIds = room.memberIds.filter((candidate) => candidate !== memberId)
+    if (memberId === 'alex') {
+      room.access = 'revoked'
+      room.unread = 0
+      if (this.stateValue.activeRoomId === id) this.stateValue.activeRoomId = null
+      this.stateValue.notice = 'You no longer have access to this room.'
+    }
     this.emit()
   }
 
@@ -954,6 +1013,12 @@ export class CommunityDemoController {
     this.stateValue.attachmentError = error.message
     this.stateValue.notice = error.message
     this.emit()
+  }
+
+  private requireRoom(id: string): CommunityState['rooms'][number] {
+    const room = this.stateValue.rooms.find((candidate) => candidate.id === id)
+    if (!room) throw new Error(`Unknown room: ${id}`)
+    return room
   }
 
   setPresence(presence: 'online' | 'offline'): void {
