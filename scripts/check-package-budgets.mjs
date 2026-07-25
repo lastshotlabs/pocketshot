@@ -24,6 +24,8 @@ const budgets = {
   'dist/media.cjs': 40 * 1024,
   'dist/ai.js': 36 * 1024,
   'dist/ai.cjs': 40 * 1024,
+  'dist/audio.js': 32 * 1024,
+  'dist/audio.cjs': 36 * 1024,
 }
 
 async function filesUnder(directory) {
@@ -74,6 +76,7 @@ for (const target of [
   packageJson.exports?.['./testing']?.types,
   packageJson.exports?.['./media']?.types,
   packageJson.exports?.['./ai']?.types,
+  packageJson.exports?.['./audio']?.types,
   packageJson.bin?.pocketshot,
 ]) {
   if (!target) {

@@ -61,6 +61,11 @@
       "types": "./dist/types/ai/index.d.ts",
       "import": "./dist/ai.js",
       "require": "./dist/ai.cjs"
+    },
+    "./audio": {
+      "types": "./dist/types/audio/index.d.ts",
+      "import": "./dist/audio.js",
+      "require": "./dist/audio.cjs"
     }
   },
   "scripts": {
@@ -78,6 +83,7 @@
     "@react-native-community/netinfo": ">=11.0.0",
     "@tanstack/react-query": ">=5.0.0",
     "expo-application": ">=5.0.0",
+    "expo-audio": ">=1.0.0",
     "expo-clipboard": ">=7.0.0",
     "expo-constants": ">=17.0.0",
     "expo-device": ">=6.0.0",
@@ -100,6 +106,9 @@
       "optional": true
     },
     "expo-application": {
+      "optional": true
+    },
+    "expo-audio": {
       "optional": true
     },
     "expo-clipboard": {

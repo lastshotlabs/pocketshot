@@ -96,6 +96,7 @@ import {
   type MediaAsset,
 } from '@lastshotlabs/pocketshot/media'
 import { AiConversationController, createMemoryAiStorage } from '@lastshotlabs/pocketshot/ai'
+import { PlaybackController, type AudioTrack } from '@lastshotlabs/pocketshot/audio'
 import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
@@ -167,6 +168,28 @@ const ai = new AiConversationController({
   },
 })
 void ai
+const audioTrack: AudioTrack = {
+  id: 'track',
+  provider: 'consumer',
+  title: 'Track',
+  playable: true,
+}
+const playback = new PlaybackController({
+  deviceId: 'consumer-device',
+  adapter: {
+    configure: async () => undefined,
+    load: async () => undefined,
+    play: async () => undefined,
+    pause: async () => undefined,
+    stop: async () => undefined,
+    seek: async () => undefined,
+    unload: async () => undefined,
+    subscribe: () => () => undefined,
+    setRemoteCommandHandler: () => () => undefined,
+  },
+})
+void audioTrack
+void playback
 
 export const Consumer = () => <ButtonBase {...button} />
 `,

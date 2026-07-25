@@ -253,6 +253,20 @@ attempt, conversation, and message provenance needed for server-side
 idempotency and auditing. Automatic commit is available only when
 `reviewPolicy: 'auto'` is explicitly configured.
 
+### Native audio and second screens
+
+`@lastshotlabs/pocketshot/audio` supplies provider-neutral catalog and track
+contracts, an ownership-safe playback state machine, interruption/background/
+headphone-route policies, remote media commands, expiring pairing tokens, and a
+typed display-only second-screen projection.
+
+For Expo apps, install `expo-audio`, enable its background playback config
+plugin when needed, and inject it with `createExpoAudioPlaybackAdapter`. On
+Android, sustained background playback requires the generated foreground media
+service and active lock-screen controls; on iOS it requires the generated audio
+background mode. PocketShot’s adapter configures the runtime audio session and
+lock-screen metadata, while the Expo plugin owns those native declarations.
+
 ### Reliable realtime channels
 
 Import the headless API from `@lastshotlabs/pocketshot/realtime`. Each channel
