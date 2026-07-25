@@ -38,7 +38,12 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "links.burndown.app" }, { "scheme": "burndown" }],
+          "data": [{ "scheme": "https", "host": "links.burndown.app" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "burndown" }],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]

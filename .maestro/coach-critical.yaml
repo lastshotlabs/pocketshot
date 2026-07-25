@@ -7,6 +7,8 @@ name: Coach conversation, metrics, workout, billing, and privacy
     text: Wait
     optional: true
 - assertVisible: PocketShot Coach
+- assertVisible:
+    id: coach-connection
 - tapOn:
     id: ask-coach
 - extendedWaitUntil:
@@ -37,6 +39,8 @@ name: Coach conversation, metrics, workout, billing, and privacy
     centerElement: true
 - tapOn:
     id: start-workout
+- assertVisible:
+    id: coach-connection
 - scrollUntilVisible:
     element:
       id: log-set
@@ -44,6 +48,8 @@ name: Coach conversation, metrics, workout, billing, and privacy
     centerElement: true
 - tapOn:
     id: log-set
+- assertVisible:
+    id: coach-connection
 - scrollUntilVisible:
     element:
       id: complete-workout
@@ -51,6 +57,8 @@ name: Coach conversation, metrics, workout, billing, and privacy
     centerElement: true
 - tapOn:
     id: complete-workout
+- assertVisible:
+    id: coach-connection
 - assertVisible: 'Workout: complete'
 - scrollUntilVisible:
     element:

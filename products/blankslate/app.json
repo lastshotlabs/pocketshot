@@ -36,10 +36,12 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [
-            { "scheme": "https", "host": "links.blankslate.app" },
-            { "scheme": "blankslate" }
-          ],
+          "data": [{ "scheme": "https", "host": "links.blankslate.app" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "blankslate" }],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]

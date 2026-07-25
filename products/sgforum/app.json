@@ -39,7 +39,12 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "links.sgforum.app" }, { "scheme": "sgforum" }],
+          "data": [{ "scheme": "https", "host": "links.sgforum.app" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "sgforum" }],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]

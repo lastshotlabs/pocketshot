@@ -36,11 +36,12 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [
-            { "scheme": "https", "host": "links.hitshot.app", "pathPrefix": "/join" },
-            { "scheme": "hitshot" },
-            { "scheme": "pocketshot-party" }
-          ],
+          "data": [{ "scheme": "https", "host": "links.hitshot.app", "pathPrefix": "/join" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "hitshot" }, { "scheme": "pocketshot-party" }],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]

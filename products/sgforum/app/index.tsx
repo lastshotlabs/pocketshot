@@ -113,7 +113,12 @@ export default function CommunityShell() {
                 onPress={() => community.openThread(thread.id)}
                 style={styles.thread}
               >
-                <Text style={styles.heading}>{thread.title}</Text>
+                <Text
+                  testID={thread.author === 'Alex' ? 'published-thread-title' : undefined}
+                  style={styles.heading}
+                >
+                  {thread.title}
+                </Text>
                 <Text style={styles.copy}>
                   {thread.author} · {thread.replyCount} replies · {thread.reactions} reactions
                 </Text>

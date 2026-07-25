@@ -71,6 +71,25 @@ for (const product of products) {
   if (!app.android?.intentFilters?.some((filter) => filter.autoVerify)) {
     failures.push(`${product} has no verified Android App Link`)
   }
+  const verifiedFilters = app.android?.intentFilters?.filter((filter) => filter.autoVerify) ?? []
+  if (
+    verifiedFilters.some((filter) =>
+      filter.data?.some((entry) => entry.scheme && entry.scheme !== 'https'),
+    )
+  ) {
+    failures.push(`${product} mixes custom schemes into a verified Android App Link filter`)
+  }
+  if (
+    !app.android?.intentFilters?.some(
+      (filter) =>
+        !filter.autoVerify &&
+        filter.category?.includes('BROWSABLE') &&
+        filter.category?.includes('DEFAULT') &&
+        filter.data?.some((entry) => entry.scheme === app.scheme),
+    )
+  ) {
+    failures.push(`${product} has no standalone Android custom-scheme intent filter`)
+  }
   const productSources = await Promise.all(
     (product === 'hitshot'
       ? ['lib/party.ts']

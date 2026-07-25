@@ -94,8 +94,8 @@ if (!partyJoinRoute.includes('initialJoinCode')) {
 if (!partyNativeIntent.includes('redirectSystemPath')) {
   failures.push('Party shell does not normalize native intent paths')
 }
-if (!communityFlow.includes('id: feed-first-thread')) {
-  failures.push('Community journey does not use a regex-safe thread assertion')
+if (!communityFlow.includes('id: published-thread-title')) {
+  failures.push('Community journey does not assert the published thread with a stable test ID')
 }
 if (
   !all.includes('id: setup-six-player-table') ||

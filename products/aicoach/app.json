@@ -40,7 +40,12 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "links.aicoach.app" }, { "scheme": "aicoach" }],
+          "data": [{ "scheme": "https", "host": "links.aicoach.app" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "aicoach" }],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]

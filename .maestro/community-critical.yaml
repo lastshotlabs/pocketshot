@@ -20,7 +20,7 @@ name: Community post, message, moderation, privacy, and reconnect
 - tapOn:
     id: tab-feed
 - assertVisible:
-    id: feed-first-thread
+    id: published-thread-title
 - tapOn:
     id: tab-messages
 - tapOn:
