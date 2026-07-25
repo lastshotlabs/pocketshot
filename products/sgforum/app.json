@@ -4,6 +4,12 @@
     "slug": "sgforum",
     "scheme": "sgforum",
     "version": "1.0.0",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#03452f"
+    },
     "runtimeVersion": { "policy": "appVersion" },
     "platforms": ["ios", "android"],
     "ios": {
@@ -25,6 +31,10 @@
     "android": {
       "package": "com.lastshotlabs.sgforum",
       "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#03452f"
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -34,6 +44,7 @@
         }
       ]
     },
+    "web": { "favicon": "./assets/icon.png" },
     "plugins": ["expo-router", "expo-secure-store", "expo-sqlite"]
   }
 }

@@ -4,6 +4,12 @@
     "slug": "burndown",
     "scheme": "burndown",
     "version": "1.0.0",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#241006"
+    },
     "runtimeVersion": { "policy": "appVersion" },
     "platforms": ["ios", "android"],
     "orientation": "default",
@@ -24,6 +30,10 @@
     "android": {
       "package": "com.lastshotlabs.burndown",
       "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#241006"
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -33,6 +43,7 @@
         }
       ]
     },
+    "web": { "favicon": "./assets/icon.png" },
     "plugins": ["expo-router", "expo-secure-store"]
   }
 }

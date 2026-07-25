@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 
 const products = ['hitshot', 'aicoach', 'sgforum', 'burndown', 'blankslate']
 const failures = []
@@ -70,6 +70,28 @@ for (const product of products) {
   }
   if (!app.android?.intentFilters?.some((filter) => filter.autoVerify)) {
     failures.push(`${product} has no verified Android App Link`)
+  }
+  for (const [label, assetPath] of [
+    ['icon', app.icon],
+    ['splash', app.splash?.image],
+    ['adaptive icon', app.android?.adaptiveIcon?.foregroundImage],
+  ]) {
+    if (!assetPath) {
+      failures.push(`${product} has no ${label} asset`)
+      continue
+    }
+    const assetUrl = new URL(`../products/${product}/${assetPath}`, import.meta.url)
+    try {
+      await access(assetUrl)
+      const bytes = await readFile(assetUrl)
+      const width = bytes.readUInt32BE(16)
+      const height = bytes.readUInt32BE(20)
+      if (width < 1024 || height < 1024 || width !== height) {
+        failures.push(`${product} ${label} must be a square image at least 1024px`)
+      }
+    } catch {
+      failures.push(`${product} ${label} asset is missing: ${assetPath}`)
+    }
   }
 }
 

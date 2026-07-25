@@ -4,6 +4,12 @@
     "slug": "aicoach",
     "scheme": "aicoach",
     "version": "1.0.0",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#06133f"
+    },
     "runtimeVersion": { "policy": "appVersion" },
     "platforms": ["ios", "android"],
     "ios": {
@@ -26,6 +32,10 @@
     "android": {
       "package": "com.lastshotlabs.aicoach",
       "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#06133f"
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -35,6 +45,7 @@
         }
       ]
     },
+    "web": { "favicon": "./assets/icon.png" },
     "plugins": ["expo-router", "expo-secure-store", "expo-sqlite", "expo-image-picker"]
   }
 }
