@@ -59,11 +59,36 @@ export const baseComponentSchema = sharedBaseComponentSchema.extend({
   testID: z.string().optional(),
 })
 
-export function extendComponentSchema<T extends z.ZodRawShape>(shape: T) {
+type BaseComponentInput = z.input<typeof baseComponentSchema>
+type BaseComponentOutput = z.output<typeof baseComponentSchema>
+type MergeComponentShape<Base, Override> = Omit<Base, keyof Override> & Override
+
+/**
+ * Extends the shared component contract without serializing the entire shared
+ * Zod object into every consumer declaration.
+ *
+ * The explicit ZodType boundary is important: leaving this return type inferred
+ * makes TypeScript repeat the full responsive/style/state/slot schema for every
+ * component. That previously produced a 66 MB bundled `ui.d.ts` and TS7056
+ * failures. Input/output precision remains intact because the component-specific
+ * shape is still inferred from `T`.
+ */
+export function extendComponentSchema<T extends z.ZodRawShape>(
+  shape: T,
+): z.ZodType<
+  MergeComponentShape<BaseComponentOutput, z.output<z.ZodObject<T>>>,
+  MergeComponentShape<BaseComponentInput, z.input<z.ZodObject<T>>>
+> {
   return extendSharedComponentSchema({
     testID: z.string().optional(),
     ...shape,
-  })
+    // Zod's object internals are intentionally opaque here. Runtime validation is
+    // unchanged; this cast only prevents declaration serialization from expanding
+    // the full shared object into every component.
+  }) as unknown as z.ZodType<
+    MergeComponentShape<BaseComponentOutput, z.output<z.ZodObject<T>>>,
+    MergeComponentShape<BaseComponentInput, z.input<z.ZodObject<T>>>
+  >
 }
 
 /**

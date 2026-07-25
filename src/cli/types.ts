@@ -14,4 +14,5 @@ export interface PocketshotScaffoldConfig {
   deepLinks: boolean // add universal links + scheme config
   offlineSupport: boolean // add offline queue provider setup
   orgSupport: boolean // add org/permissions hooks in pocketshot.ts
+  installDependencies?: boolean // defaults true; tests/tooling may generate without network install
 }

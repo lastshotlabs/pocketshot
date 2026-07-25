@@ -43,7 +43,6 @@ export default defineConfig([
   {
     entry: { index: 'src/index.ts', ui: 'src/ui.ts' },
     format: ['esm', 'cjs'],
-    dts: true,
     external: peerDeps,
     outDir: 'dist',
   },

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, slotsSchema } from '../../_base/schema'
+import { extendComponentSchema, looseSlots } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -16,7 +16,7 @@ export const MultiSelectSchema = extendComponentSchema({
   emptyMessage: z.union([z.string(), FromRefSchema]).optional().default('No options'),
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
-  slots: slotsSchema([
+  slots: looseSlots([
     'root',
     'container',
     'label',

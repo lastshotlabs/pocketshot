@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, slotsSchema } from '../../_base/schema'
+import { extendComponentSchema, looseSlots } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 const SideSchema = z.object({
@@ -15,7 +15,7 @@ export const CompareViewSchema = extendComponentSchema({
   showLineNumbers: z.boolean().optional().default(true),
   highlightDiffs: z.boolean().optional().default(true),
   testID: z.string().optional(),
-  slots: slotsSchema([
+  slots: looseSlots([
     'root',
     'container',
     'header',

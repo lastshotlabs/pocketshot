@@ -115,26 +115,24 @@ export async function scaffold(config: PocketshotScaffoldConfig): Promise<void> 
     await write('lib/useOfflineSync.ts', offlineProviderTemplate())
   }
 
-  // Step: install dependencies
   const s = spinner()
-  s.start('Installing dependencies')
-  let installOk = false
-  try {
-    exec('bun install', config.dir, true)
-    installOk = true
-  } catch {
+
+  // Step: install dependencies. A generated app with no dependency graph is not
+  // a successful scaffold, so both installer failures are fatal.
+  if (config.installDependencies !== false) {
+    s.start('Installing dependencies')
     try {
-      exec('npm install', config.dir, true)
-      installOk = true
+      installScaffoldDependencies(config.dir)
+      s.stop('Dependencies installed')
     } catch (err) {
-      s.stop('Dependency install failed — run install manually')
-      log.warn(
+      s.stop('Dependency install failed')
+      log.error(
         `Install failed: ${err instanceof Error ? err.message : String(err)}\n` +
-          `  cd ${config.dir} && npm install`,
+          `  Fix the registry or dependency error, then run: cd ${config.dir} && npm install`,
       )
+      throw err
     }
   }
-  if (installOk) s.stop('Dependencies installed')
 
   // Step: git init
   if (config.gitInit) {
@@ -146,6 +144,23 @@ export async function scaffold(config: PocketshotScaffoldConfig): Promise<void> 
       s.stop('Git init failed')
       const stderr = (err as NodeJS.ErrnoException & { stderr?: Buffer })?.stderr
       log.warn(`Git init failed: ${stderr?.toString() ?? String(err)}`)
+    }
+  }
+}
+
+export function installScaffoldDependencies(dir: string, run: typeof exec = exec): 'bun' | 'npm' {
+  try {
+    run('bun install', dir, true)
+    return 'bun'
+  } catch (bunError) {
+    try {
+      run('npm install', dir, true)
+      return 'npm'
+    } catch (npmError) {
+      throw new AggregateError(
+        [bunError, npmError],
+        'Both bun install and npm install failed; the scaffold is incomplete.',
+      )
     }
   }
 }

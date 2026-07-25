@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, slotsSchema } from '../../_base/schema'
+import { extendComponentSchema, looseSlots } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -15,7 +15,7 @@ export const DatePickerSchema = extendComponentSchema({
   format: z.string().optional().default('MM/DD/YYYY'),
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
-  slots: slotsSchema([
+  slots: looseSlots([
     'root',
     'container',
     'label',

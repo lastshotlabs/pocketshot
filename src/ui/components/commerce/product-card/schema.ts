@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import { extendComponentSchema, slotsSchema } from '../../_base/schema'
+import { extendComponentSchema, looseSlots } from '../../_base/schema'
 import type { Action } from '../../../actions/types'
 
 const ActionSchema = z.custom<Action>()
@@ -18,7 +18,7 @@ export const ProductCardSchema = extendComponentSchema({
   onPress: ActionSchema.optional(),
   onAddToCart: ActionSchema.optional(),
   testID: z.string().optional(),
-  slots: slotsSchema([
+  slots: looseSlots([
     'root',
     'pressable',
     'card',

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, slotsSchema } from '../../_base/schema'
+import { extendComponentSchema, looseSlots } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 export const AudioPlayerSchema = extendComponentSchema({
@@ -10,7 +10,7 @@ export const AudioPlayerSchema = extendComponentSchema({
   showWaveform: z.boolean().optional().default(true),
   autoPlay: z.boolean().optional().default(false),
   testID: z.string().optional(),
-  slots: slotsSchema([
+  slots: looseSlots([
     'root',
     'container',
     'playButton',

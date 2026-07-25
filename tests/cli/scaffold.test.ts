@@ -2,8 +2,41 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { mkdtempSync, rmSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { scaffold } from '../../src/cli/scaffold'
+import { installScaffoldDependencies, scaffold } from '../../src/cli/scaffold'
 import type { PocketshotScaffoldConfig } from '../../src/cli/types'
+
+describe('scaffold dependency installation', () => {
+  it('uses bun when bun install succeeds', () => {
+    const calls: string[] = []
+    const result = installScaffoldDependencies('/tmp/example', (command) => {
+      calls.push(command)
+      return ''
+    })
+
+    expect(result).toBe('bun')
+    expect(calls).toEqual(['bun install'])
+  })
+
+  it('falls back to npm when bun install fails', () => {
+    const calls: string[] = []
+    const result = installScaffoldDependencies('/tmp/example', (command) => {
+      calls.push(command)
+      if (command === 'bun install') throw new Error('bun unavailable')
+      return ''
+    })
+
+    expect(result).toBe('npm')
+    expect(calls).toEqual(['bun install', 'npm install'])
+  })
+
+  it('throws when both installers fail', () => {
+    expect(() =>
+      installScaffoldDependencies('/tmp/example', (command) => {
+        throw new Error(`${command} failed`)
+      }),
+    ).toThrow('Both bun install and npm install failed')
+  })
+})
 
 describe('scaffold', () => {
   let dir: string
@@ -26,6 +59,7 @@ describe('scaffold', () => {
       deepLinks: false,
       offlineSupport: false,
       orgSupport: false,
+      installDependencies: false,
     }
     await scaffold(config)
   }, 60_000)
@@ -158,6 +192,7 @@ describe('scaffold without optional features', () => {
       deepLinks: false,
       offlineSupport: false,
       orgSupport: false,
+      installDependencies: false,
     }
     await scaffold(config)
   }, 60_000)

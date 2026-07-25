@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
-import { extendComponentSchema, slotsSchema } from '../../_base/schema'
+import { extendComponentSchema, looseSlots } from '../../_base/schema'
 
 const TimelineItemSchema = z.object({
   id: z.string(),
@@ -9,7 +9,7 @@ const TimelineItemSchema = z.object({
   timestamp: z.string().optional(),
   icon: z.string().optional(),
   color: z.string().optional(),
-  slots: slotsSchema([
+  slots: looseSlots([
     'item',
     'markerColumn',
     'marker',
@@ -30,7 +30,7 @@ export const TimelineSchema = extendComponentSchema({
   data: z.union([z.string(), FromRefSchema]).optional(),
   items: z.array(TimelineItemSchema).optional(),
   testID: z.string().optional(),
-  slots: slotsSchema([
+  slots: looseSlots([
     'root',
     'loadingState',
     'item',
