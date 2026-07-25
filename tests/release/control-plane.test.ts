@@ -4,6 +4,7 @@ import {
   ProductionServiceRegistry,
   ReleaseControlPlane,
   createProductServiceRegistry,
+  productEnvironmentFromPublicConfig,
   type ProductReleaseManifest,
 } from '../../src/release'
 
@@ -112,5 +113,32 @@ describe('production release services', () => {
     expect(
       createProductServiceRegistry('blankslate', '1.0.0', 1, environment).get('spotify'),
     ).toBeNull()
+  })
+
+  it('builds a redaction-safe production environment from Expo public configuration', () => {
+    const environment = productEnvironmentFromPublicConfig({
+      EXPO_PUBLIC_API_URL: 'https://api.example.test',
+      EXPO_PUBLIC_WS_ENDPOINT: 'wss://api.example.test/realtime',
+      EXPO_PUBLIC_LINK_HOST: 'links.example.test',
+      EXPO_PUBLIC_PRIVACY_URL: 'https://example.test/privacy',
+      EXPO_PUBLIC_TERMS_URL: 'https://example.test/terms',
+      EXPO_PUBLIC_SUPPORT_URL: 'https://example.test/support',
+      EXPO_PUBLIC_DELETION_URL: 'https://example.test/delete',
+      EXPO_PUBLIC_APPLE_SERVICE_ID: 'apple-client',
+      EXPO_PUBLIC_ANALYTICS_ENDPOINT: 'https://events.example.test',
+    })
+    expect(environment).toMatchObject({
+      apiUrl: 'https://api.example.test',
+      webSocketUrl: 'wss://api.example.test/realtime',
+      associatedDomains: ['applinks:links.example.test'],
+      appleClientId: 'apple-client',
+      analyticsEndpoint: 'https://events.example.test',
+    })
+    expect(() => productEnvironmentFromPublicConfig({})).toThrow('EXPO_PUBLIC_LINK_HOST')
+    expect(() =>
+      productEnvironmentFromPublicConfig({
+        EXPO_PUBLIC_LINK_HOST: 'https://bad.example.test',
+      }),
+    ).toThrow('hostname')
   })
 })

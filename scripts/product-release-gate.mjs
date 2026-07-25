@@ -52,8 +52,13 @@ for (const product of products) {
     'EXPO_PUBLIC_API_URL',
     'EXPO_PUBLIC_WS_ENDPOINT',
     'EXPO_PUBLIC_LINK_HOST',
-    'EXPO_PUBLIC_ANALYTICS_WRITE_KEY',
-    'EXPO_PUBLIC_CRASH_DSN',
+    'EXPO_PUBLIC_PRIVACY_URL',
+    'EXPO_PUBLIC_TERMS_URL',
+    'EXPO_PUBLIC_SUPPORT_URL',
+    'EXPO_PUBLIC_DELETION_URL',
+    'EXPO_PUBLIC_ANALYTICS_ENDPOINT',
+    'EXPO_PUBLIC_CRASH_ENDPOINT',
+    'EXPO_PUBLIC_FEATURE_FLAG_ENDPOINT',
   ]) {
     if (!environment.includes(`${key}=`)) {
       failures.push(`${product} environment manifest is missing ${key}`)

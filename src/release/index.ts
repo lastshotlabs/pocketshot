@@ -260,6 +260,58 @@ export interface ProductEnvironment {
   featureFlagEndpoint?: string
 }
 
+export type PublicProductEnvironment = Partial<
+  Record<
+    | 'EXPO_PUBLIC_API_URL'
+    | 'EXPO_PUBLIC_WS_ENDPOINT'
+    | 'EXPO_PUBLIC_LINK_HOST'
+    | 'EXPO_PUBLIC_PRIVACY_URL'
+    | 'EXPO_PUBLIC_TERMS_URL'
+    | 'EXPO_PUBLIC_SUPPORT_URL'
+    | 'EXPO_PUBLIC_DELETION_URL'
+    | 'EXPO_PUBLIC_APPLE_SERVICE_ID'
+    | 'EXPO_PUBLIC_GOOGLE_CLIENT_ID'
+    | 'EXPO_PUBLIC_SPOTIFY_CLIENT_ID'
+    | 'EXPO_PUBLIC_AUDIUS_CLIENT_ID'
+    | 'EXPO_PUBLIC_ANALYTICS_ENDPOINT'
+    | 'EXPO_PUBLIC_CRASH_ENDPOINT'
+    | 'EXPO_PUBLIC_FEATURE_FLAG_ENDPOINT',
+    string
+  >
+>
+
+export function productEnvironmentFromPublicConfig(
+  values: PublicProductEnvironment,
+): ProductEnvironment {
+  const required = (key: keyof PublicProductEnvironment): string => {
+    const value = values[key]?.trim()
+    if (!value) throw new Error(`${key} is required`)
+    return value
+  }
+  const optional = (key: keyof PublicProductEnvironment): string | undefined =>
+    values[key]?.trim() || undefined
+  const linkHost = required('EXPO_PUBLIC_LINK_HOST')
+  if (!/^[a-z0-9.-]+$/i.test(linkHost) || linkHost.includes('://')) {
+    throw new Error('EXPO_PUBLIC_LINK_HOST must be a hostname')
+  }
+  return {
+    apiUrl: required('EXPO_PUBLIC_API_URL'),
+    webSocketUrl: optional('EXPO_PUBLIC_WS_ENDPOINT'),
+    privacyUrl: required('EXPO_PUBLIC_PRIVACY_URL'),
+    termsUrl: required('EXPO_PUBLIC_TERMS_URL'),
+    supportUrl: required('EXPO_PUBLIC_SUPPORT_URL'),
+    deletionUrl: required('EXPO_PUBLIC_DELETION_URL'),
+    associatedDomains: [`applinks:${linkHost}`],
+    appleClientId: optional('EXPO_PUBLIC_APPLE_SERVICE_ID'),
+    googleClientId: optional('EXPO_PUBLIC_GOOGLE_CLIENT_ID'),
+    spotifyClientId: optional('EXPO_PUBLIC_SPOTIFY_CLIENT_ID'),
+    audiusClientId: optional('EXPO_PUBLIC_AUDIUS_CLIENT_ID'),
+    analyticsEndpoint: optional('EXPO_PUBLIC_ANALYTICS_ENDPOINT'),
+    crashEndpoint: optional('EXPO_PUBLIC_CRASH_ENDPOINT'),
+    featureFlagEndpoint: optional('EXPO_PUBLIC_FEATURE_FLAG_ENDPOINT'),
+  }
+}
+
 interface ProductCatalogEntry {
   bundleIdentifier: string
   androidPackage: string
@@ -269,8 +321,8 @@ interface ProductCatalogEntry {
 
 const productCatalog: Record<ProductId, ProductCatalogEntry> = {
   hitshot: {
-    bundleIdentifier: 'com.lastshotlabs.pocketshot.party',
-    androidPackage: 'com.lastshotlabs.pocketshot.party',
+    bundleIdentifier: 'com.lastshotlabs.hitshot',
+    androidPackage: 'com.lastshotlabs.hitshot',
     requiredServices: [
       'api',
       'auth',
@@ -288,8 +340,8 @@ const productCatalog: Record<ProductId, ProductCatalogEntry> = {
     products: ['hitshot.pro.monthly', 'hitshot.pro.yearly'],
   },
   aicoach: {
-    bundleIdentifier: 'com.lastshotlabs.pocketshot.coach',
-    androidPackage: 'com.lastshotlabs.pocketshot.coach',
+    bundleIdentifier: 'com.lastshotlabs.aicoach',
+    androidPackage: 'com.lastshotlabs.aicoach',
     requiredServices: [
       'api',
       'auth',
@@ -305,8 +357,8 @@ const productCatalog: Record<ProductId, ProductCatalogEntry> = {
     products: ['aicoach.pro.monthly', 'aicoach.pro.yearly'],
   },
   sgforum: {
-    bundleIdentifier: 'com.lastshotlabs.pocketshot.community',
-    androidPackage: 'com.lastshotlabs.pocketshot.community',
+    bundleIdentifier: 'com.lastshotlabs.sgforum',
+    androidPackage: 'com.lastshotlabs.sgforum',
     requiredServices: [
       'api',
       'auth',
@@ -322,8 +374,8 @@ const productCatalog: Record<ProductId, ProductCatalogEntry> = {
     products: ['sgforum.supporter.monthly'],
   },
   burndown: {
-    bundleIdentifier: 'com.lastshotlabs.pocketshot.burndown',
-    androidPackage: 'com.lastshotlabs.pocketshot.burndown',
+    bundleIdentifier: 'com.lastshotlabs.burndown',
+    androidPackage: 'com.lastshotlabs.burndown',
     requiredServices: [
       'api',
       'auth',
@@ -339,8 +391,8 @@ const productCatalog: Record<ProductId, ProductCatalogEntry> = {
     products: ['burndown.plus.lifetime'],
   },
   blankslate: {
-    bundleIdentifier: 'com.lastshotlabs.pocketshot.blankslate',
-    androidPackage: 'com.lastshotlabs.pocketshot.blankslate',
+    bundleIdentifier: 'com.lastshotlabs.blankslate',
+    androidPackage: 'com.lastshotlabs.blankslate',
     requiredServices: [
       'api',
       'auth',
