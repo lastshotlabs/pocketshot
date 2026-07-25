@@ -3,6 +3,22 @@ import { PartyDemoController } from '../../examples/party/lib/party'
 import { normalizePartySystemPath } from '../../examples/party/lib/party-link'
 
 describe('Party clean-room acceptance model', () => {
+  it('composes durable account OAuth separately from playback-provider authorization', async () => {
+    const party = new PartyDemoController()
+    await party.completeAccountOAuth('apple')
+    expect(party.state).toMatchObject({
+      phase: 'lobby',
+      accountStatus: 'authenticated',
+      accountEmail: 'player@example.com',
+      players: [expect.objectContaining({ name: 'Account player' })],
+    })
+    expect(
+      party.state.playbackCapabilities.find((provider) => provider.provider === 'spotify'),
+    ).toMatchObject({ isAuthorized: false })
+    await party.signOutAccount()
+    expect(party.state.accountStatus).toBe('anonymous')
+  })
+
   it('completes guest, lobby, realtime round, result, and rematch', () => {
     const party = new PartyDemoController()
     party.guest('Alex')

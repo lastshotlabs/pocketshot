@@ -15,6 +15,9 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
   const [party, setParty] = useState<PartyState>(controller.state)
   useEffect(() => controller.subscribe(setParty), [controller])
   useEffect(() => {
+    void controller.restoreAccount()
+  }, [controller])
+  useEffect(() => {
     if (initialJoinCode) {
       controller.join(initialJoinCode.toUpperCase(), 'Linked guest')
     } else {
@@ -53,12 +56,18 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
           />
           <Action
             testID="oauth-entry"
-            label="Continue with Spotify"
-            onPress={() => {
-              controller.connectSpotify()
-              controller.guest('Spotify player')
-            }}
+            label="Continue with Apple"
+            onPress={() => void controller.completeAccountOAuth('apple')}
           />
+          <Action
+            testID="spotify-connect"
+            label="Connect Spotify playback"
+            onPress={() => controller.connectSpotify()}
+          />
+          <Text style={styles.copy}>
+            Account: {party.accountStatus}
+            {party.accountEmail ? ` · ${party.accountEmail}` : ''}
+          </Text>
           <Text style={styles.copy}>
             {party.playbackCapabilities
               .map(

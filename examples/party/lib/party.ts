@@ -3,6 +3,11 @@ import {
   type PublicSecondScreenEnvelope,
 } from '@lastshotlabs/pocketshot/audio'
 import {
+  AccountAuthController,
+  type AccountAuthTransport,
+  type TokenStorage,
+} from '@lastshotlabs/pocketshot/auth'
+import {
   createDurableDraft,
   createMemoryDraftStorage,
   type DraftStorage,
@@ -52,6 +57,8 @@ export interface PartyState {
   winner: boolean
   playbackCapabilities: PlaybackCapabilities[]
   playbackSource: string | null
+  accountStatus: 'anonymous' | 'authenticated'
+  accountEmail: string | null
 }
 
 type Event =
@@ -97,6 +104,8 @@ const initial: PartyState = {
   winner: false,
   playbackCapabilities: [],
   playbackSource: null,
+  accountStatus: 'anonymous',
+  accountEmail: null,
 }
 
 export class PartyDemoController {
@@ -118,6 +127,7 @@ export class PartyDemoController {
     createDemoProvider('spotify', false, 'full'),
     createDemoProvider('audius', true, 'preview'),
   ])
+  readonly account = createDemoPartyAccount()
 
   constructor(storage: DraftStorage = createMemoryDraftStorage()) {
     this.deckLibrary.create('friday-mix', 'Friday Mix')
@@ -171,6 +181,22 @@ export class PartyDemoController {
     this.syncPlaybackCapabilities()
     this.stateValue.notice = 'Spotify playback disconnected; previews remain available'
     this.emit()
+  }
+
+  async completeAccountOAuth(provider: 'apple' | 'google'): Promise<void> {
+    await this.account.completeOAuth(provider, 'demo-code', `pocketshot-party://oauth/${provider}`)
+    this.syncAccount()
+    this.guest(this.account.snapshot.user?.displayName ?? 'Account player')
+  }
+
+  async restoreAccount(): Promise<void> {
+    await this.account.restore()
+    this.syncAccount()
+  }
+
+  async signOutAccount(): Promise<void> {
+    await this.account.logout()
+    this.syncAccount()
   }
 
   async resolveDemoPlayback(): Promise<void> {
@@ -510,6 +536,13 @@ export class PartyDemoController {
   private syncPlaybackCapabilities(): void {
     this.stateValue.playbackCapabilities = this.playback.capabilities
   }
+
+  private syncAccount(): void {
+    this.stateValue.accountStatus =
+      this.account.snapshot.status === 'authenticated' ? 'authenticated' : 'anonymous'
+    this.stateValue.accountEmail = this.account.snapshot.user?.email ?? null
+    this.emit()
+  }
 }
 
 function createDemoProvider(
@@ -542,6 +575,48 @@ function createDemoProvider(
       return { uri: `${provider}://${providerId}`, kind }
     },
   }
+}
+
+function createDemoPartyAccount(): AccountAuthController {
+  let accessToken: string | null = null
+  let refreshToken: string | null = null
+  const storage: TokenStorage = {
+    getToken: async () => accessToken,
+    setToken: async (value) => {
+      accessToken = value
+    },
+    clearToken: async () => {
+      accessToken = null
+    },
+    getRefreshToken: async () => refreshToken,
+    setRefreshToken: async (value) => {
+      refreshToken = value
+    },
+    clearRefreshToken: async () => {
+      refreshToken = null
+    },
+  }
+  const authenticated = {
+    user: {
+      id: 'hitshot-user',
+      email: 'player@example.com',
+      emailVerified: true,
+      displayName: 'Account player',
+    },
+    accessToken: 'hitshot-access-token',
+    refreshToken: 'hitshot-refresh-token',
+  }
+  const transport: AccountAuthTransport = {
+    register: async () => authenticated,
+    verifyEmail: async () => authenticated,
+    login: async () => authenticated,
+    exchangeOAuth: async () => authenticated,
+    restore: async () => authenticated,
+    logout: async () => undefined,
+    forgotPassword: async () => undefined,
+    resetPassword: async () => undefined,
+  }
+  return new AccountAuthController(transport, storage)
 }
 
 function reduceParty(state: PartyState, event: Event): PartyState {
