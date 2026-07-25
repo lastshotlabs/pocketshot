@@ -39,21 +39,21 @@ export default function CommunityShell() {
         </View>
       )}
       <View style={styles.tabs}>
-        {(['feed', 'compose', 'notifications', 'messages', 'privacy'] as CommunityView[]).map(
-          (view) => (
-            <Pressable
-              key={view}
-              testID={`tab-${view}`}
-              accessibilityRole="tab"
-              accessibilityLabel={`${view} tab`}
-              accessibilityState={{ selected: state.view === view }}
-              onPress={() => community.navigate(view)}
-              style={styles.tab}
-            >
-              <Text style={styles.tabText}>{view}</Text>
-            </Pressable>
-          ),
-        )}
+        {(
+          ['feed', 'compose', 'notifications', 'messages', 'profile', 'privacy'] as CommunityView[]
+        ).map((view) => (
+          <Pressable
+            key={view}
+            testID={`tab-${view}`}
+            accessibilityRole="tab"
+            accessibilityLabel={`${view} tab`}
+            accessibilityState={{ selected: state.view === view }}
+            onPress={() => community.navigate(view)}
+            style={styles.tab}
+          >
+            <Text style={styles.tabText}>{view}</Text>
+          </Pressable>
+        ))}
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         {state.view === 'feed' && (
@@ -197,6 +197,49 @@ export default function CommunityShell() {
                 )}
               </View>
             ))}
+          </Card>
+        )}
+        {state.view === 'profile' && (
+          <Card title="Profile and relationships">
+            <Text style={styles.copy}>
+              @{state.profile?.handle ?? 'unset'} · {state.profile?.displayName ?? 'No profile'}
+            </Text>
+            <Text style={styles.copy}>
+              {state.profile?.biography || 'No biography'} · {state.profile?.visibility ?? 'public'}
+            </Text>
+            <Text style={styles.copy}>
+              Following: {state.followingUsers.length} · Muted: {state.mutedUsers.length}
+            </Text>
+            <Action
+              testID="edit-profile"
+              label="Complete profile"
+              onPress={() =>
+                community.updateProfile({
+                  displayName: 'Alex Rivera',
+                  biography: 'Trail runner and community host',
+                  avatarUrl: 'https://cdn.example.test/alex.jpg',
+                  visibility: 'followers',
+                })
+              }
+            />
+            <Action
+              testID="follow-user"
+              label={state.followingUsers.includes('morgan') ? 'Unfollow Morgan' : 'Follow Morgan'}
+              onPress={() =>
+                state.followingUsers.includes('morgan')
+                  ? community.unfollow('morgan')
+                  : community.follow('morgan')
+              }
+            />
+            <Action
+              testID="mute-user"
+              label={state.mutedUsers.includes('morgan') ? 'Unmute Morgan' : 'Mute Morgan'}
+              onPress={() =>
+                state.mutedUsers.includes('morgan')
+                  ? community.unmute('morgan')
+                  : community.mute('morgan')
+              }
+            />
           </Card>
         )}
         {state.view === 'privacy' && (

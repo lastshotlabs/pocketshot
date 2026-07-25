@@ -3,6 +3,11 @@ import {
   createMemoryDraftStorage,
   type DraftStorage,
 } from '@lastshotlabs/pocketshot/drafts'
+import {
+  CommunityProfileController,
+  SocialGraphController,
+  type CommunityProfileVisibility,
+} from '@lastshotlabs/pocketshot/community'
 import { RealtimeReconciler, type RealtimeEvent } from '@lastshotlabs/pocketshot/realtime'
 import { z } from 'zod'
 
@@ -50,6 +55,7 @@ export type CommunityView =
   | 'notifications'
   | 'messages'
   | 'moderation'
+  | 'profile'
   | 'privacy'
 
 export interface CommunityState {
@@ -70,6 +76,15 @@ export interface CommunityState {
   typing: boolean
   reports: CommunityReport[]
   blockedUsers: string[]
+  profile: {
+    handle: string
+    displayName: string
+    biography: string
+    avatarUrl: string | null
+    visibility: CommunityProfileVisibility
+  } | null
+  followingUsers: string[]
+  mutedUsers: string[]
   exportStatus: 'idle' | 'requested' | 'ready'
   notice: string | null
 }
@@ -111,6 +126,9 @@ const initial: CommunityState = {
   typing: false,
   reports: [],
   blockedUsers: [],
+  profile: null,
+  followingUsers: [],
+  mutedUsers: [],
   exportStatus: 'idle',
   notice: null,
 }
@@ -123,12 +141,15 @@ export class CommunityDemoController {
   private messageId = 0
   private reportId = 0
   private reacted = new Set<string>()
+  private muted = new Set<string>()
   private listeners = new Set<(state: CommunityState) => void>()
   private realtime = new RealtimeReconciler<Event, CommunityState>((state, event) =>
     reduceCommunity(state, event.payload),
   )
 
   readonly composer
+  readonly profiles = new CommunityProfileController()
+  readonly social = new SocialGraphController()
 
   constructor(storage: DraftStorage = createMemoryDraftStorage()) {
     this.composer = createDurableDraft({
@@ -173,7 +194,53 @@ export class CommunityDemoController {
       return
     }
     this.stateValue.handle = normalized
+    this.profiles.save({
+      userId: 'alex',
+      handle: normalized,
+      displayName: 'Alex',
+      biography: '',
+      avatarUrl: null,
+      visibility: 'public',
+    })
+    this.syncProfile()
     this.stateValue.onboarded = true
+    this.emit()
+  }
+
+  updateProfile(input: {
+    displayName: string
+    biography: string
+    avatarUrl: string | null
+    visibility: CommunityProfileVisibility
+  }): void {
+    const handle = this.stateValue.handle
+    if (!handle) throw new Error('Complete onboarding before editing a profile')
+    this.profiles.save({ userId: 'alex', handle, ...input })
+    this.syncProfile()
+    this.emit()
+  }
+
+  follow(userId: string): void {
+    this.social.follow(userId)
+    this.stateValue.followingUsers = this.social.snapshot.following
+    this.emit()
+  }
+
+  unfollow(userId: string): void {
+    this.social.unfollow(userId)
+    this.stateValue.followingUsers = this.social.snapshot.following
+    this.emit()
+  }
+
+  mute(userId: string): void {
+    this.muted.add(userId)
+    this.stateValue.mutedUsers = [...this.muted].sort()
+    this.emit()
+  }
+
+  unmute(userId: string): void {
+    this.muted.delete(userId)
+    this.stateValue.mutedUsers = [...this.muted].sort()
     this.emit()
   }
 
@@ -422,6 +489,19 @@ export class CommunityDemoController {
 
   private emit(): void {
     for (const listener of this.listeners) listener(this.state)
+  }
+
+  private syncProfile(): void {
+    const profile = this.profiles.get('alex')
+    this.stateValue.profile = profile
+      ? {
+          handle: profile.handle,
+          displayName: profile.displayName,
+          biography: profile.biography,
+          avatarUrl: profile.avatarUrl,
+          visibility: profile.visibility,
+        }
+      : null
   }
 }
 

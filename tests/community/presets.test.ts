@@ -1,6 +1,7 @@
 import {
   CommunityAdminController,
   CommunityComposerController,
+  CommunityProfileController,
   RoomStateController,
   SocialGraphController,
 } from '../../src/community/presets'
@@ -63,6 +64,48 @@ describe('SocialGraphController', () => {
     graph.unfollow('alex')
     graph.unsubscribe('trail-talk')
     expect(graph.snapshot).toEqual({ following: [], subscriptions: [] })
+  })
+})
+
+describe('CommunityProfileController', () => {
+  it('validates profile identity, avatar transport, handle uniqueness, and visibility', () => {
+    const profiles = new CommunityProfileController()
+    profiles.save({
+      userId: 'alex',
+      handle: '@Alex_1',
+      displayName: 'Alex',
+      biography: 'Trail runner',
+      avatarUrl: 'https://cdn.example.test/alex.jpg',
+      visibility: 'followers',
+    })
+    expect(profiles.get('alex')).toMatchObject({ handle: 'alex_1', biography: 'Trail runner' })
+    expect(profiles.canView('alex', null, false)).toBe(false)
+    expect(profiles.canView('alex', 'morgan', true)).toBe(true)
+    expect(profiles.canView('alex', 'alex', false)).toBe(true)
+
+    expect(() =>
+      profiles.save({
+        userId: 'morgan',
+        handle: 'alex_1',
+        displayName: 'Morgan',
+        biography: '',
+        avatarUrl: null,
+        visibility: 'public',
+      }),
+    ).toThrow('already in use')
+    expect(() =>
+      profiles.save({
+        userId: 'morgan',
+        handle: 'morgan',
+        displayName: 'Morgan',
+        biography: '',
+        avatarUrl: 'http://insecure.example.test/avatar.jpg',
+        visibility: 'public',
+      }),
+    ).toThrow('HTTPS')
+
+    profiles.removeAvatar('alex')
+    expect(profiles.get('alex')?.avatarUrl).toBeNull()
   })
 })
 

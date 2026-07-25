@@ -2,6 +2,33 @@ import { describe, expect, it, vi } from 'vitest'
 import { CommunityDemoController } from '../../examples/community/lib/community'
 
 describe('Community reference shell', () => {
+  it('composes profile, avatar, follow, mute, and visibility controls', () => {
+    const community = new CommunityDemoController()
+    community.completeOnboarding('alex')
+    community.updateProfile({
+      displayName: 'Alex Rivera',
+      biography: 'Trail runner',
+      avatarUrl: 'https://cdn.example.test/alex.jpg',
+      visibility: 'followers',
+    })
+    community.follow('morgan')
+    community.follow('morgan')
+    community.mute('morgan')
+    expect(community.state).toMatchObject({
+      profile: {
+        handle: 'alex',
+        displayName: 'Alex Rivera',
+        biography: 'Trail runner',
+        visibility: 'followers',
+      },
+      followingUsers: ['morgan'],
+      mutedUsers: ['morgan'],
+    })
+    community.unfollow('morgan')
+    community.unmute('morgan')
+    expect(community.state).toMatchObject({ followingUsers: [], mutedUsers: [] })
+  })
+
   it('completes onboarding with a durable community identity', () => {
     const community = new CommunityDemoController()
     community.completeOnboarding('@alex')

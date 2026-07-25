@@ -94,6 +94,68 @@ export class SocialGraphController {
   }
 }
 
+export type CommunityProfileVisibility = 'public' | 'followers' | 'private'
+
+export interface CommunityProfile {
+  userId: string
+  handle: string
+  displayName: string
+  biography: string
+  avatarUrl: string | null
+  visibility: CommunityProfileVisibility
+}
+
+export class CommunityProfileController {
+  private profiles = new Map<string, CommunityProfile>()
+  private handles = new Map<string, string>()
+
+  get(userId: string): CommunityProfile | null {
+    const profile = this.profiles.get(userId)
+    return profile ? structuredClone(profile) : null
+  }
+
+  save(profile: CommunityProfile): void {
+    const userId = requireId(profile.userId)
+    const handle = normalizeHandle(profile.handle)
+    if (!profile.displayName.trim()) throw new Error('Display name is required')
+    if (profile.biography.length > 500) throw new Error('Biography cannot exceed 500 characters')
+    if (profile.avatarUrl && !isSafeMediaUrl(profile.avatarUrl)) {
+      throw new Error('Avatar URL must use HTTPS')
+    }
+    const claimedBy = this.handles.get(handle)
+    if (claimedBy && claimedBy !== userId) throw new Error('Handle is already in use')
+
+    const previous = this.profiles.get(userId)
+    if (previous && previous.handle !== handle) this.handles.delete(previous.handle)
+    this.handles.set(handle, userId)
+    this.profiles.set(userId, {
+      ...structuredClone(profile),
+      userId,
+      handle,
+      displayName: profile.displayName.trim(),
+      biography: profile.biography.trim(),
+    })
+  }
+
+  removeAvatar(userId: string): void {
+    const profile = this.require(userId)
+    profile.avatarUrl = null
+  }
+
+  canView(userId: string, viewerId: string | null, viewerFollows: boolean): boolean {
+    const profile = this.require(userId)
+    if (profile.visibility === 'public' || viewerId === userId) return true
+    if (profile.visibility === 'private' || !viewerId) return false
+    return viewerFollows
+  }
+
+  private require(userId: string): CommunityProfile {
+    const profile = this.profiles.get(userId)
+    if (!profile) throw new Error(`Unknown profile: ${userId}`)
+    return profile
+  }
+}
+
 export interface RoomPresence {
   userId: string
   state: 'online' | 'away' | 'offline'
@@ -278,4 +340,20 @@ function uniqueBy<T>(items: T[], key: (item: T) => string): T[] {
 function requireId(value: string): string {
   if (!value.trim()) throw new Error('Identifier is required')
   return value
+}
+
+function normalizeHandle(value: string): string {
+  const handle = value.trim().replace(/^@/, '').toLocaleLowerCase()
+  if (!/^[a-z0-9_]{3,30}$/.test(handle)) {
+    throw new Error('Handle must be 3–30 letters, numbers, or underscores')
+  }
+  return handle
+}
+
+function isSafeMediaUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === 'https:'
+  } catch {
+    return false
+  }
 }

@@ -37,6 +37,7 @@ export {
 export {
   CommunityComposerController,
   SocialGraphController,
+  CommunityProfileController,
   RoomStateController,
   CommunityAdminController,
 } from './presets'
@@ -44,6 +45,8 @@ export type {
   CommunityAttachment,
   CommunityPoll,
   CommunityDraft,
+  CommunityProfile,
+  CommunityProfileVisibility,
   RoomPresence,
   CommunityAbility,
   AdminAuditEvent,
