@@ -147,6 +147,34 @@ describe('WorkoutController', () => {
     })
     expect(restarted.snapshot.session?.sets).toHaveLength(1)
   })
+
+  it('edits sets and reconciles a rest timer across background and pause', () => {
+    let now = 1_000
+    const workouts = new WorkoutController(() => now)
+    workouts.saveProgram(program)
+    workouts.start('session', 'strength', '2026-07-25T12:00:00.000Z')
+    workouts.logSet({
+      id: 'set-1',
+      exerciseId: 'squat',
+      reps: 5,
+      load: 100,
+      unit: 'kg',
+      completedAt: '2026-07-25T12:05:00.000Z',
+    })
+    workouts.editSet('set-1', { reps: 6, load: 105 })
+    expect(workouts.snapshot.session?.sets[0]).toMatchObject({ reps: 6, load: 105 })
+    workouts.startRest(60_000)
+    now = 31_000
+    workouts.pauseRest()
+    now = 100_000
+    expect(workouts.restRemainingMs()).toBe(30_000)
+    workouts.resumeRest()
+    now = 130_000
+    expect(workouts.reconcileRest()).toBe(true)
+    expect(workouts.snapshot.session?.rest?.completed).toBe(true)
+    workouts.removeSet('set-1')
+    expect(workouts.snapshot.session?.sets).toEqual([])
+  })
 })
 
 describe('EntitlementController', () => {

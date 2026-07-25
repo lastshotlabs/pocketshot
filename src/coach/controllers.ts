@@ -145,11 +145,18 @@ export interface WorkoutSession {
   startedAt: string
   completedAt: string | null
   sets: WorkoutSet[]
+  rest?: {
+    deadline: number | null
+    pausedRemainingMs: number | null
+    completed: boolean
+  } | null
 }
 
 export class WorkoutController {
   private programs = new Map<string, WorkoutProgram>()
   private sessionValue: WorkoutSession | null = null
+
+  constructor(private readonly now: () => number = Date.now) {}
 
   get snapshot(): { programs: WorkoutProgram[]; session: WorkoutSession | null } {
     return {
@@ -175,6 +182,7 @@ export class WorkoutController {
       startedAt,
       completedAt: null,
       sets: [],
+      rest: null,
     }
   }
 
@@ -185,7 +193,65 @@ export class WorkoutController {
       throw new Error('Exercise is not part of the active program')
     }
     if (session.sets.some((candidate) => candidate.id === set.id)) return
+    this.validateSet(set)
     session.sets.push(structuredClone(set))
+  }
+
+  editSet(setId: string, patch: Partial<Pick<WorkoutSet, 'reps' | 'load' | 'unit'>>): void {
+    const session = this.requireActive()
+    const index = session.sets.findIndex((set) => set.id === setId)
+    if (index < 0) throw new Error(`Unknown workout set: ${setId}`)
+    const next = { ...session.sets[index], ...structuredClone(patch) }
+    this.validateSet(next)
+    session.sets[index] = next
+  }
+
+  removeSet(setId: string): void {
+    const session = this.requireActive()
+    session.sets = session.sets.filter((set) => set.id !== setId)
+  }
+
+  startRest(durationMs: number): void {
+    if (!Number.isFinite(durationMs) || durationMs <= 0) {
+      throw new Error('Rest duration must be positive')
+    }
+    const session = this.requireActive()
+    session.rest = {
+      deadline: this.now() + durationMs,
+      pausedRemainingMs: null,
+      completed: false,
+    }
+  }
+
+  restRemainingMs(): number {
+    const rest = this.requireActive().rest
+    if (!rest || rest.completed) return 0
+    if (rest.pausedRemainingMs !== null) return rest.pausedRemainingMs
+    return Math.max(0, (rest.deadline ?? this.now()) - this.now())
+  }
+
+  pauseRest(): void {
+    const rest = this.requireActive().rest
+    if (!rest || rest.completed || rest.pausedRemainingMs !== null) return
+    rest.pausedRemainingMs = this.restRemainingMs()
+    rest.deadline = null
+  }
+
+  resumeRest(): void {
+    const rest = this.requireActive().rest
+    if (!rest || rest.completed || rest.pausedRemainingMs === null) return
+    rest.deadline = this.now() + rest.pausedRemainingMs
+    rest.pausedRemainingMs = null
+  }
+
+  reconcileRest(): boolean {
+    const rest = this.requireActive().rest
+    if (!rest || rest.completed || rest.pausedRemainingMs !== null || this.restRemainingMs() > 0) {
+      return false
+    }
+    rest.completed = true
+    rest.deadline = null
+    return true
   }
 
   complete(at: string): void {
@@ -203,6 +269,15 @@ export class WorkoutController {
       throw new Error('No active workout')
     }
     return this.sessionValue
+  }
+
+  private validateSet(set: WorkoutSet): void {
+    if (!Number.isInteger(set.reps) || set.reps < 0) {
+      throw new Error('Workout reps must be a non-negative integer')
+    }
+    if (!Number.isFinite(set.load) || set.load < 0) {
+      throw new Error('Workout load must be non-negative')
+    }
   }
 }
 
