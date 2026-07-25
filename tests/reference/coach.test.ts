@@ -2,6 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { CoachDemoController } from '../../examples/coach/lib/coach'
 
 describe('Coach clean-room acceptance model', () => {
+  it('composes registration, email verification, secure session state, and logout', async () => {
+    const coach = new CoachDemoController()
+    await coach.initialize()
+    await coach.registerDemoAccount()
+    expect(coach.state).toMatchObject({
+      accountStatus: 'verification-required',
+      accountEmail: 'alex@example.com',
+    })
+    await coach.verifyDemoAccount()
+    expect(coach.state.accountStatus).toBe('authenticated')
+    await coach.signOut()
+    expect(coach.state.accountStatus).toBe('anonymous')
+  })
+
   it('streams advice and requires review before committing an action', async () => {
     const coach = new CoachDemoController()
     await coach.initialize()

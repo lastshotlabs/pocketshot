@@ -14,6 +14,7 @@
       "@lastshotlabs/frontend-contract": ["../frontend-contract/src/index.ts"],
       "@lastshotlabs/frontend-contract/*": ["../frontend-contract/src/*"],
       "@lastshotlabs/pocketshot/ai": ["./src/ai/index.ts"],
+      "@lastshotlabs/pocketshot/auth": ["./src/auth/index.ts"],
       "@lastshotlabs/pocketshot/audio": ["./src/audio/index.ts"],
       "@lastshotlabs/pocketshot/billing": ["./src/billing/index.ts"],
       "@lastshotlabs/pocketshot/coach": ["./src/coach/index.ts"],

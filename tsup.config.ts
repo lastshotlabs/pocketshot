@@ -52,6 +52,7 @@ export default defineConfig([
       testing: 'src/testing/index.ts',
       media: 'src/media/index.ts',
       ai: 'src/ai/index.ts',
+      auth: 'src/auth/index.ts',
       audio: 'src/audio/index.ts',
       billing: 'src/billing/index.ts',
       coach: 'src/coach/index.ts',

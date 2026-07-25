@@ -1,4 +1,9 @@
 import { type AiConversation, type AiMemoryFact } from '@lastshotlabs/pocketshot/ai'
+import {
+  AccountAuthController,
+  type AccountAuthTransport,
+  type TokenStorage,
+} from '@lastshotlabs/pocketshot/auth'
 import { type MediaCaptureAdapter } from '@lastshotlabs/pocketshot/media'
 import {
   EntitlementController,
@@ -25,6 +30,8 @@ export interface CoachState {
   chartPoints: number[]
   workoutStatus: 'idle' | 'active' | 'complete'
   proAccess: boolean
+  accountStatus: 'anonymous' | 'verification-required' | 'authenticated' | 'error'
+  accountEmail: string | null
 }
 
 export class CoachDemoController {
@@ -40,6 +47,8 @@ export class CoachDemoController {
     chartPoints: [],
     workoutStatus: 'idle',
     proAccess: false,
+    accountStatus: 'anonymous',
+    accountEmail: null,
   }
   private readonly listeners = new Set<(state: CoachState) => void>()
 
@@ -69,6 +78,7 @@ export class CoachDemoController {
     restore: async () => [{ productId: 'coach-pro', state: 'grace', expiresAt: '2026-07-28' }],
     refresh: async () => [],
   })
+  readonly account = createDemoAccount()
   constructor(capture: MediaCaptureAdapter = defaultCoachCapture()) {
     this.media = createCoachMedia(capture)
   }
@@ -87,9 +97,36 @@ export class CoachDemoController {
   }
 
   async initialize(): Promise<void> {
+    await this.account.restore()
+    this.syncAccount()
     this.stateValue.conversation = await this.ai.create('Daily coaching')
     this.stateValue.ready = true
     this.emit()
+  }
+
+  async registerDemoAccount(): Promise<void> {
+    try {
+      await this.account.register({
+        email: 'alex@example.com',
+        password: 'demo-password',
+        displayName: 'Alex',
+      })
+    } finally {
+      this.syncAccount()
+    }
+  }
+
+  async verifyDemoAccount(): Promise<void> {
+    try {
+      await this.account.verifyEmail('123456')
+    } finally {
+      this.syncAccount()
+    }
+  }
+
+  async signOut(): Promise<void> {
+    await this.account.logout()
+    this.syncAccount()
   }
 
   async ask(message: string): Promise<void> {
@@ -219,4 +256,68 @@ export class CoachDemoController {
   private emit(): void {
     for (const listener of this.listeners) listener(this.state)
   }
+
+  private syncAccount(): void {
+    const snapshot = this.account.snapshot
+    this.stateValue.accountStatus =
+      snapshot.status === 'authenticated'
+        ? 'authenticated'
+        : snapshot.status === 'verification-required'
+          ? 'verification-required'
+          : snapshot.status === 'error'
+            ? 'error'
+            : 'anonymous'
+    this.stateValue.accountEmail = snapshot.user?.email ?? snapshot.pendingEmail
+    this.emit()
+  }
+}
+
+function createDemoAccount(): AccountAuthController {
+  let accessToken: string | null = null
+  let refreshToken: string | null = null
+  const storage: TokenStorage = {
+    getToken: async () => accessToken,
+    setToken: async (token) => {
+      accessToken = token
+    },
+    clearToken: async () => {
+      accessToken = null
+    },
+    getRefreshToken: async () => refreshToken,
+    setRefreshToken: async (token) => {
+      refreshToken = token
+    },
+    clearRefreshToken: async () => {
+      refreshToken = null
+    },
+  }
+  const authenticated = {
+    user: {
+      id: 'coach-user',
+      email: 'alex@example.com',
+      emailVerified: true,
+      displayName: 'Alex',
+    },
+    accessToken: 'local-access-token',
+    refreshToken: 'local-refresh-token',
+  }
+  const transport: AccountAuthTransport = {
+    register: async (input) => ({
+      user: {
+        id: 'coach-user',
+        email: input.email,
+        emailVerified: false,
+        displayName: input.displayName,
+      },
+      verificationRequired: true,
+    }),
+    verifyEmail: async () => authenticated,
+    login: async () => authenticated,
+    exchangeOAuth: async () => authenticated,
+    restore: async () => authenticated,
+    logout: async () => undefined,
+    forgotPassword: async () => undefined,
+    resetPassword: async () => undefined,
+  }
+  return new AccountAuthController(transport, storage)
 }

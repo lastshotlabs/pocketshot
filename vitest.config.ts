@@ -3,6 +3,7 @@ import path from 'path'
 
 const packageSourceAliases = {
   '@lastshotlabs/pocketshot/ai': path.resolve(__dirname, 'src/ai/index.ts'),
+  '@lastshotlabs/pocketshot/auth': path.resolve(__dirname, 'src/auth/index.ts'),
   '@lastshotlabs/pocketshot/audio': path.resolve(__dirname, 'src/audio/index.ts'),
   '@lastshotlabs/pocketshot/billing': path.resolve(__dirname, 'src/billing/index.ts'),
   '@lastshotlabs/pocketshot/coach': path.resolve(__dirname, 'src/coach/index.ts'),

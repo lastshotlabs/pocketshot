@@ -34,6 +34,29 @@ export default function CoachShell() {
         <Text accessibilityRole="header" style={styles.title}>
           PocketShot Coach
         </Text>
+        <Card title="Account">
+          <Text style={styles.copy}>
+            Account: {state.accountStatus}
+            {state.accountEmail ? ` · ${state.accountEmail}` : ''}
+          </Text>
+          {state.accountStatus === 'anonymous' && (
+            <Action
+              testID="register-account"
+              label="Create demo account"
+              onPress={() => void coach.registerDemoAccount()}
+            />
+          )}
+          {state.accountStatus === 'verification-required' && (
+            <Action
+              testID="verify-account"
+              label="Verify email"
+              onPress={() => void coach.verifyDemoAccount()}
+            />
+          )}
+          {state.accountStatus === 'authenticated' && (
+            <Action testID="sign-out" label="Sign out" onPress={() => void coach.signOut()} />
+          )}
+        </Card>
         <Card title="Conversation">
           <Text style={styles.copy}>{assistant?.text || 'Ready for your first check-in.'}</Text>
           <Action

@@ -9,6 +9,7 @@ const entries = [
   'testing',
   'media',
   'ai',
+  'auth',
   'audio',
   'billing',
   'coach',

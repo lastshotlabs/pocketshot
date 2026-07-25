@@ -62,6 +62,11 @@
       "import": "./dist/ai.js",
       "require": "./dist/ai.cjs"
     },
+    "./auth": {
+      "types": "./dist/types/auth/index.d.ts",
+      "import": "./dist/auth.js",
+      "require": "./dist/auth.cjs"
+    },
     "./audio": {
       "types": "./dist/types/audio/index.d.ts",
       "import": "./dist/audio.js",
