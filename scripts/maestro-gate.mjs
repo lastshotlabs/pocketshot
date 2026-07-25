@@ -103,7 +103,9 @@ if (coachScrollCount === 0 || centeredCoachScrollCount !== coachScrollCount) {
   failures.push('Coach journey does not center every scrolled control above Android navigation')
 }
 for (const [index, body] of bodies.entries()) {
-  if (!body.includes('launchApp:')) failures.push(`${files[index]} does not launch the app`)
+  if (!body.includes('launchApp:') && !body.includes('openLink:')) {
+    failures.push(`${files[index]} does not launch the app or a system link`)
+  }
   if (!body.includes('assertVisible:')) failures.push(`${files[index]} has no visible assertion`)
 }
 for (const job of ['android-maestro:', 'ios-maestro:']) {

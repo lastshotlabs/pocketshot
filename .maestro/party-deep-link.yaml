@@ -1,9 +1,7 @@
 appId: com.lastshotlabs.pocketshot.party
 name: Party cold deep link
 ---
-- launchApp:
-    clearState: true
-    stopApp: true
+- stopApp
 - openLink: pocketshot-party://join/HIT-427
 - tapOn:
     text: Open
