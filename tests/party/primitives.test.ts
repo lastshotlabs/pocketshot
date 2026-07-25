@@ -23,6 +23,32 @@ describe('party lifecycle primitives', () => {
     expect(party.snapshot.rules.rounds).toBe(7)
   })
 
+  it('supports host admission, removal, blocking, and an allowlisted public projection', () => {
+    const party = new PartySessionController({ rounds: 5, secretAnswer: 'private' })
+    party.join({ id: 'h', displayName: 'Host', role: 'host', seat: 0, connected: true })
+    party.setAdmissionPolicy('h', 'approval')
+    expect(
+      party.requestAdmission({
+        id: 'p',
+        displayName: 'Player',
+        role: 'participant',
+        requestedAt: 1,
+      }),
+    ).toBe('pending')
+    expect(() =>
+      party.join({ id: 'p', displayName: 'Player', role: 'participant', seat: 1, connected: true }),
+    ).toThrow('not been admitted')
+    party.decideAdmission('h', 'p', true)
+    party.join({ id: 'p', displayName: 'Player', role: 'participant', seat: 1, connected: true })
+    party.block('h', 'p')
+    expect(() =>
+      party.join({ id: 'p', displayName: 'Player', role: 'participant', seat: 1, connected: true }),
+    ).toThrow('blocked')
+    expect(party.publicProjection()).not.toHaveProperty('admissionQueue')
+    expect(party.publicProjection()).not.toHaveProperty('blockedMemberIds')
+    party.unblock('h', 'p')
+  })
+
   it('reconciles an authoritative timer across pause and background time', () => {
     let now = 1_000
     const timer = new TimedPhaseController('write', 10_000, () => now)

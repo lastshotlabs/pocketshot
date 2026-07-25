@@ -15,10 +15,23 @@ export interface PartySessionSnapshot<Rules extends object> {
   stagedRules: Partial<Rules> | null
   paused: boolean
   rematchKey: string | null
+  admissionPolicy?: 'open' | 'approval' | 'closed'
+  admissionQueue?: PartyAdmissionRequest[]
+  blockedMemberIds?: string[]
+}
+
+export interface PartyAdmissionRequest {
+  id: string
+  displayName: string
+  role: Exclude<PartyRole, 'host'>
+  requestedAt: number
+  status: 'pending' | 'admitted' | 'denied'
 }
 
 export class PartySessionController<Rules extends object> {
   private members = new Map<string, PartyMember>()
+  private admissions = new Map<string, PartyAdmissionRequest>()
+  private blocked = new Set<string>()
   private state: Omit<PartySessionSnapshot<Rules>, 'members'>
 
   constructor(rules: Rules, snapshot?: PartySessionSnapshot<Rules>) {
@@ -29,6 +42,9 @@ export class PartySessionController<Rules extends object> {
           stagedRules: snapshot.stagedRules ? structuredClone(snapshot.stagedRules) : null,
           paused: snapshot.paused,
           rematchKey: snapshot.rematchKey,
+          admissionPolicy: snapshot.admissionPolicy ?? 'open',
+          admissionQueue: [],
+          blockedMemberIds: [],
         }
       : {
           hostId: null,
@@ -36,20 +52,40 @@ export class PartySessionController<Rules extends object> {
           stagedRules: null,
           paused: false,
           rematchKey: null,
+          admissionPolicy: 'open',
+          admissionQueue: [],
+          blockedMemberIds: [],
         }
     for (const member of snapshot?.members ?? []) {
       this.members.set(member.id, structuredClone(member))
     }
+    for (const request of snapshot?.admissionQueue ?? []) {
+      this.admissions.set(request.id, structuredClone(request))
+    }
+    for (const id of snapshot?.blockedMemberIds ?? []) this.blocked.add(id)
   }
 
   get snapshot(): PartySessionSnapshot<Rules> {
     return {
       ...structuredClone(this.state),
       members: [...this.members.values()].map((member) => structuredClone(member)),
+      admissionQueue: [...this.admissions.values()].map((request) => structuredClone(request)),
+      blockedMemberIds: [...this.blocked],
     }
   }
 
   join(member: PartyMember): void {
+    if (this.blocked.has(member.id)) throw new Error('Member is blocked')
+    if (this.state.admissionPolicy === 'closed' && member.role !== 'host') {
+      throw new Error('Party admission is closed')
+    }
+    if (
+      this.state.admissionPolicy === 'approval' &&
+      member.role !== 'host' &&
+      this.admissions.get(member.id)?.status !== 'admitted'
+    ) {
+      throw new Error('Member has not been admitted')
+    }
     if (!member.id || !member.displayName.trim()) throw new Error('Member identity is required')
     if (member.seat !== null && this.seatOwner(member.seat, member.id)) {
       throw new Error(`Seat ${member.seat} is already claimed`)
@@ -59,6 +95,73 @@ export class PartySessionController<Rules extends object> {
       displayName: member.displayName.trim(),
     })
     if (member.role === 'host') this.assignHost(member.id)
+  }
+
+  setAdmissionPolicy(
+    actorId: string,
+    policy: NonNullable<PartySessionSnapshot<Rules>['admissionPolicy']>,
+  ): void {
+    this.requireHost(actorId)
+    this.state.admissionPolicy = policy
+  }
+
+  requestAdmission(
+    request: Omit<PartyAdmissionRequest, 'status'>,
+  ): 'admitted' | 'pending' {
+    if (this.blocked.has(request.id)) throw new Error('Member is blocked')
+    if (this.state.admissionPolicy === 'closed') throw new Error('Party admission is closed')
+    const status = this.state.admissionPolicy === 'open' ? 'admitted' : 'pending'
+    this.admissions.set(request.id, { ...structuredClone(request), status })
+    return status
+  }
+
+  decideAdmission(actorId: string, memberId: string, admit: boolean): void {
+    this.requireHost(actorId)
+    const request = this.admissions.get(memberId)
+    if (!request || request.status !== 'pending') throw new Error('No pending admission request')
+    request.status = admit ? 'admitted' : 'denied'
+  }
+
+  leave(memberId: string): void {
+    const member = this.requireMember(memberId)
+    this.members.delete(memberId)
+    if (member.id === this.state.hostId) {
+      this.state.hostId = null
+      if ([...this.members.values()].some((candidate) => candidate.connected)) this.recoverHost()
+    }
+  }
+
+  block(actorId: string, memberId: string): void {
+    this.requireHost(actorId)
+    if (memberId === actorId) throw new Error('Host cannot block themself')
+    this.blocked.add(memberId)
+    this.admissions.delete(memberId)
+    if (this.members.has(memberId)) this.members.delete(memberId)
+  }
+
+  unblock(actorId: string, memberId: string): void {
+    this.requireHost(actorId)
+    this.blocked.delete(memberId)
+  }
+
+  publicProjection(): {
+    hostId: string | null
+    members: Array<Pick<PartyMember, 'id' | 'displayName' | 'role' | 'seat' | 'connected'>>
+    paused: boolean
+  } {
+    return {
+      hostId: this.state.hostId,
+      members: [...this.members.values()].map(
+        ({ id, displayName, role, seat, connected }) => ({
+          id,
+          displayName,
+          role,
+          seat,
+          connected,
+        }),
+      ),
+      paused: this.state.paused,
+    }
   }
 
   claimSeat(memberId: string, seat: number): void {
