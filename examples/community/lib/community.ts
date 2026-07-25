@@ -13,6 +13,12 @@ export interface CommunityThread {
   author: string
   reactions: number
   replyCount: number
+  attachments: string[]
+  mentions: string[]
+  poll: {
+    options: { id: string; label: string; votes: number }[]
+    votedOptionId: string | null
+  } | null
 }
 
 export interface CommunityReply {
@@ -26,6 +32,7 @@ export interface CommunityMessage {
   id: string
   body: string
   mine: boolean
+  read: boolean
 }
 
 export interface CommunityReport {
@@ -47,6 +54,8 @@ export type CommunityView =
 
 export interface CommunityState {
   view: CommunityView
+  onboarded: boolean
+  handle: string | null
   connection: 'online' | 'reconnecting'
   threads: CommunityThread[]
   replies: CommunityReply[]
@@ -54,9 +63,11 @@ export interface CommunityState {
   draftTitle: string
   searchResults: string[]
   unread: number
-  notifications: { id: string; text: string; read: boolean }[]
+  notifications: { id: string; text: string; read: boolean; targetId: string | null }[]
   messages: CommunityMessage[]
   messageAccess: 'allowed' | 'revoked'
+  presence: 'online' | 'offline'
+  typing: boolean
   reports: CommunityReport[]
   blockedUsers: string[]
   exportStatus: 'idle' | 'requested' | 'ready'
@@ -67,11 +78,13 @@ type Event =
   | { kind: 'thread'; thread: CommunityThread }
   | { kind: 'reply'; reply: CommunityReply }
   | { kind: 'reaction'; threadId: string }
-  | { kind: 'notification'; id: string; text: string }
+  | { kind: 'notification'; id: string; text: string; targetId: string | null }
   | { kind: 'message'; message: CommunityMessage }
 
 const initial: CommunityState = {
   view: 'feed',
+  onboarded: false,
+  handle: null,
   connection: 'online',
   threads: [
     {
@@ -81,6 +94,9 @@ const initial: CommunityState = {
       author: 'Morgan',
       reactions: 2,
       replyCount: 0,
+      attachments: [],
+      mentions: [],
+      poll: null,
     },
   ],
   replies: [],
@@ -91,6 +107,8 @@ const initial: CommunityState = {
   notifications: [],
   messages: [],
   messageAccess: 'allowed',
+  presence: 'online',
+  typing: false,
   reports: [],
   blockedUsers: [],
   exportStatus: 'idle',
@@ -147,6 +165,18 @@ export class CommunityDemoController {
     this.emit()
   }
 
+  completeOnboarding(handle: string): void {
+    const normalized = handle.trim().replace(/^@/, '')
+    if (!normalized) {
+      this.stateValue.notice = 'Choose a handle to continue.'
+      this.emit()
+      return
+    }
+    this.stateValue.handle = normalized
+    this.stateValue.onboarded = true
+    this.emit()
+  }
+
   async updateDraft(title: string, body: string): Promise<void> {
     await this.composer.update(() => ({ title, body }))
     this.stateValue.draftTitle = title
@@ -169,12 +199,59 @@ export class CommunityDemoController {
       author: 'Alex',
       reactions: 0,
       replyCount: 0,
+      attachments: [],
+      mentions: [],
+      poll: null,
     }
     this.event({ kind: 'thread', thread })
     await this.composer.update(() => ({ title: '', body: '' }))
     this.stateValue.draftTitle = ''
     this.stateValue.selectedThreadId = thread.id
     this.stateValue.view = 'thread'
+    this.emit()
+  }
+
+  enrichLatestThread(input: {
+    attachments?: string[]
+    mentions?: string[]
+    pollOptions?: string[]
+  }): void {
+    const thread = this.stateValue.threads[0]
+    if (!thread) return
+    const labels = input.pollOptions?.filter((label) => label.trim()) ?? []
+    this.stateValue.threads[0] = {
+      ...thread,
+      attachments: [...(input.attachments ?? [])],
+      mentions: [...(input.mentions ?? [])],
+      poll:
+        labels.length >= 2
+          ? {
+              options: labels.map((label, index) => ({
+                id: `option-${index + 1}`,
+                label,
+                votes: 0,
+              })),
+              votedOptionId: null,
+            }
+          : null,
+    }
+    this.emit()
+  }
+
+  vote(threadId: string, optionId: string): void {
+    this.stateValue.threads = this.stateValue.threads.map((thread) => {
+      if (thread.id !== threadId || !thread.poll || thread.poll.votedOptionId) return thread
+      if (!thread.poll.options.some((option) => option.id === optionId)) return thread
+      return {
+        ...thread,
+        poll: {
+          votedOptionId: optionId,
+          options: thread.poll.options.map((option) =>
+            option.id === optionId ? { ...option, votes: option.votes + 1 } : option,
+          ),
+        },
+      }
+    })
     this.emit()
   }
 
@@ -214,8 +291,27 @@ export class CommunityDemoController {
     this.emit()
   }
 
-  notify(text: string): void {
-    this.event({ kind: 'notification', id: `notification-${this.cursor + 1}`, text })
+  notify(text: string, targetId: string | null = null): void {
+    this.event({
+      kind: 'notification',
+      id: `notification-${this.cursor + 1}`,
+      text,
+      targetId,
+    })
+  }
+
+  openNotification(id: string): void {
+    const notification = this.stateValue.notifications.find((item) => item.id === id)
+    if (!notification) return
+    this.stateValue.notifications = this.stateValue.notifications.map((item) =>
+      item.id === id ? { ...item, read: true } : item,
+    )
+    this.stateValue.unread = this.stateValue.notifications.filter((item) => !item.read).length
+    if (notification.targetId) this.openThread(notification.targetId)
+    else {
+      this.stateValue.view = 'notifications'
+      this.emit()
+    }
   }
 
   readAll(): void {
@@ -236,8 +332,26 @@ export class CommunityDemoController {
     this.messageId += 1
     this.event({
       kind: 'message',
-      message: { id: `message-${this.messageId}`, body, mine: true },
+      message: { id: `message-${this.messageId}`, body, mine: true, read: false },
     })
+  }
+
+  setPresence(presence: 'online' | 'offline'): void {
+    this.stateValue.presence = presence
+    this.emit()
+  }
+
+  setTyping(typing: boolean): void {
+    this.stateValue.typing = typing
+    this.emit()
+  }
+
+  markMessagesRead(): void {
+    this.stateValue.messages = this.stateValue.messages.map((message) => ({
+      ...message,
+      read: true,
+    }))
+    this.emit()
   }
 
   revokeMessageAccess(): void {
@@ -336,7 +450,10 @@ function reduceCommunity(state: CommunityState, event: Event): CommunityState {
     return {
       ...state,
       unread: state.unread + 1,
-      notifications: [{ id: event.id, text: event.text, read: false }, ...state.notifications],
+      notifications: [
+        { id: event.id, text: event.text, read: false, targetId: event.targetId },
+        ...state.notifications,
+      ],
     }
   }
   return { ...state, messages: [...state.messages, event.message] }

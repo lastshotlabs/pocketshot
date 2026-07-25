@@ -27,6 +27,16 @@ export default function CommunityShell() {
           {state.notice}
         </Text>
       )}
+      {!state.onboarded && (
+        <View style={styles.onboarding}>
+          <Text style={styles.copy}>Choose a community identity to participate.</Text>
+          <Action
+            testID="complete-onboarding"
+            label="Continue as @alex"
+            onPress={() => community.completeOnboarding('alex')}
+          />
+        </View>
+      )}
       <View style={styles.tabs}>
         {(['feed', 'compose', 'notifications', 'messages', 'privacy'] as CommunityView[]).map(
           (view) => (
@@ -77,14 +87,33 @@ export default function CommunityShell() {
             />
             <Action
               testID="publish-thread"
-              label="Publish thread"
-              onPress={() => void community.publishDraft()}
+              label="Publish rich thread"
+              onPress={() =>
+                void community.publishDraft().then(() =>
+                  community.enrichLatestThread({
+                    attachments: ['photo.jpg'],
+                    mentions: ['morgan'],
+                    pollOptions: ['River Loop', 'Hill Track'],
+                  }),
+                )
+              }
             />
           </Card>
         )}
         {state.view === 'thread' && selected && (
           <Card title={selected.title}>
             <Text style={styles.copy}>{selected.body}</Text>
+            <Text style={styles.copy}>
+              Attachments: {selected.attachments.length} · Mentions: {selected.mentions.length}
+            </Text>
+            {selected.poll?.options.map((option) => (
+              <Action
+                key={option.id}
+                testID={`poll-${option.id}`}
+                label={`${option.label}: ${option.votes}`}
+                onPress={() => community.vote(selected.id, option.id)}
+              />
+            ))}
             {state.replies
               .filter((reply) => reply.threadId === selected.id)
               .map((reply) => (
@@ -117,11 +146,24 @@ export default function CommunityShell() {
         )}
         {state.view === 'messages' && (
           <Card title="Messages">
+            <Text style={styles.copy}>
+              {state.presence} · {state.typing ? 'typing…' : 'not typing'}
+            </Text>
             {state.messages.map((message) => (
               <Text key={message.id} style={styles.reply}>
                 {message.body}
               </Text>
             ))}
+            <Action
+              testID="typing"
+              label="Simulate typing"
+              onPress={() => community.setTyping(true)}
+            />
+            <Action
+              testID="read-messages"
+              label="Mark messages read"
+              onPress={() => community.markMessagesRead()}
+            />
             <Action
               testID="send-message"
               label="Send hello"
@@ -217,6 +259,7 @@ const styles = StyleSheet.create({
     color: '#7f1d1d',
     backgroundColor: '#fee2e2',
   },
+  onboarding: { margin: 16, padding: 16, borderRadius: 14, backgroundColor: '#fff', gap: 10 },
   tabs: { flexDirection: 'row', flexWrap: 'wrap', padding: 14, gap: 8 },
   tab: {
     backgroundColor: '#dcfce7',
