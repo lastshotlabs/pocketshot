@@ -1,12 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import * as Linking from 'expo-linking'
+import QRCode from 'react-native-qrcode-svg'
+import { createSQLiteDraftStorage } from '@lastshotlabs/pocketshot/drafts'
 import { PartyDemoController, type PartyState } from '../lib/party'
 
 export default function PartyShell() {
-  const controller = useMemo(() => new PartyDemoController(), [])
+  const controller = useMemo(
+    () => new PartyDemoController(createSQLiteDraftStorage('party-shell.db')),
+    [],
+  )
   const [party, setParty] = useState<PartyState>(controller.state)
   useEffect(() => controller.subscribe(setParty), [controller])
+  useEffect(() => {
+    void Linking.getInitialURL().then((url) => {
+      if (url) controller.joinFromUrl(url)
+    })
+    return Linking.addEventListener('url', ({ url }) => controller.joinFromUrl(url)).remove
+  }, [controller])
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -17,14 +29,27 @@ export default function PartyShell() {
       <Text testID="connection-state" style={styles.status}>
         {party.connection === 'online' ? 'Connected' : 'Reconnecting…'}
       </Text>
+      {party.notice && (
+        <Text accessibilityRole="alert" style={styles.notice}>
+          {party.notice}
+        </Text>
+      )}
 
       {party.phase === 'entry' && (
         <Panel title="Join a party">
           <Text style={styles.code}>Code {party.joinCode}</Text>
+          <View accessibilityLabel={`QR join code ${party.joinCode}`} style={styles.qr}>
+            <QRCode value={`pocketshot-party://join/${party.joinCode}`} size={112} />
+          </View>
           <Action
             testID="guest-entry"
             label="Continue as Alex"
             onPress={() => controller.guest('Alex')}
+          />
+          <Action
+            testID="oauth-entry"
+            label="Continue with OAuth"
+            onPress={() => controller.guest('OAuth player')}
           />
         </Panel>
       )}
@@ -68,7 +93,14 @@ export default function PartyShell() {
       )}
       {party.phase === 'deck' && (
         <Panel title="Durable deck">
-          <Text style={styles.copy}>Friday Mix · autosave and conflict-safe</Text>
+          <Text style={styles.copy}>
+            {controller.deck.snapshot.value.title} · autosave and conflict-safe
+          </Text>
+          <Action
+            testID="rename-deck"
+            label="Rename deck"
+            onPress={() => void controller.renameDeck('Updated Mix')}
+          />
           <Action
             testID="back-to-lobby"
             label="Back to lobby"
@@ -124,6 +156,13 @@ const styles = StyleSheet.create({
   question: { color: '#fff', fontSize: 24, fontWeight: '700' },
   score: { color: '#fde68a', fontSize: 42, fontWeight: '900' },
   private: { color: '#9ca3af', fontSize: 13 },
+  notice: {
+    color: '#fecaca',
+    backgroundColor: '#7f1d1d',
+    padding: 12,
+    borderRadius: 10,
+  },
+  qr: { backgroundColor: '#fff', padding: 12, alignSelf: 'flex-start', borderRadius: 12 },
   button: {
     minHeight: 48,
     backgroundColor: '#7c3aed',

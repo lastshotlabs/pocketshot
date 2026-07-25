@@ -31,6 +31,15 @@ describe('Party clean-room acceptance model', () => {
     })
   })
 
+  it('joins from cold/warm deep-link and QR payloads', () => {
+    const party = new PartyDemoController()
+    party.joinFromUrl('pocketshot-party://join/HIT-427')
+    expect(party.state).toMatchObject({
+      phase: 'lobby',
+      players: [expect.objectContaining({ name: 'Linked guest' })],
+    })
+  })
+
   it('hands playback/session ownership to a player after host disconnect', async () => {
     const party = new PartyDemoController()
     party.guest('Alex')

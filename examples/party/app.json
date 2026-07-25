@@ -7,6 +7,6 @@
     "platforms": ["ios", "android"],
     "ios": { "bundleIdentifier": "com.lastshotlabs.pocketshot.party" },
     "android": { "package": "com.lastshotlabs.pocketshot.party" },
-    "plugins": ["expo-router"]
+    "plugins": ["expo-router", ["expo-audio", { "enableBackgroundPlayback": true }]]
   }
 }

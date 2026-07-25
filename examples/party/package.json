@@ -10,13 +10,17 @@
   "dependencies": {
     "@lastshotlabs/pocketshot": "0.1.2",
     "expo": "~57.0.8",
+    "expo-audio": "~57.0.3",
     "expo-linking": "~57.0.4",
     "expo-router": "~57.0.8",
+    "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-native": "0.86.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-qrcode-svg": "^6.3.21",
+    "react-native-svg": "15.15.4",
     "zod": "^4.0.0"
   },
   "devDependencies": {

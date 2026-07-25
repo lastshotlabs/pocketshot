@@ -2,7 +2,11 @@ import {
   SecondScreenProjector,
   type PublicSecondScreenEnvelope,
 } from '@lastshotlabs/pocketshot/audio'
-import { createDurableDraft, createMemoryDraftStorage } from '@lastshotlabs/pocketshot/drafts'
+import {
+  createDurableDraft,
+  createMemoryDraftStorage,
+  type DraftStorage,
+} from '@lastshotlabs/pocketshot/drafts'
 import { RealtimeReconciler, type RealtimeEvent } from '@lastshotlabs/pocketshot/realtime'
 import { z } from 'zod'
 
@@ -54,18 +58,19 @@ export class PartyDemoController {
     Pick<PartyState, 'phase' | 'round' | 'question' | 'score'>
   >('party-demo', ({ phase, round, question, score }) => ({ phase, round, question, score }))
 
-  readonly deck = createDurableDraft({
-    id: 'party-deck',
-    initialValue: { title: 'Friday Mix', cards: ['Opening track'] },
-    storage: createMemoryDraftStorage(),
-    saveRemote: async ({ value }) => ({ value, version: 'demo-1' }),
-    publishSchema: z.object({
-      title: z.string().min(1),
-      cards: z.array(z.string()).min(1),
-    }),
-  })
+  readonly deck
 
-  constructor() {
+  constructor(storage: DraftStorage = createMemoryDraftStorage()) {
+    this.deck = createDurableDraft({
+      id: 'party-deck',
+      initialValue: { title: 'Friday Mix', cards: ['Opening track'] },
+      storage,
+      saveRemote: async ({ value }) => ({ value, version: 'demo-1' }),
+      publishSchema: z.object({
+        title: z.string().min(1),
+        cards: z.array(z.string()).min(1),
+      }),
+    })
     this.realtime.applySnapshot({
       version: 1,
       channel: 'party-demo',
@@ -97,6 +102,16 @@ export class PartyDemoController {
       return
     }
     this.guest(name)
+  }
+
+  joinFromUrl(url: string): void {
+    const code = /(?:join\/|code=)([A-Z0-9-]+)/i.exec(url)?.[1]
+    if (!code) {
+      this.stateValue.notice = 'This party link is invalid.'
+      this.emit()
+      return
+    }
+    this.join(code.toUpperCase(), 'Linked guest')
   }
 
   ready(): void {
@@ -145,6 +160,10 @@ export class PartyDemoController {
   openDeck(): void {
     this.stateValue.phase = 'deck'
     this.emit()
+  }
+
+  async renameDeck(title: string): Promise<void> {
+    await this.deck.update((value) => ({ ...value, title }))
   }
 
   publicDisplay(): PublicSecondScreenEnvelope<
