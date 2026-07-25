@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "PocketShot Party",
+    "slug": "pocketshot-party",
+    "scheme": "pocketshot-party",
+    "version": "0.0.1",
+    "platforms": ["ios", "android"],
+    "ios": { "bundleIdentifier": "com.lastshotlabs.pocketshot.party" },
+    "android": { "package": "com.lastshotlabs.pocketshot.party" },
+    "plugins": ["expo-router"]
+  }
+}
