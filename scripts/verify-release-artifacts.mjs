@@ -13,6 +13,7 @@ const entries = [
   'coach',
   'party',
   'party-session',
+  'release',
   'observability',
   'accessibility',
   'community',

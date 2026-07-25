@@ -82,6 +82,11 @@
       "import": "./dist/party-session.js",
       "require": "./dist/party-session.cjs"
     },
+    "./release": {
+      "types": "./dist/types/release/index.d.ts",
+      "import": "./dist/release.js",
+      "require": "./dist/release.cjs"
+    },
     "./observability": {
       "types": "./dist/types/observability/index.d.ts",
       "import": "./dist/observability.js",

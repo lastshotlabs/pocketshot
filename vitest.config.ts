@@ -7,6 +7,7 @@ const packageSourceAliases = {
   '@lastshotlabs/pocketshot/coach': path.resolve(__dirname, 'src/coach/index.ts'),
   '@lastshotlabs/pocketshot/party': path.resolve(__dirname, 'src/party/index.ts'),
   '@lastshotlabs/pocketshot/party-session': path.resolve(__dirname, 'src/party-session/index.ts'),
+  '@lastshotlabs/pocketshot/release': path.resolve(__dirname, 'src/release/index.ts'),
   '@lastshotlabs/pocketshot/observability': path.resolve(__dirname, 'src/observability/index.ts'),
   '@lastshotlabs/pocketshot/accessibility': path.resolve(__dirname, 'src/accessibility/index.ts'),
   '@lastshotlabs/pocketshot/community': path.resolve(__dirname, 'src/community/index.ts'),

@@ -56,6 +56,7 @@ export default defineConfig([
       coach: 'src/coach/index.ts',
       party: 'src/party/index.ts',
       'party-session': 'src/party-session/index.ts',
+      release: 'src/release/index.ts',
       observability: 'src/observability/index.ts',
       accessibility: 'src/accessibility/index.ts',
       community: 'src/community/index.ts',
