@@ -58,6 +58,7 @@ export default defineConfig([
       observability: 'src/observability/index.ts',
     },
     format: ['esm', 'cjs'],
+    sourcemap: true,
     external: peerDeps,
     outDir: 'dist',
   },

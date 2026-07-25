@@ -91,11 +91,14 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\"",
     "check:package": "node scripts/check-package-budgets.mjs",
+    "check:release-artifacts": "node scripts/verify-release-artifacts.mjs",
+    "check:security": "node scripts/security-gate.mjs",
     "verify:consumer": "npm run build && node scripts/verify-package-consumer.mjs",
     "verify:showcase": "node scripts/verify-showcase.mjs",
     "verify:party": "npm run build && node scripts/verify-reference-shell.mjs party",
     "verify:coach": "npm run build && node scripts/verify-reference-shell.mjs coach",
-    "verify:community": "npm run build && node scripts/verify-reference-shell.mjs community"
+    "verify:community": "npm run build && node scripts/verify-reference-shell.mjs community",
+    "verify:release": "npm run build && npm run check:release-artifacts"
   },
   "peerDependencies": {
     "@react-native-community/netinfo": ">=11.0.0",
