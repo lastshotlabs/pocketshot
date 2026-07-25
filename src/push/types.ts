@@ -28,6 +28,23 @@ export interface NotificationTapEvent {
   actionIdentifier: string
 }
 
+/** Minimal native notification surface used by the lifecycle controller. */
+export interface NativePushAdapter {
+  getExpoPushToken(projectId?: string): Promise<string>
+  getLastNotificationResponse(): Promise<NotificationTapEvent | null>
+  subscribeReceived(listener: (notification: PushNotification) => void): () => void
+  subscribeTapped(listener: (event: NotificationTapEvent) => void): () => void
+  subscribeToken(listener: (token: string) => void): () => void
+}
+
+export interface PushLifecycleState {
+  status: 'idle' | 'starting' | 'ready' | 'failed' | 'stopped'
+  token: string | null
+  lastNotification: PushNotification | null
+  lastTap: NotificationTapEvent | null
+  error: string | null
+}
+
 /** Options for registering for push notifications. */
 export interface PushRegistrationOptions {
   /** Server endpoint to POST the push token to. Default: '/device/push-token'. */

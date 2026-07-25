@@ -1,4 +1,13 @@
-import type { PersonalPush, PushDisposition, PushOpenRoute, PushQuietHours } from './types'
+import type {
+  NativePushAdapter,
+  NotificationTapEvent,
+  PersonalPush,
+  PushDisposition,
+  PushLifecycleState,
+  PushNotification,
+  PushOpenRoute,
+  PushQuietHours,
+} from './types'
 
 export interface PersonalPushPolicyOptions {
   allowedCategories: string[]
@@ -7,6 +16,113 @@ export interface PersonalPushPolicyOptions {
 }
 
 const clone = <T>(value: T): T => structuredClone(value)
+
+export interface PushLifecycleControllerOptions {
+  adapter: NativePushAdapter
+  registerToken(token: string): Promise<void>
+  projectId?: string
+  onNotification?(notification: PushNotification): void
+  onTap?(event: NotificationTapEvent, coldStart: boolean): void
+  onError?(error: Error): void
+}
+
+/** Owns process-level native push behavior while routing and backend policy stay app-owned. */
+export class PushLifecycleController {
+  private value: PushLifecycleState = {
+    status: 'idle',
+    token: null,
+    lastNotification: null,
+    lastTap: null,
+    error: null,
+  }
+  private generation = 0
+  private readonly listeners = new Set<(state: PushLifecycleState) => void>()
+  private readonly seenTaps = new Set<string>()
+  private unsubscribers: Array<() => void> = []
+
+  constructor(private readonly options: PushLifecycleControllerOptions) {}
+
+  get state(): PushLifecycleState {
+    return clone(this.value)
+  }
+
+  subscribe(listener: (state: PushLifecycleState) => void): () => void {
+    this.listeners.add(listener)
+    listener(this.state)
+    return () => this.listeners.delete(listener)
+  }
+
+  async start(): Promise<void> {
+    if (this.value.status === 'starting' || this.value.status === 'ready') return
+    const generation = ++this.generation
+    this.value.status = 'starting'
+    this.value.error = null
+    this.emit()
+    try {
+      const coldResponse = await this.options.adapter.getLastNotificationResponse()
+      if (generation !== this.generation) return
+      if (coldResponse) this.acceptTap(coldResponse, true)
+      const token = await this.options.adapter.getExpoPushToken(this.options.projectId)
+      if (generation !== this.generation) return
+      await this.register(token, generation)
+      if (generation !== this.generation) return
+      this.unsubscribers = [
+        this.options.adapter.subscribeReceived((notification) => {
+          this.value.lastNotification = clone(notification)
+          this.options.onNotification?.(clone(notification))
+          this.emit()
+        }),
+        this.options.adapter.subscribeTapped((event) => this.acceptTap(event, false)),
+        this.options.adapter.subscribeToken((nextToken) => {
+          void this.register(nextToken, generation).catch((error) => this.fail(error, generation))
+        }),
+      ]
+      this.value.status = 'ready'
+      this.emit()
+    } catch (error) {
+      this.fail(error, generation)
+    }
+  }
+
+  stop(): void {
+    this.generation += 1
+    for (const unsubscribe of this.unsubscribers.splice(0)) unsubscribe()
+    this.value.status = 'stopped'
+    this.emit()
+  }
+
+  private async register(token: string, generation: number): Promise<void> {
+    if (!token || token === this.value.token) return
+    await this.options.registerToken(token)
+    if (generation !== this.generation) return
+    this.value.token = token
+    this.value.error = null
+    this.emit()
+  }
+
+  private acceptTap(event: NotificationTapEvent, coldStart: boolean): void {
+    const key = `${event.notification.notificationId}:${event.actionIdentifier}`
+    if (this.seenTaps.has(key)) return
+    this.seenTaps.add(key)
+    this.value.lastTap = clone(event)
+    this.options.onTap?.(clone(event), coldStart)
+    this.emit()
+  }
+
+  private fail(cause: unknown, generation: number): void {
+    if (generation !== this.generation) return
+    const error = cause instanceof Error ? cause : new Error(String(cause))
+    this.value.status = 'failed'
+    this.value.error = error.message
+    this.options.onError?.(error)
+    this.emit()
+  }
+
+  private emit(): void {
+    const state = this.state
+    for (const listener of this.listeners) listener(state)
+  }
+}
 
 export class PersonalPushPolicyController {
   private readonly seen = new Set<string>()
