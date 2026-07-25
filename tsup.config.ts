@@ -51,6 +51,8 @@ export default defineConfig([
       drafts: 'src/drafts/index.ts',
       testing: 'src/testing/index.ts',
       media: 'src/media/index.ts',
+      upload: 'src/upload/index.ts',
+      push: 'src/push/index.ts',
       ai: 'src/ai/index.ts',
       auth: 'src/auth/index.ts',
       audio: 'src/audio/index.ts',

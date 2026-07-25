@@ -29,6 +29,8 @@
       "@lastshotlabs/pocketshot/drafts": ["./src/drafts/index.ts"],
       "@lastshotlabs/pocketshot/offline": ["./src/offline/index.ts"],
       "@lastshotlabs/pocketshot/media": ["./src/media/index.ts"],
+      "@lastshotlabs/pocketshot/upload": ["./src/upload/index.ts"],
+      "@lastshotlabs/pocketshot/push": ["./src/push/index.ts"],
       "@lastshotlabs/pocketshot/realtime": ["./src/realtime/index.ts"],
       "@lastshotlabs/hitshot-mobile/lib": ["./products/hitshot/lib/party.ts"],
       "@lastshotlabs/hitshot-mobile/link": ["./products/hitshot/lib/party-link.ts"],

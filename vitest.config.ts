@@ -18,6 +18,8 @@ const packageSourceAliases = {
   '@lastshotlabs/pocketshot/drafts': path.resolve(__dirname, 'src/drafts/index.ts'),
   '@lastshotlabs/pocketshot/offline': path.resolve(__dirname, 'src/offline/index.ts'),
   '@lastshotlabs/pocketshot/media': path.resolve(__dirname, 'src/media/index.ts'),
+  '@lastshotlabs/pocketshot/upload': path.resolve(__dirname, 'src/upload/index.ts'),
+  '@lastshotlabs/pocketshot/push': path.resolve(__dirname, 'src/push/index.ts'),
   '@lastshotlabs/pocketshot/realtime': path.resolve(__dirname, 'src/realtime/index.ts'),
   '@lastshotlabs/hitshot-mobile/lib': path.resolve(__dirname, 'products/hitshot/lib/party.ts'),
   '@lastshotlabs/hitshot-mobile/link': path.resolve(

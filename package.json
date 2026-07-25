@@ -57,6 +57,16 @@
       "import": "./dist/media.js",
       "require": "./dist/media.cjs"
     },
+    "./upload": {
+      "types": "./dist/types/upload/index.d.ts",
+      "import": "./dist/upload.js",
+      "require": "./dist/upload.cjs"
+    },
+    "./push": {
+      "types": "./dist/types/push/index.d.ts",
+      "import": "./dist/push.js",
+      "require": "./dist/push.cjs"
+    },
     "./ai": {
       "types": "./dist/types/ai/index.d.ts",
       "import": "./dist/ai.js",

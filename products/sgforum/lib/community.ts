@@ -26,6 +26,11 @@ import {
   type ExportStatus,
 } from '@lastshotlabs/pocketshot/privacy'
 import { RealtimeReconciler, type RealtimeEvent } from '@lastshotlabs/pocketshot/realtime'
+import {
+  UploadAuthorizationController,
+  type AcceptedUpload,
+  type UploadAuthorizationReceipt,
+} from '@lastshotlabs/pocketshot/upload'
 import { z } from 'zod'
 
 export interface CommunityThread {
@@ -129,6 +134,8 @@ export interface CommunityState {
   feedStale: boolean
   feedAnchorId: string | null
   memberships: Array<{ communityId: string; role: 'member' | 'moderator' | 'admin' }>
+  attachmentStatus: 'idle' | 'authorized' | 'accepted' | 'rejected'
+  attachmentError: string | null
 }
 
 type Event =
@@ -191,6 +198,8 @@ const initial: CommunityState = {
   feedStale: false,
   feedAnchorId: null,
   memberships: [],
+  attachmentStatus: 'idle',
+  attachmentError: null,
 }
 
 export class CommunityDemoController {
@@ -216,6 +225,15 @@ export class CommunityDemoController {
   readonly moderation = new ModerationController(() => '2026-07-25T12:00:00.000Z')
   readonly automod = new AutomodController(() => Date.parse('2026-07-25T12:00:00.000Z'))
   readonly authorization = new CommunityAuthorizationController()
+  readonly uploads = new UploadAuthorizationController(
+    {
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/heic', 'image/webp', 'video/mp4'],
+      maxBytes: 20 * 1024 * 1024,
+    },
+    () => new Date('2026-07-25T12:00:00.000Z'),
+    () => `upload-${this.messageId + this.threadId + 1}`,
+  )
+  private readonly acceptedUploads = new Map<string, AcceptedUpload>()
   readonly feed = new CursorFeedController<{ id: string; rank: number; version: number }>({
     compare: (left, right) => right.rank - left.rank || left.id.localeCompare(right.id),
     version: (item) => item.version,
@@ -462,6 +480,53 @@ export class CommunityDemoController {
             }
           : null,
     }
+    this.emit()
+  }
+
+  authorizeAttachment(
+    destination: string,
+    file: { uri: string; name: string; mimeType: string; size: number },
+    checksum: string,
+  ): UploadAuthorizationReceipt | null {
+    try {
+      const receipt = this.uploads.authorizeSelection('alex', destination, file, checksum)
+      this.stateValue.attachmentStatus = 'authorized'
+      this.stateValue.attachmentError = null
+      this.emit()
+      return receipt
+    } catch (error) {
+      this.rejectAttachment(error)
+      return null
+    }
+  }
+
+  acceptAttachment(
+    receipt: UploadAuthorizationReceipt,
+    uploaded: {
+      actorId: string
+      destination: string
+      mimeType: string
+      size: number
+      checksum: string
+      url: string
+    },
+  ): AcceptedUpload | null {
+    try {
+      const accepted = this.uploads.acceptServerUpload(receipt, uploaded)
+      this.acceptedUploads.set(accepted.receiptId, accepted)
+      this.stateValue.attachmentStatus = 'accepted'
+      this.stateValue.attachmentError = null
+      this.emit()
+      return accepted
+    } catch (error) {
+      this.rejectAttachment(error)
+      return null
+    }
+  }
+
+  retryAttachment(): void {
+    this.stateValue.attachmentStatus = 'idle'
+    this.stateValue.attachmentError = null
     this.emit()
   }
 
@@ -840,6 +905,18 @@ export class CommunityDemoController {
       return
     }
     this.authorization.require('alex', 'message', 'dm:alex-morgan')
+    if (
+      attachments.some(
+        (attachment) =>
+          ![...this.acceptedUploads.values()].some(
+            (accepted) =>
+              accepted.url === attachment.url && accepted.mimeType === attachment.mediaType,
+          ),
+      )
+    ) {
+      this.rejectAttachment(new Error('Attachment has not passed server acceptance'))
+      return
+    }
     const decision = this.automod.evaluate({ actorId: 'alex', text: body })
     if (!decision.allowed) {
       this.stateValue.automodNotice = decision.explanations.join(' ')
@@ -869,6 +946,14 @@ export class CommunityDemoController {
         attachments: structuredClone(attachments),
       },
     })
+  }
+
+  private rejectAttachment(cause: unknown): void {
+    const error = cause instanceof Error ? cause : new Error(String(cause))
+    this.stateValue.attachmentStatus = 'rejected'
+    this.stateValue.attachmentError = error.message
+    this.stateValue.notice = error.message
+    this.emit()
   }
 
   setPresence(presence: 'online' | 'offline'): void {

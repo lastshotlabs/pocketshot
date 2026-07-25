@@ -319,6 +319,17 @@ export default function CommunityShell() {
             <Text style={styles.copy}>
               {state.presence} · {state.typing ? 'typing…' : 'not typing'}
             </Text>
+            <Text testID="attachment-status" accessibilityLiveRegion="polite" style={styles.copy}>
+              Attachment: {state.attachmentStatus}
+              {state.attachmentError ? ` · ${state.attachmentError}` : ''}
+            </Text>
+            {state.attachmentStatus === 'rejected' && (
+              <Action
+                testID="retry-attachment"
+                label="Retry attachment"
+                onPress={() => community.retryAttachment()}
+              />
+            )}
             {state.messages.map((message) => (
               <View key={message.id} style={styles.replyBlock}>
                 <Text style={styles.reply}>{message.body || 'Attachment'}</Text>
@@ -367,15 +378,36 @@ export default function CommunityShell() {
             <Action
               testID="send-message-attachment"
               label="Send validated photo"
-              onPress={() =>
+              onPress={() => {
+                const checksum = 'a'.repeat(64)
+                const receipt = community.authorizeAttachment(
+                  'dm:alex-morgan',
+                  {
+                    uri: 'file:///trail.jpg',
+                    name: 'trail.jpg',
+                    mimeType: 'image/jpeg',
+                    size: 1024,
+                  },
+                  checksum,
+                )
+                if (!receipt) return
+                const accepted = community.acceptAttachment(receipt, {
+                  actorId: 'alex',
+                  destination: 'dm:alex-morgan',
+                  mimeType: 'image/jpeg',
+                  size: 1024,
+                  checksum,
+                  url: 'https://cdn.example.test/trail.jpg',
+                })
+                if (!accepted) return
                 community.sendMessage('', [
                   {
-                    id: 'trail-photo',
+                    id: accepted.receiptId,
                     url: 'https://cdn.example.test/trail.jpg',
                     mediaType: 'image/jpeg',
                   },
                 ])
-              }
+              }}
             />
             <Action
               testID="revoke-access"

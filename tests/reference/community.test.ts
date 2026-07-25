@@ -311,6 +311,25 @@ describe('Community reference shell', () => {
 
   it('sends attachment-only messages and enforces automod and scoped authorization', () => {
     const community = new CommunityDemoController()
+    const checksum = 'a'.repeat(64)
+    const receipt = community.authorizeAttachment(
+      'dm:alex-morgan',
+      {
+        uri: 'file:///trail.jpg',
+        name: 'trail.jpg',
+        mimeType: 'image/jpeg',
+        size: 1024,
+      },
+      checksum,
+    )!
+    community.acceptAttachment(receipt, {
+      actorId: 'alex',
+      destination: 'dm:alex-morgan',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      checksum,
+      url: 'https://cdn.example.test/trail.jpg',
+    })
     community.sendMessage('', [
       {
         id: 'photo-1',
@@ -334,6 +353,38 @@ describe('Community reference shell', () => {
         body: 'No access',
       }),
     ).toThrow('revoked')
+  })
+
+  it('rejects unsafe or mismatched attachments at both trust boundaries and supports retry', () => {
+    const community = new CommunityDemoController()
+    expect(
+      community.authorizeAttachment(
+        'thread:welcome',
+        { uri: 'file:///attack.html', name: 'attack.html', mimeType: 'text/html', size: 50 },
+        'a'.repeat(64),
+      ),
+    ).toBeNull()
+    expect(community.state.attachmentStatus).toBe('rejected')
+    community.retryAttachment()
+    const receipt = community.authorizeAttachment(
+      'thread:welcome',
+      { uri: 'file:///trail.jpg', name: 'trail.jpg', mimeType: 'image/jpeg', size: 1024 },
+      'a'.repeat(64),
+    )!
+    expect(
+      community.acceptAttachment(receipt, {
+        actorId: 'mallory',
+        destination: 'thread:welcome',
+        mimeType: 'image/jpeg',
+        size: 1024,
+        checksum: 'a'.repeat(64),
+        url: 'https://cdn.example.test/trail.jpg',
+      }),
+    ).toBeNull()
+    expect(community.state).toMatchObject({
+      attachmentStatus: 'rejected',
+      attachmentError: expect.stringContaining('does not match'),
+    })
   })
 
   it('moves a report through the moderator audit lifecycle', () => {
