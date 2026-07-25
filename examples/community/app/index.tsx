@@ -58,9 +58,10 @@ export default function CommunityShell() {
       <ScrollView contentContainerStyle={styles.content}>
         {state.view === 'feed' && (
           <Card title="Trail Talk">
-            {state.threads.map((thread) => (
+            {state.threads.map((thread, index) => (
               <Pressable
                 key={thread.id}
+                testID={index === 0 ? 'feed-first-thread' : `thread-${thread.id}`}
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${thread.title}`}
                 onPress={() => community.openThread(thread.id)}

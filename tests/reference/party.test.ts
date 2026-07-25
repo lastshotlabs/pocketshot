@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PartyDemoController } from '../../examples/party/lib/party'
+import { normalizePartySystemPath } from '../../examples/party/lib/party-link'
 
 describe('Party clean-room acceptance model', () => {
   it('completes guest, lobby, realtime round, result, and rematch', () => {
@@ -38,6 +39,12 @@ describe('Party clean-room acceptance model', () => {
       phase: 'lobby',
       players: [expect.objectContaining({ name: 'Linked guest' })],
     })
+  })
+
+  it('routes Android custom-scheme system URLs into the Expo join screen', () => {
+    expect(normalizePartySystemPath('pocketshot-party://join/HIT-427')).toBe('/join/HIT-427')
+    expect(normalizePartySystemPath('/games')).toBe('/games')
+    expect(normalizePartySystemPath('pocketshot-party://join/%E0%A4%A')).toBe('/')
   })
 
   it('hands playback/session ownership to a player after host disconnect', async () => {

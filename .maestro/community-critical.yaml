@@ -19,7 +19,8 @@ name: Community post, message, moderation, privacy, and reconnect
     id: publish-thread
 - tapOn:
     id: tab-feed
-- assertVisible: 'Best rainy-day trail?'
+- assertVisible:
+    id: feed-first-thread
 - tapOn:
     id: tab-messages
 - tapOn:

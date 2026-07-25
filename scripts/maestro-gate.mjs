@@ -16,6 +16,18 @@ const partyJoinRoute = await readFile(
   new URL('../examples/party/app/join/[code].tsx', import.meta.url),
   'utf8',
 )
+const partyNativeIntent = await readFile(
+  new URL('../examples/party/app/+native-intent.ts', import.meta.url),
+  'utf8',
+)
+const coachFlow = await readFile(
+  new URL('../.maestro/coach-critical.yaml', import.meta.url),
+  'utf8',
+)
+const communityFlow = await readFile(
+  new URL('../.maestro/community-critical.yaml', import.meta.url),
+  'utf8',
+)
 const failures = []
 
 const appIds = [
@@ -56,6 +68,17 @@ if (!all.includes('openLink: pocketshot-party://join/')) {
 }
 if (!partyJoinRoute.includes('initialJoinCode')) {
   failures.push('Party shell does not route cold join links into the application')
+}
+if (!partyNativeIntent.includes('redirectSystemPath')) {
+  failures.push('Party shell does not normalize native intent paths')
+}
+if (!communityFlow.includes('id: feed-first-thread')) {
+  failures.push('Community journey does not use a regex-safe thread assertion')
+}
+const coachScrollCount = coachFlow.split('scrollUntilVisible:').length - 1
+const centeredCoachScrollCount = coachFlow.split('centerElement: true').length - 1
+if (coachScrollCount === 0 || centeredCoachScrollCount !== coachScrollCount) {
+  failures.push('Coach journey does not center every scrolled control above Android navigation')
 }
 for (const [index, body] of bodies.entries()) {
   if (!body.includes('launchApp:')) failures.push(`${files[index]} does not launch the app`)
