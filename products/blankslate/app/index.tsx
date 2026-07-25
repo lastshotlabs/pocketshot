@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
+import * as Haptics from 'expo-haptics'
 import { StatusBar } from 'expo-status-bar'
 import QRCode from 'react-native-qrcode-svg'
 import { BlankSlateController, type BlankSlateState } from '../lib/blankslate'
@@ -7,8 +17,17 @@ import { BlankSlateController, type BlankSlateState } from '../lib/blankslate'
 type AppSection = 'Play' | 'Games' | 'Library' | 'Build' | 'You'
 
 export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
-  const controller = useMemo(() => new BlankSlateController(), [])
+  const controller = useMemo(
+    () =>
+      new BlankSlateController(undefined, {
+        lockIn: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+        matchedReveal: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+        rejectedInput: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
+      }),
+    [],
+  )
   const [game, setGame] = useState<BlankSlateState>(controller.state)
+  const [slate, setSlate] = useState('')
   const [section, setSection] = useState<AppSection>('Play')
   const [contentRevision, setContentRevision] = useState(0)
   useEffect(() => controller.subscribe(setGame), [controller])
@@ -240,10 +259,25 @@ export default function BlankSlateApp({ initialJoinCode }: { initialJoinCode?: s
                 onPress={() => void controller.replayOfflineCommands()}
               />
             )}
+            <TextInput
+              testID="private-slate-input"
+              accessibilityLabel="Your private slate"
+              accessibilityHint="Your answer remains private until the host reveals all slates"
+              value={slate}
+              onChangeText={setSlate}
+              placeholder="Write your answer"
+              placeholderTextColor="#8fb5a5"
+              autoCorrect={false}
+              autoCapitalize="none"
+              spellCheck={false}
+              returnKeyType="done"
+              maxLength={80}
+              style={styles.slateInput}
+            />
             <Action
               testID="submit-alex"
-              label="Alex writes cake"
-              onPress={() => controller.submit('p1', 'cake', `p1-${game.round}`)}
+              label={game.submittedIds.includes('p1') ? 'Edit Alex’s slate' : 'Lock Alex’s slate'}
+              onPress={() => controller.submit('p1', slate, `p1-${game.round}-${Date.now()}`)}
             />
             <Action
               testID="submit-sam"
@@ -491,6 +525,15 @@ const styles = StyleSheet.create({
   qr: { alignSelf: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 12 },
   notice: { color: '#fff', backgroundColor: '#8b1e1e', padding: 12, borderRadius: 10 },
   slate: { backgroundColor: '#f5e7c6', borderRadius: 10, padding: 14 },
+  slateInput: {
+    minHeight: 52,
+    borderColor: '#8fb5a5',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    color: '#fff8e8',
+    fontSize: 18,
+  },
   answer: { color: '#10251e', fontSize: 28, fontWeight: '900' },
   button: {
     minHeight: 48,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { BlankSlateController } from '../../examples/blankslate/lib/blankslate'
 import { normalizeBlankSlateSystemPath } from '../../examples/blankslate/lib/link'
 
@@ -169,6 +169,26 @@ describe('Blank Slate native acceptance model', () => {
     game.acknowledgeSubmission('p1', 'submit-2')
     expect(game.state.submissionStates.p1.status).toBe('accepted')
     expect(game.tvProjection()).not.toHaveProperty('submissionStates')
+  })
+
+  it('emits native-safe lock, matched-reveal, and rejection feedback', () => {
+    const feedback = {
+      lockIn: vi.fn(),
+      matchedReveal: vi.fn(),
+      rejectedInput: vi.fn(),
+    }
+    const game = new BlankSlateController(undefined, feedback)
+    game.enter()
+    game.startRound()
+    expect(game.submit('p1', '', 'empty')).toBe(false)
+    game.submit('p1', 'cake', 'one')
+    game.submit('p2', 'cake', 'two')
+    game.submit('p3', 'party', 'three')
+    game.rejectSubmission('p3', 'three', 'Connection lost')
+    game.reveal()
+    expect(feedback.rejectedInput).toHaveBeenCalledTimes(2)
+    expect(feedback.lockIn).toHaveBeenCalledTimes(3)
+    expect(feedback.matchedReveal).toHaveBeenCalledTimes(1)
   })
 
   it('groups reveal answers, scores matches, and supports voting', () => {

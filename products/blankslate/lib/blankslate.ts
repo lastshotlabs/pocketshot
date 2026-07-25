@@ -102,6 +102,18 @@ export interface BlankSlateSnapshot {
   offlineCommands?: QueuedOperation[]
 }
 
+export interface BlankSlateFeedback {
+  lockIn(): void | Promise<void>
+  matchedReveal(): void | Promise<void>
+  rejectedInput(): void | Promise<void>
+}
+
+const silentFeedback: BlankSlateFeedback = {
+  lockIn: () => undefined,
+  matchedReveal: () => undefined,
+  rejectedInput: () => undefined,
+}
+
 export class BlankSlateController {
   private value: BlankSlateState
   private readonly session: PartySessionController<BlankSlateRules>
@@ -152,7 +164,10 @@ export class BlankSlateController {
   readonly account = createBlankSlateAccount()
   readonly passkeys = createBlankSlatePasskeys()
 
-  constructor(snapshot?: BlankSlateSnapshot) {
+  constructor(
+    snapshot?: BlankSlateSnapshot,
+    private readonly feedback: BlankSlateFeedback = silentFeedback,
+  ) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
     this.session = new PartySessionController(
       {
@@ -476,13 +491,17 @@ export class BlankSlateController {
     const normalized = answer.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
     if (!normalized) {
       this.value.notice = 'Write a word before locking in'
+      void this.feedback.rejectedInput()
       this.emit()
       return false
     }
     const accepted = this.submissions.submit(playerId, normalized, key)
     if (accepted && !this.value.submittedIds.includes(playerId))
       this.value.submittedIds.push(playerId)
-    if (accepted) this.value.submissionStates[playerId] = { status: 'pending' }
+    if (accepted) {
+      this.value.submissionStates[playerId] = { status: 'pending' }
+      void this.feedback.lockIn()
+    }
     this.emit()
     return accepted
   }
@@ -505,6 +524,7 @@ export class BlankSlateController {
         reason: submission.rejectionReason,
       }
       this.value.notice = `${this.player(playerId).name}'s slate needs to be resent`
+      void this.feedback.rejectedInput()
       this.emit()
     }
   }
@@ -620,6 +640,9 @@ export class BlankSlateController {
     this.corrections = new HostCorrectionController(this.value.groups)
     this.value.phase = 'reveal'
     this.value.notice = null
+    if (this.value.groups.some((group) => group.playerIds.length > 1)) {
+      void this.feedback.matchedReveal()
+    }
     this.appendActivity('reveal', `${this.value.groups.length} slate groups revealed`)
     this.emit()
   }
