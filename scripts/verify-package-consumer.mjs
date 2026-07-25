@@ -86,6 +86,8 @@ import {
   type ButtonBaseProps,
   type ManifestConfig,
 } from '@lastshotlabs/pocketshot/ui'
+import { createRealtimeChannel, MemoryRealtimeStorage } from '@lastshotlabs/pocketshot/realtime'
+import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
 const sdk = createPocketshot(config)
@@ -97,6 +99,16 @@ const manifest: ManifestConfig = {
   screens: { home: { id: 'home', components: [] } },
 }
 void manifest
+
+const realtime = createRealtimeChannel({
+  channel: 'consumer',
+  url: 'wss://api.example.test/realtime',
+  schemas: { payload: z.string(), state: z.array(z.string()) },
+  fetchSnapshot: async () => ({ version: 1, channel: 'consumer', cursor: 0, state: [] }),
+  reduce: (state, event) => [...state, event.payload],
+  storage: new MemoryRealtimeStorage(),
+})
+void realtime
 
 export const Consumer = () => <ButtonBase {...button} />
 `,

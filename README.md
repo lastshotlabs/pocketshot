@@ -42,14 +42,34 @@ const WS_ENDPOINT = process.env.EXPO_PUBLIC_WS_ENDPOINT ?? 'ws://localhost:3000/
 export const pocketshot = createPocketshot({ apiUrl: API_BASE_URL, wsEndpoint: WS_ENDPOINT })
 
 export const {
-  useUser, useLogin, useRegister, useLogout,
-  useVerifyMfa, useExchangeOAuthCode,
-  useForgotPassword, useResetPassword, useVerifyEmail, useResendVerification,
-  useSetPassword, useSessions, useRevokeSession, useDeleteAccount, useCancelDeletion,
-  useMfaSetup, useMfaVerifySetup, useMfaDisable, useMfaMethods, useMfaResend,
-  useEmailOtpEnable, useEmailOtpVerifySetup,
-  useRoom, useRoomEvent,
-  Providers, api, queryClient, tokenStorage,
+  useUser,
+  useLogin,
+  useRegister,
+  useLogout,
+  useVerifyMfa,
+  useExchangeOAuthCode,
+  useForgotPassword,
+  useResetPassword,
+  useVerifyEmail,
+  useResendVerification,
+  useSetPassword,
+  useSessions,
+  useRevokeSession,
+  useDeleteAccount,
+  useCancelDeletion,
+  useMfaSetup,
+  useMfaVerifySetup,
+  useMfaDisable,
+  useMfaMethods,
+  useMfaResend,
+  useEmailOtpEnable,
+  useEmailOtpVerifySetup,
+  useRoom,
+  useRoomEvent,
+  Providers,
+  api,
+  queryClient,
+  tokenStorage,
 } = pocketshot
 ```
 
@@ -59,7 +79,11 @@ Wrap your root layout with `Providers`:
 import { Providers } from '@/lib/pocketshot'
 
 export default function RootLayout() {
-  return <Providers><Stack /></Providers>
+  return (
+    <Providers>
+      <Stack />
+    </Providers>
+  )
 }
 ```
 
@@ -98,13 +122,13 @@ npx pocketshot sync --watch                   # re-generate on spec changes
 
 Additional flags:
 
-| Flag | Default | Description |
-|---|---|---|
-| `--api-dir <dir>` | `lib/api` | Output directory for generated API functions |
-| `--hooks-dir <dir>` | `lib/hooks` | Output directory for generated React Query hooks |
-| `--types-path <path>` | `lib/types/api.ts` | Path for generated TypeScript types |
-| `--pocketshot-import <path>` | `@/lib/pocketshot` | Import path used in generated hooks |
-| `--zod` | off | Also generate Zod schemas |
+| Flag                         | Default            | Description                                      |
+| ---------------------------- | ------------------ | ------------------------------------------------ |
+| `--api-dir <dir>`            | `lib/api`          | Output directory for generated API functions     |
+| `--hooks-dir <dir>`          | `lib/hooks`        | Output directory for generated React Query hooks |
+| `--types-path <path>`        | `lib/types/api.ts` | Path for generated TypeScript types              |
+| `--pocketshot-import <path>` | `@/lib/pocketshot` | Import path used in generated hooks              |
+| `--zod`                      | off                | Also generate Zod schemas                        |
 
 Project-level defaults live in `pocketshot.config.json` at your project root.
 
@@ -112,104 +136,173 @@ Project-level defaults live in `pocketshot.config.json` at your project root.
 
 ### `createPocketshot(config)`
 
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `apiUrl` | `string` | required | Slingshot backend base URL |
-| `wsEndpoint` | `string` | — | Full WebSocket endpoint URL including path (e.g. `ws://host/chat`). Optional — omit to disable WebSocket. |
-| `tokenKey` | `string` | `"pocketshot_token"` | Key name in `expo-secure-store` |
-| `loginPath` | `string` | `"/(auth)/login"` | Route to redirect to on logout / unauthenticated |
-| `homePath` | `string` | `"/(app)/"` | Route to redirect to after login |
-| `mfaPath` | `string` | `"/(auth)/mfa"` | Route to redirect to when MFA is required |
-| `staleTime` | `number` | `300000` | React Query stale time in ms |
+| Field        | Type     | Default              | Description                                                                                               |
+| ------------ | -------- | -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `apiUrl`     | `string` | required             | Slingshot backend base URL                                                                                |
+| `wsEndpoint` | `string` | —                    | Full WebSocket endpoint URL including path (e.g. `ws://host/chat`). Optional — omit to disable WebSocket. |
+| `tokenKey`   | `string` | `"pocketshot_token"` | Key name in `expo-secure-store`                                                                           |
+| `loginPath`  | `string` | `"/(auth)/login"`    | Route to redirect to on logout / unauthenticated                                                          |
+| `homePath`   | `string` | `"/(app)/"`          | Route to redirect to after login                                                                          |
+| `mfaPath`    | `string` | `"/(auth)/mfa"`      | Route to redirect to when MFA is required                                                                 |
+| `staleTime`  | `number` | `300000`             | React Query stale time in ms                                                                              |
 
 ### Hooks
 
 **Auth**
 
-| Hook | Description |
-|---|---|
-| `useUser()` | Current user (`GET /auth/me`), returns `{ user, isLoading, isError }` |
-| `useLogin()` | Login mutation — handles MFA redirect automatically |
-| `useRegister()` | Register mutation — stores token and redirects to home |
-| `useLogout()` | Logout mutation — clears tokens and redirects to login |
+| Hook            | Description                                                           |
+| --------------- | --------------------------------------------------------------------- |
+| `useUser()`     | Current user (`GET /auth/me`), returns `{ user, isLoading, isError }` |
+| `useLogin()`    | Login mutation — handles MFA redirect automatically                   |
+| `useRegister()` | Register mutation — stores token and redirects to home                |
+| `useLogout()`   | Logout mutation — clears tokens and redirects to login                |
 
 **Account management**
 
-| Hook | Description |
-|---|---|
-| `useForgotPassword()` | `POST /auth/forgot-password` |
-| `useResetPassword()` | `POST /auth/reset-password` |
-| `useVerifyEmail()` | `POST /auth/verify-email` |
-| `useResendVerification()` | `POST /auth/resend-verification` |
-| `useSetPassword()` | `POST /auth/set-password` (change password) |
-| `useSessions()` | `GET /auth/sessions` — list active sessions |
-| `useRevokeSession()` | `DELETE /auth/sessions` — revoke a session by ID |
-| `useDeleteAccount()` | `DELETE /auth/me` — delete account, clears tokens |
-| `useCancelDeletion()` | `POST /auth/cancel-deletion` |
+| Hook                      | Description                                       |
+| ------------------------- | ------------------------------------------------- |
+| `useForgotPassword()`     | `POST /auth/forgot-password`                      |
+| `useResetPassword()`      | `POST /auth/reset-password`                       |
+| `useVerifyEmail()`        | `POST /auth/verify-email`                         |
+| `useResendVerification()` | `POST /auth/resend-verification`                  |
+| `useSetPassword()`        | `POST /auth/set-password` (change password)       |
+| `useSessions()`           | `GET /auth/sessions` — list active sessions       |
+| `useRevokeSession()`      | `DELETE /auth/sessions` — revoke a session by ID  |
+| `useDeleteAccount()`      | `DELETE /auth/me` — delete account, clears tokens |
+| `useCancelDeletion()`     | `POST /auth/cancel-deletion`                      |
 
 **MFA**
 
-| Hook | Description |
-|---|---|
-| `useVerifyMfa()` | `POST /auth/mfa/verify` — complete MFA login challenge |
-| `useMfaSetup()` | `POST /auth/mfa/setup` — initiate TOTP setup |
-| `useMfaVerifySetup()` | `POST /auth/mfa/verify-setup` — confirm TOTP setup |
-| `useMfaDisable()` | `DELETE /auth/mfa` — disable TOTP |
-| `useMfaMethods()` | `GET /auth/mfa/methods` — list enabled MFA methods |
-| `useMfaResend()` | `POST /auth/mfa/resend` — resend email OTP |
-| `useEmailOtpEnable()` | `POST /auth/mfa/email-otp/enable` |
-| `useEmailOtpVerifySetup()` | `POST /auth/mfa/email-otp/verify-setup` |
+| Hook                       | Description                                            |
+| -------------------------- | ------------------------------------------------------ |
+| `useVerifyMfa()`           | `POST /auth/mfa/verify` — complete MFA login challenge |
+| `useMfaSetup()`            | `POST /auth/mfa/setup` — initiate TOTP setup           |
+| `useMfaVerifySetup()`      | `POST /auth/mfa/verify-setup` — confirm TOTP setup     |
+| `useMfaDisable()`          | `DELETE /auth/mfa` — disable TOTP                      |
+| `useMfaMethods()`          | `GET /auth/mfa/methods` — list enabled MFA methods     |
+| `useMfaResend()`           | `POST /auth/mfa/resend` — resend email OTP             |
+| `useEmailOtpEnable()`      | `POST /auth/mfa/email-otp/enable`                      |
+| `useEmailOtpVerifySetup()` | `POST /auth/mfa/email-otp/verify-setup`                |
 
 **OAuth**
 
-| Hook / function | Description |
-|---|---|
-| `useExchangeOAuthCode()` | `POST /auth/oauth/exchange` — exchange one-time code for session |
-| `getOAuthUrl(provider, redirectUri)` | Build the OAuth initiation URL |
+| Hook / function                      | Description                                                      |
+| ------------------------------------ | ---------------------------------------------------------------- |
+| `useExchangeOAuthCode()`             | `POST /auth/oauth/exchange` — exchange one-time code for session |
+| `getOAuthUrl(provider, redirectUri)` | Build the OAuth initiation URL                                   |
 
 **WebSocket** (only available when `wsEndpoint` is configured)
 
-| Hook | Description |
-|---|---|
-| `useRoom(room)` | Subscribe to a room, returns latest message |
+| Hook                                 | Description                                  |
+| ------------------------------------ | -------------------------------------------- |
+| `useRoom(room)`                      | Subscribe to a room, returns latest message  |
 | `useRoomEvent(room, event, handler)` | Subscribe to a specific event type in a room |
 
-> **SSE (Server-Sent Events):** The Slingshot backend supports server-push streams for browser clients via `/__sse/*` endpoints. Pocketshot uses WebSockets for real-time in v1 — SSE client support for React Native may be added in a future release.
+These hooks retain the original unversioned room protocol. New applications that
+need reconnect correctness, cursor resume, ordered delivery, or offline recovery
+should use the reliable realtime channel below.
+
+### Reliable realtime channels
+
+Import the headless API from `@lastshotlabs/pocketshot/realtime`. Each channel
+validates versioned events, applies them exactly once in cursor order, persists
+its acknowledged cursor, reconciles gaps from an authoritative snapshot, pauses
+in the background, and reconnects with heartbeat monitoring and exponential
+backoff.
+
+```ts
+import {
+  bindRealtimeLifecycle,
+  createRealtimeChannel,
+  createSQLiteRealtimeStorage,
+} from '@lastshotlabs/pocketshot/realtime'
+import { z } from 'zod'
+import { pocketshot } from '@/lib/pocketshot'
+
+const channel = createRealtimeChannel({
+  channel: 'party:abc',
+  url: 'wss://api.example.com/realtime',
+  schemas: {
+    payload: z.object({ title: z.string() }),
+    state: z.object({ titles: z.array(z.string()) }),
+  },
+  getToken: () => pocketshot.tokenStorage.getToken(),
+  refreshAuth: async () => {
+    // Refresh the app session before the reconnect attempt.
+  },
+  fetchSnapshot: async (afterCursor) => {
+    return pocketshot.api.get(`/parties/abc/snapshot?after=${afterCursor ?? ''}`)
+  },
+  reduce: (state, event) => ({
+    titles: [...state.titles, event.payload.title],
+  }),
+  storage: createSQLiteRealtimeStorage(),
+})
+
+const unbindLifecycle = bindRealtimeLifecycle(channel, pocketshot.appStateManager)
+const unsubscribe = channel.subscribe((state, diagnostics) => {
+  console.log(state, diagnostics.state, diagnostics.lastCursor)
+})
+
+await channel.start()
+```
+
+`createSQLiteRealtimeStorage()` requires `expo-sqlite`. You can instead provide
+your own `RealtimeChannelStorage` implementation; `MemoryRealtimeStorage` is
+available for ephemeral sessions and tests. The server event envelope is:
+
+```ts
+type RealtimeEvent<T> = {
+  version: number
+  channel: string
+  id: string
+  cursor: number
+  type: string
+  timestamp: string
+  payload: T
+}
+```
+
+Call `unsubscribe()`, `unbindLifecycle()`, and `channel.stop()` when the owning
+session is destroyed.
+
+> **SSE (Server-Sent Events):** PocketShot also exports `SseManager` for
+> one-way streams through the optional `react-native-sse` peer dependency.
 
 **Community** (call `createCommunityHooks(api)` to create)
 
-| Hook | Description |
-|---|---|
-| `useListContainers(params?)` | List all containers (paginated) |
-| `useGetContainer(containerId)` | Get a single container |
-| `useCreateContainer()` | Create a container |
-| `useUpdateContainer()` | Update a container |
-| `useDeleteContainer()` | Delete a container |
-| `useListThreads({ containerId, ...params })` | List threads in a container |
-| `useGetThread(threadId)` | Get a single thread |
-| `useCreateThread()` | Create a thread |
-| `useUpdateThread()` | Update a thread |
-| `useDeleteThread()` | Delete a thread |
-| `useListReplies({ threadId, ...params })` | List replies to a thread |
-| `useGetReply(replyId)` | Get a single reply |
-| `useCreateReply()` | Create a reply |
-| `useUpdateReply()` | Update a reply |
-| `useDeleteReply()` | Delete a reply |
-| `useAddThreadReaction()` | Add a reaction to a thread |
-| `useRemoveThreadReaction()` | Remove a reaction from a thread |
-| `useAddReplyReaction()` | Add a reaction to a reply |
-| `useRemoveReplyReaction()` | Remove a reaction from a reply |
-| `useListReports(params?)` | List reports (mod/admin) |
-| `useCreateReport()` | File a report |
-| `useResolveReport()` | Resolve a report |
-| `useListBans(params?)` | List bans (mod/admin) |
-| `useCheckBan(userId, containerId?)` | Check if a user is banned (scoped or site-wide) |
-| `useCreateBan()` | Ban a user |
-| `useDeleteBan()` | Remove a ban |
-| `useListNotifications(params?)` | List notifications for the current user |
-| `useMarkNotificationRead()` | Mark a notification read |
-| `useMarkAllNotificationsRead()` | Mark all notifications read |
-| `useSearch(params)` | Search threads and replies (requires `q` param) |
+| Hook                                         | Description                                     |
+| -------------------------------------------- | ----------------------------------------------- |
+| `useListContainers(params?)`                 | List all containers (paginated)                 |
+| `useGetContainer(containerId)`               | Get a single container                          |
+| `useCreateContainer()`                       | Create a container                              |
+| `useUpdateContainer()`                       | Update a container                              |
+| `useDeleteContainer()`                       | Delete a container                              |
+| `useListThreads({ containerId, ...params })` | List threads in a container                     |
+| `useGetThread(threadId)`                     | Get a single thread                             |
+| `useCreateThread()`                          | Create a thread                                 |
+| `useUpdateThread()`                          | Update a thread                                 |
+| `useDeleteThread()`                          | Delete a thread                                 |
+| `useListReplies({ threadId, ...params })`    | List replies to a thread                        |
+| `useGetReply(replyId)`                       | Get a single reply                              |
+| `useCreateReply()`                           | Create a reply                                  |
+| `useUpdateReply()`                           | Update a reply                                  |
+| `useDeleteReply()`                           | Delete a reply                                  |
+| `useAddThreadReaction()`                     | Add a reaction to a thread                      |
+| `useRemoveThreadReaction()`                  | Remove a reaction from a thread                 |
+| `useAddReplyReaction()`                      | Add a reaction to a reply                       |
+| `useRemoveReplyReaction()`                   | Remove a reaction from a reply                  |
+| `useListReports(params?)`                    | List reports (mod/admin)                        |
+| `useCreateReport()`                          | File a report                                   |
+| `useResolveReport()`                         | Resolve a report                                |
+| `useListBans(params?)`                       | List bans (mod/admin)                           |
+| `useCheckBan(userId, containerId?)`          | Check if a user is banned (scoped or site-wide) |
+| `useCreateBan()`                             | Ban a user                                      |
+| `useDeleteBan()`                             | Remove a ban                                    |
+| `useListNotifications(params?)`              | List notifications for the current user         |
+| `useMarkNotificationRead()`                  | Mark a notification read                        |
+| `useMarkAllNotificationsRead()`              | Mark all notifications read                     |
+| `useSearch(params)`                          | Search threads and replies (requires `q` param) |
 
 ```ts
 import { createCommunityHooks } from '@lastshotlabs/pocketshot'
@@ -221,16 +314,16 @@ export const { useListThreads, useCreateThread, useCheckBan } = community
 
 **Webhooks** (call `createWebhookHooks(api)` to create)
 
-| Hook | Description |
-|---|---|
-| `useListWebhookEndpoints()` | List all registered webhook endpoints |
-| `useGetWebhookEndpoint(endpointId)` | Get a single endpoint |
-| `useCreateWebhookEndpoint()` | Register a new endpoint |
-| `useUpdateWebhookEndpoint()` | Update an endpoint (PATCH) |
-| `useDeleteWebhookEndpoint()` | Soft-delete an endpoint |
-| `useListWebhookDeliveries({ endpointId, ...params })` | List delivery history for an endpoint |
-| `useGetWebhookDelivery(deliveryId)` | Get a single delivery record |
-| `useTestWebhookEndpoint()` | Fire a test delivery; invalidates delivery list on success |
+| Hook                                                  | Description                                                |
+| ----------------------------------------------------- | ---------------------------------------------------------- |
+| `useListWebhookEndpoints()`                           | List all registered webhook endpoints                      |
+| `useGetWebhookEndpoint(endpointId)`                   | Get a single endpoint                                      |
+| `useCreateWebhookEndpoint()`                          | Register a new endpoint                                    |
+| `useUpdateWebhookEndpoint()`                          | Update an endpoint (PATCH)                                 |
+| `useDeleteWebhookEndpoint()`                          | Soft-delete an endpoint                                    |
+| `useListWebhookDeliveries({ endpointId, ...params })` | List delivery history for an endpoint                      |
+| `useGetWebhookDelivery(deliveryId)`                   | Get a single delivery record                               |
+| `useTestWebhookEndpoint()`                            | Fire a test delivery; invalidates delivery list on success |
 
 > **No retry hook:** Slingshot manages retries internally via BullMQ. There is no client-triggered retry endpoint.
 
@@ -244,33 +337,33 @@ export const { useListWebhookEndpoints, useCreateWebhookEndpoint } = webhooks
 
 **Provider**
 
-| Export | Description |
-|---|---|
+| Export      | Description                                                             |
+| ----------- | ----------------------------------------------------------------------- |
 | `Providers` | Wraps `QueryClientProvider` + Jotai `Provider` — use at the root layout |
 
 ### Instance properties
 
-| Property | Description |
-|---|---|
-| `api` | `ApiClient` instance — call `api.get()`, `api.post()`, etc. directly |
-| `queryClient` | `QueryClient` instance — for manual cache invalidation |
+| Property       | Description                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `api`          | `ApiClient` instance — call `api.get()`, `api.post()`, etc. directly                                                      |
+| `queryClient`  | `QueryClient` instance — for manual cache invalidation                                                                    |
 | `tokenStorage` | `TokenStorage` instance — `getToken`, `setToken`, `clearToken`, `getRefreshToken`, `setRefreshToken`, `clearRefreshToken` |
 
 ## Auth flow
 
-| | |
-|---|---|
-| Token storage | `expo-secure-store` |
-| Request header | `x-user-token: <jwt>` |
-| Refresh | `POST /auth/refresh` with `{ refreshToken }` in body; on success, retries original request once; on second 401, clears tokens |
-| OAuth | `expo-web-browser` opens `GET /auth/:provider`, deep link returns `scheme://auth/callback?code=xxx`, exchanged via `POST /auth/oauth/exchange` |
-| WebSocket | `wss://host/ws?token=<jwt>` (Slingshot accepts `?token=` for React Native clients) |
+|                |                                                                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Token storage  | `expo-secure-store`                                                                                                                            |
+| Request header | `x-user-token: <jwt>`                                                                                                                          |
+| Refresh        | `POST /auth/refresh` with `{ refreshToken }` in body; on success, retries original request once; on second 401, clears tokens                  |
+| OAuth          | `expo-web-browser` opens `GET /auth/:provider`, deep link returns `scheme://auth/callback?code=xxx`, exchanged via `POST /auth/oauth/exchange` |
+| WebSocket      | `wss://host/ws?token=<jwt>` (Slingshot accepts `?token=` for React Native clients)                                                             |
 
 ## Environment variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `EXPO_PUBLIC_API_URL` | `http://localhost:3000` | Slingshot backend base URL |
+| Variable                  | Default                    | Description                       |
+| ------------------------- | -------------------------- | --------------------------------- |
+| `EXPO_PUBLIC_API_URL`     | `http://localhost:3000`    | Slingshot backend base URL        |
 | `EXPO_PUBLIC_WS_ENDPOINT` | `ws://localhost:3000/chat` | WebSocket endpoint URL (optional) |
 
 ## File structure

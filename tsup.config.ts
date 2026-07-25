@@ -7,6 +7,7 @@ const peerDeps = [
   'jotai',
   'react',
   'react-native',
+  'zod',
   // Optional native peers — duck-typed at runtime
   'react-native-maps',
   'react-native-markdown-display',
@@ -41,7 +42,7 @@ export default defineConfig([
     outDir: 'dist',
   },
   {
-    entry: { index: 'src/index.ts', ui: 'src/ui.ts' },
+    entry: { index: 'src/index.ts', ui: 'src/ui.ts', realtime: 'src/realtime/index.ts' },
     format: ['esm', 'cjs'],
     external: peerDeps,
     outDir: 'dist',

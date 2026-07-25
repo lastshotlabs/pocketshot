@@ -4,6 +4,29 @@ export { createSecureStoreStorage } from './auth/storage'
 export type { TokenStorage } from './auth/storage'
 export { ApiClient, ApiError } from './api/client'
 export { PocketshotWS, createWsHooks } from './ws/index'
+export {
+  RealtimeChannel,
+  RealtimeReconciler,
+  MemoryRealtimeStorage,
+  createSQLiteRealtimeStorage,
+  bindRealtimeLifecycle,
+  createRealtimeChannel,
+  createRealtimeEventSchema,
+  createRealtimeSnapshotSchema,
+} from './realtime/index'
+export type {
+  RealtimeChannelOptions,
+  RealtimeChannelStorage,
+  RealtimeConnectionState,
+  RealtimeDiagnostics,
+  RealtimeEvent,
+  RealtimeSchemas,
+  RealtimeSnapshot,
+  RealtimeSocket,
+  RealtimeSocketFactory,
+  RealtimeStateListener,
+  ReconcilerResult,
+} from './realtime/index'
 export { createAuthHooks } from './auth/hooks'
 export type {
   AuthUser,
