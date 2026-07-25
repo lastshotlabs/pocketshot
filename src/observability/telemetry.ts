@@ -160,6 +160,80 @@ export class DiagnosticsBuffer implements TelemetrySink {
   }
 }
 
+export interface ServiceLevelIndicatorDefinition {
+  name: string
+  target: number
+  windowSize: number
+  maximumDurationMs?: number
+}
+
+export interface ServiceLevelIndicatorSnapshot {
+  name: string
+  target: number
+  total: number
+  good: number
+  ratio: number
+  breached: boolean
+}
+
+export class ServiceLevelIndicatorController {
+  private definitions = new Map<string, ServiceLevelIndicatorDefinition>()
+  private samples = new Map<string, Array<{ good: boolean; at: number }>>()
+
+  define(definition: ServiceLevelIndicatorDefinition): void {
+    if (
+      !definition.name.trim() ||
+      definition.target < 0 ||
+      definition.target > 1 ||
+      !Number.isInteger(definition.windowSize) ||
+      definition.windowSize < 1
+    ) {
+      throw new Error('SLI definition is invalid')
+    }
+    this.definitions.set(definition.name, structuredClone(definition))
+    this.samples.set(definition.name, this.samples.get(definition.name) ?? [])
+  }
+
+  record(name: string, sample: { succeeded: boolean; durationMs?: number; at?: number }): void {
+    const definition = this.require(name)
+    const good =
+      sample.succeeded &&
+      (definition.maximumDurationMs === undefined ||
+        (sample.durationMs !== undefined && sample.durationMs <= definition.maximumDurationMs))
+    const samples = this.samples.get(name) ?? []
+    samples.push({ good, at: sample.at ?? Date.now() })
+    if (samples.length > definition.windowSize) {
+      samples.splice(0, samples.length - definition.windowSize)
+    }
+    this.samples.set(name, samples)
+  }
+
+  snapshot(name: string): ServiceLevelIndicatorSnapshot {
+    const definition = this.require(name)
+    const samples = this.samples.get(name) ?? []
+    const good = samples.filter((sample) => sample.good).length
+    const ratio = samples.length ? good / samples.length : 1
+    return {
+      name,
+      target: definition.target,
+      total: samples.length,
+      good,
+      ratio,
+      breached: samples.length > 0 && ratio < definition.target,
+    }
+  }
+
+  all(): ServiceLevelIndicatorSnapshot[] {
+    return [...this.definitions.keys()].sort().map((name) => this.snapshot(name))
+  }
+
+  private require(name: string): ServiceLevelIndicatorDefinition {
+    const definition = this.definitions.get(name)
+    if (!definition) throw new Error(`Unknown service-level indicator: ${name}`)
+    return definition
+  }
+}
+
 export function scrubTelemetryAttributes(
   attributes: Record<string, unknown>,
 ): Record<string, string | number | boolean | null> {

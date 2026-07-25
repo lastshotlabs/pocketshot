@@ -2,6 +2,7 @@ import {
   DiagnosticsBuffer,
   FeatureFlagController,
   OperationTelemetry,
+  ServiceLevelIndicatorController,
   scrubTelemetryAttributes,
   type LifecycleEvent,
   type TelemetryClock,
@@ -129,5 +130,47 @@ describe('FeatureFlagController', () => {
     expect(() =>
       flags.replace([{ key: 'bad', enabled: true, rolloutPercent: 101, killSwitch: false }]),
     ).toThrow('between 0 and 100')
+  })
+})
+
+describe('ServiceLevelIndicatorController', () => {
+  it('tracks bounded success and latency windows with breach state', () => {
+    const indicators = new ServiceLevelIndicatorController()
+    indicators.define({
+      name: 'join_success',
+      target: 0.75,
+      windowSize: 4,
+      maximumDurationMs: 2_000,
+    })
+    indicators.record('join_success', { succeeded: true, durationMs: 500 })
+    indicators.record('join_success', { succeeded: true, durationMs: 2_500 })
+    indicators.record('join_success', { succeeded: false, durationMs: 100 })
+    expect(indicators.snapshot('join_success')).toMatchObject({
+      total: 3,
+      good: 1,
+      ratio: 1 / 3,
+      breached: true,
+    })
+    indicators.record('join_success', { succeeded: true, durationMs: 500 })
+    indicators.record('join_success', { succeeded: true, durationMs: 500 })
+    expect(indicators.snapshot('join_success').total).toBe(4)
+  })
+
+  it('supports the release indicator catalog without provider coupling', () => {
+    const indicators = new ServiceLevelIndicatorController()
+    for (const name of [
+      'crash_free_session',
+      'launch_success',
+      'reconnect_success',
+      'queue_drain',
+      'stream_completion',
+      'upload_completion',
+      'push_open_success',
+    ]) {
+      indicators.define({ name, target: 0.99, windowSize: 100 })
+      indicators.record(name, { succeeded: true })
+    }
+    expect(indicators.all()).toHaveLength(7)
+    expect(indicators.all().every((indicator) => !indicator.breached)).toBe(true)
   })
 })
