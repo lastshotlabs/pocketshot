@@ -1,0 +1,99 @@
+import { describe, expect, it } from 'vitest'
+import {
+  BallotController,
+  HostCorrectionController,
+  PartySessionController,
+  PersonalCuePolicy,
+  PrivateSubmissionController,
+  SharedDeviceController,
+  TimedPhaseController,
+} from '../../src/party-session'
+
+describe('party lifecycle primitives', () => {
+  it('recovers a host, stages rules, and deduplicates rematches', () => {
+    const party = new PartySessionController({ rounds: 5 })
+    party.join({ id: 'h', displayName: 'Host', role: 'host', seat: 1, connected: true })
+    party.join({ id: 'p', displayName: 'Player', role: 'participant', seat: 0, connected: true })
+    party.stageRules('h', { rounds: 7 })
+    party.setConnected('h', false)
+    expect(party.recoverHost()).toBe('p')
+    expect(party.startRematch('p', 'rematch-1')).toBe(true)
+    expect(party.startRematch('p', 'rematch-1')).toBe(false)
+    expect(party.snapshot.rules.rounds).toBe(7)
+  })
+
+  it('reconciles an authoritative timer across pause and background time', () => {
+    let now = 1_000
+    const timer = new TimedPhaseController('write', 10_000, () => now)
+    now = 8_000
+    expect(timer.remainingMs()).toBe(3_000)
+    expect(timer.isWarning(3_000)).toBe(true)
+    timer.pause()
+    now = 30_000
+    expect(timer.remainingMs()).toBe(3_000)
+    timer.resume()
+    now = 33_000
+    expect(timer.reconcile()).toBe(true)
+    expect(timer.snapshot.completed).toBe(true)
+  })
+
+  it('keeps submissions private, supports edit windows, and deduplicates replay', () => {
+    let now = 1_000
+    const submissions = new PrivateSubmissionController<string>(5_000, () => now)
+    expect(submissions.submit('a', 'secret', 'one')).toBe(true)
+    expect(submissions.submit('a', 'secret', 'one')).toBe(false)
+    expect(submissions.projection('b', false)[0]).not.toHaveProperty('value')
+    expect(submissions.projection('a', false)[0]).toHaveProperty('value', 'secret')
+    now = 7_000
+    expect(() => submissions.submit('a', 'late', 'two')).toThrow('closed')
+    expect(submissions.projection('tv', true)[0]).toHaveProperty('value', 'secret')
+  })
+
+  it('supports cumulative ballot approval and revocation', () => {
+    const ballot = new BallotController<'merge' | 'nobody'>(['a', 'b'])
+    ballot.set('a', 'merge', true)
+    ballot.set('a', 'nobody', true)
+    ballot.set('a', 'nobody', false)
+    ballot.set('b', 'merge', true)
+    expect(ballot.close().get('merge')).toBe(2)
+    expect(() => ballot.set('a', 'merge', false)).toThrow('closed')
+  })
+
+  it('requires arm/propose/confirm and restores correction history', () => {
+    const correction = new HostCorrectionController({ groups: [['a'], ['b']] })
+    correction.arm()
+    correction.propose({ groups: [['a', 'b']] })
+    correction.confirm()
+    expect(correction.snapshot.state.groups).toEqual([['a', 'b']])
+    expect(correction.undo()).toBe(true)
+    expect(correction.snapshot.state.groups).toEqual([['a'], ['b']])
+  })
+
+  it('protects pass-the-phone handoff and in-flight commands', () => {
+    const shared = new SharedDeviceController()
+    shared.begin(2)
+    expect(shared.snapshot).toMatchObject({ curtainVisible: true, wakeLock: true })
+    shared.arm(2)
+    expect(shared.lockCommand('burn-a')).toBe(true)
+    expect(shared.lockCommand('burn-a')).toBe(false)
+    shared.settleCommand('burn-a')
+    shared.end()
+    expect(shared.snapshot.wakeLock).toBe(false)
+  })
+
+  it('delivers actor-only cues with mute, quiet-hour, lifecycle, and duplicate policy', () => {
+    const cue = new PersonalCuePolicy(5_000)
+    const request = {
+      roomId: 'room',
+      eventId: 'turn',
+      actorId: 'a',
+      recipientId: 'a',
+      at: new Date(2026, 0, 1, 12).getTime(),
+    }
+    expect(cue.shouldDeliver(request, 'active')).toBe(true)
+    expect(cue.shouldDeliver({ ...request, at: request.at + 1_000 }, 'active')).toBe(false)
+    expect(cue.shouldDeliver({ ...request, eventId: 'other' }, 'suspended')).toBe(false)
+    cue.setRoomMuted('room', true)
+    expect(cue.shouldDeliver({ ...request, eventId: 'muted' }, 'active')).toBe(false)
+  })
+})
