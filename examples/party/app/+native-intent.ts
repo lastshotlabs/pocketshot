@@ -1,5 +1,1 @@
-import { normalizePartySystemPath } from '../lib/party-link'
-
-export function redirectSystemPath({ path }: { path: string; initial: boolean }): string {
-  return normalizePartySystemPath(path)
-}
+export * from '../../../products/hitshot/app/+native-intent'

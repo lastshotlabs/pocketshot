@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Hitshot",
+    "slug": "hitshot",
+    "scheme": "hitshot",
+    "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.lastshotlabs.hitshot",
+      "buildNumber": "1",
+      "associatedDomains": ["applinks:links.hitshot.app"],
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
+    },
+    "android": {
+      "package": "com.lastshotlabs.hitshot",
+      "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "links.hitshot.app", "pathPrefix": "/join" },
+            { "scheme": "hitshot" },
+            { "scheme": "pocketshot-party" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sqlite",
+      ["expo-audio", { "enableBackgroundPlayback": true }]
+    ]
+  }
+}
