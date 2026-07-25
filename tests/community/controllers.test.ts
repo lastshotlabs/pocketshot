@@ -42,6 +42,33 @@ describe('CursorFeedController', () => {
     expect(feed.snapshot.items).toHaveLength(2)
   })
 
+  it('preserves anchors, rank order, item versions, and rolls back optimistic changes', () => {
+    type Ranked = { id: string; rank: number; version: number }
+    const feed = new CursorFeedController<Ranked>({
+      compare: (left, right) => right.rank - left.rank,
+      version: (item) => item.version,
+    })
+    feed.replace({
+      items: [
+        { id: 'low', rank: 1, version: 1 },
+        { id: 'high', rank: 10, version: 1 },
+      ],
+      nextCursor: 'next',
+      version: 1,
+    })
+    feed.setAnchor('low')
+    expect(feed.anchorIndex()).toBe(1)
+    feed.upsert({ id: 'high', rank: 0, version: 0 })
+    expect(feed.snapshot.items[0].id).toBe('high')
+    feed.optimisticRemove('remove-low', 'low')
+    expect(feed.anchorIndex()).toBeNull()
+    feed.settleOptimistic('remove-low', false)
+    expect(feed.anchorIndex()).toBe(1)
+    feed.optimisticUpsert('add', { id: 'top', rank: 20, version: 1 })
+    feed.settleOptimistic('add', true)
+    expect(feed.snapshot.items[0].id).toBe('top')
+  })
+
   it('supports optimistic upsert and removal', () => {
     const feed = new CursorFeedController<{ id: string; value: number }>()
     feed.replace({ items: [{ id: 'one', value: 1 }], nextCursor: null, version: 1 })

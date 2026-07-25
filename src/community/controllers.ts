@@ -13,6 +13,8 @@ export interface CursorFeedSnapshot<T> {
   nextCursor: string | null
   version: number
   isStale: boolean
+  anchorId?: string | null
+  pendingMutationIds?: string[]
 }
 
 export class CursorFeedController<T extends CursorEntity> {
@@ -20,6 +22,15 @@ export class CursorFeedController<T extends CursorEntity> {
   private nextCursorValue: string | null = null
   private versionValue = 0
   private staleValue = false
+  private anchorIdValue: string | null = null
+  private optimistic = new Map<string, T[]>()
+
+  constructor(
+    private readonly options: {
+      compare?: (left: T, right: T) => number
+      version?: (item: T) => number
+    } = {},
+  ) {}
 
   get snapshot(): CursorFeedSnapshot<T> {
     return {
@@ -27,12 +38,14 @@ export class CursorFeedController<T extends CursorEntity> {
       nextCursor: this.nextCursorValue,
       version: this.versionValue,
       isStale: this.staleValue,
+      anchorId: this.anchorIdValue,
+      pendingMutationIds: [...this.optimistic.keys()],
     }
   }
 
   replace(page: CursorPage<T>): void {
     if (page.version < this.versionValue) return
-    this.itemsValue = uniqueById(page.items)
+    this.itemsValue = this.order(this.mergeByVersion([], page.items))
     this.nextCursorValue = page.nextCursor
     this.versionValue = page.version
     this.staleValue = false
@@ -43,14 +56,22 @@ export class CursorFeedController<T extends CursorEntity> {
       this.staleValue = true
       return
     }
-    this.itemsValue = uniqueById([...this.itemsValue, ...page.items])
+    this.itemsValue = this.order(this.mergeByVersion(this.itemsValue, page.items))
     this.nextCursorValue = page.nextCursor
     this.versionValue = page.version
   }
 
   upsert(item: T, position: 'start' | 'end' = 'start'): void {
+    const existing = this.itemsValue.find((candidate) => candidate.id === item.id)
+    if (
+      existing &&
+      this.options.version &&
+      this.options.version(item) < this.options.version(existing)
+    ) {
+      return
+    }
     const remaining = this.itemsValue.filter((candidate) => candidate.id !== item.id)
-    this.itemsValue = position === 'start' ? [item, ...remaining] : [...remaining, item]
+    this.itemsValue = this.order(position === 'start' ? [item, ...remaining] : [...remaining, item])
   }
 
   remove(id: string): void {
@@ -59,6 +80,59 @@ export class CursorFeedController<T extends CursorEntity> {
 
   markStale(): void {
     this.staleValue = true
+  }
+
+  setAnchor(id: string | null): void {
+    if (id !== null && !this.itemsValue.some((item) => item.id === id)) {
+      throw new Error(`Unknown feed anchor: ${id}`)
+    }
+    this.anchorIdValue = id
+  }
+
+  anchorIndex(): number | null {
+    if (!this.anchorIdValue) return null
+    const index = this.itemsValue.findIndex((item) => item.id === this.anchorIdValue)
+    return index < 0 ? null : index
+  }
+
+  optimisticUpsert(mutationId: string, item: T, position: 'start' | 'end' = 'start'): boolean {
+    if (this.optimistic.has(mutationId)) return false
+    this.optimistic.set(mutationId, structuredClone(this.itemsValue))
+    this.upsert(item, position)
+    return true
+  }
+
+  optimisticRemove(mutationId: string, id: string): boolean {
+    if (this.optimistic.has(mutationId)) return false
+    this.optimistic.set(mutationId, structuredClone(this.itemsValue))
+    this.remove(id)
+    return true
+  }
+
+  settleOptimistic(mutationId: string, accepted: boolean): void {
+    const previous = this.optimistic.get(mutationId)
+    if (!previous) return
+    if (!accepted) this.itemsValue = previous
+    this.optimistic.delete(mutationId)
+  }
+
+  private order(items: T[]): T[] {
+    return this.options.compare ? [...items].sort(this.options.compare) : items
+  }
+
+  private mergeByVersion(existing: T[], incoming: T[]): T[] {
+    const values = new Map(existing.map((item) => [item.id, structuredClone(item)]))
+    for (const item of incoming) {
+      const current = values.get(item.id)
+      if (
+        !current ||
+        !this.options.version ||
+        this.options.version(item) >= this.options.version(current)
+      ) {
+        values.set(item.id, structuredClone(item))
+      }
+    }
+    return [...values.values()]
   }
 }
 
