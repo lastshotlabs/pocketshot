@@ -9,3 +9,9 @@ export type {
 
 export { createUploadHooks } from './hooks'
 export type { UploadHooks } from './hooks'
+export { UploadAuthorizationController } from './authorization'
+export type {
+  AcceptedUpload,
+  UploadAuthorizationPolicy,
+  UploadAuthorizationReceipt,
+} from './authorization'
