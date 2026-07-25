@@ -58,7 +58,7 @@ jobs:
         working-directory: examples/${{ matrix.shell }}
         run: |
           npx expo prebuild --platform android --clean --no-install
-          ./android/gradlew -p android assembleDebug --no-daemon
+          ./android/gradlew -p android assembleRelease --no-daemon
       - name: Install Maestro CLI
         run: curl -fsSL "https://get.maestro.mobile.dev" | bash
       - name: Run critical journeys
@@ -69,7 +69,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
-            adb install -r "examples/${{ matrix.shell }}/android/app/build/outputs/apk/debug/app-debug.apk"
+            adb install -r "examples/${{ matrix.shell }}/android/app/build/outputs/apk/release/app-release.apk"
             "$HOME/.maestro/bin/maestro" test ${{ matrix.flow }}
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -143,7 +143,7 @@ jobs:
             -workspace "$workspace" \
             -scheme "$scheme" \
             -sdk iphonesimulator \
-            -configuration Debug \
+            -configuration Release \
             -destination "platform=iOS Simulator,id=$DEVICE_ID" \
             -derivedDataPath "$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data" \
             CODE_SIGNING_ALLOWED=NO \
@@ -154,7 +154,7 @@ jobs:
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
         run: |
-          products="$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data/Build/Products/Debug-iphonesimulator"
+          products="$RUNNER_TEMP/pocketshot-${{ matrix.shell }}-derived-data/Build/Products/Release-iphonesimulator"
           app=$(find "$products" -maxdepth 1 -type d -name '*.app' -print -quit)
           test -n "$app"
           echo "Installing $app on simulator $DEVICE_ID"
@@ -170,6 +170,4 @@ jobs:
         if: always() && steps.simulator.outputs.id
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
-        run: |
-          xcrun simctl shutdown "$DEVICE_ID" || true
-          xcrun simctl delete "$DEVICE_ID" || true
+        run: xcrun simctl delete "$DEVICE_ID" || true

@@ -49,11 +49,30 @@ personal data.
 - Dependency review runs at high severity in CI. Medium findings require an
   owner and written release decision; critical/high findings block release.
 
+## Native dependency review
+
+| Surface                         | Release control                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Expo and React Native           | pinned to the tested Expo 57 compatibility line; `doctor` rejects an incompatible app dependency graph   |
+| Expo native modules             | optional peers resolve only when called; generated native apps prove CocoaPods and Gradle integration     |
+| iOS CocoaPods                   | generated from the clean consumer lockfile and compiled as the application scheme, not an arbitrary pod  |
+| Android Gradle dependencies     | generated from the clean consumer lockfile and compiled on the current supported Android toolchain        |
+| JavaScript production graph     | high/critical `npm audit` findings block CI                                                               |
+| Release inventory and integrity | a CycloneDX production SBOM is retained as an artifact; registry publication uses trusted provenance      |
+| Store/runtime credentials       | injected by EAS/store secret facilities; never placed in source, app config, SBOM, logs, or public env    |
+
+Changing Expo/React Native compatibility lines, adding a native module, or
+changing a plugin requires a clean iOS application build, Android application
+build, production audit, regenerated SBOM, permission/privacy review, and
+critical-path device run before the release candidate can be approved.
+
 ## Release evidence
 
 `npm run check:security` scans tracked runtime/configuration sources and built
 artifacts for private keys, credential-shaped assignments, cleartext production
-URLs, and required threat-model controls. CI also runs the production dependency
-audit. Device review must still verify OS backup behavior, screenshots/app
-switcher privacy, clipboard handling, notification previews, and platform
-privacy manifests.
+URLs, required threat-model controls, dependency audit, SBOM, and provenance
+configuration. CI generates and validates the production CycloneDX SBOM. Native
+CI compiles generated iOS and Android application targets from a packed
+PocketShot consumer. Device review must still verify OS backup behavior,
+screenshots/app switcher privacy, clipboard handling, notification previews, and
+platform privacy manifests.

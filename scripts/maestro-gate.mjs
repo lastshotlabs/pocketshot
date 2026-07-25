@@ -72,6 +72,15 @@ if (!workflow.includes('scheme=$(basename "$workspace" .xcworkspace)')) {
 if (!nativeWorkflow.includes('scheme=$(basename "$workspace" .xcworkspace)')) {
   failures.push('native smoke workflow does not select the application workspace scheme')
 }
+for (const releaseBuild of [
+  'assembleRelease --no-daemon',
+  '-configuration Release',
+  'Build/Products/Release-iphonesimulator',
+]) {
+  if (!workflow.includes(releaseBuild)) {
+    failures.push(`device workflow is not self-contained: missing ${releaseBuild}`)
+  }
+}
 
 if (failures.length) {
   console.error(`Maestro gate failed:\n- ${failures.join('\n- ')}`)
