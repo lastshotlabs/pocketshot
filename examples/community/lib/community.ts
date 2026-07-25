@@ -41,6 +41,9 @@ export interface CommunityReply {
   threadId: string
   body: string
   author: string
+  parentId: string | null
+  reactions: number
+  deleted: boolean
 }
 
 export interface CommunityMessage {
@@ -80,6 +83,7 @@ export interface CommunityState {
   selectedThreadId: string | null
   draftTitle: string
   searchResults: string[]
+  savedThreadIds: string[]
   unread: number
   notifications: { id: string; text: string; read: boolean; targetId: string | null }[]
   messages: CommunityMessage[]
@@ -134,6 +138,7 @@ const initial: CommunityState = {
   selectedThreadId: null,
   draftTitle: '',
   searchResults: [],
+  savedThreadIds: [],
   unread: 0,
   notifications: [],
   messages: [],
@@ -417,14 +422,85 @@ export class CommunityDemoController {
     this.emit()
   }
 
-  reply(body: string): void {
+  reply(body: string, parentId: string | null = null): void {
     const threadId = this.stateValue.selectedThreadId
     if (!threadId || !body.trim()) return
+    if (
+      parentId &&
+      !this.stateValue.replies.some(
+        (reply) => reply.id === parentId && reply.threadId === threadId && !reply.deleted,
+      )
+    ) {
+      throw new Error('Nested reply parent must belong to the selected thread')
+    }
     this.replyId += 1
     this.event({
       kind: 'reply',
-      reply: { id: `reply-${this.replyId}`, threadId, body, author: 'Alex' },
+      reply: {
+        id: `reply-${this.replyId}`,
+        threadId,
+        body,
+        author: 'Alex',
+        parentId,
+        reactions: 0,
+        deleted: false,
+      },
     })
+  }
+
+  editSelectedThread(title: string, body: string): void {
+    const id = this.stateValue.selectedThreadId
+    if (!id || !title.trim() || !body.trim()) return
+    this.stateValue.threads = this.stateValue.threads.map((thread) =>
+      thread.id === id ? { ...thread, title: title.trim(), body: body.trim() } : thread,
+    )
+    this.emit()
+  }
+
+  deleteSelectedThread(): void {
+    const id = this.stateValue.selectedThreadId
+    if (!id) return
+    this.stateValue.threads = this.stateValue.threads.filter((thread) => thread.id !== id)
+    this.stateValue.replies = this.stateValue.replies.filter((reply) => reply.threadId !== id)
+    this.stateValue.savedThreadIds = this.stateValue.savedThreadIds.filter(
+      (threadId) => threadId !== id,
+    )
+    this.stateValue.selectedThreadId = null
+    this.stateValue.view = 'feed'
+    this.emit()
+  }
+
+  editReply(id: string, body: string): void {
+    if (!body.trim()) return
+    this.stateValue.replies = this.stateValue.replies.map((reply) =>
+      reply.id === id && !reply.deleted ? { ...reply, body: body.trim() } : reply,
+    )
+    this.emit()
+  }
+
+  deleteReply(id: string): void {
+    this.stateValue.replies = this.stateValue.replies.map((reply) =>
+      reply.id === id ? { ...reply, body: '', deleted: true } : reply,
+    )
+    this.emit()
+  }
+
+  reactToReply(id: string): void {
+    const key = `reply:${id}`
+    if (this.reacted.has(key)) return
+    this.reacted.add(key)
+    this.stateValue.replies = this.stateValue.replies.map((reply) =>
+      reply.id === id && !reply.deleted ? { ...reply, reactions: reply.reactions + 1 } : reply,
+    )
+    this.emit()
+  }
+
+  setSaved(threadId: string, saved: boolean): void {
+    const values = new Set(this.stateValue.savedThreadIds)
+    if (saved) values.add(threadId)
+    else values.delete(threadId)
+    this.stateValue.savedThreadIds = [...values].sort()
+    this.emit()
   }
 
   react(threadId: string): void {
@@ -436,13 +512,27 @@ export class CommunityDemoController {
   search(query: string): void {
     const normalized = query.trim().toLowerCase()
     this.stateValue.searchResults = normalized
-      ? this.stateValue.threads
-          .filter(
-            (thread) =>
-              thread.title.toLowerCase().includes(normalized) ||
-              thread.body.toLowerCase().includes(normalized),
-          )
-          .map((thread) => thread.id)
+      ? [
+          ...this.stateValue.threads
+            .filter(
+              (thread) =>
+                thread.title.toLowerCase().includes(normalized) ||
+                thread.body.toLowerCase().includes(normalized) ||
+                thread.author.toLowerCase().includes(normalized),
+            )
+            .map((thread) => thread.id),
+          ...this.stateValue.replies
+            .filter(
+              (reply) =>
+                !reply.deleted &&
+                (reply.body.toLowerCase().includes(normalized) ||
+                  reply.author.toLowerCase().includes(normalized)),
+            )
+            .map((reply) => `reply:${reply.id}`),
+          ...['Trail Talk', 'Alex', 'Morgan']
+            .filter((value) => value.toLowerCase().includes(normalized))
+            .map((value) => `directory:${value}`),
+        ]
       : []
     this.emit()
   }

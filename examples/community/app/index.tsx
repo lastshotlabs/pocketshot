@@ -106,6 +106,16 @@ export default function CommunityShell() {
               label="Test reconnect"
               onPress={() => community.reconnect()}
             />
+            <Action
+              testID="search-community"
+              label="Search threads, replies, people, and communities"
+              onPress={() => community.search('trail')}
+            />
+            {state.searchResults.map((result) => (
+              <Text key={result} style={styles.copy}>
+                Search result · {result}
+              </Text>
+            ))}
           </Card>
         )}
         {state.view === 'compose' && (
@@ -150,9 +160,39 @@ export default function CommunityShell() {
             {state.replies
               .filter((reply) => reply.threadId === selected.id)
               .map((reply) => (
-                <Text key={reply.id} style={styles.reply}>
-                  {reply.author}: {reply.body}
-                </Text>
+                <View
+                  key={reply.id}
+                  style={[styles.replyBlock, reply.parentId ? styles.nestedReply : undefined]}
+                >
+                  <Text style={styles.reply}>
+                    {reply.deleted ? 'Deleted reply' : `${reply.author}: ${reply.body}`} ·{' '}
+                    {reply.reactions} reactions
+                  </Text>
+                  {!reply.deleted && (
+                    <>
+                      <Action
+                        testID={`nested-reply-${reply.id}`}
+                        label={`Reply to ${reply.author}`}
+                        onPress={() => community.reply('Nested follow-up', reply.id)}
+                      />
+                      <Action
+                        testID={`edit-reply-${reply.id}`}
+                        label="Edit reply"
+                        onPress={() => community.editReply(reply.id, 'Edited reply')}
+                      />
+                      <Action
+                        testID={`react-reply-${reply.id}`}
+                        label="React to reply"
+                        onPress={() => community.reactToReply(reply.id)}
+                      />
+                      <Action
+                        testID={`delete-reply-${reply.id}`}
+                        label="Delete reply"
+                        onPress={() => community.deleteReply(reply.id)}
+                      />
+                    </>
+                  )}
+                </View>
               ))}
             <Action
               testID="reply"
@@ -160,6 +200,27 @@ export default function CommunityShell() {
               onPress={() => community.reply('Try River Loop.')}
             />
             <Action testID="react" label="React" onPress={() => community.react(selected.id)} />
+            <Action
+              testID="save-thread"
+              label={
+                state.savedThreadIds.includes(selected.id) ? 'Remove saved thread' : 'Save thread'
+              }
+              onPress={() =>
+                community.setSaved(selected.id, !state.savedThreadIds.includes(selected.id))
+              }
+            />
+            <Action
+              testID="edit-thread"
+              label="Edit thread"
+              onPress={() => community.editSelectedThread('Edited trail question', selected.body)}
+            />
+            {selected.author === 'Alex' && (
+              <Action
+                testID="delete-thread"
+                label="Delete thread"
+                onPress={() => community.deleteSelectedThread()}
+              />
+            )}
             <Action
               testID="report"
               label="Report"
@@ -400,6 +461,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   reply: { padding: 10, borderLeftWidth: 3, borderLeftColor: '#22c55e', color: '#374151' },
+  replyBlock: { gap: 8 },
+  nestedReply: { marginLeft: 20 },
   button: {
     minHeight: 48,
     borderRadius: 12,

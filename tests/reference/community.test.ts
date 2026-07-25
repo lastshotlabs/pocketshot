@@ -83,6 +83,55 @@ describe('Community reference shell', () => {
     expect(community.state.threads[0]).toMatchObject({ replyCount: 1, reactions: 1 })
   })
 
+  it('composes nested replies, reply edits/deletes/reactions, saves, and thread edits', async () => {
+    const community = new CommunityDemoController()
+    await community.updateDraft('Question', 'Body')
+    await community.publishDraft()
+    const threadId = community.state.threads[0].id
+    community.reply('Parent')
+    const parentId = community.state.replies[0].id
+    community.reply('Child', parentId)
+    const childId = community.state.replies[1].id
+    community.editReply(childId, 'Edited child')
+    community.reactToReply(childId)
+    community.reactToReply(childId)
+    community.setSaved(threadId, true)
+    community.editSelectedThread('Edited question', 'Edited body')
+    expect(community.state.savedThreadIds).toEqual([threadId])
+    expect(community.state.threads[0]).toMatchObject({
+      title: 'Edited question',
+      replyCount: 2,
+    })
+    expect(community.state.replies).toEqual([
+      expect.objectContaining({ id: parentId, parentId: null }),
+      expect.objectContaining({
+        id: childId,
+        parentId,
+        body: 'Edited child',
+        reactions: 1,
+      }),
+    ])
+    community.deleteReply(parentId)
+    expect(community.state.replies[0]).toMatchObject({ deleted: true, body: '' })
+  })
+
+  it('deletes an authored thread and its replies and saved state', async () => {
+    const community = new CommunityDemoController()
+    await community.updateDraft('Question', 'Body')
+    await community.publishDraft()
+    const threadId = community.state.threads[0].id
+    community.reply('Answer')
+    community.setSaved(threadId, true)
+    community.deleteSelectedThread()
+    expect(community.state).toMatchObject({
+      view: 'feed',
+      selectedThreadId: null,
+      savedThreadIds: [],
+      replies: [],
+    })
+    expect(community.state.threads.some((thread) => thread.id === threadId)).toBe(false)
+  })
+
   it('searches threads and reconciles unread notifications', async () => {
     const community = new CommunityDemoController()
     await community.updateDraft('Rainy route', 'Try this in wet weather')
@@ -94,6 +143,20 @@ describe('Community reference shell', () => {
     community.readAll()
     expect(community.state.unread).toBe(0)
     expect(community.state.notifications[0].read).toBe(true)
+  })
+
+  it('searches reply, user, and community directory content', async () => {
+    const community = new CommunityDemoController()
+    community.openThread('thread-welcome')
+    community.reply('Morgan recommends the ridge')
+    community.search('morgan')
+    expect(community.state.searchResults).toEqual(
+      expect.arrayContaining(['reply:reply-1', 'directory:Morgan']),
+    )
+    community.search('trail')
+    expect(community.state.searchResults).toEqual(
+      expect.arrayContaining(['thread-welcome', 'directory:Trail Talk']),
+    )
   })
 
   it('publishes attachments, mentions, and a single-vote poll', async () => {
