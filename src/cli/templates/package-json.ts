@@ -5,6 +5,7 @@ export function packageJsonTemplate(config: PocketshotScaffoldConfig): string {
     '@lastshotlabs/pocketshot': 'latest',
     '@tanstack/react-query': '^5.0.0',
     expo: '55',
+    'expo-dev-client': '~55.0.10',
     'expo-linking': '~55.0.7',
     'expo-router': '~55.0.6',
     'expo-secure-store': '~55.0.9',

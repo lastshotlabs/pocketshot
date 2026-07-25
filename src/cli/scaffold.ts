@@ -5,6 +5,7 @@ import type { PocketshotScaffoldConfig } from './types'
 import { exec } from './utils'
 import { packageJsonTemplate } from './templates/package-json'
 import { appJsonTemplate } from './templates/app-json'
+import { easJsonTemplate } from './templates/eas-json'
 import { tsconfigTemplate } from './templates/tsconfig'
 import { envTemplate } from './templates/env'
 import { pocketshotConfigTemplate } from './templates/pocketshot-config'
@@ -53,6 +54,7 @@ export async function scaffold(config: PocketshotScaffoldConfig): Promise<void> 
   // Config files
   await write('package.json', packageJsonTemplate(config))
   await write('app.json', appJsonTemplate(config))
+  await write('eas.json', easJsonTemplate())
   await write('tsconfig.json', tsconfigTemplate())
   await write('.env.example', envTemplate(config))
   await write('.gitignore', GITIGNORE_CONTENT)

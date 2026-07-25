@@ -69,6 +69,7 @@ describe('scaffold', () => {
   const expectedFiles = [
     'package.json',
     'app.json',
+    'eas.json',
     'tsconfig.json',
     '.env.example',
     '.gitignore',
@@ -139,6 +140,14 @@ describe('scaffold', () => {
     const app = JSON.parse(readFileSync(join(dir, 'app.json'), 'utf8'))
     expect(app.expo.ios.bundleIdentifier).toBe('com.example.testapp')
     expect(app.expo.android.package).toBe('com.example.testapp')
+  })
+
+  it('eas.json has development, preview, and production profiles', () => {
+    const eas = JSON.parse(readFileSync(join(dir, 'eas.json'), 'utf8'))
+    expect(eas.build.development.developmentClient).toBe(true)
+    expect(eas.build.preview.distribution).toBe('internal')
+    expect(eas.build.production.autoIncrement).toBe(true)
+    expect(eas.submit.production).toEqual({})
   })
 
   it('pocketshot.config.json has pocketshotImport field', () => {

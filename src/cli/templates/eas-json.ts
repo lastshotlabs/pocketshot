@@ -1,0 +1,30 @@
+export function easJsonTemplate(): string {
+  return JSON.stringify(
+    {
+      cli: {
+        version: '>= 16.0.0',
+        appVersionSource: 'remote',
+      },
+      build: {
+        development: {
+          developmentClient: true,
+          distribution: 'internal',
+          channel: 'development',
+        },
+        preview: {
+          distribution: 'internal',
+          channel: 'preview',
+        },
+        production: {
+          autoIncrement: true,
+          channel: 'production',
+        },
+      },
+      submit: {
+        production: {},
+      },
+    },
+    null,
+    2,
+  )
+}
