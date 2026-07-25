@@ -95,6 +95,7 @@ import {
   createMemoryMediaStorage,
   type MediaAsset,
 } from '@lastshotlabs/pocketshot/media'
+import { AiConversationController, createMemoryAiStorage } from '@lastshotlabs/pocketshot/ai'
 import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
@@ -151,6 +152,21 @@ const media = new MediaPipelineController({
   storage: createMemoryMediaStorage(),
 })
 void media
+const ai = new AiConversationController({
+  storage: createMemoryAiStorage(),
+  transport: {
+    createAttempt: async () => ({
+      attemptId: 'attempt',
+      userMessageId: 'user',
+      assistantMessageId: 'assistant',
+    }),
+    stream: async function* () {
+      yield { type: 'complete' as const, sequence: 1, attemptId: 'attempt' }
+    },
+    cancel: async () => undefined,
+  },
+})
+void ai
 
 export const Consumer = () => <ButtonBase {...button} />
 `,

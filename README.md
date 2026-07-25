@@ -239,6 +239,20 @@ const item = await media.acquire('camera')
 if (item) await media.run(item.id)
 ```
 
+### Streaming AI conversations
+
+`@lastshotlabs/pocketshot/ai` provides durable conversation history and a strict,
+resumable streaming-turn controller. It applies ordered text deltas, structured
+parts, citations, usage state, and action proposals; suppresses replayed events;
+supports stop/retry/resume; and keeps conversation rename/archive/delete and
+paginated history independent from UI.
+
+Actions default to explicit review. Applications provide an action adapter and
+call `confirmAction`, `rejectAction`, or `undoAction`; every proposal carries the
+attempt, conversation, and message provenance needed for server-side
+idempotency and auditing. Automatic commit is available only when
+`reviewPolicy: 'auto'` is explicitly configured.
+
 ### Reliable realtime channels
 
 Import the headless API from `@lastshotlabs/pocketshot/realtime`. Each channel

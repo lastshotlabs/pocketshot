@@ -50,6 +50,7 @@ export default defineConfig([
       drafts: 'src/drafts/index.ts',
       testing: 'src/testing/index.ts',
       media: 'src/media/index.ts',
+      ai: 'src/ai/index.ts',
     },
     format: ['esm', 'cjs'],
     external: peerDeps,

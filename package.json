@@ -56,6 +56,11 @@
       "types": "./dist/types/media/index.d.ts",
       "import": "./dist/media.js",
       "require": "./dist/media.cjs"
+    },
+    "./ai": {
+      "types": "./dist/types/ai/index.d.ts",
+      "import": "./dist/ai.js",
+      "require": "./dist/ai.cjs"
     }
   },
   "scripts": {
