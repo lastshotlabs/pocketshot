@@ -19,6 +19,7 @@ export type BlankSlatePhase =
   | 'reveal'
   | 'vote'
   | 'summary'
+  | 'sudden-death'
   | 'results'
 
 export interface SlatePlayer {
@@ -41,12 +42,20 @@ export interface BlankSlateState {
   groups: SlateGroup[]
   round: number
   targetScore: number
+  winMode: 'target-score' | 'fixed-rounds'
+  fixedRounds: number
+  paused: boolean
   winnerIds: string[]
   notice: string | null
   ended: boolean
 }
 
-type BlankSlateRules = { targetScore: number; writeMs: number }
+type BlankSlateRules = {
+  targetScore: number
+  writeMs: number
+  winMode: 'target-score' | 'fixed-rounds'
+  fixedRounds: number
+}
 
 export interface BlankSlateSnapshot {
   state: BlankSlateState
@@ -76,6 +85,9 @@ export class BlankSlateController {
     groups: [],
     round: 0,
     targetScore: 12,
+    winMode: 'target-score',
+    fixedRounds: 5,
+    paused: false,
     winnerIds: [],
     notice: null,
     ended: false,
@@ -86,7 +98,7 @@ export class BlankSlateController {
   constructor(snapshot?: BlankSlateSnapshot) {
     this.value = structuredClone(snapshot?.state ?? this.initialState)
     this.session = new PartySessionController(
-      { targetScore: 12, writeMs: 30_000 },
+      { targetScore: 12, writeMs: 30_000, winMode: 'target-score', fixedRounds: 5 },
       snapshot?.session,
     )
     this.submissions = new PrivateSubmissionController(5_000, Date.now, snapshot?.submissions)
@@ -156,6 +168,11 @@ export class BlankSlateController {
   }
 
   startRound(): void {
+    this.session.applyStagedRules()
+    const rules = this.session.snapshot.rules
+    this.value.targetScore = rules.targetScore
+    this.value.winMode = rules.winMode
+    this.value.fixedRounds = rules.fixedRounds
     this.value.round += 1
     this.value.phase = 'write'
     this.value.submittedIds = []
@@ -288,11 +305,19 @@ export class BlankSlateController {
       for (const playerId of group.playerIds) this.player(playerId).score += points
     }
     const highest = Math.max(...this.value.players.map((player) => player.score))
-    if (highest >= this.value.targetScore) {
+    const leaders = this.value.players.filter((player) => player.score === highest)
+    const terminal =
+      this.value.winMode === 'target-score'
+        ? highest >= this.value.targetScore
+        : this.value.round >= this.value.fixedRounds
+    if (terminal && leaders.length === 1) {
       this.value.winnerIds = this.value.players
         .filter((player) => player.score === highest)
         .map((player) => player.id)
       this.value.phase = 'results'
+    } else if (terminal) {
+      this.value.phase = 'sudden-death'
+      this.value.notice = 'Tie game — sudden death round'
     } else {
       this.value.phase = 'summary'
     }
@@ -306,6 +331,7 @@ export class BlankSlateController {
     this.value.players = this.value.players.map((player) => ({ ...player, score: 0 }))
     this.value.winnerIds = []
     this.value.ended = false
+    this.value.paused = false
     this.value.phase = 'lobby'
     this.emit()
     return true
@@ -330,9 +356,56 @@ export class BlankSlateController {
     this.prompts.publish('starter')
   }
 
-  stageWinRules(patch: Partial<{ targetScore: number; writeMs: number }>): void {
+  stageWinRules(
+    patch: Partial<{
+      targetScore: number
+      writeMs: number
+      winMode: 'target-score' | 'fixed-rounds'
+      fixedRounds: number
+    }>,
+  ): void {
     this.session.stageRules('p1', patch)
     this.value.notice = 'Win rules staged for the next round or rematch'
+    this.emit()
+  }
+
+  pause(): void {
+    this.session.pause(this.session.snapshot.hostId ?? 'p1')
+    this.timer.pause()
+    this.value.paused = true
+    this.emit()
+  }
+
+  resume(): void {
+    this.session.resume(this.session.snapshot.hostId ?? 'p1')
+    this.timer.resume()
+    this.value.paused = false
+    this.emit()
+  }
+
+  recoverHost(): string {
+    const current = this.session.snapshot.hostId
+    if (current) this.session.setConnected(current, false)
+    const next = this.session.recoverHost()
+    this.value.notice = `${this.player(next).name} recovered host controls`
+    this.emit()
+    return next
+  }
+
+  handoffSeat(fromId: string, toId: string): void {
+    this.session.handoffSeat(fromId, toId)
+    this.value.notice = `${this.player(toId).name} claimed the seat`
+    this.emit()
+  }
+
+  blockPlayer(playerId: string): void {
+    this.session.block(this.session.snapshot.hostId ?? 'p1', playerId)
+    this.value.players = this.value.players.filter((player) => player.id !== playerId)
+    this.emit()
+  }
+
+  unblockPlayer(playerId: string): void {
+    this.session.unblock(this.session.snapshot.hostId ?? 'p1', playerId)
     this.emit()
   }
 

@@ -81,6 +81,28 @@ describe('Blank Slate native acceptance model', () => {
     expect(game.state).toMatchObject({ phase: 'lobby', ended: false, targetScore: 20 })
   })
 
+  it('runs fixed-round sudden death and host recovery lifecycle', () => {
+    const game = new BlankSlateController()
+    game.enter()
+    game.stageWinRules({ winMode: 'fixed-rounds', fixedRounds: 1 })
+    game.startRound()
+    game.submit('p1', 'same', 'one')
+    game.submit('p2', 'same', 'two')
+    game.submit('p3', 'unique', 'three')
+    game.reveal()
+    game.scoreRound()
+    expect(game.state).toMatchObject({
+      winMode: 'fixed-rounds',
+      fixedRounds: 1,
+      phase: 'sudden-death',
+    })
+    expect(game.recoverHost()).toBe('p2')
+    game.pause()
+    expect(game.state.paused).toBe(true)
+    game.resume()
+    expect(game.state.paused).toBe(false)
+  })
+
   it('restores private drafts and ballots without projection leakage after process death', () => {
     const game = new BlankSlateController()
     submittedRound(game)
