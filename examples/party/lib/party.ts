@@ -68,6 +68,7 @@ export interface PartyState {
   ended: boolean
   endConfirmationPending: boolean
   activityCount: number
+  deckExport: string | null
 }
 
 type Event =
@@ -120,6 +121,7 @@ const initial: PartyState = {
   ended: false,
   endConfirmationPending: false,
   activityCount: 0,
+  deckExport: null,
 }
 
 export class PartyDemoController {
@@ -182,6 +184,29 @@ export class PartyDemoController {
     this.deckLibrary.submit('friday-mix')
     this.deckLibrary.approve('friday-mix')
     this.deckLibrary.publish('friday-mix', at)
+    this.emit()
+  }
+
+  rateDeck(rating: number): void {
+    this.deckLibrary.rate('friday-mix', 'guest-1', rating)
+    this.deckLibrary.setFeatured('friday-mix', true)
+    this.emit()
+  }
+
+  exportDeck(format: 'json' | 'csv'): string {
+    const value = this.deckLibrary.exportData('friday-mix', format)
+    this.stateValue.deckExport = `${format.toUpperCase()} · ${value.length} bytes`
+    this.emit()
+    return value
+  }
+
+  archiveDeck(): void {
+    this.deckLibrary.archive('friday-mix')
+    this.emit()
+  }
+
+  deckCatalog() {
+    return this.deckLibrary.discover({ sort: 'rating' })
   }
 
   deckHealth() {

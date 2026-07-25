@@ -194,6 +194,40 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
             {controller.deckHealth().playable} playable · {controller.providerCapabilities().length}{' '}
             connected providers
           </Text>
+          <Text style={styles.copy}>
+            Versions: {controller.deckLibrary.history('friday-mix').length} ·{' '}
+            {party.deckExport ?? 'Not exported'}
+          </Text>
+          {controller.deckHealth().isPublishable &&
+            controller.deckLibrary.snapshot[0]?.status === 'draft' && (
+              <Action
+                testID="publish-deck"
+                label="Submit, approve, and publish"
+                onPress={() => controller.publishDeck('2026-07-25T12:00:00.000Z')}
+              />
+            )}
+          {controller.deckLibrary.snapshot[0]?.status === 'published' && (
+            <>
+              <Action
+                testID="rate-deck"
+                label="Rate deck five stars"
+                onPress={() => controller.rateDeck(5)}
+              />
+              <Action
+                testID="export-deck-json"
+                label="Export deck JSON"
+                onPress={() => controller.exportDeck('json')}
+              />
+              <Action
+                testID="export-deck-csv"
+                label="Export deck CSV"
+                onPress={() => controller.exportDeck('csv')}
+              />
+              <Text style={styles.copy}>
+                Rating: {controller.deckCatalog()[0]?.averageRating ?? 'unrated'}
+              </Text>
+            </>
+          )}
           <Action
             testID="back-to-lobby"
             label="Back to lobby"

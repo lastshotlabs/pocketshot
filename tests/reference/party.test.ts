@@ -196,6 +196,15 @@ describe('Party clean-room acceptance model', () => {
     expect(renders).toBe(2)
     party.publishDeck('2026-07-25T00:00:00Z')
     expect(party.deckLibrary.snapshot[0].status).toBe('published')
+    party.rateDeck(5)
+    expect(party.deckCatalog()[0]).toMatchObject({
+      featured: true,
+      averageRating: 5,
+      ratingCount: 1,
+    })
+    expect(party.exportDeck('json')).toContain('Blue Monday')
+    expect(party.exportDeck('csv')).toContain('New Order')
+    expect(party.state.deckExport).toMatch(/^CSV/)
   })
 
   it('reports provider capabilities, authorizes Spotify, and falls back to Audius previews', async () => {
