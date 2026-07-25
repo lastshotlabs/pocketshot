@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import process from 'node:process'
 
 const dist = new URL('../dist/', import.meta.url)
+const packageRoot = new URL('../', import.meta.url)
 
 const budgets = {
   'dist/index.js': 160 * 1024,
@@ -62,10 +63,15 @@ for (const target of [
     continue
   }
   try {
-    await stat(new URL(`..${target.slice(1)}`, import.meta.url))
+    await stat(new URL(target.replace(/^\.\//, ''), packageRoot))
   } catch {
     failures.push(`package target does not exist: ${target}`)
   }
+}
+
+const cliMode = (await stat(new URL('../dist/cli.cjs', import.meta.url))).mode
+if ((cliMode & 0o111) === 0) {
+  failures.push('dist/cli.cjs is not executable; npm will remove the package bin entry')
 }
 
 if (failures.length) {

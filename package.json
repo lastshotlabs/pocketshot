@@ -1,6 +1,14 @@
 {
   "name": "@lastshotlabs/pocketshot",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lastshotlabs/pocketshot.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
   "files": [
     "dist",
     "LICENSE",
@@ -8,7 +16,7 @@
   ],
   "type": "module",
   "bin": {
-    "pocketshot": "./dist/cli.cjs"
+    "pocketshot": "dist/cli.cjs"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -26,7 +34,7 @@
     }
   },
   "scripts": {
-    "build": "node scripts/clean-dist.mjs && NODE_OPTIONS=--max-old-space-size=8192 tsup && tsc -p tsconfig.build.json && npm run check:package",
+    "build": "node scripts/clean-dist.mjs && NODE_OPTIONS=--max-old-space-size=8192 tsup && node scripts/finalize-package.mjs && tsc -p tsconfig.build.json && npm run check:package",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
