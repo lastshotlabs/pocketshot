@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import { useKeepAwake } from 'expo-keep-awake'
 import { BurndownController, type BurndownState } from '../lib/burndown'
 
 export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: string } = {}) {
@@ -15,6 +16,7 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
 
   return (
     <SafeAreaView style={styles.screen}>
+      {controller.sharedState.wakeLock && <ActiveTableWakeLock />}
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={styles.content}>
         <Text accessibilityRole="header" style={styles.brand}>
@@ -263,6 +265,11 @@ export default function BurndownApp({ initialJoinCode }: { initialJoinCode?: str
       </ScrollView>
     </SafeAreaView>
   )
+}
+
+function ActiveTableWakeLock() {
+  useKeepAwake('burndown-shared-table')
+  return null
 }
 
 function Card({
