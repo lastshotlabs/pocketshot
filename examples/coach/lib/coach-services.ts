@@ -1,1 +1,1 @@
-export * from '../../../products/aicoach/lib/coach-services'
+export * from '@lastshotlabs/aicoach-mobile/services'

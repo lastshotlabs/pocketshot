@@ -1,1 +1,1 @@
-export * from '../../../products/sgforum/lib/community'
+export * from '@lastshotlabs/sgforum-mobile/lib'

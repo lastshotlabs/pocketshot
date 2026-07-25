@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@lastshotlabs/pocketshot": "0.1.2",
+    "@lastshotlabs/burndown-mobile": "file:../../products/burndown",
     "expo": "~57.0.8",
     "expo-keep-awake": "~57.0.1",
     "expo-linking": "~57.0.4",

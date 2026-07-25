@@ -1,1 +1,1 @@
-export * from '../../../products/hitshot/app/+native-intent'
+export * from '@lastshotlabs/hitshot-mobile/native-intent'

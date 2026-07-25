@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@lastshotlabs/pocketshot": "0.1.2",
+    "@lastshotlabs/aicoach-mobile": "file:../../products/aicoach",
     "expo": "~57.0.8",
     "expo-image-picker": "~57.0.6",
     "expo-linking": "~57.0.4",

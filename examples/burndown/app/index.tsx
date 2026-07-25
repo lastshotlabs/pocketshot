@@ -1,1 +1,1 @@
-export { default } from '../../../products/burndown/app'
+export { default } from '@lastshotlabs/burndown-mobile/app'

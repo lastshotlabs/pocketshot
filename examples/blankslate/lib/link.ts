@@ -1,1 +1,1 @@
-export * from '../../../products/blankslate/lib/link'
+export * from '@lastshotlabs/blankslate-mobile/link'

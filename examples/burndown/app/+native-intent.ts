@@ -1,1 +1,1 @@
-export * from '../../../products/burndown/app/+native-intent'
+export * from '@lastshotlabs/burndown-mobile/native-intent'

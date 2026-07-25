@@ -1,1 +1,1 @@
-export { default } from '../../../../products/hitshot/app/join/[code]'
+export { default } from '@lastshotlabs/hitshot-mobile/join-route'

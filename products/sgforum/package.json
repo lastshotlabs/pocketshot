@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
+  "exports": {
+    "./app": "./app/index.tsx",
+    "./lib": "./lib/community.ts"
+  },
   "scripts": {
     "start": "expo start",
     "typecheck": "tsc --noEmit",

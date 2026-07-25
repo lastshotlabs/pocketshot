@@ -28,7 +28,16 @@
       "@lastshotlabs/pocketshot/community": ["./src/community/index.ts"],
       "@lastshotlabs/pocketshot/drafts": ["./src/drafts/index.ts"],
       "@lastshotlabs/pocketshot/media": ["./src/media/index.ts"],
-      "@lastshotlabs/pocketshot/realtime": ["./src/realtime/index.ts"]
+      "@lastshotlabs/pocketshot/realtime": ["./src/realtime/index.ts"],
+      "@lastshotlabs/hitshot-mobile/lib": ["./products/hitshot/lib/party.ts"],
+      "@lastshotlabs/hitshot-mobile/link": ["./products/hitshot/lib/party-link.ts"],
+      "@lastshotlabs/aicoach-mobile/lib": ["./products/aicoach/lib/coach.ts"],
+      "@lastshotlabs/aicoach-mobile/services": ["./products/aicoach/lib/coach-services.ts"],
+      "@lastshotlabs/sgforum-mobile/lib": ["./products/sgforum/lib/community.ts"],
+      "@lastshotlabs/burndown-mobile/lib": ["./products/burndown/lib/burndown.ts"],
+      "@lastshotlabs/burndown-mobile/link": ["./products/burndown/lib/link.ts"],
+      "@lastshotlabs/blankslate-mobile/lib": ["./products/blankslate/lib/blankslate.ts"],
+      "@lastshotlabs/blankslate-mobile/link": ["./products/blankslate/lib/link.ts"]
     }
   },
   "include": ["src", "tests"]

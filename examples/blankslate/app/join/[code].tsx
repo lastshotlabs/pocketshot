@@ -1,1 +1,1 @@
-export { default } from '../../../../products/blankslate/app/join/[code]'
+export { default } from '@lastshotlabs/blankslate-mobile/join-route'

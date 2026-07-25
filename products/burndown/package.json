@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
+  "exports": {
+    "./app": "./app/index.tsx",
+    "./native-intent": "./app/+native-intent.ts",
+    "./join-route": "./app/join/[code].tsx",
+    "./lib": "./lib/burndown.ts",
+    "./link": "./lib/link.ts"
+  },
   "scripts": {
     "start": "expo start",
     "typecheck": "tsc --noEmit",

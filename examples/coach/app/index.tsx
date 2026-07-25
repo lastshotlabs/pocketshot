@@ -1,1 +1,1 @@
-export { default } from '../../../products/aicoach/app'
+export { default } from '@lastshotlabs/aicoach-mobile/app'

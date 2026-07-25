@@ -1,1 +1,1 @@
-export * from '../../../products/blankslate/app/+native-intent'
+export * from '@lastshotlabs/blankslate-mobile/native-intent'

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@lastshotlabs/pocketshot": "0.1.2",
+    "@lastshotlabs/hitshot-mobile": "file:../../products/hitshot",
     "expo": "~57.0.8",
     "expo-audio": "~57.0.3",
     "expo-linking": "~57.0.4",

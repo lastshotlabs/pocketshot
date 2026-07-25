@@ -1,1 +1,1 @@
-export * from '../../../products/hitshot/lib/party'
+export * from '@lastshotlabs/hitshot-mobile/lib'

@@ -1,1 +1,1 @@
-export * from '../../../products/burndown/lib/link'
+export * from '@lastshotlabs/burndown-mobile/link'

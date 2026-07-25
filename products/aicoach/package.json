@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
+  "exports": {
+    "./app": "./app/index.tsx",
+    "./lib": "./lib/coach.ts",
+    "./services": "./lib/coach-services.ts"
+  },
   "scripts": {
     "start": "expo start",
     "typecheck": "tsc --noEmit",

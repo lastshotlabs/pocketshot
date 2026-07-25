@@ -1,1 +1,1 @@
-export { default } from '../../../products/blankslate/app'
+export { default } from '@lastshotlabs/blankslate-mobile/app'

@@ -1,1 +1,1 @@
-export { default } from '../../../../products/burndown/app/join/[code]'
+export { default } from '@lastshotlabs/burndown-mobile/join-route'

@@ -1,1 +1,1 @@
-export { default } from '../../../products/sgforum/app'
+export { default } from '@lastshotlabs/sgforum-mobile/app'

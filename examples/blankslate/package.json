@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@lastshotlabs/pocketshot": "0.1.2",
+    "@lastshotlabs/blankslate-mobile": "file:../../products/blankslate",
     "expo": "~57.0.8",
     "expo-linking": "~57.0.4",
     "expo-router": "~57.0.8",

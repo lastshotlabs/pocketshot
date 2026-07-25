@@ -18,6 +18,27 @@ const packageSourceAliases = {
   '@lastshotlabs/pocketshot/drafts': path.resolve(__dirname, 'src/drafts/index.ts'),
   '@lastshotlabs/pocketshot/media': path.resolve(__dirname, 'src/media/index.ts'),
   '@lastshotlabs/pocketshot/realtime': path.resolve(__dirname, 'src/realtime/index.ts'),
+  '@lastshotlabs/hitshot-mobile/lib': path.resolve(__dirname, 'products/hitshot/lib/party.ts'),
+  '@lastshotlabs/hitshot-mobile/link': path.resolve(
+    __dirname,
+    'products/hitshot/lib/party-link.ts',
+  ),
+  '@lastshotlabs/aicoach-mobile/lib': path.resolve(__dirname, 'products/aicoach/lib/coach.ts'),
+  '@lastshotlabs/aicoach-mobile/services': path.resolve(
+    __dirname,
+    'products/aicoach/lib/coach-services.ts',
+  ),
+  '@lastshotlabs/sgforum-mobile/lib': path.resolve(__dirname, 'products/sgforum/lib/community.ts'),
+  '@lastshotlabs/burndown-mobile/lib': path.resolve(__dirname, 'products/burndown/lib/burndown.ts'),
+  '@lastshotlabs/burndown-mobile/link': path.resolve(__dirname, 'products/burndown/lib/link.ts'),
+  '@lastshotlabs/blankslate-mobile/lib': path.resolve(
+    __dirname,
+    'products/blankslate/lib/blankslate.ts',
+  ),
+  '@lastshotlabs/blankslate-mobile/link': path.resolve(
+    __dirname,
+    'products/blankslate/lib/link.ts',
+  ),
 }
 
 export default defineConfig({
