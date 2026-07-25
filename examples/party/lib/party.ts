@@ -20,6 +20,10 @@ import {
   type PlaybackCapabilities,
   type PlaybackProvider,
 } from '@lastshotlabs/pocketshot/party'
+import {
+  PartyActivityController,
+  PartySessionController,
+} from '@lastshotlabs/pocketshot/party-session'
 import { z } from 'zod'
 
 export type PartyPhase = 'entry' | 'lobby' | 'round' | 'results' | 'deck'
@@ -59,6 +63,11 @@ export interface PartyState {
   playbackSource: string | null
   accountStatus: 'anonymous' | 'authenticated'
   accountEmail: string | null
+  paused: boolean
+  muted: boolean
+  ended: boolean
+  endConfirmationPending: boolean
+  activityCount: number
 }
 
 type Event =
@@ -106,6 +115,11 @@ const initial: PartyState = {
   playbackSource: null,
   accountStatus: 'anonymous',
   accountEmail: null,
+  paused: false,
+  muted: false,
+  ended: false,
+  endConfirmationPending: false,
+  activityCount: 0,
 }
 
 export class PartyDemoController {
@@ -128,8 +142,17 @@ export class PartyDemoController {
     createDemoProvider('audius', true, 'preview'),
   ])
   readonly account = createDemoPartyAccount()
+  readonly session = new PartySessionController({ targetCards: initial.settings.targetCards })
+  readonly activity = new PartyActivityController()
 
   constructor(storage: DraftStorage = createMemoryDraftStorage()) {
+    this.session.join({
+      id: 'host-1',
+      displayName: 'Host',
+      role: 'host',
+      seat: 0,
+      connected: true,
+    })
     this.deckLibrary.create('friday-mix', 'Friday Mix')
     this.deck = createDurableDraft({
       id: 'party-deck',
@@ -227,8 +250,18 @@ export class PartyDemoController {
   }
 
   guest(name: string): void {
+    if (!this.session.snapshot.members.some((member) => member.id === 'guest-1')) {
+      this.session.join({
+        id: 'guest-1',
+        displayName: name,
+        role: 'participant',
+        seat: 1,
+        connected: true,
+      })
+    }
     this.event({ kind: 'joined', id: 'guest-1', name })
     this.stateValue.phase = 'lobby'
+    this.appendActivity('join', `${name} joined the party`, 'guest-1')
     this.emit()
   }
 
@@ -362,6 +395,11 @@ export class PartyDemoController {
     }
     this.stateValue.revealed = false
     this.stateValue.challenge = null
+    this.appendActivity(
+      'round-start',
+      `Round ${this.stateValue.round} started`,
+      this.stateValue.hostId,
+    )
     this.emit()
   }
 
@@ -370,6 +408,7 @@ export class PartyDemoController {
     this.answeredRounds.add(this.stateValue.round)
     this.event({ kind: 'score', points })
     this.event({ kind: 'results' })
+    this.appendActivity('round-result', `${points} points awarded`, 'guest-1')
   }
 
   rematch(): void {
@@ -377,7 +416,80 @@ export class PartyDemoController {
     this.stateValue.winner = false
     this.stateValue.activeCard = null
     this.stateValue.revealed = false
+    this.stateValue.ended = false
+    this.stateValue.endConfirmationPending = false
     this.emit()
+  }
+
+  toggleMute(): void {
+    this.stateValue.muted = !this.stateValue.muted
+    this.appendActivity(
+      'audio',
+      this.stateValue.muted ? 'Shared playback muted' : 'Shared playback unmuted',
+      'host-1',
+    )
+    this.emit()
+  }
+
+  pauseMatch(): void {
+    this.session.pause(this.session.snapshot.hostId ?? 'host-1')
+    this.stateValue.paused = true
+    this.appendActivity('pause', 'Match paused', this.session.snapshot.hostId ?? 'host-1')
+    this.emit()
+  }
+
+  resumeMatch(): void {
+    this.session.resume(this.session.snapshot.hostId ?? 'host-1')
+    this.stateValue.paused = false
+    this.appendActivity('resume', 'Match resumed', this.session.snapshot.hostId ?? 'host-1')
+    this.emit()
+  }
+
+  adjustTokens(delta: number): void {
+    this.stateValue.tokens = Math.max(
+      0,
+      Math.min(this.stateValue.settings.tokenCap, this.stateValue.tokens + delta),
+    )
+    this.appendActivity('token-adjust', `Tokens adjusted by ${delta}`, 'host-1')
+    this.emit()
+  }
+
+  requestEndMatch(): void {
+    this.stateValue.endConfirmationPending = true
+    this.emit()
+  }
+
+  cancelEndMatch(): void {
+    this.stateValue.endConfirmationPending = false
+    this.emit()
+  }
+
+  confirmEndMatch(): void {
+    if (!this.stateValue.endConfirmationPending) throw new Error('End confirmation is required')
+    this.stateValue.ended = true
+    this.stateValue.endConfirmationPending = false
+    this.stateValue.phase = 'results'
+    this.appendActivity('match-end', 'The host ended the match', 'host-1')
+    this.emit()
+  }
+
+  reactToLatest(actorId: string, emoji: string): void {
+    const latest = this.activity.snapshot.events.at(-1)
+    if (!latest) return
+    const active = !(latest.reactions[emoji] ?? []).includes(actorId)
+    this.activity.react(latest.id, actorId, emoji, active)
+    this.emit()
+  }
+
+  activityProjection() {
+    return this.activity.publicProjection()
+  }
+
+  resultsSharePayload(): { title: string; message: string } {
+    return {
+      title: 'Hitshot results',
+      message: `Hitshot finished with ${this.stateValue.score} points after ${this.stateValue.round} rounds.`,
+    }
   }
 
   placeCard(index: number): boolean {
@@ -477,7 +589,10 @@ export class PartyDemoController {
   }
 
   hostDisconnect(): void {
-    this.stateValue.hostId = 'guest-1'
+    this.session.setConnected('host-1', false)
+    const recovered = this.session.recoverHost()
+    this.stateValue.hostId = recovered
+    this.appendActivity('host-recovery', 'Host control recovered', recovered)
     this.reconnect()
   }
 
@@ -542,6 +657,19 @@ export class PartyDemoController {
       this.account.snapshot.status === 'authenticated' ? 'authenticated' : 'anonymous'
     this.stateValue.accountEmail = this.account.snapshot.user?.email ?? null
     this.emit()
+  }
+
+  private appendActivity(kind: string, text: string, actorId: string): void {
+    const sequence = this.activity.snapshot.lastSequence + 1
+    this.activity.append({
+      id: `hitshot-activity-${sequence}`,
+      sequence,
+      kind,
+      actorId,
+      text,
+      createdAt: Date.now(),
+    })
+    this.stateValue.activityCount = this.activity.snapshot.events.length
   }
 }
 

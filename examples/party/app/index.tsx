@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, SafeAreaView, Share, StyleSheet, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import * as Linking from 'expo-linking'
 import * as SQLite from 'expo-sqlite'
@@ -108,17 +108,66 @@ export default function PartyShell({ initialJoinCode }: { initialJoinCode?: stri
       {party.phase === 'round' && (
         <Panel title={`Round ${party.round}`}>
           <Text style={styles.question}>{party.question}</Text>
+          <Text style={styles.copy}>
+            {party.paused ? 'Paused' : 'Playing'} · {party.muted ? 'Muted' : 'Audio on'} ·{' '}
+            {party.activityCount} activities
+          </Text>
           <Action
             testID="submit-answer"
             label="Lock in answer"
             onPress={() => controller.answer(3)}
           />
           <Text style={styles.private}>Answer stays private on the player device.</Text>
+          <Action
+            testID="toggle-mute"
+            label={party.muted ? 'Unmute shared playback' : 'Mute shared playback'}
+            onPress={() => controller.toggleMute()}
+          />
+          <Action
+            testID="pause-resume"
+            label={party.paused ? 'Resume match' : 'Pause match'}
+            onPress={() => (party.paused ? controller.resumeMatch() : controller.pauseMatch())}
+          />
+          <Action
+            testID="adjust-tokens"
+            label="Grant a token"
+            onPress={() => controller.adjustTokens(1)}
+          />
+          <Action
+            testID="react-activity"
+            label="React to activity"
+            onPress={() => controller.reactToLatest('guest-1', '🔥')}
+          />
+          {!party.endConfirmationPending ? (
+            <Action
+              testID="request-end"
+              label="End match"
+              onPress={() => controller.requestEndMatch()}
+            />
+          ) : (
+            <>
+              <Action
+                testID="confirm-end"
+                label="Confirm end match"
+                onPress={() => controller.confirmEndMatch()}
+              />
+              <Action
+                testID="cancel-end"
+                label="Keep playing"
+                onPress={() => controller.cancelEndMatch()}
+              />
+            </>
+          )}
         </Panel>
       )}
       {party.phase === 'results' && (
         <Panel title="Results">
           <Text style={styles.score}>{party.score} points</Text>
+          <Action
+            testID="share-results"
+            label="Share results"
+            onPress={() => void Share.share(controller.resultsSharePayload())}
+          />
           <Action testID="rematch" label="Rematch" onPress={() => controller.rematch()} />
         </Panel>
       )}

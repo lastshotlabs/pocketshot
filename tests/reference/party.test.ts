@@ -108,6 +108,30 @@ describe('Party clean-room acceptance model', () => {
     expect(party.state.connection).toBe('online')
   })
 
+  it('composes host pause, audio, token, activity, reviewed end, and sharing controls', () => {
+    const party = new PartyDemoController()
+    party.guest('Alex')
+    party.startRound()
+    party.toggleMute()
+    party.pauseMatch()
+    expect(party.state).toMatchObject({ muted: true, paused: true })
+    party.resumeMatch()
+    party.adjustTokens(99)
+    expect(party.state.tokens).toBe(party.state.settings.tokenCap)
+    party.reactToLatest('guest-1', '🔥')
+    expect(party.activityProjection().at(-1)?.reactions).toEqual({ '🔥': ['guest-1'] })
+    expect(() => party.confirmEndMatch()).toThrow('confirmation')
+    party.requestEndMatch()
+    party.cancelEndMatch()
+    party.requestEndMatch()
+    party.confirmEndMatch()
+    expect(party.state).toMatchObject({ phase: 'results', ended: true })
+    expect(party.resultsSharePayload()).toMatchObject({
+      title: 'Hitshot results',
+      message: expect.stringContaining('Hitshot'),
+    })
+  })
+
   it('shows an explicit removed state for a kicked player', () => {
     const party = new PartyDemoController()
     party.guest('Alex')
