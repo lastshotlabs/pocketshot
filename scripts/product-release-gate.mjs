@@ -4,6 +4,10 @@ const products = ['hitshot', 'aicoach', 'sgforum', 'burndown', 'blankslate']
 const failures = []
 const identifiers = new Set()
 const ciWorkflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8')
+const releaseWorkflow = await readFile(
+  new URL('../.github/workflows/release.yml', import.meta.url),
+  'utf8',
+)
 
 for (const product of products) {
   const app = JSON.parse(
@@ -204,6 +208,17 @@ if (!ciWorkflow.includes(`product: [hitshot, aicoach, sgforum, burndown, blanksl
 }
 if (!ciWorkflow.includes('verify:product:${{ matrix.product }}')) {
   failures.push('CI does not independently typecheck and export production apps')
+}
+for (const releaseCommand of [
+  'npm run verify:burndown',
+  'npm run verify:blankslate',
+  'npm run verify:products',
+  'npm run check:product-release',
+  'npm run check:parity-evidence',
+]) {
+  if (!releaseWorkflow.includes(releaseCommand)) {
+    failures.push(`package release omits required five-product gate: ${releaseCommand}`)
+  }
 }
 
 if (failures.length) {
