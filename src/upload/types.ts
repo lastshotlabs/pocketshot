@@ -50,6 +50,10 @@ export interface PresignedUploadOptions {
   presignBody?: Record<string, unknown>
   /** Called on upload progress. */
   onProgress?: (progress: UploadProgress) => void
+  /** Cancels the native upload request. */
+  signal?: AbortSignal
+  /** Native request timeout. Default: 60 seconds. */
+  timeoutMs?: number
 }
 
 /** Options for direct upload. */
@@ -60,4 +64,36 @@ export interface DirectUploadOptions {
   fields?: Record<string, string>
   /** Called on upload progress. */
   onProgress?: (progress: UploadProgress) => void
+  /** Cancels the native upload request. */
+  signal?: AbortSignal
+  /** Native request timeout. Default: 60 seconds. */
+  timeoutMs?: number
+}
+
+export interface UploadHookPolicy {
+  allowedMimeTypes?: readonly string[]
+  maxBytes?: number
+  /** Allows HTTP upload/result URLs for local development only. Default: false. */
+  allowInsecureUrls?: boolean
+  /** Auth header used for direct uploads. Default: `x-user-token`. */
+  authHeader?: string
+}
+
+export class UploadTransportError extends Error {
+  constructor(
+    readonly code:
+      | 'invalid_file'
+      | 'invalid_endpoint'
+      | 'insecure_url'
+      | 'cancelled'
+      | 'timeout'
+      | 'network'
+      | 'http'
+      | 'invalid_response',
+    message: string,
+    readonly status?: number,
+  ) {
+    super(message)
+    this.name = 'UploadTransportError'
+  }
 }

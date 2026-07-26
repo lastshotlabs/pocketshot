@@ -28,12 +28,22 @@ export interface AcceptedUpload {
 
 export class UploadAuthorizationController {
   private readonly consumed = new Set<string>()
+  private readonly issued = new Map<string, UploadAuthorizationReceipt>()
 
   constructor(
     private readonly policy: UploadAuthorizationPolicy,
     private readonly now: () => Date = () => new Date(),
     private readonly createId: () => string = () => crypto.randomUUID(),
-  ) {}
+  ) {
+    if (
+      policy.allowedMimeTypes.length === 0 ||
+      !Number.isFinite(policy.maxBytes) ||
+      policy.maxBytes <= 0 ||
+      (policy.ttlMs !== undefined && (!Number.isFinite(policy.ttlMs) || policy.ttlMs <= 0))
+    ) {
+      throw new RangeError('[pocketshot] Upload authorization policy is invalid')
+    }
+  }
 
   authorizeSelection(
     actorId: string,
@@ -46,7 +56,7 @@ export class UploadAuthorizationController {
     if (!/^[a-f0-9]{64}$/i.test(checksum)) {
       throw new Error('[pocketshot] Upload checksum must be a SHA-256 hex digest')
     }
-    return {
+    const receipt: UploadAuthorizationReceipt = {
       id: this.createId(),
       actorId,
       destination,
@@ -56,6 +66,11 @@ export class UploadAuthorizationController {
       checksum: checksum.toLowerCase(),
       expiresAt: new Date(this.now().getTime() + (this.policy.ttlMs ?? 300_000)).toISOString(),
     }
+    if (!receipt.id || this.issued.has(receipt.id) || this.consumed.has(receipt.id)) {
+      throw new Error('[pocketshot] Upload receipt ID must be unique')
+    }
+    this.issued.set(receipt.id, { ...receipt })
+    return receipt
   }
 
   acceptServerUpload(
@@ -71,6 +86,10 @@ export class UploadAuthorizationController {
   ): AcceptedUpload {
     if (this.consumed.has(receipt.id))
       throw new Error('[pocketshot] Upload receipt was already used')
+    const issued = this.issued.get(receipt.id)
+    if (!issued || !sameReceipt(issued, receipt)) {
+      throw new Error('[pocketshot] Upload receipt was not issued or was modified')
+    }
     if (new Date(receipt.expiresAt).getTime() <= this.now().getTime()) {
       throw new Error('[pocketshot] Upload authorization expired')
     }
@@ -92,7 +111,11 @@ export class UploadAuthorizationController {
     const url = new URL(uploaded.url)
     if (url.protocol !== 'https:')
       throw new Error('[pocketshot] Accepted upload URL must use HTTPS')
+    if (url.username || url.password) {
+      throw new Error('[pocketshot] Accepted upload URL must not contain credentials')
+    }
     this.consumed.add(receipt.id)
+    this.issued.delete(receipt.id)
     return {
       receiptId: receipt.id,
       url: url.toString(),
@@ -111,6 +134,13 @@ export class UploadAuthorizationController {
 
   private validateFile(file: Pick<UploadFile, 'mimeType' | 'name'> & { size: number }): void {
     if (!file.name.trim()) throw new Error('[pocketshot] Upload file name is required')
+    if (
+      file.name.includes('/') ||
+      file.name.includes('\\') ||
+      /[\u0000-\u001f\u007f]/.test(file.name)
+    ) {
+      throw new Error('[pocketshot] Upload file name must not contain paths or control characters')
+    }
     if (!this.policy.allowedMimeTypes.includes(file.mimeType)) {
       throw new Error(`[pocketshot] Unsupported upload type: ${file.mimeType}`)
     }
@@ -120,4 +150,20 @@ export class UploadAuthorizationController {
       )
     }
   }
+}
+
+function sameReceipt(
+  left: UploadAuthorizationReceipt,
+  right: UploadAuthorizationReceipt,
+): boolean {
+  return (
+    left.id === right.id &&
+    left.actorId === right.actorId &&
+    left.destination === right.destination &&
+    left.fileName === right.fileName &&
+    left.mimeType === right.mimeType &&
+    left.size === right.size &&
+    left.checksum === right.checksum &&
+    left.expiresAt === right.expiresAt
+  )
 }

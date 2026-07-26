@@ -10,6 +10,7 @@ vi.mock('react', async (importOriginal) => {
 })
 
 import { createUploadHooks } from '../../src/upload/hooks'
+import { UploadTransportError } from '../../src/upload/types'
 import type { ApiClient } from '../../src/api/client'
 import type { TokenStorage } from '../../src/auth/storage'
 
@@ -102,6 +103,25 @@ describe('usePresignedUpload', () => {
       expect.objectContaining({ mimeType: 'image/jpeg', fileName: 'photo.jpg' }),
     )
   })
+
+  it('rejects insecure presigned destinations before sending file bytes', async () => {
+    const api = makeApi()
+    ;(api.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+      uploadUrl: 'http://storage.example.com/upload/123',
+      fileUrl: 'https://cdn.example.com/file/123',
+    })
+    const xhr = vi.fn()
+    ;(globalThis as any).XMLHttpRequest = xhr
+    const { upload } = createUploadHooks(api, {
+      baseUrl: 'https://api.example.com',
+      tokenStorage: makeStorage(),
+    }).usePresignedUpload()
+
+    await expect(
+      upload({ uri: 'file:///photo.jpg', mimeType: 'image/jpeg', name: 'photo.jpg' }),
+    ).rejects.toMatchObject({ code: 'insecure_url' })
+    expect(xhr).not.toHaveBeenCalled()
+  })
 })
 
 describe('useDirectUpload', () => {
@@ -154,5 +174,58 @@ describe('useDirectUpload', () => {
     await Promise.resolve()
 
     expect(mockXhr.open).toHaveBeenCalledWith('POST', 'https://api.example.com/files/upload')
+  })
+
+  it('rejects absolute endpoints and invalid file policy before reading credentials', async () => {
+    const storage = makeStorage()
+    const { upload } = createUploadHooks(makeApi(), {
+      baseUrl: 'https://api.example.com',
+      tokenStorage: storage,
+      policy: { allowedMimeTypes: ['image/jpeg'], maxBytes: 100 },
+    }).useDirectUpload()
+
+    await expect(
+      upload(
+        { uri: 'file:///photo.jpg', mimeType: 'image/jpeg', name: 'photo.jpg', size: 10 },
+        { endpoint: 'https://attacker.test/upload' },
+      ),
+    ).rejects.toBeInstanceOf(UploadTransportError)
+    expect(storage.getToken).not.toHaveBeenCalled()
+  })
+
+  it('supports aborting an active native upload', async () => {
+    const controller = new AbortController()
+    const mockXhr = {
+      open: vi.fn(),
+      setRequestHeader: vi.fn(),
+      send: vi.fn(),
+      abort: vi.fn(),
+      upload: { onprogress: null as unknown },
+      onload: null as unknown,
+      onerror: null as unknown,
+      onabort: null as unknown,
+      ontimeout: null as unknown,
+      status: 200,
+      responseText: JSON.stringify({ url: 'https://cdn.example.com/file/1' }),
+      timeout: 0,
+    }
+    ;(globalThis as any).XMLHttpRequest = vi.fn(() => mockXhr)
+    ;(globalThis as any).FormData = class {
+      append() {}
+    }
+    const { upload } = createUploadHooks(makeApi(), {
+      baseUrl: 'https://api.example.com',
+      tokenStorage: makeStorage(),
+    }).useDirectUpload()
+
+    const pending = upload(
+      { uri: 'file:///photo.jpg', mimeType: 'image/jpeg', name: 'photo.jpg' },
+      { signal: controller.signal },
+    )
+    await vi.waitFor(() => expect(mockXhr.send).toHaveBeenCalledOnce())
+    controller.abort()
+
+    await expect(pending).rejects.toMatchObject({ code: 'cancelled' })
+    expect(mockXhr.abort).toHaveBeenCalledOnce()
   })
 })

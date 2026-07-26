@@ -8,7 +8,9 @@ import type {
   UploadResult,
   PresignedUploadOptions,
   DirectUploadOptions,
+  UploadHookPolicy,
 } from './types'
+import { UploadTransportError } from './types'
 
 // ── XMLHttpRequest upload with progress ────────────────────────────────────────
 // fetch() doesn't support upload progress in React Native. XHR does.
@@ -22,10 +24,17 @@ function uploadWithProgress(
   method: 'PUT' | 'POST',
   headers: Record<string, string>,
   onProgress?: (p: UploadProgress) => void,
+  signal?: AbortSignal,
+  timeoutMs = 60_000,
 ): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new UploadTransportError('cancelled', '[pocketshot] Upload cancelled'))
+      return
+    }
     const xhr = new XMLHttpRequest()
     xhr.open(method, url)
+    xhr.timeout = timeoutMs
 
     for (const [key, value] of Object.entries(headers)) {
       xhr.setRequestHeader(key, value)
@@ -41,9 +50,29 @@ function uploadWithProgress(
       }
     }
 
-    xhr.onload = () => resolve({ status: xhr.status, body: xhr.responseText })
-    xhr.onerror = () => reject(new Error('[pocketshot] Upload network error'))
-    xhr.ontimeout = () => reject(new Error('[pocketshot] Upload timed out'))
+    const cleanup = () => signal?.removeEventListener('abort', abort)
+    const abort = () => {
+      xhr.abort()
+      cleanup()
+      reject(new UploadTransportError('cancelled', '[pocketshot] Upload cancelled'))
+    }
+    signal?.addEventListener('abort', abort, { once: true })
+    xhr.onload = () => {
+      cleanup()
+      resolve({ status: xhr.status, body: xhr.responseText })
+    }
+    xhr.onerror = () => {
+      cleanup()
+      reject(new UploadTransportError('network', '[pocketshot] Upload network error'))
+    }
+    xhr.onabort = () => {
+      cleanup()
+      reject(new UploadTransportError('cancelled', '[pocketshot] Upload cancelled'))
+    }
+    xhr.ontimeout = () => {
+      cleanup()
+      reject(new UploadTransportError('timeout', '[pocketshot] Upload timed out'))
+    }
     xhr.send(body)
   })
 }
@@ -58,9 +87,10 @@ function uploadWithProgress(
  */
 export function createUploadHooks(
   api: ApiClient,
-  opts: { baseUrl: string; tokenStorage: TokenStorage },
+  opts: { baseUrl: string; tokenStorage: TokenStorage; policy?: UploadHookPolicy },
 ) {
   const { baseUrl, tokenStorage } = opts
+  const policy = opts.policy ?? {}
 
   /**
    * Hook for presigned URL uploads (recommended for large files).
@@ -98,8 +128,10 @@ export function createUploadHooks(
       async (file: UploadFile, callOpts: PresignedUploadOptions = {}): Promise<UploadResult> => {
         const mergedOpts = { ...defaultOpts, ...callOpts }
         const presignEndpoint = mergedOpts.presignEndpoint ?? '/upload/presign'
+        validateEndpoint(presignEndpoint)
         // Prefer the call-site onProgress if provided, fall back to default.
         const onProgress = callOpts.onProgress ?? defaultOpts.onProgress
+        validateFile(file, policy)
 
         setIsUploading(true)
         setProgress(null)
@@ -113,6 +145,8 @@ export function createUploadHooks(
             size: file.size,
             ...mergedOpts.presignBody,
           })
+          validateRemoteUrl(presigned.uploadUrl, policy)
+          validateRemoteUrl(presigned.fileUrl, policy)
 
           // Step 2: PUT file directly to storage via XHR for progress events.
           // React Native's FormData accepts { uri, type, name } objects as file blobs.
@@ -128,10 +162,16 @@ export function createUploadHooks(
               setProgress(p)
               onProgress?.(p)
             },
+            callOpts.signal ?? defaultOpts.signal,
+            callOpts.timeoutMs ?? defaultOpts.timeoutMs,
           )
 
-          if (status >= 400) {
-            throw new Error(`[pocketshot] Presigned upload failed with status ${status}`)
+          if (status < 200 || status >= 300) {
+            throw new UploadTransportError(
+              'http',
+              `[pocketshot] Presigned upload failed (${status})`,
+              status,
+            )
           }
 
           const uploadResult: UploadResult = { fileUrl: presigned.fileUrl, file }
@@ -188,6 +228,8 @@ export function createUploadHooks(
         const endpoint = mergedOpts.endpoint ?? '/upload'
         // Prefer the call-site onProgress if provided, fall back to default.
         const onProgress = callOpts.onProgress ?? defaultOpts.onProgress
+        validateFile(file, policy)
+        validateEndpoint(endpoint)
 
         setIsUploading(true)
         setProgress(null)
@@ -215,7 +257,7 @@ export function createUploadHooks(
           // the server — callers should re-authenticate if that occurs.
           const token = await tokenStorage.getToken()
           const headers: Record<string, string> = {}
-          if (token) headers['x-user-token'] = token
+          if (token) headers[policy.authHeader ?? 'x-user-token'] = token
 
           const normalizedBase = baseUrl.replace(/\/$/, '')
           const { status, body: responseBody } = await uploadWithProgress(
@@ -227,23 +269,37 @@ export function createUploadHooks(
               setProgress(p)
               onProgress?.(p)
             },
+            callOpts.signal ?? defaultOpts.signal,
+            callOpts.timeoutMs ?? defaultOpts.timeoutMs,
           )
 
-          if (status >= 400) {
-            throw new Error(`[pocketshot] Direct upload failed with status ${status}`)
+          if (status < 200 || status >= 300) {
+            throw new UploadTransportError(
+              'http',
+              `[pocketshot] Direct upload failed (${status})`,
+              status,
+            )
           }
 
           let metadata: Record<string, unknown> | undefined
           try {
             metadata = JSON.parse(responseBody) as Record<string, unknown>
           } catch {
-            // Non-JSON response body — metadata remains undefined.
+            throw new UploadTransportError(
+              'invalid_response',
+              '[pocketshot] Upload response must be valid JSON',
+            )
           }
 
-          const fileUrl =
-            (metadata?.fileUrl as string | undefined) ??
-            (metadata?.url as string | undefined) ??
-            file.uri
+          const fileUrl = (metadata?.fileUrl as string | undefined) ??
+            (metadata?.url as string | undefined)
+          if (!fileUrl) {
+            throw new UploadTransportError(
+              'invalid_response',
+              '[pocketshot] Upload response is missing a file URL',
+            )
+          }
+          validateRemoteUrl(fileUrl, policy)
 
           const uploadResult: UploadResult = { fileUrl, file, metadata }
           setResult(uploadResult)
@@ -268,3 +324,42 @@ export function createUploadHooks(
 
 /** Type of the object returned by {@link createUploadHooks}. */
 export type UploadHooks = ReturnType<typeof createUploadHooks>
+
+function validateFile(file: UploadFile, policy: UploadHookPolicy): void {
+  if (!file.uri || !file.name.trim() || !file.mimeType.trim()) {
+    throw new UploadTransportError('invalid_file', '[pocketshot] Upload file metadata is required')
+  }
+  if (policy.allowedMimeTypes && !policy.allowedMimeTypes.includes(file.mimeType)) {
+    throw new UploadTransportError('invalid_file', '[pocketshot] Upload MIME type is not allowed')
+  }
+  if (
+    policy.maxBytes !== undefined &&
+    (file.size === undefined ||
+      !Number.isFinite(file.size) ||
+      file.size <= 0 ||
+      file.size > policy.maxBytes)
+  ) {
+    throw new UploadTransportError('invalid_file', '[pocketshot] Upload file size is invalid')
+  }
+}
+
+function validateRemoteUrl(value: string, policy: UploadHookPolicy): void {
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new UploadTransportError('invalid_response', '[pocketshot] Upload URL is invalid')
+  }
+  if (url.protocol !== 'https:' && !(policy.allowInsecureUrls && url.protocol === 'http:')) {
+    throw new UploadTransportError('insecure_url', '[pocketshot] Upload URL must use HTTPS')
+  }
+}
+
+function validateEndpoint(endpoint: string): void {
+  if (!endpoint.startsWith('/') || endpoint.startsWith('//')) {
+    throw new UploadTransportError(
+      'invalid_endpoint',
+      '[pocketshot] Upload endpoint must be API-relative',
+    )
+  }
+}

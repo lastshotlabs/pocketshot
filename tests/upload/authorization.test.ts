@@ -77,4 +77,43 @@ describe('UploadAuthorizationController', () => {
       }),
     ).toThrow('expired')
   })
+
+  it('rejects fabricated or modified receipts and credential-bearing URLs', () => {
+    const controller = new UploadAuthorizationController(
+      { allowedMimeTypes: ['image/jpeg'], maxBytes: 2048 },
+      () => new Date('2026-07-25T12:00:00.000Z'),
+      () => 'receipt-1',
+    )
+    const receipt = controller.authorizeSelection('alex', 'thread:42', file, checksum)
+    const uploaded = {
+      actorId: 'alex',
+      destination: 'thread:42',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      checksum,
+      url: 'https://cdn.example.test/photo.jpg',
+    }
+    expect(() =>
+      controller.acceptServerUpload({ ...receipt, destination: 'thread:43' }, uploaded),
+    ).toThrow('not issued or was modified')
+    expect(() =>
+      controller.acceptServerUpload({ ...receipt, id: 'fabricated' }, uploaded),
+    ).toThrow('not issued or was modified')
+    expect(() =>
+      controller.acceptServerUpload(receipt, {
+        ...uploaded,
+        url: 'https://user:password@cdn.example.test/photo.jpg',
+      }),
+    ).toThrow('must not contain credentials')
+  })
+
+  it('rejects filenames containing paths or control characters', () => {
+    const controller = new UploadAuthorizationController({
+      allowedMimeTypes: ['image/jpeg'],
+      maxBytes: 2048,
+    })
+    expect(() =>
+      controller.authorizeSelection('alex', 'thread:42', { ...file, name: '../photo.jpg' }, checksum),
+    ).toThrow('must not contain paths')
+  })
 })
