@@ -36,6 +36,10 @@ export interface OAuthFlowOptions<Result> {
   allowedProviders: readonly string[]
   /** Custom schemes registered by this app. HTTPS remains allowed. */
   allowedRedirectSchemes?: readonly string[]
+  /** Preferred production policy: exact callback URIs registered with the provider. */
+  allowedRedirectUris?: readonly string[]
+  /** HTTPS callback hosts, used only when exact URIs are not configured. */
+  allowedRedirectHosts?: readonly string[]
   storage: OAuthTransactionStorage
   transport: OAuthFlowTransport<Result>
   createState(): string
@@ -59,16 +63,25 @@ export class OAuthFlowController<Result> {
     this.requireProvider(provider)
     const uri = new URL(redirectUri)
     const scheme = uri.protocol.slice(0, -1).toLowerCase()
-    if (
-      scheme !== 'https' &&
-      !(this.options.allowedRedirectSchemes ?? [])
-        .map((value) => value.toLowerCase())
-        .includes(scheme)
-    ) {
-      throw new Error('[pocketshot] OAuth redirect URI scheme is not allowlisted')
-    }
     if (uri.username || uri.password || uri.hash) {
       throw new Error('[pocketshot] OAuth redirect URI contains forbidden components')
+    }
+    const exactUris = (this.options.allowedRedirectUris ?? []).map(normalizeRedirectUri)
+    if (exactUris.length && !exactUris.includes(uri.toString())) {
+      throw new Error('[pocketshot] OAuth redirect URI is not exactly allowlisted')
+    }
+    if (!exactUris.length) {
+      const customAllowed = (this.options.allowedRedirectSchemes ?? [])
+        .map((value) => value.toLowerCase())
+        .includes(scheme)
+      const httpsAllowed =
+        scheme === 'https' &&
+        (this.options.allowedRedirectHosts ?? [])
+          .map((value) => value.toLowerCase())
+          .includes(uri.hostname.toLowerCase())
+      if (!customAllowed && !httpsAllowed) {
+        throw new Error('[pocketshot] OAuth redirect URI scheme or host is not allowlisted')
+      }
     }
     const pending = await this.options.storage.get()
     if (pending && this.now() - pending.createdAt <= this.ttlMs) {
@@ -87,13 +100,19 @@ export class OAuthFlowController<Result> {
       createdAt: this.now(),
     }
     await this.options.storage.set(transaction)
-    return this.options.transport.authorizationUrl({
+    const authorizationUrl = await this.options.transport.authorizationUrl({
       provider,
       redirectUri: transaction.redirectUri,
       state,
       codeChallenge: await this.options.challenge(verifier),
       codeChallengeMethod: 'S256',
     })
+    const authorization = new URL(authorizationUrl)
+    if (authorization.protocol !== 'https:' || authorization.username || authorization.password) {
+      await this.options.storage.clear()
+      throw new Error('[pocketshot] OAuth authorization URL is unsafe')
+    }
+    return authorization.toString()
   }
 
   async complete(input: {
@@ -159,6 +178,14 @@ export class OAuthFlowController<Result> {
       throw new Error(`[pocketshot] Unsupported OAuth provider: ${provider}`)
     }
   }
+}
+
+function normalizeRedirectUri(value: string): string {
+  const url = new URL(value)
+  if (url.username || url.password || url.hash) {
+    throw new Error('[pocketshot] OAuth redirect allowlist contains a forbidden URI')
+  }
+  return url.toString()
 }
 
 export function createMemoryOAuthTransactionStorage(): OAuthTransactionStorage {

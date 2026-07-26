@@ -82,6 +82,55 @@ describe('OAuthFlowController', () => {
     )
   })
 
+  it('supports exact redirect URI binding and allowlisted HTTPS hosts', async () => {
+    const exact = new OAuthFlowController({
+      allowedProviders: ['apple'],
+      allowedRedirectUris: ['hitshot://oauth/apple'],
+      storage: createMemoryOAuthTransactionStorage(),
+      createState: () => state,
+      createVerifier: () => verifier,
+      challenge: () => 'challenge',
+      transport: {
+        authorizationUrl: () => 'https://id.example/authorize',
+        exchange: async () => ({}),
+      },
+    })
+    await expect(exact.begin('apple', 'hitshot://oauth/google')).rejects.toThrow('exactly')
+    await expect(exact.begin('apple', 'hitshot://oauth/apple')).resolves.toContain('id.example')
+
+    const web = new OAuthFlowController({
+      allowedProviders: ['google'],
+      allowedRedirectHosts: ['links.example.test'],
+      storage: createMemoryOAuthTransactionStorage(),
+      createState: () => state,
+      createVerifier: () => verifier,
+      challenge: () => 'challenge',
+      transport: {
+        authorizationUrl: () => 'https://id.example/authorize',
+        exchange: async () => ({}),
+      },
+    })
+    await expect(web.begin('google', 'https://evil.test/oauth/google')).rejects.toThrow('host')
+    await expect(web.begin('google', 'https://links.example.test/oauth/google')).resolves.toContain(
+      'id.example',
+    )
+  })
+
+  it('clears the pending transaction when the authorization endpoint is unsafe', async () => {
+    const storage = createMemoryOAuthTransactionStorage()
+    const unsafe = new OAuthFlowController({
+      allowedProviders: ['apple'],
+      allowedRedirectSchemes: ['hitshot'],
+      storage,
+      createState: () => state,
+      createVerifier: () => verifier,
+      challenge: () => 'challenge',
+      transport: { authorizationUrl: () => 'http://id.example', exchange: async () => ({}) },
+    })
+    await expect(unsafe.begin('apple', 'hitshot://oauth/apple')).rejects.toThrow('unsafe')
+    expect(await storage.get()).toBeNull()
+  })
+
   it('returns cancellation without exchanging a code', async () => {
     const { controller, exchange } = flow()
     await controller.begin('apple', 'blankslate://oauth/apple')
