@@ -1,6 +1,8 @@
 import {
   DiagnosticsBuffer,
+  DurableFeatureFlagController,
   FeatureFlagController,
+  MemoryFeatureFlagStorage,
   OperationTelemetry,
   ServiceLevelIndicatorController,
   scrubTelemetryAttributes,
@@ -122,6 +124,36 @@ describe('FeatureFlagController', () => {
     expect(flags.isEnabled('new-feed', 'person-1')).toBe(true)
     flags.replace([{ key: 'new-feed', enabled: true, rolloutPercent: 100, killSwitch: true }])
     expect(flags.isEnabled('new-feed', 'person-1')).toBe(false)
+  })
+
+  it('rejects duplicate flags and fails closed without a stable subject', () => {
+    const flags = new FeatureFlagController()
+    flags.replace([{ key: 'feed', enabled: true, rolloutPercent: 100, killSwitch: false }])
+    expect(flags.isEnabled('feed', '')).toBe(false)
+    expect(() =>
+      flags.replace([
+        { key: 'feed', enabled: true, rolloutPercent: 100, killSwitch: false },
+        { key: 'feed', enabled: false, rolloutPercent: 0, killSwitch: false },
+      ]),
+    ).toThrow('Duplicate')
+  })
+
+  it('restores fresh durable flags and fails closed after expiry', async () => {
+    const storage = new MemoryFeatureFlagStorage()
+    let now = Date.parse('2026-07-26T00:00:00Z')
+    const flags = new DurableFeatureFlagController(storage, () => now)
+    await flags.replace({
+      schemaVersion: 1,
+      revision: 'r1',
+      fetchedAt: '2026-07-26T00:00:00Z',
+      expiresAt: '2026-07-27T00:00:00Z',
+      flags: [{ key: 'coach', enabled: true, rolloutPercent: 100, killSwitch: false }],
+    })
+    const restored = new DurableFeatureFlagController(storage, () => now)
+    await restored.initialize()
+    expect(restored.isEnabled('coach', 'person')).toBe(true)
+    now = Date.parse('2026-07-28T00:00:00Z')
+    expect(restored.isEnabled('coach', 'person')).toBe(false)
   })
 
   it('validates rollout bounds and defaults missing flags off', () => {

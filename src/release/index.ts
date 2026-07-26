@@ -178,8 +178,15 @@ export class ReleaseControlPlane {
   private state: ReleaseControlSnapshot
   private drills = new Map<string, { passed: boolean; at: string; notes: string }>()
 
-  constructor(version: string, channel: ReleaseChannel = 'development') {
+  constructor(
+    version: string,
+    channel: ReleaseChannel = 'development',
+    private readonly maximumDrills = 100,
+  ) {
     if (!version.trim()) throw new Error('Release version is required')
+    if (!Number.isInteger(maximumDrills) || maximumDrills < 1) {
+      throw new Error('Maximum drills must be a positive integer')
+    }
     this.state = {
       channel,
       deployedVersion: version,
@@ -243,7 +250,11 @@ export class ReleaseControlPlane {
     if (!name.trim() || !Number.isFinite(Date.parse(at))) {
       throw new Error('Drill name and timestamp are required')
     }
-    this.drills.set(name, { passed, at, notes: notes.trim() })
+    this.drills.delete(name)
+    this.drills.set(name, { passed, at, notes: scrubReleaseText(notes).slice(0, 500) })
+    while (this.drills.size > this.maximumDrills) {
+      this.drills.delete(this.drills.keys().next().value!)
+    }
   }
 
   diagnostics(): string {
@@ -265,8 +276,27 @@ export interface LocalServiceEvent {
 export class LocalProductionServiceHarness {
   private events: LocalServiceEvent[] = []
 
+  constructor(private readonly capacity = 500) {
+    if (!Number.isInteger(capacity) || capacity < 1) {
+      throw new Error('Harness capacity must be a positive integer')
+    }
+  }
+
   emit(event: LocalServiceEvent): void {
-    this.events.push(structuredClone(event))
+    this.events.push({
+      ...structuredClone(event),
+      attributes: Object.fromEntries(
+        Object.entries(event.attributes).map(([key, value]) => [
+          key,
+          /authorization|cookie|email|password|phone|secret|token|receipt/i.test(key)
+            ? '[REDACTED]'
+            : typeof value === 'string'
+              ? scrubReleaseText(value).slice(0, 500)
+              : value,
+        ]),
+      ),
+    })
+    if (this.events.length > this.capacity) this.events.shift()
   }
 
   snapshot(): LocalServiceEvent[] {
@@ -557,4 +587,13 @@ function validateRollout(percent: number): void {
   if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
     throw new Error('Rollout percent must be between 0 and 100')
   }
+}
+
+function scrubReleaseText(value: string): string {
+  return value
+    .trim()
+    .replace(
+      /(?:bearer\s+[a-z0-9._~-]+)|(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/gi,
+      '[REDACTED]',
+    )
 }

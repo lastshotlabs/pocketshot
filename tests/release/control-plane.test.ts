@@ -82,7 +82,7 @@ describe('production release services', () => {
   })
 
   it('provides credential-free adapters for deterministic product development', () => {
-    const harness = new LocalProductionServiceHarness()
+    const harness = new LocalProductionServiceHarness(1)
     harness.emit({
       service: 'analytics',
       name: 'round_completed',
@@ -90,6 +90,17 @@ describe('production release services', () => {
       attributes: { round: 2 },
     })
     expect(harness.snapshot()).toHaveLength(1)
+    harness.emit({
+      service: 'analytics',
+      name: 'login',
+      at: '2026-07-25T00:00:01Z',
+      attributes: { token: 'secret', message: 'user@example.com' },
+    })
+    expect(harness.snapshot()).toEqual([
+      expect.objectContaining({
+        attributes: { token: '[REDACTED]', message: '[REDACTED]' },
+      }),
+    ])
     harness.clear()
     expect(harness.snapshot()).toEqual([])
   })
