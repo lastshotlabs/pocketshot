@@ -20,6 +20,12 @@ export class MetricLogController {
   private records = new Map<string, MetricRecord>()
   private conflicts = new Map<string, MetricConflict>()
 
+  constructor(private readonly capacity = 10_000) {
+    if (!Number.isInteger(capacity) || capacity < 1) {
+      throw new Error('Metric capacity must be a positive integer')
+    }
+  }
+
   get snapshot(): { records: MetricRecord[]; conflicts: MetricConflict[] } {
     return {
       records: [...this.records.values()]
@@ -30,7 +36,9 @@ export class MetricLogController {
   }
 
   log(input: Omit<MetricRecord, 'id' | 'status'>): void {
+    validateMetric(input)
     if (this.records.has(input.clientId)) return
+    if (this.records.size >= this.capacity) throw new Error('Metric capacity exceeded')
     this.records.set(input.clientId, {
       ...structuredClone(input),
       id: input.clientId,
@@ -46,6 +54,7 @@ export class MetricLogController {
       clientId,
       status: 'synced',
     }
+    validateMetric(remote)
     if (
       local.kind !== remote.kind ||
       local.value !== remote.value ||
@@ -169,7 +178,14 @@ export class WorkoutController {
   private conflictValue: WorkoutSyncSnapshot['conflict'] = null
   private syncError: string | null = null
 
-  constructor(private readonly now: () => number = Date.now) {}
+  constructor(
+    private readonly now: () => number = Date.now,
+    private readonly limits = { programs: 100, exercisesPerProgram: 100, setsPerSession: 2_000 },
+  ) {
+    for (const value of Object.values(limits)) {
+      if (!Number.isInteger(value) || value < 1) throw new Error('Workout limits must be positive')
+    }
+  }
 
   get snapshot(): {
     programs: WorkoutProgram[]
@@ -195,13 +211,37 @@ export class WorkoutController {
   }
 
   saveProgram(program: WorkoutProgram): void {
-    if (!program.name.trim() || program.exercises.length === 0) {
+    if (
+      !program.id.trim() ||
+      !program.name.trim() ||
+      program.exercises.length === 0 ||
+      program.exercises.length > this.limits.exercisesPerProgram
+    ) {
       throw new Error('Program requires a name and exercise')
+    }
+    if (!this.programs.has(program.id) && this.programs.size >= this.limits.programs) {
+      throw new Error('Workout program capacity exceeded')
+    }
+    const exerciseIds = new Set<string>()
+    for (const exercise of program.exercises) {
+      if (
+        !exercise.id.trim() ||
+        !exercise.name.trim() ||
+        !Number.isInteger(exercise.targetSets) ||
+        exercise.targetSets < 1 ||
+        !Number.isInteger(exercise.targetReps) ||
+        exercise.targetReps < 1 ||
+        exerciseIds.has(exercise.id)
+      ) {
+        throw new Error('Program exercise is invalid')
+      }
+      exerciseIds.add(exercise.id)
     }
     this.programs.set(program.id, structuredClone(program))
   }
 
   start(sessionId: string, programId: string, startedAt: string): void {
+    if (!sessionId.trim() || !isTimestamp(startedAt)) throw new Error('Workout session is invalid')
     if (!this.programs.has(programId)) throw new Error(`Unknown program: ${programId}`)
     if (this.sessionValue?.status === 'active') throw new Error('A workout is already active')
     this.sessionValue = {
@@ -223,6 +263,9 @@ export class WorkoutController {
       throw new Error('Exercise is not part of the active program')
     }
     if (session.sets.some((candidate) => candidate.id === set.id)) return
+    if (session.sets.length >= this.limits.setsPerSession) {
+      throw new Error('Workout set capacity exceeded')
+    }
     this.validateSet(set)
     session.sets.push(structuredClone(set))
     this.stage(`set:${set.id}`)
@@ -296,6 +339,7 @@ export class WorkoutController {
   }
 
   complete(at: string): void {
+    if (!isTimestamp(at)) throw new Error('Workout completion timestamp is invalid')
     const session = this.requireActive()
     this.sessionValue = { ...session, status: 'complete', completedAt: at }
     this.stage(`complete:${session.id}`)
@@ -303,6 +347,7 @@ export class WorkoutController {
 
   restore(session: WorkoutSession): void {
     if (!this.programs.has(session.programId)) throw new Error('Cannot restore an unknown program')
+    this.validateSession(session)
     this.sessionValue = structuredClone(session)
   }
 
@@ -313,7 +358,7 @@ export class WorkoutController {
 
   failSync(message: string): void {
     if (!message.trim()) throw new Error('Sync failure requires a message')
-    this.syncError = message
+    this.syncError = safeCoachText(message)
   }
 
   rejectWithConflict(serverSession: WorkoutSession, reason: string): void {
@@ -321,7 +366,8 @@ export class WorkoutController {
       throw new Error('Cannot reconcile an unknown program')
     }
     if (!reason.trim()) throw new Error('Workout conflict requires a reason')
-    this.conflictValue = { serverSession: structuredClone(serverSession), reason }
+    this.validateSession(serverSession)
+    this.conflictValue = { serverSession: structuredClone(serverSession), reason: safeCoachText(reason) }
     this.syncError = null
   }
 
@@ -344,6 +390,9 @@ export class WorkoutController {
   }
 
   private validateSet(set: WorkoutSet): void {
+    if (!set.id.trim() || !set.exerciseId.trim() || !isTimestamp(set.completedAt)) {
+      throw new Error('Workout set identity and timestamp are required')
+    }
     if (!Number.isInteger(set.reps) || set.reps < 0) {
       throw new Error('Workout reps must be a non-negative integer')
     }
@@ -352,10 +401,51 @@ export class WorkoutController {
     }
   }
 
+  private validateSession(session: WorkoutSession): void {
+    if (
+      !session.id.trim() ||
+      !isTimestamp(session.startedAt) ||
+      (session.completedAt !== null && !isTimestamp(session.completedAt)) ||
+      session.sets.length > this.limits.setsPerSession
+    ) {
+      throw new Error('Workout session is invalid')
+    }
+    for (const set of session.sets) this.validateSet(set)
+  }
+
   private stage(mutationId: string): void {
     this.pendingMutationIds.add(mutationId)
     this.syncError = null
   }
+}
+
+function validateMetric(
+  metric: Pick<MetricRecord, 'clientId' | 'kind' | 'value' | 'unit' | 'recordedAt'>,
+): void {
+  if (
+    !metric.clientId.trim() ||
+    !metric.kind.trim() ||
+    !Number.isFinite(metric.value) ||
+    !isTimestamp(metric.recordedAt) ||
+    !['kg', 'lb', 'cm', 'in', 'count', 'minutes'].includes(metric.unit)
+  ) {
+    throw new Error('Metric record is invalid')
+  }
+}
+
+function isTimestamp(value: string): boolean {
+  return value.trim().length > 0 && Number.isFinite(Date.parse(value))
+}
+
+function safeCoachText(value: string): string {
+  return value
+    .replace(
+      /(?:bearer\s+[a-z0-9._~-]+)|(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/gi,
+      '[REDACTED]',
+    )
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 160)
 }
 
 export type EntitlementState =

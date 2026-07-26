@@ -11,6 +11,16 @@ import {
 } from '../../src/coach/controllers'
 
 describe('MetricLogController', () => {
+  it('rejects malformed and over-capacity device records', () => {
+    const metrics = new MetricLogController(1)
+    expect(() =>
+      metrics.log({ clientId: '', kind: 'weight', value: 1, unit: 'kg', recordedAt: 'bad' }),
+    ).toThrow('invalid')
+    metrics.log({ clientId: 'one', kind: 'weight', value: 1, unit: 'kg', recordedAt: '2026-07-25' })
+    expect(() =>
+      metrics.log({ clientId: 'two', kind: 'weight', value: 2, unit: 'kg', recordedAt: '2026-07-25' }),
+    ).toThrow('capacity')
+  })
   it('deduplicates offline logs and acknowledges the server record', () => {
     const metrics = new MetricLogController()
     const input = {
@@ -234,6 +244,24 @@ describe('WorkoutController', () => {
     expect(workouts.snapshot.session?.rest?.completed).toBe(true)
     workouts.removeSet('set-1')
     expect(workouts.snapshot.session?.sets).toEqual([])
+  })
+
+  it('rejects malformed restored sessions and redacts sync diagnostics', () => {
+    const workouts = new WorkoutController()
+    workouts.saveProgram(program)
+    expect(() =>
+      workouts.restore({
+        id: 'session',
+        programId: 'strength',
+        status: 'active',
+        startedAt: 'bad',
+        completedAt: null,
+        sets: [],
+      }),
+    ).toThrow('invalid')
+    workouts.start('session', 'strength', '2026-07-25T12:00:00Z')
+    workouts.failSync('Bearer abc.secret for user@example.com')
+    expect(workouts.snapshot.sync.error).toBe('[REDACTED] for [REDACTED]')
   })
 })
 

@@ -52,6 +52,20 @@ export class DeckLibraryController {
   private featured = new Set<string>()
   private proposals = new Map<string, DeckTrackProposal>()
 
+  constructor(
+    private readonly limits = {
+      decks: 500,
+      tracksPerDeck: 5_000,
+      versionsPerDeck: 100,
+      proposals: 1_000,
+      ratingsPerDeck: 100_000,
+    },
+  ) {
+    for (const value of Object.values(limits)) {
+      if (!Number.isInteger(value) || value < 1) throw new Error('Deck limits must be positive')
+    }
+  }
+
   get snapshot(): PartyDeck[] {
     return [...this.decks.values()].map((deck) => structuredClone(deck))
   }
@@ -61,8 +75,9 @@ export class DeckLibraryController {
   }
 
   create(id: string, title: string): void {
-    if (!title.trim()) throw new Error('Deck title is required')
+    if (!id.trim() || !title.trim()) throw new Error('Deck identity and title are required')
     if (this.decks.has(id)) throw new Error(`Deck already exists: ${id}`)
+    if (this.decks.size >= this.limits.decks) throw new Error('Deck capacity exceeded')
     this.decks.set(id, {
       id,
       title: title.trim(),
@@ -102,6 +117,9 @@ export class DeckLibraryController {
     validateTrack(track)
     const key = trackIdentity(track)
     if (!deck.tracks.some((candidate) => trackIdentity(candidate) === key)) {
+      if (deck.tracks.length >= this.limits.tracksPerDeck) {
+        throw new Error('Deck track capacity exceeded')
+      }
       deck.tracks.push(structuredClone(track))
       deck.revision += 1
       this.recordVersion(id)
@@ -128,6 +146,7 @@ export class DeckLibraryController {
   proposeTracks(id: string, deckId: string, prompt: string, tracks: PartyTrack[]): void {
     this.requireEditable(deckId)
     if (this.proposals.has(id)) throw new Error(`Proposal already exists: ${id}`)
+    if (this.proposals.size >= this.limits.proposals) throw new Error('Proposal capacity exceeded')
     if (!prompt.trim() || tracks.length === 0) {
       throw new Error('A proposal requires a prompt and at least one track')
     }
@@ -200,6 +219,7 @@ export class DeckLibraryController {
   publish(id: string, at: string): void {
     const deck = this.require(id)
     if (deck.status !== 'approved') throw new Error('Only approved decks can be published')
+    if (!Number.isFinite(Date.parse(at))) throw new Error('Publish timestamp is invalid')
     deck.status = 'published'
     deck.publishedAt = at
     this.recordVersion(id)
@@ -217,6 +237,9 @@ export class DeckLibraryController {
       throw new Error('Deck ratings require a user and an integer from 1 to 5')
     }
     const ratings = this.ratings.get(id) ?? new Map<string, number>()
+    if (!ratings.has(userId) && ratings.size >= this.limits.ratingsPerDeck) {
+      throw new Error('Deck rating capacity exceeded')
+    }
     ratings.set(userId, rating)
     this.ratings.set(id, ratings)
   }
@@ -313,6 +336,7 @@ export class DeckLibraryController {
     if (!deck) return
     const versions = this.versions.get(id) ?? []
     versions.push(structuredClone(deck))
+    if (versions.length > this.limits.versionsPerDeck) versions.shift()
     this.versions.set(id, versions)
   }
 
@@ -429,6 +453,22 @@ function validateTrack(track: PartyTrack): void {
     (!Number.isInteger(track.year) || track.year < 1000 || track.year > 9999)
   ) {
     throw new Error('Track year must be a four-digit year')
+  }
+  for (const value of [track.previewUrl, ...Object.values(track.providerIds)]) {
+    if (value !== null && value !== undefined && (!value.trim() || value.length > 2_048)) {
+      throw new Error('Track provider reference is invalid')
+    }
+  }
+  if (track.previewUrl) {
+    let url: URL
+    try {
+      url = new URL(track.previewUrl)
+    } catch {
+      throw new Error('Track preview URL is invalid')
+    }
+    if (url.protocol !== 'https:' || url.username || url.password) {
+      throw new Error('Track preview URL must use HTTPS without credentials')
+    }
   }
 }
 

@@ -17,6 +17,23 @@ const track = (id: string, title = `Track ${id}`): PartyTrack => ({
 })
 
 describe('DeckLibraryController', () => {
+  it('bounds deck history and rejects unsafe preview URLs', () => {
+    const library = new DeckLibraryController({
+      decks: 1,
+      tracksPerDeck: 2,
+      versionsPerDeck: 2,
+      proposals: 1,
+      ratingsPerDeck: 1,
+    })
+    library.create('deck', 'Safe')
+    expect(() => library.add('deck', { ...track('1'), previewUrl: 'http://preview.test/1' })).toThrow(
+      'HTTPS',
+    )
+    library.add('deck', track('1'))
+    library.add('deck', track('2'))
+    expect(library.history('deck')).toHaveLength(2)
+    expect(() => library.add('deck', track('3'))).toThrow('capacity')
+  })
   it('imports, combines, deduplicates, and reports deck health', () => {
     const library = new DeckLibraryController()
     library.create('one', 'One')
