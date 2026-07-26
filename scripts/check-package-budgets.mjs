@@ -67,6 +67,27 @@ for (const [name, limit] of Object.entries(budgets)) {
   if (size > limit) failures.push(`${name}: ${size} bytes exceeds ${limit}`)
 }
 
+const genericPrimitiveBudget = 64 * 1024
+for (const entry of await readdir(dist, { withFileTypes: true })) {
+  if (
+    !entry.isFile() ||
+    (!entry.name.endsWith('.js') && !entry.name.endsWith('.cjs')) ||
+    entry.name.endsWith('.map') ||
+    ['index.js', 'index.cjs', 'ui.js', 'ui.cjs', 'cli.cjs'].includes(entry.name) ||
+    entry.name.startsWith('chunk-')
+  ) {
+    continue
+  }
+  const path = `dist/${entry.name}`
+  if (budgets[path]) continue
+  const size = (await stat(new URL(entry.name, dist))).size
+  if (size > genericPrimitiveBudget) {
+    failures.push(
+      `${path}: ${size} bytes exceeds generic primitive budget ${genericPrimitiveBudget}`,
+    )
+  }
+}
+
 const typeFiles = (await filesUnder(dist.pathname + 'types')).filter((path) =>
   path.endsWith('.d.ts'),
 )
@@ -88,30 +109,14 @@ if (totalTypeBytes > totalTypeBudget) {
 }
 
 const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
-for (const target of [
+const declaredTargets = [
   packageJson.types,
-  packageJson.exports?.['.']?.types,
-  packageJson.exports?.['./ui']?.types,
-  packageJson.exports?.['./realtime']?.types,
-  packageJson.exports?.['./offline']?.types,
-  packageJson.exports?.['./drafts']?.types,
-  packageJson.exports?.['./testing']?.types,
-  packageJson.exports?.['./media']?.types,
-  packageJson.exports?.['./ai']?.types,
-  packageJson.exports?.['./auth']?.types,
-  packageJson.exports?.['./audio']?.types,
-  packageJson.exports?.['./billing']?.types,
-  packageJson.exports?.['./coach']?.types,
-  packageJson.exports?.['./party']?.types,
-  packageJson.exports?.['./party-session']?.types,
-  packageJson.exports?.['./release']?.types,
-  packageJson.exports?.['./privacy']?.types,
-  packageJson.exports?.['./observability']?.types,
-  packageJson.exports?.['./accessibility']?.types,
-  packageJson.exports?.['./community']?.types,
-  packageJson.exports?.['./community/core']?.types,
-  packageJson.bin?.pocketshot,
-]) {
+  ...Object.values(packageJson.exports ?? {}).flatMap((entry) =>
+    typeof entry === 'string' ? [entry] : [entry.types, entry.import, entry.require],
+  ),
+  ...Object.values(packageJson.bin ?? {}),
+]
+for (const target of declaredTargets) {
   if (!target) {
     failures.push('package.json is missing a required types/bin target')
     continue

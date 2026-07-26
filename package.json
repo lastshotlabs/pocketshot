@@ -122,6 +122,71 @@
       "import": "./dist/accessibility.js",
       "require": "./dist/accessibility.cjs"
     },
+    "./app-state": {
+      "types": "./dist/types/app-state/index.d.ts",
+      "import": "./dist/app-state.js",
+      "require": "./dist/app-state.cjs"
+    },
+    "./biometrics": {
+      "types": "./dist/types/biometrics/index.d.ts",
+      "import": "./dist/biometrics.js",
+      "require": "./dist/biometrics.cjs"
+    },
+    "./deep-links": {
+      "types": "./dist/types/deep-links/index.d.ts",
+      "import": "./dist/deep-links.js",
+      "require": "./dist/deep-links.cjs"
+    },
+    "./device": {
+      "types": "./dist/types/device/index.d.ts",
+      "import": "./dist/device.js",
+      "require": "./dist/device.cjs"
+    },
+    "./haptics": {
+      "types": "./dist/types/haptics/index.d.ts",
+      "import": "./dist/haptics.js",
+      "require": "./dist/haptics.cjs"
+    },
+    "./organizations": {
+      "types": "./dist/types/organizations/index.d.ts",
+      "import": "./dist/organizations.js",
+      "require": "./dist/organizations.cjs"
+    },
+    "./permissions": {
+      "types": "./dist/types/permissions/index.d.ts",
+      "import": "./dist/permissions.js",
+      "require": "./dist/permissions.cjs"
+    },
+    "./search": {
+      "types": "./dist/types/search/index.d.ts",
+      "import": "./dist/search.js",
+      "require": "./dist/search.cjs"
+    },
+    "./share": {
+      "types": "./dist/types/share/index.d.ts",
+      "import": "./dist/share.js",
+      "require": "./dist/share.cjs"
+    },
+    "./sse": {
+      "types": "./dist/types/sse/index.d.ts",
+      "import": "./dist/sse.js",
+      "require": "./dist/sse.cjs"
+    },
+    "./theme": {
+      "types": "./dist/types/theme/index.d.ts",
+      "import": "./dist/theme.js",
+      "require": "./dist/theme.cjs"
+    },
+    "./webhooks": {
+      "types": "./dist/types/webhooks/index.d.ts",
+      "import": "./dist/webhooks.js",
+      "require": "./dist/webhooks.cjs"
+    },
+    "./ws": {
+      "types": "./dist/types/ws/index.d.ts",
+      "import": "./dist/ws.js",
+      "require": "./dist/ws.cjs"
+    },
     "./community": {
       "types": "./dist/types/community/index.d.ts",
       "import": "./dist/community.js",
