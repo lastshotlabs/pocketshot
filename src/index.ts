@@ -136,6 +136,18 @@ export {
   AutomodController,
   PrivacyController,
 } from './community/controllers'
+export {
+  AccountDataController,
+  RelationshipPrivacyController,
+} from './privacy'
+export type {
+  AccountDataControllerOptions,
+  AccountDataSnapshot,
+  AccountDataTransport,
+  DeletionStatus,
+  ExportStatus,
+  LocalDataStore,
+} from './privacy'
 
 // ── Coaching, health records, workouts, and billing ──────────────────────────
 export {

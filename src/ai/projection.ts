@@ -4,6 +4,7 @@ import type {
   AiProjectedAction,
   AiProjectedMessage,
   AiProjectionAudience,
+  AiProjectionOptions,
 } from './types'
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
@@ -28,21 +29,25 @@ const projectAction = (
 const projectMessage = (
   message: AiConversation['messages'][number],
   audience: AiProjectionAudience,
+  options: AiProjectionOptions,
 ): AiProjectedMessage => {
   const owner = audience === 'owner'
   const support = audience === 'support'
-  const userText = message.role === 'user' && !owner ? '[redacted user message]' : message.text
+  const text = owner
+    ? message.text
+    : (options.redactText?.(message.text, message.role, audience) ??
+      `[redacted ${message.role} message]`)
   return {
     id: message.id,
     role: message.role,
-    text: userText,
+    text,
     citations: message.citations.map((citation) =>
       owner
         ? clone(citation)
         : {
             id: citation.id,
             title: citation.title,
-            ...(support && citation.url ? { url: citation.url } : {}),
+            ...(support && citation.url ? safeSupportUrl(citation.url) : {}),
           },
     ),
     actions: message.actions.map((action) => projectAction(action, audience)),
@@ -61,13 +66,24 @@ const projectMessage = (
 export function projectAiConversation(
   conversation: AiConversation,
   audience: AiProjectionAudience,
+  options: AiProjectionOptions = {},
 ): AiConversationProjection {
   return {
     id: conversation.id,
     title: audience === 'owner' ? conversation.title : 'AI conversation',
     status: conversation.status,
-    messages: conversation.messages.map((message) => projectMessage(message, audience)),
+    messages: conversation.messages.map((message) => projectMessage(message, audience, options)),
     usage: audience === 'owner' ? clone(conversation.usage) : null,
     updatedAt: conversation.updatedAt,
+  }
+}
+
+function safeSupportUrl(value: string): { url: string } | Record<string, never> {
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' || url.username || url.password) return {}
+    return { url: `${url.origin}${url.pathname}` }
+  } catch {
+    return {}
   }
 }

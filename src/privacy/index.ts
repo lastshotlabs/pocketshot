@@ -5,6 +5,7 @@ export type DeletionStatus =
   | 'scheduled'
   | 'processing'
   | 'completed'
+  | 'cleanup-required'
   | 'cancelled'
   | 'failed'
 
@@ -17,7 +18,7 @@ export interface AccountDataTransport {
   requestDeletion(): Promise<{ requestId: string; scheduledAt: string }>
   cancelDeletion(requestId: string): Promise<void>
   getDeletion(requestId: string): Promise<{
-    status: Exclude<DeletionStatus, 'idle' | 'requested'>
+    status: Exclude<DeletionStatus, 'idle' | 'requested' | 'cleanup-required'>
   }>
   revokeAuthorization(): Promise<void>
 }
@@ -36,7 +37,12 @@ export interface AccountDataSnapshot {
   deletionScheduledAt: string | null
   authorizationRevoked: boolean
   clearedStores: string[]
+  cleanupFailures: string[]
   error: string | null
+}
+
+export interface AccountDataControllerOptions {
+  sanitizeError?: (error: unknown) => string
 }
 
 export class AccountDataController {
@@ -49,21 +55,30 @@ export class AccountDataController {
     deletionScheduledAt: null,
     authorizationRevoked: false,
     clearedStores: [],
+    cleanupFailures: [],
     error: null,
   }
+  private operationChain: Promise<void> = Promise.resolve()
+  private cleanupPromise: Promise<void> | null = null
 
   constructor(
     private readonly transport: AccountDataTransport,
     private readonly stores: LocalDataStore[],
-  ) {}
+    private readonly options: AccountDataControllerOptions = {},
+  ) {
+    const names = stores.map((store) => store.name.trim())
+    if (names.some((name) => !name) || new Set(names).size !== names.length) {
+      throw new Error('Local data stores require unique names')
+    }
+  }
 
   get snapshot(): AccountDataSnapshot {
     return structuredClone(this.state)
   }
 
   async requestExport(): Promise<void> {
-    if (this.state.exportStatus === 'requested' || this.state.exportStatus === 'processing') return
     await this.run(async () => {
+      if (this.state.exportStatus === 'requested' || this.state.exportStatus === 'processing') return
       const request = await this.transport.requestExport()
       if (!request.requestId) throw new Error('Export request did not return an ID')
       this.state.exportRequestId = request.requestId
@@ -76,6 +91,7 @@ export class AccountDataController {
     if (!this.state.exportRequestId) throw new Error('No export request is active')
     await this.run(async () => {
       const result = await this.transport.getExport(this.state.exportRequestId!)
+      if (result.status === 'ready') validateDownloadUrl(result.downloadUrl)
       this.state.exportStatus = result.status
       this.state.exportDownloadUrl =
         result.status === 'ready' && result.downloadUrl ? result.downloadUrl : null
@@ -83,14 +99,14 @@ export class AccountDataController {
   }
 
   async requestDeletion(): Promise<void> {
-    if (
-      this.state.deletionStatus === 'scheduled' ||
-      this.state.deletionStatus === 'processing' ||
-      this.state.deletionStatus === 'completed'
-    ) {
-      return
-    }
     await this.run(async () => {
+      if (
+        this.state.deletionStatus === 'scheduled' ||
+        this.state.deletionStatus === 'processing' ||
+        this.state.deletionStatus === 'completed'
+      ) {
+        return
+      }
       const request = await this.transport.requestDeletion()
       if (!request.requestId || !Number.isFinite(Date.parse(request.scheduledAt))) {
         throw new Error('Deletion request response is invalid')
@@ -119,25 +135,80 @@ export class AccountDataController {
     }, 'deletion')
   }
 
-  private async completeLocalCleanup(): Promise<void> {
-    await this.transport.revokeAuthorization()
-    this.state.authorizationRevoked = true
-    for (const store of this.stores) {
-      await store.clear()
-      this.state.clearedStores.push(store.name)
+  async completeLocalCleanup(): Promise<void> {
+    this.cleanupPromise ??= this.performLocalCleanup().finally(() => {
+      this.cleanupPromise = null
+    })
+    return this.cleanupPromise
+  }
+
+  private async performLocalCleanup(): Promise<void> {
+    this.state.cleanupFailures = []
+    const operations: Array<{
+      name: string
+      run: () => Promise<void>
+      complete: () => void
+    }> = []
+    if (!this.state.authorizationRevoked) {
+      operations.push({
+        name: 'authorization',
+        run: () => this.transport.revokeAuthorization(),
+        complete: () => {
+          this.state.authorizationRevoked = true
+        },
+      })
     }
+    for (const store of this.stores) {
+      if (this.state.clearedStores.includes(store.name)) continue
+      operations.push({
+        name: store.name,
+        run: () => Promise.resolve(store.clear()),
+        complete: () => {
+          this.state.clearedStores.push(store.name)
+        },
+      })
+    }
+    const results = await Promise.allSettled(operations.map((operation) => operation.run()))
+    results.forEach((result, index) => {
+      const operation = operations[index]!
+      if (result.status === 'fulfilled') operation.complete()
+      else this.state.cleanupFailures.push(operation.name)
+    })
+    this.state.clearedStores.sort()
+    if (this.state.cleanupFailures.length > 0) {
+      this.state.deletionStatus = 'cleanup-required'
+      this.state.error = 'Account cleanup requires retry'
+      throw new Error('Account cleanup requires retry')
+    }
+    this.state.deletionStatus = 'completed'
+    this.state.error = null
   }
 
   private async run(operation: () => Promise<void>, area: 'export' | 'deletion'): Promise<void> {
-    this.state.error = null
-    try {
-      await operation()
-    } catch (error) {
-      this.state.error = error instanceof Error ? error.message : String(error)
-      if (area === 'export') this.state.exportStatus = 'failed'
-      else this.state.deletionStatus = 'failed'
-      throw error
-    }
+    const run = this.operationChain.then(async () => {
+      this.state.error = null
+      try {
+        await operation()
+      } catch (error) {
+        this.state.error = this.safeError(error)
+        if (area === 'export') this.state.exportStatus = 'failed'
+        else if (this.state.deletionStatus !== 'cleanup-required')
+          this.state.deletionStatus = 'failed'
+        throw error
+      }
+    })
+    this.operationChain = run.catch(() => undefined)
+    return run
+  }
+
+  private safeError(error: unknown): string {
+    const value = (
+      this.options.sanitizeError?.(error) ??
+      (error instanceof Error ? error.name : 'Account data operation failed')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (value || 'Account data operation failed').slice(0, 160)
   }
 }
 
@@ -179,4 +250,17 @@ export class RelationshipPrivacyController {
 
 function requireUserId(userId: string): void {
   if (!userId.trim()) throw new Error('User ID is required')
+}
+
+function validateDownloadUrl(value: string | undefined): void {
+  if (!value) throw new Error('Ready export did not return a download URL')
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new Error('Export download URL is invalid')
+  }
+  if (url.protocol !== 'https:' || url.username || url.password) {
+    throw new Error('Export download URL must use credential-free HTTPS')
+  }
 }

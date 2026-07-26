@@ -104,7 +104,7 @@ describe('AiConversationController', () => {
     await expect(ai.send(conversation.id, 'Hello')).rejects.toThrow('sequence gap')
     expect(ai.get(conversation.id)?.messages[1]).toMatchObject({
       status: 'failed',
-      error: expect.stringContaining('sequence gap'),
+      error: 'Error',
     })
   })
 
@@ -167,6 +167,7 @@ describe('AiConversationController', () => {
     const ai = controller(completeEvents, {
       actions,
       reviewPolicy: 'auto',
+      automaticActionKinds: ['log_metric'],
       authorization: { authorize: () => false },
     })
     const conversation = await ai.create()
@@ -194,13 +195,55 @@ describe('AiConversationController', () => {
       commit: vi.fn(async () => 'saved'),
       undo: vi.fn(async () => undefined),
     }
-    const ai = controller(completeEvents, { actions, reviewPolicy: 'auto' })
+    const ai = controller(completeEvents, {
+      actions,
+      reviewPolicy: 'auto',
+      automaticActionKinds: ['log_metric'],
+    })
     const conversation = await ai.create()
     const result = await ai.send(conversation.id, 'Log')
     expect(result.messages[1].actions[0]).toMatchObject({
       status: 'confirmed',
       result: 'saved',
     })
+  })
+
+  it('does not auto-commit action kinds that were not explicitly allowlisted', async () => {
+    const actions = {
+      commit: vi.fn(async () => 'saved'),
+      undo: vi.fn(async () => undefined),
+    }
+    const ai = controller(completeEvents, { actions, reviewPolicy: 'auto' })
+    const conversation = await ai.create()
+    const result = await ai.send(conversation.id, 'Log')
+    expect(result.messages[1].actions[0]?.status).toBe('proposed')
+    expect(actions.commit).not.toHaveBeenCalled()
+  })
+
+  it('coalesces confirmation and does not mutate edited input before authorization', async () => {
+    let allowed = false
+    const actions = {
+      commit: vi.fn(async () => ({ saved: true })),
+      undo: vi.fn(async () => undefined),
+    }
+    const ai = controller(completeEvents, {
+      actions,
+      authorization: { authorize: async () => allowed },
+    })
+    const conversation = await ai.create()
+    await ai.send(conversation.id, 'Log')
+    await expect(
+      ai.confirmAction(conversation.id, 'action-1', { value: 999 }),
+    ).rejects.toThrow('authorization revoked')
+    expect(ai.get(conversation.id)?.messages[1].actions[0]?.input).toEqual({ value: 7 })
+
+    allowed = true
+    const [first, second] = await Promise.all([
+      ai.confirmAction(conversation.id, 'action-1', { value: 9 }),
+      ai.confirmAction(conversation.id, 'action-1', { value: 9 }),
+    ])
+    expect(first).toEqual(second)
+    expect(actions.commit).toHaveBeenCalledOnce()
   })
 
   it('supports rename, archive, and delete lifecycle', async () => {

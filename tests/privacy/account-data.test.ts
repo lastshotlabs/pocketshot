@@ -62,7 +62,55 @@ describe('account data lifecycle', () => {
       deletionStatus: 'completed',
       authorizationRevoked: true,
       clearedStores: ['database', 'secure-tokens'],
+      cleanupFailures: [],
     })
+  })
+
+  it('clears independent local stores even when revocation and another store fail, then retries', async () => {
+    const api = transport()
+    ;(api.revokeAuthorization as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new Error('private revoke detail'))
+      .mockResolvedValue(undefined)
+    const database = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('private database path'))
+      .mockResolvedValue(undefined)
+    const secureTokens = vi.fn(async () => undefined)
+    const controller = new AccountDataController(api, [
+      { name: 'database', clear: database },
+      { name: 'secure-tokens', clear: secureTokens },
+    ])
+    await controller.requestDeletion()
+    await expect(controller.refreshDeletion()).rejects.toThrow('cleanup requires retry')
+    expect(secureTokens).toHaveBeenCalledOnce()
+    expect(controller.snapshot).toMatchObject({
+      deletionStatus: 'cleanup-required',
+      authorizationRevoked: false,
+      clearedStores: ['secure-tokens'],
+      cleanupFailures: ['authorization', 'database'],
+      error: 'Error',
+    })
+
+    await controller.completeLocalCleanup()
+    expect(controller.snapshot).toMatchObject({
+      deletionStatus: 'completed',
+      authorizationRevoked: true,
+      clearedStores: ['database', 'secure-tokens'],
+      cleanupFailures: [],
+    })
+    expect(secureTokens).toHaveBeenCalledOnce()
+  })
+
+  it('rejects insecure or credential-bearing export download URLs', async () => {
+    const api = transport()
+    ;(api.getExport as ReturnType<typeof vi.fn>).mockResolvedValue({
+      status: 'ready',
+      downloadUrl: 'http://user:password@download.example.test/export.zip',
+    })
+    const controller = new AccountDataController(api, [])
+    await controller.requestExport()
+    await expect(controller.refreshExport()).rejects.toThrow('credential-free HTTPS')
+    expect(controller.snapshot.exportDownloadUrl).toBeNull()
   })
 })
 

@@ -105,6 +105,15 @@ export interface AiConversationOptions {
   actions?: AiActionAdapter
   authorization?: AiActionAuthorization
   reviewPolicy?: 'always' | 'auto'
+  /**
+   * Required in addition to `reviewPolicy: auto`. Every other action remains
+   * proposed for explicit user confirmation.
+   */
+  automaticActionKinds?: readonly string[]
+  sanitizeError?: (error: unknown) => string
+  maxDeltaCharacters?: number
+  maxStructuredParts?: number
+  maxActionsPerMessage?: number
   now?: () => Date
   createId?: () => string
 }
@@ -139,6 +148,11 @@ export interface AiConversationProjection {
   messages: AiProjectedMessage[]
   usage: AiUsage | null
   updatedAt: string
+}
+
+export interface AiProjectionOptions {
+  /** Explicitly transforms message text for non-owner audiences. Defaults to redaction. */
+  redactText?: (text: string, role: AiMessage['role'], audience: AiProjectionAudience) => string
 }
 
 export interface AiMemoryFact {

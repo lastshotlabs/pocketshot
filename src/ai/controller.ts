@@ -15,6 +15,8 @@ export class AiConversationController {
   private readonly listeners = new Set<(conversation: AiConversation) => void>()
   private readonly aborters = new Map<string, AbortController>()
   private readonly turns = new Map<string, Promise<AiConversation>>()
+  private readonly actionRuns = new Map<string, Promise<AiActionProposal>>()
+  private persistChain: Promise<void> = Promise.resolve()
 
   constructor(private readonly options: AiConversationOptions) {}
 
@@ -144,12 +146,33 @@ export class AiConversationController {
     actionId: string,
     editedInput?: unknown,
   ): Promise<AiActionProposal> {
+    const key = `${conversationId}:${actionId}:commit`
+    const existing = this.actionRuns.get(key)
+    if (existing) return existing
+    const run = this.performConfirmAction(conversationId, actionId, editedInput).finally(() =>
+      this.actionRuns.delete(key),
+    )
+    this.actionRuns.set(key, run)
+    return run
+  }
+
+  private async performConfirmAction(
+    conversationId: string,
+    actionId: string,
+    editedInput?: unknown,
+  ): Promise<AiActionProposal> {
     const { conversation, action } = this.findAction(conversationId, actionId)
     if (action.status === 'confirmed') return clone(action)
+    if (action.status !== 'proposed') {
+      throw new Error('[pocketshot] Only proposed AI actions can be confirmed')
+    }
     if (!this.options.actions) throw new Error('[pocketshot] No AI action adapter configured')
-    if (editedInput !== undefined) action.input = editedInput
-    await this.authorize('commit', action)
-    action.result = await this.options.actions.commit(clone(action))
+    const candidate = clone(action)
+    if (editedInput !== undefined) candidate.input = clone(editedInput)
+    await this.authorize('commit', candidate)
+    const result = await this.options.actions.commit(clone(candidate))
+    action.input = candidate.input
+    action.result = result
     action.status = 'confirmed'
     await this.changed(conversation)
     return clone(action)
@@ -164,6 +187,20 @@ export class AiConversationController {
   }
 
   async undoAction(conversationId: string, actionId: string): Promise<AiActionProposal> {
+    const key = `${conversationId}:${actionId}:undo`
+    const existing = this.actionRuns.get(key)
+    if (existing) return existing
+    const run = this.performUndoAction(conversationId, actionId).finally(() =>
+      this.actionRuns.delete(key),
+    )
+    this.actionRuns.set(key, run)
+    return run
+  }
+
+  private async performUndoAction(
+    conversationId: string,
+    actionId: string,
+  ): Promise<AiActionProposal> {
     const { conversation, action } = this.findAction(conversationId, actionId)
     if (action.status !== 'confirmed')
       throw new Error('[pocketshot] Only confirmed actions can be undone')
@@ -255,7 +292,7 @@ export class AiConversationController {
         const message = this.assistant(conversation)
         if (message) {
           message.status = 'failed'
-          message.error = error instanceof Error ? error.message : String(error)
+          message.error = this.safeError(error)
         }
         await this.changed(conversation)
       }
@@ -269,8 +306,18 @@ export class AiConversationController {
     const message = this.assistant(conversation)
     if (!message) throw new Error('[pocketshot] Missing assistant message')
     conversation.lastSequence = event.sequence
-    if (event.type === 'delta') message.text += event.text
-    if (event.type === 'part') message.structuredParts.push(event.part)
+    if (event.type === 'delta') {
+      if (message.text.length + event.text.length > (this.options.maxDeltaCharacters ?? 100_000)) {
+        throw new Error('[pocketshot] AI text limit exceeded')
+      }
+      message.text += event.text
+    }
+    if (event.type === 'part') {
+      if (message.structuredParts.length >= (this.options.maxStructuredParts ?? 100)) {
+        throw new Error('[pocketshot] AI structured-part limit exceeded')
+      }
+      message.structuredParts.push(event.part)
+    }
     if (
       event.type === 'citation' &&
       !message.citations.some((item) => item.id === event.citation.id)
@@ -278,6 +325,9 @@ export class AiConversationController {
       message.citations.push(event.citation)
     }
     if (event.type === 'action' && !message.actions.some((item) => item.id === event.action.id)) {
+      if (message.actions.length >= (this.options.maxActionsPerMessage ?? 25)) {
+        throw new Error('[pocketshot] AI action limit exceeded')
+      }
       const action: AiActionProposal = {
         ...event.action,
         status: 'proposed',
@@ -288,7 +338,11 @@ export class AiConversationController {
         },
       }
       message.actions.push(action)
-      if (this.options.reviewPolicy === 'auto' && this.options.actions) {
+      if (
+        this.options.reviewPolicy === 'auto' &&
+        this.options.automaticActionKinds?.includes(action.kind) &&
+        this.options.actions
+      ) {
         await this.authorize('commit', action)
         action.result = await this.options.actions.commit(clone(action))
         action.status = 'confirmed'
@@ -297,7 +351,7 @@ export class AiConversationController {
     if (event.type === 'usage') conversation.usage = event.usage
     if (event.type === 'error') {
       message.status = 'failed'
-      message.error = event.error
+      message.error = this.safeError(event.error)
       conversation.activeAttemptId = null
     }
     if (event.type === 'complete') {
@@ -354,7 +408,20 @@ export class AiConversationController {
   }
 
   private async persist() {
-    await this.options.storage.save(this.conversations)
+    const snapshot = clone(this.conversations)
+    const save = this.persistChain.then(() => this.options.storage.save(snapshot))
+    this.persistChain = save.catch(() => undefined)
+    await save
+  }
+
+  private safeError(error: unknown): string {
+    const value = (
+      this.options.sanitizeError?.(error) ??
+      (error instanceof Error ? error.name : 'AI operation failed')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (value || 'AI operation failed').slice(0, 160)
   }
 
   private id(): string {
