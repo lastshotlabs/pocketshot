@@ -71,6 +71,10 @@ try {
   ])
   run('npm', ['run', 'typecheck'])
   run('npm', ['run', 'export'])
+  // The performance gate runs after the clean-room verifiers in CI. Preserve
+  // only their generated bundles as evidence before deleting the temporary app.
+  await rm(join(shellDir, 'dist'), { recursive: true, force: true })
+  await cp(join(workingShell, 'dist'), join(shellDir, 'dist'), { recursive: true })
   console.log(`${shell} reference shell typechecked and bundled for iOS/Android.`)
 } finally {
   await rm(output, { recursive: true, force: true })
