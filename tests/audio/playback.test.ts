@@ -51,6 +51,27 @@ function nativeAdapter() {
 }
 
 describe('PlaybackController', () => {
+  it('coalesces concurrent native initialization', async () => {
+    const native = nativeAdapter()
+    let release!: () => void
+    ;(native.adapter.configure as ReturnType<typeof vi.fn>).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve
+        }),
+    )
+    const playback = new PlaybackController({
+      adapter: native.adapter,
+      deviceId: 'phone-1',
+    })
+    const first = playback.initialize()
+    const second = playback.initialize()
+    expect(native.adapter.configure).toHaveBeenCalledOnce()
+    release()
+    await Promise.all([first, second])
+    expect(native.adapter.subscribe).toHaveBeenCalledOnce()
+  })
+
   it('loads, claims ownership, plays, seeks, and releases cleanly', async () => {
     const native = nativeAdapter()
     const ownership = {
@@ -139,6 +160,82 @@ describe('PlaybackController', () => {
     await vi.waitFor(() => expect(playback.snapshot.state).toBe('playing'))
     native.command({ type: 'seek', positionMs: 2_000 })
     await vi.waitFor(() => expect(playback.snapshot.positionMs).toBe(2_000))
+  })
+
+  it('routes next and previous commands and reports asynchronous failures', async () => {
+    const native = nativeAdapter()
+    const onError = vi.fn()
+    const onNext = vi.fn(async () => {
+      throw new Error('private provider error')
+    })
+    const onPrevious = vi.fn()
+    const playback = new PlaybackController({
+      adapter: native.adapter,
+      deviceId: 'phone-1',
+      onNext,
+      onPrevious,
+      onError,
+    })
+    await playback.initialize()
+    native.command({ type: 'next' })
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce())
+    native.command({ type: 'previous' })
+    await vi.waitFor(() => expect(onPrevious).toHaveBeenCalledOnce())
+  })
+
+  it('releases ownership after native play failure and natural completion', async () => {
+    const native = nativeAdapter()
+    const release = vi.fn(async () => undefined)
+    const ownership = {
+      claim: vi.fn(async () => ({ ownerId: 'phone-1', leaseId: 'lease-1' })),
+      release,
+    }
+    const playback = new PlaybackController({
+      adapter: native.adapter,
+      deviceId: 'phone-1',
+      sessionId: 'party-1',
+      ownership,
+    })
+    await playback.load(track)
+    ;(native.adapter.play as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('account user@example.com failed'),
+    )
+    await expect(playback.play()).rejects.toThrow()
+    expect(playback.snapshot).toMatchObject({ state: 'error', error: 'Error', ownerId: null })
+    expect(release).toHaveBeenCalledOnce()
+
+    await playback.play()
+    native.status({ positionMs: 10_000, playing: false, ended: true })
+    await vi.waitFor(() => expect(release).toHaveBeenCalledTimes(2))
+    expect(playback.snapshot.ownerId).toBeNull()
+  })
+
+  it('pauses when ownership lease renewal fails', async () => {
+    vi.useFakeTimers()
+    const native = nativeAdapter()
+    const onError = vi.fn()
+    const playback = new PlaybackController({
+      adapter: native.adapter,
+      deviceId: 'phone-1',
+      sessionId: 'party-1',
+      ownershipRenewIntervalMs: 100,
+      ownership: {
+        claim: async () => ({ ownerId: 'phone-1', leaseId: 'lease-1' }),
+        renew: async () => {
+          throw new Error('lease backend secret')
+        },
+        release: async () => undefined,
+      },
+      onError,
+    })
+    await playback.load(track)
+    await playback.play()
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(playback.snapshot).toMatchObject({ state: 'paused', ownerId: null, error: 'Error' })
+    expect(native.adapter.pause).toHaveBeenCalledOnce()
+    expect(onError).toHaveBeenCalledOnce()
+    vi.useRealTimers()
   })
 })
 

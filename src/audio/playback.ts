@@ -23,12 +23,17 @@ export class PlaybackController {
   private unsubscribeCommands: (() => void) | null = null
   private leaseId: string | null = null
   private initialized = false
+  private initializePromise: Promise<void> | null = null
   private wasPlayingBeforeInterruption = false
+  private ownershipRenewTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(private readonly options: PlaybackControllerOptions) {}
 
   get snapshot(): PlaybackSnapshot {
-    return { ...this.snapshotValue }
+    return {
+      ...this.snapshotValue,
+      track: this.snapshotValue.track ? cloneTrack(this.snapshotValue.track) : null,
+    }
   }
 
   subscribe(listener: (snapshot: PlaybackSnapshot) => void): () => void {
@@ -39,40 +44,61 @@ export class PlaybackController {
 
   async initialize(): Promise<void> {
     if (this.initialized) return
-    await this.options.adapter.configure({
-      playsInSilentMode: this.options.playsInSilentMode ?? true,
-      staysActiveInBackground: this.options.backgroundPolicy === 'continue',
-      interruptionMode: 'pause',
-    })
-    this.unsubscribeStatus = this.options.adapter.subscribe((status) => {
-      this.patch({
-        positionMs: status.positionMs,
-        durationMs: status.durationMs ?? this.snapshotValue.durationMs,
-        bufferedMs: status.bufferedMs ?? this.snapshotValue.bufferedMs,
-        state: status.error
-          ? 'error'
-          : status.ended
-            ? 'ended'
-            : status.playing
-              ? 'playing'
-              : this.snapshotValue.state === 'loading'
-                ? 'ready'
-                : this.snapshotValue.state,
-        error: status.error ?? null,
+    this.initializePromise ??= (async () => {
+      await this.options.adapter.configure({
+        playsInSilentMode: this.options.playsInSilentMode ?? true,
+        staysActiveInBackground: this.options.backgroundPolicy === 'continue',
+        interruptionMode: 'pause',
       })
+      this.unsubscribeStatus = this.options.adapter.subscribe((status) => {
+        const positionMs = finiteNonNegative(status.positionMs, this.snapshotValue.positionMs)
+        const durationMs =
+          status.durationMs === undefined
+            ? this.snapshotValue.durationMs
+            : finiteNonNegative(status.durationMs, this.snapshotValue.durationMs)
+        const bufferedMs =
+          status.bufferedMs === undefined
+            ? this.snapshotValue.bufferedMs
+            : finiteNonNegative(status.bufferedMs, this.snapshotValue.bufferedMs)
+        this.patch({
+          positionMs,
+          durationMs,
+          bufferedMs,
+          state: status.error
+            ? 'error'
+            : status.ended
+              ? 'ended'
+              : status.playing
+                ? 'playing'
+                : this.snapshotValue.state === 'loading'
+                  ? 'ready'
+                  : this.snapshotValue.state,
+          error: status.error ? this.safeError(status.error) : null,
+        })
+        if (status.error || status.ended) {
+          void this.releaseOwnership().catch((error) => this.reportError(error))
+        }
+      })
+      this.unsubscribeCommands = this.options.adapter.setRemoteCommandHandler((command) => {
+        void this.handleRemoteCommand(command).catch((error) => this.reportError(error))
+      })
+      this.initialized = true
+    })().finally(() => {
+      this.initializePromise = null
     })
-    this.unsubscribeCommands = this.options.adapter.setRemoteCommandHandler((command) => {
-      void this.handleRemoteCommand(command)
-    })
-    this.initialized = true
+    return this.initializePromise
   }
 
   async load(track: AudioTrack): Promise<void> {
     await this.initialize()
     if (!track.playable) throw new Error('[pocketshot] Track is not playable')
+    if (!track.id.trim() || !track.provider.trim() || !track.title.trim()) {
+      throw new Error('[pocketshot] Track identity and title are required')
+    }
+    if (this.snapshotValue.track?.id !== track.id) await this.releaseOwnership()
     this.patch({
       state: 'loading',
-      track,
+      track: cloneTrack(track),
       positionMs: 0,
       durationMs: track.durationMs ?? null,
       error: null,
@@ -81,7 +107,7 @@ export class PlaybackController {
       await this.options.adapter.load(track)
       this.patch({ state: 'ready' })
     } catch (error) {
-      this.patch({ state: 'error', error: message(error) })
+      this.patch({ state: 'error', error: this.safeError(error) })
       throw error
     }
   }
@@ -89,8 +115,14 @@ export class PlaybackController {
   async play(): Promise<void> {
     if (!this.snapshotValue.track) throw new Error('[pocketshot] Load a track before playback')
     await this.claimOwnership()
-    await this.options.adapter.play()
-    this.patch({ state: 'playing' })
+    try {
+      await this.options.adapter.play()
+      this.patch({ state: 'playing', error: null })
+    } catch (error) {
+      await this.releaseOwnership().catch((releaseError) => this.reportError(releaseError))
+      this.patch({ state: 'error', error: this.safeError(error) })
+      throw error
+    }
   }
 
   async pause(): Promise<void> {
@@ -105,6 +137,7 @@ export class PlaybackController {
   }
 
   async seek(positionMs: number): Promise<void> {
+    if (!Number.isFinite(positionMs)) throw new RangeError('[pocketshot] Seek must be finite')
     const maximum = this.snapshotValue.durationMs ?? Number.MAX_SAFE_INTEGER
     const position = Math.max(0, Math.min(positionMs, maximum))
     await this.options.adapter.seek(position)
@@ -115,9 +148,11 @@ export class PlaybackController {
     if (started) {
       this.wasPlayingBeforeInterruption = this.snapshotValue.state === 'playing'
       if (this.wasPlayingBeforeInterruption) await this.pause()
-    } else if (this.wasPlayingBeforeInterruption && this.options.interruptionPolicy === 'resume') {
+    } else {
+      const shouldResume =
+        this.wasPlayingBeforeInterruption && this.options.interruptionPolicy === 'resume'
       this.wasPlayingBeforeInterruption = false
-      await this.play()
+      if (shouldResume) await this.play()
     }
   }
 
@@ -142,12 +177,21 @@ export class PlaybackController {
   }
 
   async destroy(): Promise<void> {
-    await this.releaseOwnership()
     this.unsubscribeStatus?.()
     this.unsubscribeCommands?.()
-    await this.options.adapter.unload()
+    this.unsubscribeStatus = null
+    this.unsubscribeCommands = null
+    this.cancelOwnershipRenewal()
+    const cleanup = await Promise.allSettled([
+      this.releaseOwnership(),
+      this.options.adapter.unload(),
+    ])
     this.initialized = false
     this.patch({ ...initial })
+    const failure = cleanup.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    )
+    if (failure) throw failure.reason
   }
 
   private async claimOwnership(): Promise<void> {
@@ -165,18 +209,24 @@ export class PlaybackController {
     }
     this.leaseId = lease.leaseId
     this.patch({ ownerId: lease.ownerId })
+    this.scheduleOwnershipRenewal()
   }
 
   private async releaseOwnership(): Promise<void> {
-    if (this.leaseId && this.options.ownership && this.options.sessionId) {
-      await this.options.ownership.release({
-        sessionId: this.options.sessionId,
-        deviceId: this.options.deviceId,
-        leaseId: this.leaseId,
-      })
+    this.cancelOwnershipRenewal()
+    const leaseId = this.leaseId
+    try {
+      if (leaseId && this.options.ownership && this.options.sessionId) {
+        await this.options.ownership.release({
+          sessionId: this.options.sessionId,
+          deviceId: this.options.deviceId,
+          leaseId,
+        })
+      }
+    } finally {
+      this.leaseId = null
+      this.patch({ ownerId: null })
     }
-    this.leaseId = null
-    this.patch({ ownerId: null })
   }
 
   private async handleRemoteCommand(command: RemotePlaybackCommand): Promise<void> {
@@ -184,6 +234,62 @@ export class PlaybackController {
     if (command.type === 'pause') await this.pause()
     if (command.type === 'stop') await this.stop()
     if (command.type === 'seek') await this.seek(command.positionMs)
+    if (command.type === 'next') await this.options.onNext?.()
+    if (command.type === 'previous') await this.options.onPrevious?.()
+  }
+
+  private scheduleOwnershipRenewal(): void {
+    this.cancelOwnershipRenewal()
+    if (!this.options.ownership?.renew || !this.leaseId || !this.options.sessionId) return
+    this.ownershipRenewTimer = (this.options.setTimer ?? setTimeout)(() => {
+      this.ownershipRenewTimer = null
+      void this.renewOwnership()
+    }, this.options.ownershipRenewIntervalMs ?? 15_000)
+  }
+
+  private async renewOwnership(): Promise<void> {
+    if (!this.options.ownership?.renew || !this.leaseId || !this.options.sessionId) return
+    try {
+      const lease = await this.options.ownership.renew({
+        sessionId: this.options.sessionId,
+        deviceId: this.options.deviceId,
+        leaseId: this.leaseId,
+      })
+      if (lease.ownerId !== this.options.deviceId) {
+        await this.options.adapter.pause()
+        this.leaseId = null
+        this.patch({ state: 'paused', ownerId: lease.ownerId })
+        return
+      }
+      this.leaseId = lease.leaseId
+      this.scheduleOwnershipRenewal()
+    } catch (error) {
+      await this.options.adapter.pause().catch(() => undefined)
+      this.leaseId = null
+      this.patch({ state: 'paused', ownerId: null, error: this.safeError(error) })
+      this.reportError(error)
+    }
+  }
+
+  private cancelOwnershipRenewal(): void {
+    if (this.ownershipRenewTimer) {
+      ;(this.options.clearTimer ?? clearTimeout)(this.ownershipRenewTimer)
+    }
+    this.ownershipRenewTimer = null
+  }
+
+  private safeError(error: unknown): string {
+    const value = (
+      this.options.sanitizeError?.(error) ??
+      (error instanceof Error ? error.name : 'Playback failure')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (value || 'Playback failure').slice(0, 160)
+  }
+
+  private reportError(error: unknown): void {
+    this.options.onError?.(error)
   }
 
   private patch(patch: Partial<PlaybackSnapshot>): void {
@@ -192,6 +298,12 @@ export class PlaybackController {
   }
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
+function cloneTrack(track: AudioTrack): AudioTrack {
+  return JSON.parse(JSON.stringify(track)) as AudioTrack
+}
+
+function finiteNonNegative(value: number, fallback: number): number
+function finiteNonNegative(value: number, fallback: number | null): number | null
+function finiteNonNegative(value: number, fallback: number | null): number | null {
+  return Number.isFinite(value) && value >= 0 ? value : fallback
 }

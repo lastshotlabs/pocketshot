@@ -73,7 +73,13 @@ export interface PlaybackOwnershipAdapter {
   claim(input: { sessionId: string; deviceId: string }): Promise<{
     ownerId: string
     leaseId: string
+    expiresAt?: string
   }>
+  renew?(input: {
+    sessionId: string
+    deviceId: string
+    leaseId: string
+  }): Promise<{ ownerId: string; leaseId: string; expiresAt?: string }>
   release(input: { sessionId: string; deviceId: string; leaseId: string }): Promise<void>
 }
 
@@ -86,6 +92,17 @@ export interface PlaybackControllerOptions {
   interruptionPolicy?: 'resume' | 'stay-paused'
   routeLossPolicy?: 'pause' | 'continue'
   playsInSilentMode?: boolean
+  /** Handles lock-screen queue navigation without coupling the controller to an app queue. */
+  onNext?: () => void | Promise<void>
+  onPrevious?: () => void | Promise<void>
+  /** Receives asynchronous native/remote/ownership failures. */
+  onError?: (error: unknown) => void
+  /** Converts errors into bounded, privacy-safe snapshot text. */
+  sanitizeError?: (error: unknown) => string
+  /** Ownership lease renewal cadence when the adapter supports renewal. Default: 15 seconds. */
+  ownershipRenewIntervalMs?: number
+  setTimer?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>
+  clearTimer?: (timer: ReturnType<typeof setTimeout>) => void
 }
 
 export interface PairingToken {
