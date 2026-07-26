@@ -37,7 +37,17 @@ export class ApiClient {
     tokenStorage: TokenStorage
     contract: PocketshotAuthContract
   }) {
-    this.baseUrl = opts.baseUrl.replace(/\/$/, '')
+    const base = new URL(opts.baseUrl)
+    if (
+      (base.protocol !== 'https:' && !['localhost', '127.0.0.1', '::1'].includes(base.hostname)) ||
+      base.username ||
+      base.password ||
+      base.search ||
+      base.hash
+    ) {
+      throw new Error('[pocketshot] API base URL must use HTTPS without credentials or query data')
+    }
+    this.baseUrl = base.toString().replace(/\/$/, '')
     this.tokenStorage = opts.tokenStorage
     this.contract = opts.contract
   }
@@ -54,6 +64,7 @@ export class ApiClient {
       })
       if (!res.ok) return null
       const data = (await res.json()) as { token: string; refreshToken?: string }
+      if (!data.token?.trim()) return null
       await this.tokenStorage.setToken(data.token)
       if (data.refreshToken) {
         await this.tokenStorage.setRefreshToken(data.refreshToken)
@@ -87,14 +98,20 @@ export class ApiClient {
   }
 
   async fetch(path: string, options: RequestOptions = {}): Promise<Response> {
+    if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) {
+      throw new Error('[pocketshot] API path must be relative to the configured origin')
+    }
     const { skipAuth = false, ...init } = options
     const headers = await this.buildHeaders(skipAuth)
 
     // Merge any caller-supplied headers
     if (init.headers) {
-      new Headers(init.headers as Record<string, string>).forEach((val, key) =>
-        headers.set(key, val),
-      )
+      new Headers(init.headers as Record<string, string>).forEach((val, key) => {
+        if (!skipAuth && key.toLowerCase() === this.contract.headers.userToken.toLowerCase()) {
+          throw new Error('[pocketshot] API authentication header is managed by Pocketshot')
+        }
+        headers.set(key, val)
+      })
     }
 
     const res = await fetch(`${this.baseUrl}${path}`, { ...init, headers })
@@ -173,7 +190,7 @@ export class ApiClient {
 function parseRetryAfter(value: string | null): number | undefined {
   if (!value) return undefined
   const seconds = Number(value)
-  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1_000
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.min(seconds * 1_000, 86_400_000)
   const date = Date.parse(value)
-  return Number.isNaN(date) ? undefined : Math.max(0, date - Date.now())
+  return Number.isNaN(date) ? undefined : Math.min(Math.max(0, date - Date.now()), 86_400_000)
 }
