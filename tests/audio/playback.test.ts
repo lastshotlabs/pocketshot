@@ -266,6 +266,30 @@ describe('pairing and second screen', () => {
     expect((await pairing.refresh()).status).toBe('expired')
     await pairing.revoke()
     expect(pairing.token?.status).toBe('revoked')
+    expect(pairing.token?.code).toBe('')
+    expect(pairing.token?.qrPayload).toBe('')
+  })
+
+  it('rejects invalid or identity-swapped pairing tokens', async () => {
+    const pairing = new PairingController({
+      create: async () => ({
+        id: 'pair-1',
+        code: '123456',
+        qrPayload: 'pocketshot://pair/123456',
+        expiresAt: '2026-08-01T00:00:00Z',
+        status: 'pending',
+      }),
+      get: async () => ({
+        id: 'pair-2',
+        code: '654321',
+        qrPayload: 'pocketshot://pair/654321',
+        expiresAt: '2026-08-01T00:00:00Z',
+        status: 'pending',
+      }),
+      revoke: async () => undefined,
+    })
+    await pairing.create('party', 'display')
+    await expect(pairing.refresh()).rejects.toThrow('identity')
   })
 
   it('projects only explicitly selected public state with monotonic sequence', () => {

@@ -18,7 +18,20 @@ export class AiConversationController {
   private readonly actionRuns = new Map<string, Promise<AiActionProposal>>()
   private persistChain: Promise<void> = Promise.resolve()
 
-  constructor(private readonly options: AiConversationOptions) {}
+  constructor(private readonly options: AiConversationOptions) {
+    for (const [name, value] of Object.entries({
+      maxDeltaCharacters: options.maxDeltaCharacters ?? 100_000,
+      maxStructuredParts: options.maxStructuredParts ?? 100,
+      maxActionsPerMessage: options.maxActionsPerMessage ?? 25,
+      maxCitationsPerMessage: options.maxCitationsPerMessage ?? 100,
+      maxMessagesPerConversation: options.maxMessagesPerConversation ?? 2_000,
+      maxConversations: options.maxConversations ?? 500,
+      maxInputCharacters: options.maxInputCharacters ?? 50_000,
+      maxPersistedBytes: options.maxPersistedBytes ?? 20 * 1024 * 1024,
+    })) {
+      if (!Number.isInteger(value) || value < 1) throw new Error(`[pocketshot] ${name} is invalid`)
+    }
+  }
 
   subscribe(listener: (conversation: AiConversation) => void): () => void {
     this.listeners.add(listener)
@@ -28,6 +41,10 @@ export class AiConversationController {
   async load(): Promise<AiConversation[]> {
     if (!this.loaded) {
       this.conversations = await this.options.storage.load()
+      if (this.conversations.length > (this.options.maxConversations ?? 500)) {
+        throw new Error('[pocketshot] AI conversation capacity exceeded')
+      }
+      this.assertPersistedSize(this.conversations)
       for (const conversation of this.conversations) {
         if (conversation.activeAttemptId) {
           const message = this.assistant(conversation)
@@ -68,11 +85,15 @@ export class AiConversationController {
 
   async create(title = 'New conversation'): Promise<AiConversation> {
     await this.load()
+    if (!title.trim() || title.length > 200) throw new Error('[pocketshot] Conversation title is invalid')
+    if (this.conversations.length >= (this.options.maxConversations ?? 500)) {
+      throw new Error('[pocketshot] AI conversation capacity exceeded')
+    }
     const timestamp = this.now()
     const conversation: AiConversation = {
       schemaVersion: 1,
       id: this.id(),
-      title,
+      title: title.trim(),
       status: 'active',
       messages: [],
       usage: null,
@@ -218,7 +239,17 @@ export class AiConversationController {
     idempotencyKey: string,
   ): Promise<AiConversation> {
     await this.load()
+    if (
+      !text.trim() ||
+      text.length > (this.options.maxInputCharacters ?? 50_000) ||
+      !idempotencyKey.trim()
+    ) {
+      throw new Error('[pocketshot] AI message or idempotency key is invalid')
+    }
     const conversation = this.require(conversationId)
+    if (conversation.messages.length + 2 > (this.options.maxMessagesPerConversation ?? 2_000)) {
+      throw new Error('[pocketshot] AI message capacity exceeded')
+    }
     const attempt = await this.options.transport.createAttempt({
       conversationId,
       message: text,
@@ -322,6 +353,9 @@ export class AiConversationController {
       event.type === 'citation' &&
       !message.citations.some((item) => item.id === event.citation.id)
     ) {
+      if (message.citations.length >= (this.options.maxCitationsPerMessage ?? 100)) {
+        throw new Error('[pocketshot] AI citation limit exceeded')
+      }
       message.citations.push(event.citation)
     }
     if (event.type === 'action' && !message.actions.some((item) => item.id === event.action.id)) {
@@ -409,9 +443,17 @@ export class AiConversationController {
 
   private async persist() {
     const snapshot = clone(this.conversations)
+    this.assertPersistedSize(snapshot)
     const save = this.persistChain.then(() => this.options.storage.save(snapshot))
     this.persistChain = save.catch(() => undefined)
     await save
+  }
+
+  private assertPersistedSize(conversations: AiConversation[]): void {
+    const bytes = new TextEncoder().encode(JSON.stringify(conversations)).byteLength
+    if (bytes > (this.options.maxPersistedBytes ?? 20 * 1024 * 1024)) {
+      throw new Error('[pocketshot] AI persisted storage limit exceeded')
+    }
   }
 
   private safeError(error: unknown): string {

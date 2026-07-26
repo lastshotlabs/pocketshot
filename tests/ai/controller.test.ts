@@ -69,6 +69,38 @@ const completeEvents: AiStreamEvent[] = [
 ]
 
 describe('AiConversationController', () => {
+  it('bounds conversations, input, messages, and persisted bytes', async () => {
+    const ai = controller([], { maxConversations: 1, maxInputCharacters: 3 })
+    const conversation = await ai.create('One')
+    await expect(ai.create('Two')).rejects.toThrow('conversation capacity')
+    await expect(ai.send(conversation.id, 'four')).rejects.toThrow('message')
+
+    const tooSmall = controller([], { maxPersistedBytes: 1 })
+    await expect(tooSmall.create()).rejects.toThrow('storage limit')
+  })
+
+  it('bounds citations independently from streamed text', async () => {
+    const ai = controller(
+      [
+        {
+          type: 'citation',
+          sequence: 1,
+          attemptId: 'attempt-1',
+          citation: { id: 'one', title: 'One' },
+        },
+        {
+          type: 'citation',
+          sequence: 2,
+          attemptId: 'attempt-1',
+          citation: { id: 'two', title: 'Two' },
+        },
+      ],
+      { maxCitationsPerMessage: 1 },
+    )
+    const conversation = await ai.create()
+    await expect(ai.send(conversation.id, 'go')).rejects.toThrow('citation limit')
+  })
+
   it('streams text, citations, actions, usage, and completion durably', async () => {
     const ai = controller(completeEvents)
     const conversation = await ai.create('Coach')

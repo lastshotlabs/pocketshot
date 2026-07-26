@@ -114,6 +114,11 @@ export interface AiConversationOptions {
   maxDeltaCharacters?: number
   maxStructuredParts?: number
   maxActionsPerMessage?: number
+  maxCitationsPerMessage?: number
+  maxMessagesPerConversation?: number
+  maxConversations?: number
+  maxInputCharacters?: number
+  maxPersistedBytes?: number
   now?: () => Date
   createId?: () => string
 }
