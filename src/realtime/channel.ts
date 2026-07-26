@@ -14,6 +14,8 @@ const SOCKET_OPEN = 1
 
 type ServerControlFrame =
   | { type: 'pong' }
+  | { type: 'authenticated' }
+  | { type: 'auth_rejected' }
   | { type: 'auth_expired' }
   | { type: 'reset'; reason?: string }
 
@@ -26,6 +28,7 @@ export class RealtimeChannel<TPayload, TState> {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private heartbeatTimer: ReturnType<typeof setTimeout> | null = null
   private heartbeatDeadlineTimer: ReturnType<typeof setTimeout> | null = null
+  private authDeadlineTimer: ReturnType<typeof setTimeout> | null = null
   private connectionGeneration = 0
   private reconnectAttempt = 0
   private started = false
@@ -41,6 +44,7 @@ export class RealtimeChannel<TPayload, TState> {
     duplicateEvents: 0,
     rejectedEvents: 0,
     gapRecoveries: 0,
+    authenticationFailures: 0,
     lastError: null,
   }
 
@@ -123,12 +127,18 @@ export class RealtimeChannel<TPayload, TState> {
       this.socket = socket
       socket.onopen = () => {
         if (this.socket !== socket) return
-        this.reconnectAttempt = 0
-        this.patchDiagnostics({ reconnectAttempt: 0, lastError: null })
-        this.setConnectionState('connected')
-        if (token) this.send({ type: 'authenticate', token })
-        this.send({ type: 'subscribe', channel: this.options.channel, cursor })
-        this.scheduleHeartbeat()
+        if (token) {
+          this.setConnectionState('authenticating')
+          this.send({ type: 'authenticate', token })
+          if (this.options.requireAuthAcknowledgement ?? true) {
+            this.authDeadlineTimer = this.setTimer(
+              () => this.failConnection('Authentication timeout'),
+              this.options.authTimeoutMs ?? 10_000,
+            )
+            return
+          }
+        }
+        this.completeSubscription(cursor)
       }
       socket.onmessage = (event) => {
         if (this.socket === socket) void this.handleMessage(event.data)
@@ -164,12 +174,23 @@ export class RealtimeChannel<TPayload, TState> {
         this.patchDiagnostics({ lastHeartbeatAt: this.now() })
         this.clearHeartbeatDeadline()
         this.scheduleHeartbeat()
+      } else if (decoded.type === 'authenticated') {
+        if (this.diagnosticsValue.state !== 'authenticating') return
+        this.clearAuthDeadline()
+        const cursor = this.reconciler.cursor ?? this.diagnosticsValue.lastCursor
+        this.completeSubscription(cursor)
       } else if (decoded.type === 'auth_expired') {
-        await this.options.refreshAuth?.()
-        this.failConnection('Authentication expired')
+        await this.handleAuthorizationFailure(true)
+      } else if (decoded.type === 'auth_rejected') {
+        await this.handleAuthorizationFailure(false)
       } else {
         await this.reconcile(decoded.reason ?? 'server reset')
       }
+      return
+    }
+
+    if (this.diagnosticsValue.state === 'authenticating') {
+      this.reject('Realtime event received before authentication')
       return
     }
 
@@ -271,6 +292,15 @@ export class RealtimeChannel<TPayload, TState> {
     if (!this.started || this.paused || this.reconnectTimer) return
     this.closeSocket()
     this.reconnectAttempt += 1
+    const maxAttempts = this.options.maxReconnectAttempts
+    if (maxAttempts !== undefined && this.reconnectAttempt > maxAttempts) {
+      this.patchDiagnostics({
+        state: 'exhausted',
+        reconnectAttempt: this.reconnectAttempt - 1,
+        lastError: this.safeError(error),
+      })
+      return
+    }
     const min = this.options.minReconnectDelayMs ?? 1_000
     const max = this.options.maxReconnectDelayMs ?? 30_000
     const jitter = this.options.reconnectJitter ?? 0.2
@@ -280,7 +310,7 @@ export class RealtimeChannel<TPayload, TState> {
     this.patchDiagnostics({
       state: 'backing_off',
       reconnectAttempt: this.reconnectAttempt,
-      lastError: error,
+      lastError: this.safeError(error),
     })
     this.reconnectTimer = this.setTimer(() => {
       this.reconnectTimer = null
@@ -295,7 +325,7 @@ export class RealtimeChannel<TPayload, TState> {
   private reject(error: string): void {
     this.patchDiagnostics({
       rejectedEvents: this.diagnosticsValue.rejectedEvents + 1,
-      lastError: error,
+      lastError: this.safeError(error),
     })
   }
 
@@ -312,6 +342,7 @@ export class RealtimeChannel<TPayload, TState> {
     const socket = this.socket
     this.socket = null
     this.cancelHeartbeat()
+    this.clearAuthDeadline()
     if (socket) socket.close(code, reason)
   }
 
@@ -331,6 +362,39 @@ export class RealtimeChannel<TPayload, TState> {
     this.heartbeatDeadlineTimer = null
   }
 
+  private clearAuthDeadline(): void {
+    if (this.authDeadlineTimer) this.clearTimer(this.authDeadlineTimer)
+    this.authDeadlineTimer = null
+  }
+
+  private completeSubscription(cursor: number | null): void {
+    this.clearAuthDeadline()
+    this.reconnectAttempt = 0
+    this.patchDiagnostics({ reconnectAttempt: 0, lastError: null })
+    this.setConnectionState('connected')
+    this.send({ type: 'subscribe', channel: this.options.channel, cursor })
+    this.scheduleHeartbeat()
+  }
+
+  private async handleAuthorizationFailure(allowRefresh: boolean): Promise<void> {
+    this.patchDiagnostics({
+      authenticationFailures: this.diagnosticsValue.authenticationFailures + 1,
+    })
+    if (allowRefresh && this.options.refreshAuth) {
+      try {
+        await this.options.refreshAuth()
+        this.failConnection('Authentication expired')
+        return
+      } catch {
+        // Fall through to explicit authorization-required state.
+      }
+    }
+    this.closeSocket(4001, 'authorization required')
+    this.cancelReconnect()
+    this.setConnectionState('authorization_required')
+    await this.options.onAuthorizationRequired?.()
+  }
+
   private setConnectionState(state: RealtimeConnectionState): void {
     this.patchDiagnostics({ state })
   }
@@ -348,7 +412,13 @@ export class RealtimeChannel<TPayload, TState> {
   private isControlFrame(value: unknown): value is ServerControlFrame {
     if (!value || typeof value !== 'object' || !('type' in value)) return false
     const type = (value as { type?: unknown }).type
-    return type === 'pong' || type === 'auth_expired' || type === 'reset'
+    return (
+      type === 'pong' ||
+      type === 'authenticated' ||
+      type === 'auth_rejected' ||
+      type === 'auth_expired' ||
+      type === 'reset'
+    )
   }
 
   private supportsVersion(version: number): boolean {
@@ -372,7 +442,17 @@ export class RealtimeChannel<TPayload, TState> {
   }
 
   private errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : String(error)
+    return this.safeError(error)
+  }
+
+  private safeError(error: unknown): string {
+    const sanitized = (
+      this.options.sanitizeError?.(error) ??
+      (typeof error === 'string' ? error : error instanceof Error ? error.name : 'Realtime failure')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (sanitized || 'Realtime failure').slice(0, 160)
   }
 }
 

@@ -3,11 +3,14 @@ import type { z } from 'zod'
 export type RealtimeConnectionState =
   | 'idle'
   | 'connecting'
+  | 'authenticating'
   | 'connected'
   | 'reconciling'
   | 'backing_off'
   | 'paused'
   | 'stale'
+  | 'authorization_required'
+  | 'exhausted'
   | 'closed'
 
 export interface RealtimeEvent<T = unknown> {
@@ -37,6 +40,7 @@ export interface RealtimeDiagnostics {
   duplicateEvents: number
   rejectedEvents: number
   gapRecoveries: number
+  authenticationFailures: number
   lastError: string | null
 }
 
@@ -69,6 +73,8 @@ export interface RealtimeChannelOptions<TPayload, TState> {
   schemas: RealtimeSchemas<TPayload, TState>
   getToken?: () => Promise<string | null>
   refreshAuth?: () => Promise<void>
+  /** Called when credentials cannot be refreshed or the server rejects them. */
+  onAuthorizationRequired?: () => void | Promise<void>
   fetchSnapshot: (afterCursor: number | null) => Promise<RealtimeSnapshot<TState>>
   reduce: (state: TState, event: RealtimeEvent<TPayload>) => TState
   storage?: RealtimeChannelStorage
@@ -77,13 +83,21 @@ export interface RealtimeChannelOptions<TPayload, TState> {
   heartbeatTimeoutMs?: number
   minReconnectDelayMs?: number
   maxReconnectDelayMs?: number
+  /** Stops automatic reconnect after this many consecutive failures. Default: unlimited. */
+  maxReconnectAttempts?: number
   reconnectJitter?: number
+  /** Require an `authenticated` control frame before subscribing. Default: true when token exists. */
+  requireAuthAcknowledgement?: boolean
+  /** Time allowed for auth acknowledgement. Default: 10 seconds. */
+  authTimeoutMs?: number
   maxBufferedEvents?: number
   supportedVersions?: readonly number[]
   now?: () => number
   random?: () => number
   setTimer?: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>
   clearTimer?: (timer: ReturnType<typeof setTimeout>) => void
+  /** Converts failures into bounded, privacy-safe diagnostics. */
+  sanitizeError?: (error: unknown) => string
 }
 
 export type RealtimeStateListener<TState> = (

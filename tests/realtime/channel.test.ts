@@ -104,6 +104,9 @@ describe('RealtimeChannel', () => {
     expect(socketUrls[0]).not.toContain('access-token')
     expect(sockets[0].sent[0]).toContain('"type":"authenticate"')
     expect(sockets[0].sent[0]).toContain('"token":"access-token"')
+    expect(sockets[0].sent).toHaveLength(1)
+    expect(channel.diagnostics.state).toBe('authenticating')
+    sockets[0].message({ type: 'authenticated' })
     expect(sockets[0].sent[1]).toContain('"type":"subscribe"')
     sockets[0].message({ ...event(1), payload: 99 })
     sockets[0].message(event(1))
@@ -122,6 +125,7 @@ describe('RealtimeChannel', () => {
     ])
     await channel.start()
     sockets[0].open()
+    sockets[0].message({ type: 'authenticated' })
     sockets[0].message(event(2))
     await settle()
 
@@ -144,6 +148,7 @@ describe('RealtimeChannel', () => {
     ])
     await channel.start()
     sockets[0].open()
+    sockets[0].message({ type: 'authenticated' })
     channel.pause()
 
     expect(channel.diagnostics.state).toBe('paused')
@@ -160,6 +165,7 @@ describe('RealtimeChannel', () => {
     const { channel, sockets, refreshAuth } = setup()
     await channel.start()
     sockets[0].open()
+    sockets[0].message({ type: 'authenticated' })
     sockets[0].message({ type: 'auth_expired' })
     await settle()
 
@@ -182,6 +188,7 @@ describe('RealtimeChannel', () => {
     const { channel, sockets } = setup()
     await channel.start()
     sockets[0].open()
+    sockets[0].message({ type: 'authenticated' })
 
     await vi.advanceTimersByTimeAsync(100)
     expect(sockets[0].sent.at(-1)).toContain('"type":"ping"')
@@ -195,6 +202,7 @@ describe('RealtimeChannel', () => {
     const { channel, sockets } = setup()
     await channel.start()
     sockets[0].open()
+    sockets[0].message({ type: 'authenticated' })
     sockets[0].message(event(1))
     sockets[0].message(event(1))
     await settle()
@@ -208,11 +216,107 @@ describe('RealtimeChannel', () => {
     const { channel, sockets } = setup()
     await channel.start()
     sockets[0].open()
+    sockets[0].message({ type: 'authenticated' })
     sockets[0].message({ ...event(1), version: 2 })
     await settle()
 
     expect(channel.state).toEqual({ values: [] })
     expect(channel.diagnostics.rejectedEvents).toBe(1)
+    channel.stop()
+  })
+
+  it('does not subscribe or accept events before authentication acknowledgement', async () => {
+    const { channel, sockets } = setup()
+    await channel.start()
+    sockets[0].open()
+    sockets[0].message(event(1))
+    await settle()
+
+    expect(sockets[0].sent).toHaveLength(1)
+    expect(channel.state).toEqual({ values: [] })
+    expect(channel.diagnostics.state).toBe('authenticating')
+    expect(channel.diagnostics.rejectedEvents).toBe(1)
+    channel.stop()
+  })
+
+  it('requires reauthorization after server rejection without reconnect loops', async () => {
+    const onAuthorizationRequired = vi.fn()
+    const sockets: FakeSocket[] = []
+    const channel = new RealtimeChannel<string, State>({
+      channel: 'room:1',
+      url: 'wss://api.example.test/realtime',
+      schemas: { payload: z.string(), state: z.object({ values: z.array(z.string()) }) },
+      getToken: async () => 'bad-token',
+      onAuthorizationRequired,
+      fetchSnapshot: async () => ({
+        version: 1,
+        channel: 'room:1',
+        cursor: 0,
+        state: { values: [] },
+      }),
+      reduce: (state) => state,
+      socketFactory: () => {
+        const socket = new FakeSocket()
+        sockets.push(socket)
+        return socket
+      },
+    })
+    await channel.start()
+    sockets[0]!.open()
+    sockets[0]!.message({ type: 'auth_rejected' })
+    await settle()
+
+    expect(channel.diagnostics.state).toBe('authorization_required')
+    expect(channel.diagnostics.authenticationFailures).toBe(1)
+    expect(onAuthorizationRequired).toHaveBeenCalledOnce()
+    await vi.runAllTimersAsync()
+    expect(sockets).toHaveLength(1)
+    channel.stop()
+  })
+
+  it('fails closed when authentication acknowledgement times out', async () => {
+    const { channel, sockets } = setup()
+    await channel.start()
+    sockets[0].open()
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(channel.diagnostics.state).toBe('backing_off')
+    expect(channel.diagnostics.lastError).toBe('Authentication timeout')
+    expect(sockets[0].sent.some((frame) => frame.includes('"subscribe"'))).toBe(false)
+    channel.stop()
+  })
+
+  it('stops reconnecting after the configured failure budget', async () => {
+    const sockets: FakeSocket[] = []
+    const channel = new RealtimeChannel<string, State>({
+      channel: 'room:1',
+      url: 'wss://api.example.test/realtime',
+      schemas: { payload: z.string(), state: z.object({ values: z.array(z.string()) }) },
+      fetchSnapshot: async () => ({
+        version: 1,
+        channel: 'room:1',
+        cursor: 0,
+        state: { values: [] },
+      }),
+      reduce: (state) => state,
+      maxReconnectAttempts: 1,
+      reconnectJitter: 0,
+      socketFactory: () => {
+        const socket = new FakeSocket()
+        sockets.push(socket)
+        return socket
+      },
+    })
+    await channel.start()
+    sockets[0]!.open()
+    sockets[0]!.serverClose()
+    await vi.advanceTimersByTimeAsync(1_000)
+    sockets[1]!.serverClose()
+
+    expect(channel.diagnostics.state).toBe('exhausted')
+    await vi.runAllTimersAsync()
+    expect(sockets).toHaveLength(2)
     channel.stop()
   })
 })
