@@ -22,6 +22,10 @@ export interface CommunityDraft {
 export class CommunityComposerController {
   private drafts = new Map<string, CommunityDraft>()
 
+  constructor(
+    private readonly limits = { drafts: 100, mentions: 100, attachments: 20, bodyCharacters: 100_000 },
+  ) {}
+
   get(id: string): CommunityDraft | null {
     const draft = this.drafts.get(id)
     return draft ? structuredClone(draft) : null
@@ -29,6 +33,16 @@ export class CommunityComposerController {
 
   save(draft: CommunityDraft): void {
     if (!draft.id.trim()) throw new Error('Draft id is required')
+    if (!this.drafts.has(draft.id) && this.drafts.size >= this.limits.drafts) {
+      throw new Error('Community draft capacity exceeded')
+    }
+    if (
+      draft.body.length > this.limits.bodyCharacters ||
+      draft.mentions.length > this.limits.mentions ||
+      draft.attachments.length > this.limits.attachments
+    ) {
+      throw new Error('Community draft content capacity exceeded')
+    }
     if (draft.poll) validatePoll(draft.poll)
     this.drafts.set(draft.id, {
       ...structuredClone(draft),
@@ -73,11 +87,19 @@ export class SocialGraphController {
   private following = new Set<string>()
   private subscriptions = new Set<string>()
 
+  constructor(private readonly capacity = 10_000) {
+    if (!Number.isInteger(capacity) || capacity < 1)
+      throw new Error('Social graph capacity is invalid')
+  }
+
   get snapshot(): { following: string[]; subscriptions: string[] } {
     return { following: [...this.following], subscriptions: [...this.subscriptions] }
   }
 
   follow(userId: string): void {
+    if (!this.following.has(userId) && this.following.size >= this.capacity) {
+      throw new Error('Social graph capacity exceeded')
+    }
     this.following.add(requireId(userId))
   }
 
@@ -86,6 +108,9 @@ export class SocialGraphController {
   }
 
   subscribe(channelId: string): void {
+    if (!this.subscriptions.has(channelId) && this.subscriptions.size >= this.capacity) {
+      throw new Error('Social graph capacity exceeded')
+    }
     this.subscriptions.add(requireId(channelId))
   }
 
@@ -109,6 +134,11 @@ export class CommunityProfileController {
   private profiles = new Map<string, CommunityProfile>()
   private handles = new Map<string, string>()
 
+  constructor(private readonly capacity = 10_000) {
+    if (!Number.isInteger(capacity) || capacity < 1)
+      throw new Error('Profile capacity is invalid')
+  }
+
   get(userId: string): CommunityProfile | null {
     const profile = this.profiles.get(userId)
     return profile ? structuredClone(profile) : null
@@ -124,6 +154,9 @@ export class CommunityProfileController {
     }
     const claimedBy = this.handles.get(handle)
     if (claimedBy && claimedBy !== userId) throw new Error('Handle is already in use')
+    if (!this.profiles.has(userId) && this.profiles.size >= this.capacity) {
+      throw new Error('Profile capacity exceeded')
+    }
 
     const previous = this.profiles.get(userId)
     if (previous && previous.handle !== handle) this.handles.delete(previous.handle)
@@ -167,6 +200,11 @@ export class RoomStateController {
   private presence = new Map<string, RoomPresence>()
   private latestSequence = 0
 
+  constructor(private readonly capacity = 10_000) {
+    if (!Number.isInteger(capacity) || capacity < 1)
+      throw new Error('Room state capacity is invalid')
+  }
+
   get snapshot(): {
     latestSequence: number
     unread: Record<string, number>
@@ -190,6 +228,9 @@ export class RoomStateController {
 
   openRoom(roomId: string): void {
     const id = requireId(roomId)
+    if (!this.readCursors.has(id) && this.readCursors.size >= this.capacity) {
+      throw new Error('Room state capacity exceeded')
+    }
     if (!this.readCursors.has(id)) this.readCursors.set(id, 0)
   }
 
@@ -200,6 +241,9 @@ export class RoomStateController {
   }
 
   setPresence(presence: RoomPresence): void {
+    if (!this.presence.has(presence.userId) && this.presence.size >= this.capacity) {
+      throw new Error('Room presence capacity exceeded')
+    }
     this.presence.set(requireId(presence.userId), structuredClone(presence))
   }
 

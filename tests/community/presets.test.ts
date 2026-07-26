@@ -8,6 +8,19 @@ import {
 import { describe, expect, it } from 'vitest'
 
 describe('CommunityComposerController', () => {
+  it('bounds draft content and collection count', () => {
+    const composer = new CommunityComposerController({
+      drafts: 1,
+      mentions: 1,
+      attachments: 1,
+      bodyCharacters: 5,
+    })
+    composer.save({ id: 'one', body: 'hello', mentions: [], attachments: [], poll: null })
+    expect(() =>
+      composer.save({ id: 'two', body: 'hello', mentions: [], attachments: [], poll: null }),
+    ).toThrow('capacity')
+  })
+
   it('deduplicates mentions/attachments and waits for upload before publish', () => {
     const composer = new CommunityComposerController()
     composer.save({

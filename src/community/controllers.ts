@@ -361,6 +361,14 @@ export class NotificationInboxController {
   private readCursors = new Map<string, number>()
   private processedEvents = new Set<string>()
 
+  constructor(
+    private readonly limits = { items: 1_000, processedEvents: 10_000, preferences: 500 },
+  ) {
+    for (const value of Object.values(limits)) {
+      if (!Number.isInteger(value) || value < 1) throw new Error('Notification limits are invalid')
+    }
+  }
+
   get snapshot(): {
     items: CommunityNotification[]
     unread: number
@@ -393,6 +401,10 @@ export class NotificationInboxController {
     if (this.items.has(item.id) || item.sequence <= this.lastSequence) return
     this.lastSequence = item.sequence
     if (this.preferences.get(item.category) === false) return
+    if (this.items.size >= this.limits.items) {
+      const oldest = [...this.items.values()].sort((left, right) => left.sequence - right.sequence)[0]
+      if (oldest) this.items.delete(oldest.id)
+    }
     this.items.set(item.id, { ...structuredClone(item), read: false })
   }
 
@@ -408,6 +420,9 @@ export class NotificationInboxController {
       throw new Error('Notification event sequence gap')
     }
     if (event.notification.sequence <= this.lastSequence) return false
+    if (this.processedEvents.size >= this.limits.processedEvents) {
+      this.processedEvents.delete(this.processedEvents.values().next().value!)
+    }
     this.processedEvents.add(event.eventId)
     this.receive(event.notification)
     return true
@@ -431,6 +446,10 @@ export class NotificationInboxController {
   }
 
   setPreference(category: string, enabled: boolean): void {
+    if (!category.trim()) throw new Error('Notification category is required')
+    if (!this.preferences.has(category) && this.preferences.size >= this.limits.preferences) {
+      throw new Error('Notification preference capacity exceeded')
+    }
     this.preferences.set(category, enabled)
   }
 
@@ -476,6 +495,14 @@ export class MessagingController {
   private presence = new Map<string, 'online' | 'offline'>()
   private connection: 'online' | 'reconnecting' | 'offline' = 'online'
 
+  constructor(
+    private readonly limits = { messages: 10_000, members: 1_000, bodyCharacters: 100_000 },
+  ) {
+    for (const value of Object.values(limits)) {
+      if (!Number.isInteger(value) || value < 1) throw new Error('Messaging limits are invalid')
+    }
+  }
+
   get snapshot(): {
     access: 'allowed' | 'revoked'
     messages: ConversationMessage[]
@@ -495,6 +522,9 @@ export class MessagingController {
   }
 
   configureMembers(memberIds: string[]): void {
+    if (memberIds.length > this.limits.members || memberIds.some((id) => !id.trim())) {
+      throw new Error('Conversation membership is invalid')
+    }
     this.members = new Set(memberIds)
     for (const id of [...this.typing]) if (!this.members.has(id)) this.typing.delete(id)
     for (const id of [...this.presence.keys()]) if (!this.members.has(id)) this.presence.delete(id)
@@ -506,7 +536,16 @@ export class MessagingController {
     if (!message.body.trim() && !(message.attachments?.length ?? 0)) {
       throw new Error('Message requires text or an attachment')
     }
+    if (
+      !message.id.trim() ||
+      !message.clientId.trim() ||
+      message.body.length > this.limits.bodyCharacters ||
+      (message.attachments?.length ?? 0) > 20
+    ) {
+      throw new Error('Message content is invalid')
+    }
     if (this.messages.has(message.clientId)) return
+    if (this.messages.size >= this.limits.messages) throw new Error('Message capacity exceeded')
     this.messages.set(message.clientId, { ...structuredClone(message), status: 'pending' })
   }
 
@@ -817,7 +856,14 @@ export class AutomodController {
   private policies = new Map<string, AutomodPolicy>()
   private recent = new Map<string, number[]>()
 
-  constructor(private readonly now: () => number = Date.now) {}
+  constructor(
+    private readonly now: () => number = Date.now,
+    private readonly limits = { policies: 500, actors: 10_000, eventsPerActor: 1_000 },
+  ) {
+    for (const value of Object.values(limits)) {
+      if (!Number.isInteger(value) || value < 1) throw new Error('Automod limits are invalid')
+    }
+  }
 
   savePolicy(policy: AutomodPolicy): void {
     if (!policy.id || !policy.explanation.trim()) {
@@ -831,18 +877,33 @@ export class AutomodController {
     ) {
       throw new Error('Automod policy value is invalid')
     }
+    if (!this.policies.has(policy.id) && this.policies.size >= this.limits.policies) {
+      throw new Error('Automod policy capacity exceeded')
+    }
     this.policies.set(policy.id, structuredClone(policy))
   }
 
   evaluate(input: { actorId: string; text: string; windowMs?: number }): AutomodDecision {
+    if (!input.actorId.trim() || !Number.isFinite(input.windowMs ?? 60_000) || (input.windowMs ?? 60_000) <= 0) {
+      throw new Error('Automod evaluation is invalid')
+    }
     const matches: AutomodPolicy[] = []
     const text = input.text.toLocaleLowerCase()
     const now = this.now()
     const windowMs = input.windowMs ?? 60_000
+    for (const [actorId, values] of this.recent) {
+      const active = values.filter((timestamp) => timestamp > now - windowMs)
+      if (active.length) this.recent.set(actorId, active)
+      else this.recent.delete(actorId)
+    }
+    if (!this.recent.has(input.actorId) && this.recent.size >= this.limits.actors) {
+      throw new Error('Automod actor capacity exceeded')
+    }
     const timestamps = (this.recent.get(input.actorId) ?? []).filter(
       (timestamp) => timestamp > now - windowMs,
     )
     timestamps.push(now)
+    if (timestamps.length > this.limits.eventsPerActor) timestamps.shift()
     this.recent.set(input.actorId, timestamps)
 
     for (const policy of this.policies.values()) {

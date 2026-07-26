@@ -357,6 +357,28 @@ describe('ModerationController', () => {
 })
 
 describe('community authorization and automod', () => {
+  it('bounds automod actors and legacy inbox/message state', () => {
+    const automod = new AutomodController(
+      () => 1,
+      { policies: 1, actors: 1, eventsPerActor: 2 },
+    )
+    automod.evaluate({ actorId: 'one', text: '' })
+    expect(() => automod.evaluate({ actorId: 'two', text: '' })).toThrow('actor capacity')
+
+    const inbox = new NotificationInboxController({
+      items: 1,
+      processedEvents: 1,
+      preferences: 1,
+    })
+    inbox.receive({ id: 'one', sequence: 1, category: 'activity', text: 'One' })
+    inbox.receive({ id: 'two', sequence: 2, category: 'activity', text: 'Two' })
+    expect(inbox.snapshot.items.map((item) => item.id)).toEqual(['two'])
+
+    const messages = new MessagingController({ messages: 1, members: 1, bodyCharacters: 10 })
+    messages.send({ id: 'one', clientId: 'one', body: 'hello' })
+    expect(() => messages.send({ id: 'two', clientId: 'two', body: 'hello' })).toThrow('capacity')
+  })
+
   it('enforces role permissions and immediate scope revocation', () => {
     const authorization = new CommunityAuthorizationController()
     authorization.setRole('sam', 'moderator')
