@@ -34,6 +34,8 @@ export type OAuthCallbackResult<Result> =
 
 export interface OAuthFlowOptions<Result> {
   allowedProviders: readonly string[]
+  /** Custom schemes registered by this app. HTTPS remains allowed. */
+  allowedRedirectSchemes?: readonly string[]
   storage: OAuthTransactionStorage
   transport: OAuthFlowTransport<Result>
   createState(): string
@@ -56,10 +58,21 @@ export class OAuthFlowController<Result> {
   async begin(provider: string, redirectUri: string): Promise<string> {
     this.requireProvider(provider)
     const uri = new URL(redirectUri)
-    if (!['https:', ...this.options.allowedProviders.map(() => '')].includes(uri.protocol)) {
-      if (!/^[a-z][a-z0-9+.-]*:$/.test(uri.protocol)) {
-        throw new Error('[pocketshot] OAuth redirect URI has an invalid scheme')
-      }
+    const scheme = uri.protocol.slice(0, -1).toLowerCase()
+    if (
+      scheme !== 'https' &&
+      !(this.options.allowedRedirectSchemes ?? [])
+        .map((value) => value.toLowerCase())
+        .includes(scheme)
+    ) {
+      throw new Error('[pocketshot] OAuth redirect URI scheme is not allowlisted')
+    }
+    if (uri.username || uri.password || uri.hash) {
+      throw new Error('[pocketshot] OAuth redirect URI contains forbidden components')
+    }
+    const pending = await this.options.storage.get()
+    if (pending && this.now() - pending.createdAt <= this.ttlMs) {
+      throw new Error('[pocketshot] OAuth transaction is already pending')
     }
     const state = this.options.createState()
     const verifier = this.options.createVerifier()
@@ -108,12 +121,21 @@ export class OAuthFlowController<Result> {
       throw new Error('[pocketshot] OAuth callback state or provider does not match')
     }
     this.consumedStates.add(transaction.state)
+    while (this.consumedStates.size > 100) {
+      const oldest = this.consumedStates.values().next().value as string | undefined
+      if (oldest === undefined) break
+      this.consumedStates.delete(oldest)
+    }
     await this.options.storage.clear()
     if (input.error) {
+      const error = input.error.trim().slice(0, 64)
+      if (!/^[a-z0-9_.-]+$/i.test(error)) {
+        throw new Error('[pocketshot] OAuth callback error code is invalid')
+      }
       return {
         status: 'cancelled',
-        error: input.error,
-        description: input.errorDescription?.trim() || null,
+        error,
+        description: input.errorDescription?.trim().slice(0, 256) || null,
       }
     }
     if (!input.code?.trim()) throw new Error('[pocketshot] OAuth callback is missing its code')

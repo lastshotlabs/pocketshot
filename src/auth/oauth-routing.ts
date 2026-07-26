@@ -7,25 +7,26 @@ export interface NativeOAuthCallback {
 }
 
 export function normalizeOAuthSystemPath(path: string, schemes: readonly string[]): string {
-  const escaped = schemes.map((scheme) => scheme.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  const match = new RegExp(`^(?:${escaped.join('|')}):\\/\\/oauth\\/(apple|google)(.*)$`, 'i').exec(
-    path,
-  )
-  if (!match) return path
-  const suffix = match[2] ?? ''
-  const query = suffix.startsWith('?')
-    ? suffix
-    : suffix.includes('?')
-      ? suffix.slice(suffix.indexOf('?'))
-      : ''
-  const params = new URLSearchParams(query)
+  let url: URL
+  try {
+    url = new URL(path)
+  } catch {
+    return path
+  }
+  const scheme = url.protocol.slice(0, -1).toLowerCase()
+  if (!schemes.map((value) => value.toLowerCase()).includes(scheme)) return path
+  if (url.hostname.toLowerCase() !== 'oauth' || url.hash || url.username || url.password) return path
+  const segments = url.pathname.split('/').filter(Boolean)
+  const provider = segments.length === 1 ? segments[0]?.toLowerCase() : null
+  if (provider !== 'apple' && provider !== 'google') return path
+  const params = url.searchParams
   const safe = new URLSearchParams()
   for (const key of ['code', 'state', 'error', 'error_description']) {
     const value = params.get(key)
     if (value) safe.set(key, value)
   }
   const encoded = safe.toString()
-  return `/oauth/${match[1].toLowerCase()}${encoded ? `?${encoded}` : ''}`
+  return `/oauth/${provider}${encoded ? `?${encoded}` : ''}`
 }
 
 export function parseOAuthCallback(

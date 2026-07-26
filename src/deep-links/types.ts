@@ -25,3 +25,31 @@ export interface DeepLinkRouterOptions {
   /** Whether to also handle the initial URL that opened the app. Default: true. */
   handleInitialUrl?: boolean
 }
+
+export type DeepLinkDeliverySource = 'cold' | 'warm' | 'push' | 'qr'
+
+export interface DeepLinkRouteDefinition {
+  id: string
+  pattern: string
+  allowedQueryParams?: readonly string[]
+  handler(
+    params: Record<string, string>,
+    parsed: ParsedDeepLink,
+    source: DeepLinkDeliverySource,
+  ): void | Promise<void>
+}
+
+export interface DeepLinkControllerOptions {
+  allowedSchemes: readonly string[]
+  allowedHttpsHosts?: readonly string[]
+  routes: readonly DeepLinkRouteDefinition[]
+  maxPending?: number
+  maxSeen?: number
+  maxUrlLength?: number
+  fingerprint?: (url: string) => string
+}
+
+export type DeepLinkDelivery =
+  | { status: 'queued' | 'duplicate' | 'unmatched'; source: DeepLinkDeliverySource }
+  | { status: 'handled'; source: DeepLinkDeliverySource; routeId: string }
+  | { status: 'rejected'; source: DeepLinkDeliverySource; reason: 'origin' | 'query' }

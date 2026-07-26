@@ -76,7 +76,11 @@ export function matchPattern(
     const pSeg = patternSegments[i]!
     const uSeg = pathSegments[i]!
     if (pSeg.startsWith(':')) {
-      params[pSeg.slice(1)] = decodeURIComponent(uSeg)
+      try {
+        params[pSeg.slice(1)] = decodeURIComponent(uSeg)
+      } catch {
+        return null
+      }
     } else if (pSeg !== uSeg) {
       return null
     }

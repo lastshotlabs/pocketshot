@@ -24,6 +24,9 @@ describe('native OAuth callback routing', () => {
     expect(normalizeOAuthSystemPath('hitshot://oauth/unknown?code=x', ['hitshot'])).toBe(
       'hitshot://oauth/unknown?code=x',
     )
+    expect(normalizeOAuthSystemPath('hitshot://oauth/apple/extra?code=x', ['hitshot'])).toBe(
+      'hitshot://oauth/apple/extra?code=x',
+    )
   })
 
   it('parses scalar/array router parameters and rejects unknown providers', () => {

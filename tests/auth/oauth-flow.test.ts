@@ -8,6 +8,7 @@ function flow(now = () => 1000) {
   const exchange = vi.fn(async () => ({ accessToken: 'token' }))
   const controller = new OAuthFlowController({
     allowedProviders: ['apple', 'google'],
+    allowedRedirectSchemes: ['hitshot', 'aicoach', 'sgforum', 'blankslate'],
     storage: createMemoryOAuthTransactionStorage(),
     createState: () => state,
     createVerifier: () => verifier,
@@ -60,6 +61,7 @@ describe('OAuthFlowController', () => {
 
     const weak = new OAuthFlowController({
       allowedProviders: ['apple'],
+      allowedRedirectSchemes: ['app'],
       storage: createMemoryOAuthTransactionStorage(),
       createState: () => 'weak',
       createVerifier: () => 'weak',
@@ -67,6 +69,17 @@ describe('OAuthFlowController', () => {
       transport: { authorizationUrl: () => '', exchange: async () => ({}) },
     })
     await expect(weak.begin('apple', 'app://oauth/apple')).rejects.toThrow('entropy')
+  })
+
+  it('rejects unregistered redirect schemes and overlapping transactions', async () => {
+    const { controller } = flow()
+    await expect(controller.begin('apple', 'attacker://oauth/apple')).rejects.toThrow(
+      'not allowlisted',
+    )
+    await controller.begin('apple', 'hitshot://oauth/apple')
+    await expect(controller.begin('google', 'aicoach://oauth/google')).rejects.toThrow(
+      'already pending',
+    )
   })
 
   it('returns cancellation without exchanging a code', async () => {
