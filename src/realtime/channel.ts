@@ -118,7 +118,6 @@ export class RealtimeChannel<TPayload, TState> {
       url.searchParams.set('channel', this.options.channel)
       const cursor = this.reconciler.cursor ?? this.diagnosticsValue.lastCursor
       if (cursor !== null) url.searchParams.set('cursor', String(cursor))
-      if (token) url.searchParams.set('token', token)
 
       const socket = this.createSocket(url.toString())
       this.socket = socket
@@ -127,6 +126,7 @@ export class RealtimeChannel<TPayload, TState> {
         this.reconnectAttempt = 0
         this.patchDiagnostics({ reconnectAttempt: 0, lastError: null })
         this.setConnectionState('connected')
+        if (token) this.send({ type: 'authenticate', token })
         this.send({ type: 'subscribe', channel: this.options.channel, cursor })
         this.scheduleHeartbeat()
       }

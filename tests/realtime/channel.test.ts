@@ -66,6 +66,7 @@ describe('RealtimeChannel', () => {
     ],
   ) {
     const sockets: FakeSocket[] = []
+    const socketUrls: string[] = []
     const fetchSnapshot = vi.fn(async () => {
       const snapshot = snapshots.shift()
       if (!snapshot) throw new Error('No snapshot configured')
@@ -82,7 +83,8 @@ describe('RealtimeChannel', () => {
       fetchSnapshot,
       reduce: (state, next) => ({ values: [...state.values, next.payload] }),
       storage,
-      socketFactory: () => {
+      socketFactory: (url) => {
+        socketUrls.push(url)
         const socket = new FakeSocket()
         sockets.push(socket)
         return socket
@@ -91,15 +93,18 @@ describe('RealtimeChannel', () => {
       heartbeatIntervalMs: 100,
       heartbeatTimeoutMs: 50,
     })
-    return { channel, sockets, fetchSnapshot, refreshAuth, storage }
+    return { channel, sockets, socketUrls, fetchSnapshot, refreshAuth, storage }
   }
 
   it('resumes with token and cursor, rejects invalid frames, and persists applied cursors', async () => {
-    const { channel, sockets, storage } = setup()
+    const { channel, sockets, socketUrls, storage } = setup()
     await channel.start()
     sockets[0].open()
 
-    expect(sockets[0].sent[0]).toContain('"type":"subscribe"')
+    expect(socketUrls[0]).not.toContain('access-token')
+    expect(sockets[0].sent[0]).toContain('"type":"authenticate"')
+    expect(sockets[0].sent[0]).toContain('"token":"access-token"')
+    expect(sockets[0].sent[1]).toContain('"type":"subscribe"')
     sockets[0].message({ ...event(1), payload: 99 })
     sockets[0].message(event(1))
     await settle()
