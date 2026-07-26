@@ -87,7 +87,11 @@ export class LifecycleCoordinator {
 
   subscribe(listener: (checkpoint: LifecycleCheckpoint) => void): () => void {
     this.listeners.add(listener)
-    listener(this.checkpoint)
+    try {
+      listener(this.checkpoint)
+    } catch {
+      // Subscription setup follows the same observer-isolation rule as updates.
+    }
     return () => this.listeners.delete(listener)
   }
 
@@ -117,12 +121,13 @@ export class LifecycleCoordinator {
           state: initialState,
           lastActiveAt: initialState === 'active' ? this.now().toISOString() : null,
         }
-    this.initialized = true
     await this.options.storage.set(this.value)
-    this.emit()
     if (stored && !stored.cleanShutdown && initialState === 'active') {
       await this.runPhase('foreground', 'process-restart', stored.state, initialState)
+      await this.options.storage.set(this.value)
     }
+    this.initialized = true
+    this.emit()
     return this.checkpoint
   }
 
@@ -131,14 +136,20 @@ export class LifecycleCoordinator {
       if (!this.initialized) await this.initialize(this.value.state)
       const previousState = this.value.state
       if (previousState === nextState) return
+      const previousCheckpoint = clone(this.value)
       this.value.state = nextState
       if (nextState === 'active') this.value.lastActiveAt = this.now().toISOString()
       if (nextState === 'background') this.value.lastBackgroundAt = this.now().toISOString()
       const phase =
         nextState === 'active' ? 'foreground' : previousState === 'active' ? 'background' : null
-      if (phase) await this.runPhase(phase, reason, previousState, nextState)
-      await this.options.storage.set(this.value)
-      this.emit()
+      try {
+        if (phase) await this.runPhase(phase, reason, previousState, nextState)
+        await this.options.storage.set(this.value)
+        this.emit()
+      } catch (error) {
+        this.value = previousCheckpoint
+        throw error
+      }
     })
     return this.queue
   }
@@ -146,8 +157,14 @@ export class LifecycleCoordinator {
   async markCleanShutdown(): Promise<void> {
     await this.queue.catch(() => undefined)
     if (!this.initialized) await this.initialize(this.value.state)
+    const previous = this.value.cleanShutdown
     this.value.cleanShutdown = true
-    await this.options.storage.set(this.value)
+    try {
+      await this.options.storage.set(this.value)
+    } catch (error) {
+      this.value.cleanShutdown = previous
+      throw error
+    }
     this.emit()
   }
 
@@ -181,14 +198,24 @@ export class LifecycleCoordinator {
         const error = cause instanceof Error ? cause : new Error(String(cause))
         this.value.failures.push({ taskId: task.id, phase, message: this.safeError(error) })
         this.value.failures = this.value.failures.slice(-50)
-        this.options.onError?.(task.id, phase, error)
+        try {
+          this.options.onError?.(task.id, phase, error)
+        } catch {
+          // Diagnostic reporters must never interrupt lifecycle recovery.
+        }
       }
     }
   }
 
   private emit(): void {
     const value = this.checkpoint
-    for (const listener of this.listeners) listener(value)
+    for (const listener of this.listeners) {
+      try {
+        listener(value)
+      } catch {
+        // One UI observer must not starve the remaining lifecycle subscribers.
+      }
+    }
   }
 
   private safeError(error: unknown): string {

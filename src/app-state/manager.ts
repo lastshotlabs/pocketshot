@@ -30,9 +30,21 @@ export class AppStateManager {
       this.currentState = nextState
 
       if (nextState === 'active' && prev !== 'active') {
-        for (const cb of this.foregroundCallbacks) cb()
+        for (const cb of this.foregroundCallbacks) {
+          try {
+            cb()
+          } catch {
+            // Keep delivering lifecycle transitions to independent subscribers.
+          }
+        }
       } else if (nextState !== 'active' && prev === 'active') {
-        for (const cb of this.backgroundCallbacks) cb()
+        for (const cb of this.backgroundCallbacks) {
+          try {
+            cb()
+          } catch {
+            // Keep delivering lifecycle transitions to independent subscribers.
+          }
+        }
       }
     })
   }

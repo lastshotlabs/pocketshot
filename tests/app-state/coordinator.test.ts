@@ -114,8 +114,31 @@ describe('LifecycleCoordinator', () => {
     expect(get).toHaveBeenCalledOnce()
     fail = true
     await expect(coordinator.transition('background')).rejects.toThrow('disk unavailable')
+    expect(coordinator.checkpoint.state).toBe('active')
     await coordinator.transition('active')
     expect(coordinator.checkpoint.state).toBe('active')
+  })
+
+  it('isolates subscriber and diagnostic callback failures', async () => {
+    const completed = vi.fn()
+    const coordinator = new LifecycleCoordinator({
+      storage: createMemoryLifecycleStorage(),
+      timeout: async () => {
+        throw new Error('task failed')
+      },
+      onError: () => {
+        throw new Error('reporter failed')
+      },
+    })
+    coordinator.register({ id: 'first', background: vi.fn() })
+    coordinator.subscribe(() => {
+      throw new Error('observer failed')
+    })
+    coordinator.subscribe(completed)
+    await coordinator.initialize()
+    await coordinator.transition('background')
+    expect(completed).toHaveBeenCalled()
+    expect(coordinator.checkpoint.failures).toHaveLength(1)
   })
 
   it('bridges the single native lifecycle manager into durable transitions', async () => {
