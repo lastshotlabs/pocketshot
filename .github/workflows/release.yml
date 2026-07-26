@@ -24,6 +24,8 @@ jobs:
       - run: npm ci --legacy-peer-deps
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify release tag matches package version
+        run: npm run check:release-tag
       - run: npm run typecheck
       - run: npm test
       - run: npm run verify:consumer
