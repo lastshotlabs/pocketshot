@@ -269,6 +269,25 @@ describe('party lifecycle primitives', () => {
     expect(() => games.recover('game-2')).toThrow('not resumable')
   })
 
+  it('bounds dashboard and reusable content catalogs', () => {
+    const games = new GameDashboardController(undefined, () => 1, 1)
+    games.upsert({ id: 'one', product: 'party', title: 'One', status: 'lobby', resumable: true })
+    expect(() =>
+      games.upsert({ id: 'two', product: 'party', title: 'Two', status: 'lobby', resumable: true }),
+    ).toThrow('capacity')
+
+    const library = new ContentLibraryController<{ value: string }>(
+      () => [],
+      (item) => item.value,
+      () => 1,
+      { collections: 1, itemsPerCollection: 1, proposals: 1 },
+    )
+    library.create('one', 'owner', 'One')
+    library.appendItems('one', 'owner', 1, [{ value: 'a' }])
+    expect(() => library.appendItems('one', 'owner', 2, [{ value: 'b' }])).toThrow('capacity')
+    expect(() => library.create('two', 'owner', 'Two')).toThrow('capacity')
+  })
+
   it('provides versioned content browse, ownership, workflow, and AI review', () => {
     let now = 1
     const library = new ContentLibraryController<{ cue: string }>(

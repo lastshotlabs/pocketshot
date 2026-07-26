@@ -897,7 +897,14 @@ export class GameDashboardController {
   constructor(
     snapshot?: GameDashboardSnapshot,
     private readonly now: () => number = Date.now,
+    private readonly maximumRecords = 1_000,
   ) {
+    if (!Number.isInteger(maximumRecords) || maximumRecords < 1) {
+      throw new Error('Game dashboard capacity is invalid')
+    }
+    if ((snapshot?.records.length ?? 0) > maximumRecords) {
+      throw new Error('Game dashboard capacity exceeded')
+    }
     this.stale = snapshot?.stale ?? false
     this.refreshedAt = snapshot?.refreshedAt ?? null
     for (const record of snapshot?.records ?? []) {
@@ -921,6 +928,17 @@ export class GameDashboardController {
   }
 
   upsert(record: Omit<GameDashboardRecord, 'updatedAt'> & { updatedAt?: number }): void {
+    if (
+      !record.id.trim() ||
+      !record.product.trim() ||
+      !record.title.trim() ||
+      !['lobby', 'active', 'paused', 'complete', 'cancelled', 'left'].includes(record.status)
+    ) {
+      throw new Error('Game dashboard record is invalid')
+    }
+    if (!this.records.has(record.id) && this.records.size >= this.maximumRecords) {
+      throw new Error('Game dashboard capacity exceeded')
+    }
     const existing = this.records.get(record.id)
     const updatedAt = record.updatedAt ?? this.now()
     if (existing && existing.updatedAt > updatedAt) return
@@ -948,6 +966,9 @@ export class GameDashboardController {
 
   createRematch(sourceId: string, id: string): GameDashboardRecord {
     if (this.records.has(id)) return structuredClone(this.records.get(id)!)
+    if (!id.trim() || this.records.size >= this.maximumRecords) {
+      throw new Error('Game dashboard capacity exceeded')
+    }
     const source = this.require(sourceId)
     const rematch: GameDashboardRecord = {
       ...structuredClone(source),
@@ -1041,7 +1062,12 @@ export class ContentLibraryController<Item> {
     private readonly validateItem: (item: Item) => string[],
     private readonly identity: (item: Item) => string,
     private readonly now: () => number = Date.now,
-  ) {}
+    private readonly limits = { collections: 500, itemsPerCollection: 5_000, proposals: 1_000 },
+  ) {
+    for (const value of Object.values(limits)) {
+      if (!Number.isInteger(value) || value < 1) throw new Error('Content limits are invalid')
+    }
+  }
 
   get snapshot(): ContentCollection<Item>[] {
     return [...this.collections.values()].map((collection) => structuredClone(collection))
@@ -1051,6 +1077,9 @@ export class ContentLibraryController<Item> {
     if (!id || !ownerId || !title.trim())
       throw new Error('Collection identity and title are required')
     if (this.collections.has(id)) throw new Error(`Collection already exists: ${id}`)
+    if (this.collections.size >= this.limits.collections) {
+      throw new Error('Content collection capacity exceeded')
+    }
     this.collections.set(id, {
       id,
       ownerId,
@@ -1116,6 +1145,9 @@ export class ContentLibraryController<Item> {
   replaceItems(id: string, actorId: string, revision: number, items: Item[]): number {
     const collection = this.requireEditable(id, actorId, revision)
     this.validateItems(items)
+    if (items.length > this.limits.itemsPerCollection) {
+      throw new Error('Content item capacity exceeded')
+    }
     collection.items = deduplicate(items, this.identity)
     return this.touch(collection)
   }
@@ -1123,7 +1155,11 @@ export class ContentLibraryController<Item> {
   appendItems(id: string, actorId: string, revision: number, items: Item[]): number {
     const collection = this.requireEditable(id, actorId, revision)
     this.validateItems(items)
-    collection.items = deduplicate([...collection.items, ...items], this.identity)
+    const combined = deduplicate([...collection.items, ...items], this.identity)
+    if (combined.length > this.limits.itemsPerCollection) {
+      throw new Error('Content item capacity exceeded')
+    }
+    collection.items = combined
     return this.touch(collection)
   }
 
@@ -1187,7 +1223,16 @@ export class ContentLibraryController<Item> {
 
   addProposal(proposal: Omit<ContentProposal<Item>, 'status'>): void {
     if (this.proposals.has(proposal.id)) return
+    if (this.proposals.size >= this.limits.proposals) {
+      throw new Error('Content proposal capacity exceeded')
+    }
+    if (!proposal.id.trim() || !proposal.rationale.trim()) {
+      throw new Error('Content proposal identity and rationale are required')
+    }
     this.validateItems(proposal.items)
+    if (proposal.items.length > this.limits.itemsPerCollection) {
+      throw new Error('Content item capacity exceeded')
+    }
     this.requireOwner(proposal.collectionId, this.require(proposal.collectionId).ownerId)
     this.proposals.set(proposal.id, { ...structuredClone(proposal), status: 'pending' })
   }
@@ -1199,7 +1244,11 @@ export class ContentLibraryController<Item> {
     if (proposal.status !== 'pending') throw new Error('Proposal has already been reviewed')
     proposal.status = accept ? 'accepted' : 'rejected'
     if (accept) {
-      collection.items = deduplicate([...collection.items, ...proposal.items], this.identity)
+      const combined = deduplicate([...collection.items, ...proposal.items], this.identity)
+      if (combined.length > this.limits.itemsPerCollection) {
+        throw new Error('Content item capacity exceeded')
+      }
+      collection.items = combined
       this.touch(collection)
     }
   }
