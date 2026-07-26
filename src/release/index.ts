@@ -592,8 +592,5 @@ function validateRollout(percent: number): void {
 function scrubReleaseText(value: string): string {
   return value
     .trim()
-    .replace(
-      /(?:bearer\s+[a-z0-9._~-]+)|(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/gi,
-      '[REDACTED]',
-    )
+    .replace(/(?:bearer\s+[a-z0-9._~-]+)|(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/gi, '[REDACTED]')
 }

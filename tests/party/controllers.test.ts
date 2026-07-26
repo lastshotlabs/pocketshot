@@ -26,9 +26,9 @@ describe('DeckLibraryController', () => {
       ratingsPerDeck: 1,
     })
     library.create('deck', 'Safe')
-    expect(() => library.add('deck', { ...track('1'), previewUrl: 'http://preview.test/1' })).toThrow(
-      'HTTPS',
-    )
+    expect(() =>
+      library.add('deck', { ...track('1'), previewUrl: 'http://preview.test/1' }),
+    ).toThrow('HTTPS')
     library.add('deck', track('1'))
     library.add('deck', track('2'))
     expect(library.history('deck')).toHaveLength(2)

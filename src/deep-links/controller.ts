@@ -55,10 +55,7 @@ export class DeepLinkController {
     return this.pending.length
   }
 
-  private async deliver(
-    url: string,
-    source: DeepLinkDeliverySource,
-  ): Promise<DeepLinkDelivery> {
+  private async deliver(url: string, source: DeepLinkDeliverySource): Promise<DeepLinkDelivery> {
     const parsed = this.normalize(url)
     if (!parsed) return { status: 'rejected', source, reason: 'origin' }
     const fingerprint = this.fingerprint(url)

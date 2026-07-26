@@ -194,9 +194,7 @@ describe('CommunityAdminController', () => {
       bootstrapAdminIds: ['owner'],
     })
     expect(() => admin.grant('attacker', 'attacker', 'administer')).toThrow('Missing ability')
-    expect(() => admin.revokeGrant('owner', 'owner', 'administer')).toThrow(
-      'final administrator',
-    )
+    expect(() => admin.revokeGrant('owner', 'owner', 'administer')).toThrow('final administrator')
     admin.grant('owner', 'second-owner', 'administer')
     admin.revokeGrant('owner', 'owner', 'administer')
     expect(admin.can('owner', 'administer')).toBe(false)

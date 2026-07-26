@@ -21,9 +21,9 @@ describe('FeatureEntitlementGate', () => {
   })
 
   it('rejects empty and duplicate product mappings', () => {
-    expect(
-      () => new FeatureEntitlementGate({ premium: {} }, { canAccess: () => false }),
-    ).toThrow('requires a feature and product')
+    expect(() => new FeatureEntitlementGate({ premium: {} }, { canAccess: () => false })).toThrow(
+      'requires a feature and product',
+    )
     expect(
       () =>
         new FeatureEntitlementGate(

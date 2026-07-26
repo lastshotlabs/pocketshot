@@ -136,7 +136,13 @@ export class ApiClient {
       const code: string | undefined = (errBody as Record<string, unknown>).code as
         | string
         | undefined
-      throw new ApiError(msg, res.status, code, errBody, parseRetryAfter(res.headers.get('retry-after')))
+      throw new ApiError(
+        msg,
+        res.status,
+        code,
+        errBody,
+        parseRetryAfter(res.headers.get('retry-after')),
+      )
     }
     const contentType = res.headers.get('content-type')
     if (!contentType?.includes('application/json')) {

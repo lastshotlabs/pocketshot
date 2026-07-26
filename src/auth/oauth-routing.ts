@@ -15,7 +15,8 @@ export function normalizeOAuthSystemPath(path: string, schemes: readonly string[
   }
   const scheme = url.protocol.slice(0, -1).toLowerCase()
   if (!schemes.map((value) => value.toLowerCase()).includes(scheme)) return path
-  if (url.hostname.toLowerCase() !== 'oauth' || url.hash || url.username || url.password) return path
+  if (url.hostname.toLowerCase() !== 'oauth' || url.hash || url.username || url.password)
+    return path
   const segments = url.pathname.split('/').filter(Boolean)
   const provider = segments.length === 1 ? segments[0]?.toLowerCase() : null
   if (provider !== 'apple' && provider !== 'google') return path

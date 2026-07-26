@@ -43,7 +43,11 @@ export function auditAccessibilityNode(
   }
   if (node.interactive && !node.decorative) {
     if (!node.role?.trim()) {
-      violations.push({ nodeId: node.id, code: 'missing-role', message: 'Interactive role is required' })
+      violations.push({
+        nodeId: node.id,
+        code: 'missing-role',
+        message: 'Interactive role is required',
+      })
     }
     if (!node.label?.trim()) {
       violations.push({

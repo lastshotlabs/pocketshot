@@ -13,7 +13,10 @@ const DEFAULT_MAX_DRAFT_BYTES = 5 * 1024 * 1024
 const MAX_ERROR_LENGTH = 160
 
 export class DraftCapacityError extends Error {
-  constructor(readonly bytes: number, readonly maximum: number) {
+  constructor(
+    readonly bytes: number,
+    readonly maximum: number,
+  ) {
     super(`Draft requires ${bytes} bytes; maximum is ${maximum}`)
     this.name = 'DraftCapacityError'
   }

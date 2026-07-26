@@ -76,8 +76,7 @@ export class LifecycleCoordinator {
       throw new Error(`[pocketshot] Duplicate lifecycle task: ${task.id}`)
     if (
       (task.order !== undefined && !Number.isFinite(task.order)) ||
-      (task.timeoutMs !== undefined &&
-        (!Number.isFinite(task.timeoutMs) || task.timeoutMs <= 0))
+      (task.timeoutMs !== undefined && (!Number.isFinite(task.timeoutMs) || task.timeoutMs <= 0))
     ) {
       throw new RangeError('[pocketshot] Lifecycle task order/timeout is invalid')
     }
@@ -132,25 +131,27 @@ export class LifecycleCoordinator {
   }
 
   transition(nextState: LifecycleState, reason: LifecycleReason = 'os-transition'): Promise<void> {
-    this.queue = this.queue.catch(() => undefined).then(async () => {
-      if (!this.initialized) await this.initialize(this.value.state)
-      const previousState = this.value.state
-      if (previousState === nextState) return
-      const previousCheckpoint = clone(this.value)
-      this.value.state = nextState
-      if (nextState === 'active') this.value.lastActiveAt = this.now().toISOString()
-      if (nextState === 'background') this.value.lastBackgroundAt = this.now().toISOString()
-      const phase =
-        nextState === 'active' ? 'foreground' : previousState === 'active' ? 'background' : null
-      try {
-        if (phase) await this.runPhase(phase, reason, previousState, nextState)
-        await this.options.storage.set(this.value)
-        this.emit()
-      } catch (error) {
-        this.value = previousCheckpoint
-        throw error
-      }
-    })
+    this.queue = this.queue
+      .catch(() => undefined)
+      .then(async () => {
+        if (!this.initialized) await this.initialize(this.value.state)
+        const previousState = this.value.state
+        if (previousState === nextState) return
+        const previousCheckpoint = clone(this.value)
+        this.value.state = nextState
+        if (nextState === 'active') this.value.lastActiveAt = this.now().toISOString()
+        if (nextState === 'background') this.value.lastBackgroundAt = this.now().toISOString()
+        const phase =
+          nextState === 'active' ? 'foreground' : previousState === 'active' ? 'background' : null
+        try {
+          if (phase) await this.runPhase(phase, reason, previousState, nextState)
+          await this.options.storage.set(this.value)
+          this.emit()
+        } catch (error) {
+          this.value = previousCheckpoint
+          throw error
+        }
+      })
     return this.queue
   }
 
@@ -258,10 +259,10 @@ function withTimeout<T>(operation: Promise<T>, milliseconds: number): Promise<T>
 function isCheckpoint(value: LifecycleCheckpoint | null): value is LifecycleCheckpoint {
   return Boolean(
     value &&
-      value.schemaVersion === 1 &&
-      Number.isInteger(value.processGeneration) &&
-      value.processGeneration >= 0 &&
-      ['active', 'inactive', 'background'].includes(value.state) &&
-      Array.isArray(value.failures),
+    value.schemaVersion === 1 &&
+    Number.isInteger(value.processGeneration) &&
+    value.processGeneration >= 0 &&
+    ['active', 'inactive', 'background'].includes(value.state) &&
+    Array.isArray(value.failures),
   )
 }

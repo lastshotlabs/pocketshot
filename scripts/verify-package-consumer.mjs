@@ -96,26 +96,28 @@ import {
   type MediaAsset,
 } from '@lastshotlabs/pocketshot/media'
 import { AiConversationController, createMemoryAiStorage } from '@lastshotlabs/pocketshot/ai'
-import { PlaybackController, type AudioTrack } from '@lastshotlabs/pocketshot/audio'
+import { PairingController, PlaybackController, type AudioTrack } from '@lastshotlabs/pocketshot/audio'
 import { TimedPhaseController } from '@lastshotlabs/pocketshot/party-session'
 import { ReleaseControlPlane } from '@lastshotlabs/pocketshot/release'
 import { LocalBillingAdapter } from '@lastshotlabs/pocketshot/billing'
-import { RelationshipPrivacyController } from '@lastshotlabs/pocketshot/privacy'
+import { AccountDataController, RelationshipPrivacyController } from '@lastshotlabs/pocketshot/privacy'
 import { LifecycleCoordinator, createMemoryLifecycleStorage } from '@lastshotlabs/pocketshot/app-state'
 import { normalizeOAuthSystemPath } from '@lastshotlabs/pocketshot/auth'
 import { createExpoPushAdapter } from '@lastshotlabs/pocketshot/push'
-import { parseDeepLink } from '@lastshotlabs/pocketshot/deep-links'
+import { DeepLinkController, parseDeepLink } from '@lastshotlabs/pocketshot/deep-links'
 import { createDeviceHooks } from '@lastshotlabs/pocketshot/device'
 import { haptics } from '@lastshotlabs/pocketshot/haptics'
 import { createOrgHooks } from '@lastshotlabs/pocketshot/organizations'
-import { createPermissionHooks } from '@lastshotlabs/pocketshot/permissions'
+import { PermissionController, createPermissionHooks } from '@lastshotlabs/pocketshot/permissions'
 import { createSearchHooks } from '@lastshotlabs/pocketshot/search'
 import { share } from '@lastshotlabs/pocketshot/share'
 import { createSseHooks } from '@lastshotlabs/pocketshot/sse'
 import { useTheme } from '@lastshotlabs/pocketshot/theme'
 import { createWebhookHooks } from '@lastshotlabs/pocketshot/webhooks'
 import { PocketshotWS } from '@lastshotlabs/pocketshot/ws'
-import { checkBiometricAvailability } from '@lastshotlabs/pocketshot/biometrics'
+import { FreshAuthenticationController, checkBiometricAvailability } from '@lastshotlabs/pocketshot/biometrics'
+import { DurableFeatureFlagController, MemoryFeatureFlagStorage } from '@lastshotlabs/pocketshot/observability'
+import { auditAccessibilityNode, resolveAdaptiveLayout } from '@lastshotlabs/pocketshot/accessibility'
 import { z } from 'zod'
 
 const config: PocketshotConfig = { apiUrl: 'https://api.example.test' }
@@ -213,7 +215,19 @@ void new TimedPhaseController('consumer', 1_000)
 void new ReleaseControlPlane('1.0.0')
 void new LocalBillingAdapter()
 void new RelationshipPrivacyController()
+void AccountDataController
 void new LifecycleCoordinator({ storage: createMemoryLifecycleStorage() })
+void new PairingController({
+  create: async () => ({ id: 'id', code: 'code', qrPayload: 'app://pair', expiresAt: new Date().toISOString(), status: 'pending' }),
+  get: async () => ({ id: 'id', code: 'code', qrPayload: 'app://pair', expiresAt: new Date().toISOString(), status: 'pending' }),
+  revoke: async () => undefined,
+})
+void new DurableFeatureFlagController(new MemoryFeatureFlagStorage())
+void new PermissionController({ fetch: async () => null })
+void new FreshAuthenticationController(async () => ({ success: true }))
+void DeepLinkController
+void auditAccessibilityNode
+void resolveAdaptiveLayout
 void normalizeOAuthSystemPath
 void createExpoPushAdapter
 void parseDeepLink

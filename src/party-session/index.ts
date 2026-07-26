@@ -121,7 +121,11 @@ export class PartySessionController<Rules extends object> {
   }
 
   requestAdmission(request: Omit<PartyAdmissionRequest, 'status'>): 'admitted' | 'pending' {
-    if (!request.id.trim() || !request.displayName.trim() || !Number.isFinite(request.requestedAt)) {
+    if (
+      !request.id.trim() ||
+      !request.displayName.trim() ||
+      !Number.isFinite(request.requestedAt)
+    ) {
       throw new Error('Admission request is invalid')
     }
     if (!this.admissions.has(request.id) && this.admissions.size >= this.capacity) {
@@ -369,7 +373,12 @@ export class PrivateSubmissionController<Value> {
     initial: PrivateSubmission<Value>[] = [],
     private readonly capacity = 500,
   ) {
-    if (!Number.isFinite(editWindowMs) || editWindowMs < 0 || !Number.isInteger(capacity) || capacity < 1) {
+    if (
+      !Number.isFinite(editWindowMs) ||
+      editWindowMs < 0 ||
+      !Number.isInteger(capacity) ||
+      capacity < 1
+    ) {
       throw new Error('Submission limits are invalid')
     }
     if (initial.length > capacity) throw new Error('Submission capacity exceeded')

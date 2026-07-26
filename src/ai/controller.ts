@@ -85,7 +85,8 @@ export class AiConversationController {
 
   async create(title = 'New conversation'): Promise<AiConversation> {
     await this.load()
-    if (!title.trim() || title.length > 200) throw new Error('[pocketshot] Conversation title is invalid')
+    if (!title.trim() || title.length > 200)
+      throw new Error('[pocketshot] Conversation title is invalid')
     if (this.conversations.length >= (this.options.maxConversations ?? 500)) {
       throw new Error('[pocketshot] AI conversation capacity exceeded')
     }

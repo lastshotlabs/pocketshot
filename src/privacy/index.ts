@@ -78,7 +78,8 @@ export class AccountDataController {
 
   async requestExport(): Promise<void> {
     await this.run(async () => {
-      if (this.state.exportStatus === 'requested' || this.state.exportStatus === 'processing') return
+      if (this.state.exportStatus === 'requested' || this.state.exportStatus === 'processing')
+        return
       const request = await this.transport.requestExport()
       if (!request.requestId) throw new Error('Export request did not return an ID')
       this.state.exportRequestId = request.requestId

@@ -291,8 +291,8 @@ export function createUploadHooks(
             )
           }
 
-          const fileUrl = (metadata?.fileUrl as string | undefined) ??
-            (metadata?.url as string | undefined)
+          const fileUrl =
+            (metadata?.fileUrl as string | undefined) ?? (metadata?.url as string | undefined)
           if (!fileUrl) {
             throw new UploadTransportError(
               'invalid_response',

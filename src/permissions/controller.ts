@@ -33,7 +33,13 @@ export class PermissionController {
     const active = this.activeClaims()
     return {
       claims: active ? structuredClone(active) : null,
-      status: this.errorValue ? 'error' : active ? 'authorized' : this.claims ? 'unauthorized' : 'unknown',
+      status: this.errorValue
+        ? 'error'
+        : active
+          ? 'authorized'
+          : this.claims
+            ? 'unauthorized'
+            : 'unknown',
       error: this.errorValue,
     }
   }
@@ -49,7 +55,10 @@ export class PermissionController {
   hasPermission(permission: Permission, requireAll: Permission[] = []): boolean {
     const claims = this.activeClaims()
     if (!claims || !permission.trim()) return false
-    return claims.permissions.includes(permission) && requireAll.every((item) => claims.permissions.includes(item))
+    return (
+      claims.permissions.includes(permission) &&
+      requireAll.every((item) => claims.permissions.includes(item))
+    )
   }
 
   hasRole(role: Role, organizationId?: string): boolean {

@@ -336,10 +336,9 @@ describe('ModerationController', () => {
 
   it('rechecks moderation authorization at confirmation time', () => {
     let allowed = true
-    const moderation = new ModerationController(
-      () => '2026-07-25T12:00:00.000Z',
-      { authorize: () => allowed },
-    )
+    const moderation = new ModerationController(() => '2026-07-25T12:00:00.000Z', {
+      authorize: () => allowed,
+    })
     moderation.submit({ id: 'report', targetId: 'thread', reason: 'Review' })
     moderation.proposeAction('action-1', {
       reportId: 'report',
@@ -358,10 +357,7 @@ describe('ModerationController', () => {
 
 describe('community authorization and automod', () => {
   it('bounds automod actors and legacy inbox/message state', () => {
-    const automod = new AutomodController(
-      () => 1,
-      { policies: 1, actors: 1, eventsPerActor: 2 },
-    )
+    const automod = new AutomodController(() => 1, { policies: 1, actors: 1, eventsPerActor: 2 })
     automod.evaluate({ actorId: 'one', text: '' })
     expect(() => automod.evaluate({ actorId: 'two', text: '' })).toThrow('actor capacity')
 

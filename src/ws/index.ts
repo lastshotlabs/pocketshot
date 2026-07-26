@@ -33,7 +33,8 @@ export class PocketshotWS {
       throw new Error('[pocketshot] WebSocket endpoint must use WSS without credentials')
     }
     for (const value of Object.values(limits)) {
-      if (!Number.isFinite(value) || value < 1) throw new Error('[pocketshot] WS limits are invalid')
+      if (!Number.isFinite(value) || value < 1)
+        throw new Error('[pocketshot] WS limits are invalid')
     }
     this.endpointUrl = endpoint.toString().replace(/\/$/, '')
     this.storage = storage

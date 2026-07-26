@@ -137,10 +137,7 @@ export {
   PrivacyController,
 } from './community/controllers'
 export type { ModerationControllerOptions } from './community/controllers'
-export {
-  AccountDataController,
-  RelationshipPrivacyController,
-} from './privacy'
+export { AccountDataController, RelationshipPrivacyController } from './privacy'
 export type {
   AccountDataControllerOptions,
   AccountDataSnapshot,

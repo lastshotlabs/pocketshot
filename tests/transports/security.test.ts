@@ -19,9 +19,14 @@ function storage(token = 'private-token'): TokenStorage {
 
 describe('legacy realtime transport security', () => {
   it('rejects insecure or credential-bearing endpoints', () => {
-    expect(() => new SseManager({ url: 'http://api.test/events', tokenStorage: storage(), appStateManager: appState() })).toThrow(
-      'HTTPS',
-    )
+    expect(
+      () =>
+        new SseManager({
+          url: 'http://api.test/events',
+          tokenStorage: storage(),
+          appStateManager: appState(),
+        }),
+    ).toThrow('HTTPS')
     expect(() => new PocketshotWS('ws://api.test/ws', storage(), appState())).toThrow('WSS')
     expect(() => new PocketshotWS('wss://user:pass@api.test/ws', storage(), appState())).toThrow(
       'credentials',

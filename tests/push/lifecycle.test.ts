@@ -212,9 +212,7 @@ describe('PushLifecycleController', () => {
     })
     const first = controller.start()
     const second = controller.start()
-    await vi.waitFor(() =>
-      expect(native.value.getLastNotificationResponse).toHaveBeenCalledOnce(),
-    )
+    await vi.waitFor(() => expect(native.value.getLastNotificationResponse).toHaveBeenCalledOnce())
     release()
     await Promise.all([first, second])
     expect(registerToken).toHaveBeenCalledOnce()

@@ -65,7 +65,9 @@ describe('ApiClient', () => {
     await expect(client(tokens).get('/data')).resolves.toEqual({ ok: true })
     expect(tokens.setToken).toHaveBeenCalledWith('rotated')
     const retried = fetchMock.mock.calls[2]![1]!.headers as Headers
-    expect(retried.get(defaultContract('https://api.example.test').headers.userToken)).toBe('rotated')
+    expect(retried.get(defaultContract('https://api.example.test').headers.userToken)).toBe(
+      'rotated',
+    )
   })
 
   it('parses and caps Retry-After on API errors', async () => {

@@ -96,9 +96,9 @@ describe('UploadAuthorizationController', () => {
     expect(() =>
       controller.acceptServerUpload({ ...receipt, destination: 'thread:43' }, uploaded),
     ).toThrow('not issued or was modified')
-    expect(() =>
-      controller.acceptServerUpload({ ...receipt, id: 'fabricated' }, uploaded),
-    ).toThrow('not issued or was modified')
+    expect(() => controller.acceptServerUpload({ ...receipt, id: 'fabricated' }, uploaded)).toThrow(
+      'not issued or was modified',
+    )
     expect(() =>
       controller.acceptServerUpload(receipt, {
         ...uploaded,
@@ -113,7 +113,12 @@ describe('UploadAuthorizationController', () => {
       maxBytes: 2048,
     })
     expect(() =>
-      controller.authorizeSelection('alex', 'thread:42', { ...file, name: '../photo.jpg' }, checksum),
+      controller.authorizeSelection(
+        'alex',
+        'thread:42',
+        { ...file, name: '../photo.jpg' },
+        checksum,
+      ),
     ).toThrow('must not contain paths')
   })
 })

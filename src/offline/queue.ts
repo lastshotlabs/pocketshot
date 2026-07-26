@@ -311,9 +311,7 @@ export class OfflineQueue {
         status: 'queued',
         nextAttemptAt: null,
         lastError: null,
-        ...(input.optimisticContext === undefined
-          ? {}
-          : { optimisticContext }),
+        ...(input.optimisticContext === undefined ? {} : { optimisticContext }),
       }
       const bytes = operationBytes(operation)
       if (bytes > this.maxOperationBytes) {

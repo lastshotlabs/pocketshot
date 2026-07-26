@@ -264,9 +264,9 @@ describe('AiConversationController', () => {
     })
     const conversation = await ai.create()
     await ai.send(conversation.id, 'Log')
-    await expect(
-      ai.confirmAction(conversation.id, 'action-1', { value: 999 }),
-    ).rejects.toThrow('authorization revoked')
+    await expect(ai.confirmAction(conversation.id, 'action-1', { value: 999 })).rejects.toThrow(
+      'authorization revoked',
+    )
     expect(ai.get(conversation.id)?.messages[1].actions[0]?.input).toEqual({ value: 7 })
 
     allowed = true

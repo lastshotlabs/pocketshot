@@ -367,7 +367,10 @@ export class WorkoutController {
     }
     if (!reason.trim()) throw new Error('Workout conflict requires a reason')
     this.validateSession(serverSession)
-    this.conflictValue = { serverSession: structuredClone(serverSession), reason: safeCoachText(reason) }
+    this.conflictValue = {
+      serverSession: structuredClone(serverSession),
+      reason: safeCoachText(reason),
+    }
     this.syncError = null
   }
 
@@ -439,10 +442,7 @@ function isTimestamp(value: string): boolean {
 
 function safeCoachText(value: string): string {
   return value
-    .replace(
-      /(?:bearer\s+[a-z0-9._~-]+)|(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/gi,
-      '[REDACTED]',
-    )
+    .replace(/(?:bearer\s+[a-z0-9._~-]+)|(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/gi, '[REDACTED]')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 160)
@@ -561,7 +561,9 @@ export class EntitlementController {
 
   async purchase(productId: string): Promise<void> {
     if (!productId.trim()) throw new Error('Product ID is required')
-    await this.serialize(() => this.run(async () => [await this.adapter.purchase(productId)], false))
+    await this.serialize(() =>
+      this.run(async () => [await this.adapter.purchase(productId)], false),
+    )
   }
 
   async restore(): Promise<void> {
@@ -612,10 +614,7 @@ export class EntitlementController {
     this.emit()
   }
 
-  private async run(
-    operation: () => Promise<StoreEntitlement[]>,
-    replace: boolean,
-  ): Promise<void> {
+  private async run(operation: () => Promise<StoreEntitlement[]>, replace: boolean): Promise<void> {
     this.loadingValue = true
     this.errorValue = null
     this.emit()
@@ -733,9 +732,7 @@ function publicEntitlement(value: StoreEntitlement): StoreEntitlement {
 function validateStoreEntitlement(entitlement: StoreEntitlement): void {
   if (!entitlement.productId.trim()) throw new Error('Entitlement product ID is required')
   if (
-    !['inactive', 'pending', 'active', 'grace', 'expired', 'revoked'].includes(
-      entitlement.state,
-    )
+    !['inactive', 'pending', 'active', 'grace', 'expired', 'revoked'].includes(entitlement.state)
   ) {
     throw new Error('Entitlement state is invalid')
   }

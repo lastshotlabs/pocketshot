@@ -18,7 +18,13 @@ describe('MetricLogController', () => {
     ).toThrow('invalid')
     metrics.log({ clientId: 'one', kind: 'weight', value: 1, unit: 'kg', recordedAt: '2026-07-25' })
     expect(() =>
-      metrics.log({ clientId: 'two', kind: 'weight', value: 2, unit: 'kg', recordedAt: '2026-07-25' }),
+      metrics.log({
+        clientId: 'two',
+        kind: 'weight',
+        value: 2,
+        unit: 'kg',
+        recordedAt: '2026-07-25',
+      }),
     ).toThrow('capacity')
   })
   it('deduplicates offline logs and acknowledges the server record', () => {

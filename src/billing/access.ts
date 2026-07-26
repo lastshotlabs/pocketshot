@@ -32,8 +32,13 @@ export class FeatureEntitlementGate<Feature extends string = string> {
       if (!feature.trim() || (anyOf.length === 0 && allOf.length === 0)) {
         throw new Error('Every feature entitlement rule requires a feature and product')
       }
-      if (anyOf.length !== (rule.anyOf?.length ?? 0) || allOf.length !== (rule.allOf?.length ?? 0)) {
-        throw new Error(`Feature entitlement rule contains duplicate or invalid products: ${feature}`)
+      if (
+        anyOf.length !== (rule.anyOf?.length ?? 0) ||
+        allOf.length !== (rule.allOf?.length ?? 0)
+      ) {
+        throw new Error(
+          `Feature entitlement rule contains duplicate or invalid products: ${feature}`,
+        )
       }
     }
   }

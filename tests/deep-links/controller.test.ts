@@ -92,11 +92,7 @@ describe('DeepLinkController', () => {
     await expect(controller.ingest('pocketshot://join/NEXT', 'warm')).resolves.toMatchObject({
       status: 'handled',
     })
-    expect(handler).toHaveBeenLastCalledWith(
-      { code: 'NEXT' },
-      expect.any(Object),
-      'warm',
-    )
+    expect(handler).toHaveBeenLastCalledWith({ code: 'NEXT' }, expect.any(Object), 'warm')
   })
 
   it('subscribes before reading the Android cold intent and deduplicates overlap', async () => {

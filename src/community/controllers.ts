@@ -402,7 +402,9 @@ export class NotificationInboxController {
     this.lastSequence = item.sequence
     if (this.preferences.get(item.category) === false) return
     if (this.items.size >= this.limits.items) {
-      const oldest = [...this.items.values()].sort((left, right) => left.sequence - right.sequence)[0]
+      const oldest = [...this.items.values()].sort(
+        (left, right) => left.sequence - right.sequence,
+      )[0]
       if (oldest) this.items.delete(oldest.id)
     }
     this.items.set(item.id, { ...structuredClone(item), read: false })
@@ -884,7 +886,11 @@ export class AutomodController {
   }
 
   evaluate(input: { actorId: string; text: string; windowMs?: number }): AutomodDecision {
-    if (!input.actorId.trim() || !Number.isFinite(input.windowMs ?? 60_000) || (input.windowMs ?? 60_000) <= 0) {
+    if (
+      !input.actorId.trim() ||
+      !Number.isFinite(input.windowMs ?? 60_000) ||
+      (input.windowMs ?? 60_000) <= 0
+    ) {
       throw new Error('Automod evaluation is invalid')
     }
     const matches: AutomodPolicy[] = []

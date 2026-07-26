@@ -152,10 +152,7 @@ export class UploadAuthorizationController {
   }
 }
 
-function sameReceipt(
-  left: UploadAuthorizationReceipt,
-  right: UploadAuthorizationReceipt,
-): boolean {
+function sameReceipt(left: UploadAuthorizationReceipt, right: UploadAuthorizationReceipt): boolean {
   return (
     left.id === right.id &&
     left.actorId === right.actorId &&

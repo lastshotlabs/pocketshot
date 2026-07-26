@@ -23,7 +23,12 @@ export class CommunityComposerController {
   private drafts = new Map<string, CommunityDraft>()
 
   constructor(
-    private readonly limits = { drafts: 100, mentions: 100, attachments: 20, bodyCharacters: 100_000 },
+    private readonly limits = {
+      drafts: 100,
+      mentions: 100,
+      attachments: 20,
+      bodyCharacters: 100_000,
+    },
   ) {}
 
   get(id: string): CommunityDraft | null {
@@ -135,8 +140,7 @@ export class CommunityProfileController {
   private handles = new Map<string, string>()
 
   constructor(private readonly capacity = 10_000) {
-    if (!Number.isInteger(capacity) || capacity < 1)
-      throw new Error('Profile capacity is invalid')
+    if (!Number.isInteger(capacity) || capacity < 1) throw new Error('Profile capacity is invalid')
   }
 
   get(userId: string): CommunityProfile | null {

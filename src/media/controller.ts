@@ -6,11 +6,7 @@ import type {
   MediaPipelineDiagnostics,
   MediaSource,
 } from './types'
-import {
-  MediaCleanupError,
-  MediaPermissionError,
-  MediaPipelineCapacityError,
-} from './types'
+import { MediaCleanupError, MediaPermissionError, MediaPipelineCapacityError } from './types'
 import { validateMediaAsset, validatePendingQuota } from './validation'
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
@@ -72,8 +68,9 @@ export class MediaPipelineController {
     const activeStatuses = new Set(['processing', 'uploading', 'analyzing'])
     return {
       total: this.records.length,
-      pending: this.records.filter((record) => ['pending', 'ready', 'uploaded'].includes(record.status))
-        .length,
+      pending: this.records.filter((record) =>
+        ['pending', 'ready', 'uploaded'].includes(record.status),
+      ).length,
       active: this.records.filter((record) => activeStatuses.has(record.status)).length,
       paused: this.records.filter((record) => record.status === 'paused').length,
       failed: this.records.filter((record) => record.status === 'failed').length,
