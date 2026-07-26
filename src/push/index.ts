@@ -1,6 +1,10 @@
 export { createPushHooks } from './hooks'
-export { createExpoPushAdapter } from './expo'
-export { PersonalPushPolicyController, PushLifecycleController } from './controller'
+export { createExpoPushAdapter, createExpoPushPermissionAdapter } from './expo'
+export {
+  PersonalPushPolicyController,
+  PushLifecycleController,
+  createMemoryPushLifecycleStorage,
+} from './controller'
 export type { PersonalPushPolicyOptions, PushLifecycleControllerOptions } from './controller'
 export type { PushHooks } from './hooks'
 export type { ExpoNotificationModule } from './expo'
@@ -11,6 +15,9 @@ export type {
   NotificationTapEvent,
   NativePushAdapter,
   PushLifecycleState,
+  PushLifecycleSnapshot,
+  PushLifecycleStorage,
+  PushPermissionAdapter,
   PushRegistrationOptions,
   PushTokenRegistrationPayload,
   PushTokenRegistrationResponse,

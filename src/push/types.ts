@@ -37,8 +37,34 @@ export interface NativePushAdapter {
   subscribeToken(listener: (token: string) => void): () => void
 }
 
+export interface PushPermissionAdapter {
+  getPermission(): Promise<PushPermissionResult>
+  requestPermission(): Promise<PushPermissionResult>
+  openSettings?(): Promise<void>
+}
+
+export interface PushLifecycleSnapshot {
+  token: string | null
+  seenTapKeys: string[]
+}
+
+export interface PushLifecycleStorage {
+  get(): Promise<PushLifecycleSnapshot | null>
+  set(snapshot: PushLifecycleSnapshot): Promise<void>
+  clear(): Promise<void>
+}
+
 export interface PushLifecycleState {
-  status: 'idle' | 'starting' | 'ready' | 'failed' | 'stopped'
+  status:
+    | 'idle'
+    | 'checking-permission'
+    | 'permission-required'
+    | 'starting'
+    | 'ready'
+    | 'failed'
+    | 'stopped'
+    | 'revoked'
+  permission: PushPermissionResult | null
   token: string | null
   lastNotification: PushNotification | null
   lastTap: NotificationTapEvent | null

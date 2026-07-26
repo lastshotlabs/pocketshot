@@ -6,6 +6,16 @@ function module() {
   let tapped: ((value: unknown) => void) | undefined
   let token: ((value: { data: string }) => void) | undefined
   const value: ExpoNotificationModule = {
+    getPermissionsAsync: vi.fn(async () => ({
+      status: 'undetermined',
+      canAskAgain: true,
+      granted: false,
+    })),
+    requestPermissionsAsync: vi.fn(async () => ({
+      status: 'granted',
+      canAskAgain: true,
+      granted: true,
+    })),
     getExpoPushTokenAsync: vi.fn(async () => ({ data: 'expo-token' })),
     getLastNotificationResponseAsync: vi.fn(async () => ({
       actionIdentifier: 'open',

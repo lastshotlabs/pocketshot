@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { PushLifecycleController } from '../../src/push/controller'
+import {
+  PushLifecycleController,
+  createMemoryPushLifecycleStorage,
+} from '../../src/push/controller'
 import type {
   NativePushAdapter,
   NotificationTapEvent,
@@ -95,6 +98,7 @@ describe('PushLifecycleController', () => {
     const onError = vi.fn()
     const controller = new PushLifecycleController({
       adapter: failed.value,
+      maxRegistrationAttempts: 1,
       registerToken: async () => {
         throw new Error('registration unavailable')
       },
@@ -116,5 +120,77 @@ describe('PushLifecycleController', () => {
     second.stop()
     expect(ready.removals.every((remove) => remove.mock.calls.length === 1)).toBe(true)
     expect(second.state.status).toBe('stopped')
+  })
+
+  it('waits for user-triggered permission and opens settings after denial', async () => {
+    const native = adapter()
+    const openSettings = vi.fn(async () => undefined)
+    let granted = false
+    const controller = new PushLifecycleController({
+      adapter: native.value,
+      registerToken: async () => undefined,
+      permission: {
+        getPermission: async () => ({
+          status: granted ? 'granted' : 'undetermined',
+          canAskAgain: true,
+          granted,
+        }),
+        requestPermission: async () => ({
+          status: 'denied',
+          canAskAgain: false,
+          granted: false,
+        }),
+        openSettings,
+      },
+    })
+    await controller.start()
+    expect(controller.state.status).toBe('permission-required')
+    expect(native.value.getExpoPushToken).not.toHaveBeenCalled()
+    await expect(controller.enable()).resolves.toBe(false)
+    await controller.openSettings()
+    expect(openSettings).toHaveBeenCalledOnce()
+    granted = true
+  })
+
+  it('retries registration, restores durable dedupe, and unregisters on revoke', async () => {
+    const storage = createMemoryPushLifecycleStorage()
+    const native = adapter(tap('cold'))
+    const registerToken = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(undefined)
+    const waits: number[] = []
+    const firstTap = vi.fn()
+    const first = new PushLifecycleController({
+      adapter: native.value,
+      registerToken,
+      storage,
+      wait: async (milliseconds) => {
+        waits.push(milliseconds)
+      },
+      onTap: firstTap,
+    })
+    await first.start()
+    expect(registerToken).toHaveBeenCalledTimes(2)
+    expect(waits).toEqual([250])
+    expect(firstTap).toHaveBeenCalledOnce()
+    first.stop()
+
+    const restoredNative = adapter(tap('cold'))
+    const unregisterToken = vi.fn(async () => undefined)
+    const restoredTap = vi.fn()
+    const restored = new PushLifecycleController({
+      adapter: restoredNative.value,
+      registerToken: async () => undefined,
+      unregisterToken,
+      storage,
+      onTap: restoredTap,
+    })
+    await restored.start()
+    expect(restoredTap).not.toHaveBeenCalled()
+    await restored.revoke()
+    expect(unregisterToken).toHaveBeenCalledWith('token-1')
+    expect(restored.state).toMatchObject({ status: 'revoked', token: null })
+    expect(await storage.get()).toBeNull()
   })
 })

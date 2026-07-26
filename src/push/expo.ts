@@ -1,11 +1,39 @@
-import type { NativePushAdapter, NotificationTapEvent, PushNotification } from './types'
+import type {
+  NativePushAdapter,
+  NotificationTapEvent,
+  PushNotification,
+  PushPermissionAdapter,
+} from './types'
 
 export interface ExpoNotificationModule {
+  getPermissionsAsync(): Promise<{ status: string; canAskAgain: boolean; granted: boolean }>
+  requestPermissionsAsync(): Promise<{ status: string; canAskAgain: boolean; granted: boolean }>
   getExpoPushTokenAsync(options?: { projectId?: string }): Promise<{ data: string }>
   getLastNotificationResponseAsync(): Promise<unknown | null>
   addNotificationReceivedListener(listener: (notification: unknown) => void): { remove(): void }
   addNotificationResponseReceivedListener(listener: (response: unknown) => void): { remove(): void }
   addPushTokenListener(listener: (token: { data: string }) => void): { remove(): void }
+}
+
+export function createExpoPushPermissionAdapter(
+  module: ExpoNotificationModule,
+  openSettings?: () => Promise<void>,
+): PushPermissionAdapter {
+  const normalize = (value: { status: string; canAskAgain: boolean; granted: boolean }) => ({
+    status:
+      value.status === 'granted'
+        ? ('granted' as const)
+        : value.status === 'denied'
+          ? ('denied' as const)
+          : ('undetermined' as const),
+    canAskAgain: value.canAskAgain,
+    granted: value.granted,
+  })
+  return {
+    getPermission: async () => normalize(await module.getPermissionsAsync()),
+    requestPermission: async () => normalize(await module.requestPermissionsAsync()),
+    openSettings,
+  }
 }
 
 export function createExpoPushAdapter(module: ExpoNotificationModule): NativePushAdapter {

@@ -4,9 +4,11 @@ import type {
   PersonalPush,
   PushDisposition,
   PushLifecycleState,
+  PushLifecycleStorage,
   PushNotification,
   PushOpenRoute,
   PushQuietHours,
+  PushPermissionAdapter,
 } from './types'
 
 export interface PersonalPushPolicyOptions {
@@ -20,7 +22,12 @@ const clone = <T>(value: T): T => structuredClone(value)
 export interface PushLifecycleControllerOptions {
   adapter: NativePushAdapter
   registerToken(token: string): Promise<void>
+  unregisterToken?(token: string): Promise<void>
+  permission?: PushPermissionAdapter
+  storage?: PushLifecycleStorage
   projectId?: string
+  maxRegistrationAttempts?: number
+  wait?(milliseconds: number): Promise<void>
   onNotification?(notification: PushNotification): void
   onTap?(event: NotificationTapEvent, coldStart: boolean): void
   onError?(error: Error): void
@@ -30,6 +37,7 @@ export interface PushLifecycleControllerOptions {
 export class PushLifecycleController {
   private value: PushLifecycleState = {
     status: 'idle',
+    permission: null,
     token: null,
     lastNotification: null,
     lastTap: null,
@@ -39,6 +47,7 @@ export class PushLifecycleController {
   private readonly listeners = new Set<(state: PushLifecycleState) => void>()
   private readonly seenTaps = new Set<string>()
   private unsubscribers: Array<() => void> = []
+  private restored = false
 
   constructor(private readonly options: PushLifecycleControllerOptions) {}
 
@@ -55,6 +64,19 @@ export class PushLifecycleController {
   async start(): Promise<void> {
     if (this.value.status === 'starting' || this.value.status === 'ready') return
     const generation = ++this.generation
+    await this.restore()
+    if (this.options.permission) {
+      this.value.status = 'checking-permission'
+      this.emit()
+      const permission = await this.options.permission.getPermission()
+      if (generation !== this.generation) return
+      this.value.permission = clone(permission)
+      if (!permission.granted) {
+        this.value.status = 'permission-required'
+        this.emit()
+        return
+      }
+    }
     this.value.status = 'starting'
     this.value.error = null
     this.emit()
@@ -84,6 +106,38 @@ export class PushLifecycleController {
     }
   }
 
+  async enable(): Promise<boolean> {
+    if (!this.options.permission) {
+      await this.start()
+      return this.value.status === 'ready'
+    }
+    const permission = await this.options.permission.requestPermission()
+    this.value.permission = clone(permission)
+    if (!permission.granted) {
+      this.value.status = 'permission-required'
+      this.emit()
+      return false
+    }
+    this.value.status = 'idle'
+    await this.start()
+    return this.state.status === 'ready'
+  }
+
+  async openSettings(): Promise<void> {
+    await this.options.permission?.openSettings?.()
+  }
+
+  async revoke(): Promise<void> {
+    const token = this.value.token
+    this.stop()
+    if (token && this.options.unregisterToken) await this.options.unregisterToken(token)
+    this.value.token = null
+    this.value.status = 'revoked'
+    this.seenTaps.clear()
+    await this.options.storage?.clear()
+    this.emit()
+  }
+
   stop(): void {
     this.generation += 1
     for (const unsubscribe of this.unsubscribers.splice(0)) unsubscribe()
@@ -93,10 +147,25 @@ export class PushLifecycleController {
 
   private async register(token: string, generation: number): Promise<void> {
     if (!token || token === this.value.token) return
-    await this.options.registerToken(token)
+    const attempts = Math.max(1, this.options.maxRegistrationAttempts ?? 3)
+    let failure: unknown
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        await this.options.registerToken(token)
+        failure = null
+        break
+      } catch (error) {
+        failure = error
+        if (attempt < attempts) {
+          await (this.options.wait ?? defaultWait)(Math.min(250 * 2 ** (attempt - 1), 2_000))
+        }
+      }
+    }
+    if (failure) throw failure
     if (generation !== this.generation) return
     this.value.token = token
     this.value.error = null
+    await this.persist()
     this.emit()
   }
 
@@ -106,6 +175,7 @@ export class PushLifecycleController {
     this.seenTaps.add(key)
     this.value.lastTap = clone(event)
     this.options.onTap?.(clone(event), coldStart)
+    void this.persist().catch((error) => this.options.onError?.(toError(error)))
     this.emit()
   }
 
@@ -121,6 +191,41 @@ export class PushLifecycleController {
   private emit(): void {
     const state = this.state
     for (const listener of this.listeners) listener(state)
+  }
+
+  private async restore(): Promise<void> {
+    if (this.restored) return
+    this.restored = true
+    const snapshot = await this.options.storage?.get()
+    if (!snapshot) return
+    this.value.token = snapshot.token
+    for (const key of snapshot.seenTapKeys) this.seenTaps.add(key)
+  }
+
+  private async persist(): Promise<void> {
+    await this.options.storage?.set({
+      token: this.value.token,
+      seenTapKeys: [...this.seenTaps].slice(-100),
+    })
+  }
+}
+
+const defaultWait = (milliseconds: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, milliseconds))
+
+const toError = (cause: unknown): Error =>
+  cause instanceof Error ? cause : new Error(String(cause))
+
+export function createMemoryPushLifecycleStorage(): PushLifecycleStorage {
+  let value: Awaited<ReturnType<PushLifecycleStorage['get']>> = null
+  return {
+    get: async () => (value ? clone(value) : null),
+    set: async (snapshot) => {
+      value = clone(snapshot)
+    },
+    clear: async () => {
+      value = null
+    },
   }
 }
 
