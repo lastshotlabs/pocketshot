@@ -236,7 +236,11 @@ export class CommunityDemoController {
   readonly profiles = new CommunityProfileController()
   readonly social = new SocialGraphController()
   readonly rooms = new RoomStateController()
-  readonly admin = new CommunityAdminController(() => '2026-07-25T12:00:00.000Z')
+  readonly admin = new CommunityAdminController(
+    () => '2026-07-25T12:00:00.000Z',
+    undefined,
+    { bootstrapAdminIds: ['system'] },
+  )
   readonly messaging = new MessagingController()
   readonly moderation = new ModerationController(() => '2026-07-25T12:00:00.000Z')
   readonly automod = new AutomodController(() => Date.parse('2026-07-25T12:00:00.000Z'))

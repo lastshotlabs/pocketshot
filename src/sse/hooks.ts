@@ -25,7 +25,7 @@ export function createSseHooks(opts: CreateSseHooksOpts) {
         appStateManager: opts.appStateManager,
       })
       managers.set(url, manager)
-      void manager.connect()
+      void manager.connect().catch(() => undefined)
     }
     return managers.get(url)!
   }

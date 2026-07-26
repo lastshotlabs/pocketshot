@@ -12,15 +12,30 @@ export class PocketshotWS {
   private listeners = new Map<string, Set<RoomListener>>()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private unsubscribeForeground: (() => void) | null = null
+  private unsubscribeBackground: (() => void) | null = null
   private connecting = false
+  private stopped = false
+  private reconnectDelay = 1_000
 
   /**
    * @param endpointUrl     - Full WebSocket URL, e.g. wss://api.example.com/ws
    * @param storage         - Token storage for auth header injection
    * @param appStateManager - Shared AppStateManager; WS reconnects on foreground
    */
-  constructor(endpointUrl: string, storage: TokenStorage, appStateManager: AppStateManager) {
-    this.endpointUrl = endpointUrl.replace(/\/$/, '')
+  constructor(
+    endpointUrl: string,
+    storage: TokenStorage,
+    appStateManager: AppStateManager,
+    private readonly limits = { rooms: 100, payloadBytes: 256 * 1024, maxReconnectMs: 30_000 },
+  ) {
+    const endpoint = new URL(endpointUrl)
+    if (endpoint.protocol !== 'wss:' || endpoint.username || endpoint.password) {
+      throw new Error('[pocketshot] WebSocket endpoint must use WSS without credentials')
+    }
+    for (const value of Object.values(limits)) {
+      if (!Number.isFinite(value) || value < 1) throw new Error('[pocketshot] WS limits are invalid')
+    }
+    this.endpointUrl = endpoint.toString().replace(/\/$/, '')
     this.storage = storage
     // Subscribe to foreground events via the centralized manager (not AppState directly)
     this.unsubscribeForeground = appStateManager.onForeground(() => {
@@ -28,28 +43,46 @@ export class PocketshotWS {
         void this.connect()
       }
     })
+    this.unsubscribeBackground = appStateManager.onBackground(() => {
+      this.closeSocket(1000)
+    })
   }
 
-  async connect() {
+  async connect(): Promise<void> {
+    if (this.stopped || this.connecting || this.ws?.readyState === WebSocket.OPEN) return
     this.connecting = true
-    const token = await this.storage.getToken()
-    const u = new URL(this.endpointUrl)
-    if (token) u.searchParams.set('token', token)
-    const url = u.toString()
-
-    this.ws = new WebSocket(url)
+    let token: string | null
+    try {
+      token = await this.storage.getToken()
+    } catch {
+      this.connecting = false
+      this.scheduleReconnect()
+      return
+    }
+    if (this.stopped) {
+      this.connecting = false
+      return
+    }
+    this.ws = new WebSocket(this.endpointUrl)
 
     this.ws.onopen = () => {
       this.connecting = false
-      console.log('[ws] connected')
+      this.reconnectDelay = 1_000
+      if (token) this.send({ action: 'authenticate', token })
       for (const room of this.subscribedRooms) {
         this.send({ action: 'subscribe', room })
       }
     }
 
     this.ws.onmessage = (e) => {
+      if (
+        typeof e.data !== 'string' ||
+        new TextEncoder().encode(e.data).byteLength > this.limits.payloadBytes
+      ) {
+        return
+      }
       try {
-        const msg = JSON.parse(e.data as string) as { room?: string }
+        const msg = JSON.parse(e.data) as { room?: string }
         if (msg.room) {
           const roomListeners = this.listeners.get(msg.room)
           if (roomListeners) {
@@ -63,8 +96,8 @@ export class PocketshotWS {
 
     this.ws.onclose = (e) => {
       this.connecting = false
-      console.log('[ws] closed', e.code)
-      if (e.code !== 1000) {
+      this.ws = null
+      if (!this.stopped && e.code !== 1000) {
         this.scheduleReconnect()
       }
     }
@@ -76,6 +109,10 @@ export class PocketshotWS {
   }
 
   subscribe(room: string, listener: RoomListener) {
+    if (!room.trim() || room.length > 200) throw new Error('[pocketshot] WS room is invalid')
+    if (!this.subscribedRooms.has(room) && this.subscribedRooms.size >= this.limits.rooms) {
+      throw new Error('[pocketshot] WS room capacity exceeded')
+    }
     this.subscribedRooms.add(room)
     if (!this.listeners.has(room)) this.listeners.set(room, new Set())
     this.listeners.get(room)!.add(listener)
@@ -110,19 +147,36 @@ export class PocketshotWS {
   }
 
   private scheduleReconnect() {
-    if (this.reconnectTimer) return
+    if (this.reconnectTimer || this.stopped || this.subscribedRooms.size === 0) return
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
       void this.connect()
-    }, 3000)
+    }, this.reconnectDelay)
+    this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.limits.maxReconnectMs)
   }
 
   disconnect() {
+    this.stopped = true
     this.unsubscribeForeground?.()
     this.unsubscribeForeground = null
+    this.unsubscribeBackground?.()
+    this.unsubscribeBackground = null
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
-    this.ws?.close(1000)
+    this.closeSocket(1000)
+    this.listeners.clear()
+    this.subscribedRooms.clear()
+  }
+
+  private closeSocket(code: number): void {
+    const socket = this.ws
     this.ws = null
+    if (socket) {
+      socket.onclose = null
+      socket.onerror = null
+      socket.onmessage = null
+      socket.onopen = null
+      socket.close(code)
+    }
   }
 }
 
