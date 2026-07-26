@@ -26,18 +26,34 @@ export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
   const { api, appStateManager } = opts
   const queue = new OfflineQueue(opts.queueOptions)
   const processor = new OfflineCommandProcessor(queue, api)
+  let activeFlushController: AbortController | null = null
 
   // Start flushing when the app comes to foreground
   appStateManager.onForeground(() => {
     void flushQueue()
   })
+  appStateManager.onBackground(() => {
+    activeFlushController?.abort()
+  })
 
   async function flushQueue(): Promise<OfflineFlushResult> {
     const status = await checkNetworkStatus()
     if (!status.isConnected) {
-      return { flushed: 0, failed: 0, deadLettered: 0, deferred: 0 }
+      return {
+        flushed: 0,
+        failed: 0,
+        deadLettered: 0,
+        deferred: 0,
+        authorizationRequired: false,
+        cancelled: false,
+      }
     }
-    return processor.flush()
+    activeFlushController ??= new AbortController()
+    try {
+      return await processor.flush(activeFlushController.signal)
+    } finally {
+      activeFlushController = null
+    }
   }
 
   /**
@@ -111,6 +127,15 @@ export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
       [refreshQueue],
     )
 
+    const cancel = useCallback(
+      async (id: string) => {
+        const cancelled = await queue.cancel(id)
+        await refreshQueue()
+        return cancelled
+      },
+      [refreshQueue],
+    )
+
     return {
       queuedOps,
       queueCount: queuedOps.length,
@@ -121,7 +146,9 @@ export function createOfflineHooks(opts: CreateOfflineHooksOpts) {
       flush,
       clearQueue,
       retryDeadLetter,
+      cancel,
       getDeadLetters: () => queue.getDeadLetters(),
+      getDiagnostics: () => queue.getDiagnostics(),
     }
   }
 

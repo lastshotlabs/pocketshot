@@ -28,7 +28,14 @@ describe('OfflineCommandProcessor', () => {
 
     const result = await new OfflineCommandProcessor(queue, client).flush()
 
-    expect(result).toEqual({ flushed: 2, failed: 0, deadLettered: 0, deferred: 0 })
+    expect(result).toEqual({
+      flushed: 2,
+      failed: 0,
+      deadLettered: 0,
+      deferred: 0,
+      authorizationRequired: false,
+      cancelled: false,
+    })
     expect(client.post).toHaveBeenCalledWith(
       '/first',
       { order: 1 },
@@ -83,7 +90,7 @@ describe('OfflineCommandProcessor', () => {
     const result = await new OfflineCommandProcessor(queue, client, { onDeadLetter }).flush()
 
     expect(result.deadLettered).toBe(1)
-    expect((await queue.getDeadLetters())[0]?.lastError).toBe('Validation failed')
+    expect((await queue.getDeadLetters())[0]?.lastError).toBe('Request failed (422)')
     expect(onDeadLetter).toHaveBeenCalledWith(
       expect.objectContaining({ optimisticContext: { localId: 'temp-1' } }),
       expect.any(ApiError),
@@ -110,6 +117,8 @@ describe('OfflineCommandProcessor', () => {
       failed: 1,
       deadLettered: 0,
       deferred: 0,
+      authorizationRequired: false,
+      cancelled: false,
     })
     expect(post).toHaveBeenCalledOnce()
     expect((await queue.getAll())[0]?.attempts).toBe(1)
@@ -119,5 +128,78 @@ describe('OfflineCommandProcessor', () => {
     now = new Date('2026-07-25T00:00:01.000Z')
     expect((await processor.flush()).flushed).toBe(2)
     expect(post).toHaveBeenCalledTimes(3)
+  })
+
+  it('pauses without dead-lettering when authorization must be restored', async () => {
+    const queue = new OfflineQueue({ storage: createMemoryOfflineQueueStorage() })
+    await queue.enqueue({ method: 'POST', path: '/protected', body: {} })
+    const onAuthorizationRequired = vi.fn()
+    const processor = new OfflineCommandProcessor(
+      queue,
+      api({
+        post: vi.fn(async () => {
+          throw new ApiError('secret server detail', 401)
+        }) as ApiClient['post'],
+      }),
+      { onAuthorizationRequired },
+    )
+
+    const result = await processor.flush()
+
+    expect(result.authorizationRequired).toBe(true)
+    expect(result.deadLettered).toBe(0)
+    expect(result.deferred).toBe(1)
+    expect((await queue.getAll())[0]?.lastError).toBe('Request failed (401)')
+    expect(onAuthorizationRequired).toHaveBeenCalledOnce()
+  })
+
+  it('uses server retry-after hints within the configured queue cap', async () => {
+    let now = new Date('2026-07-25T00:00:00.000Z')
+    const queue = new OfflineQueue({
+      storage: createMemoryOfflineQueueStorage(),
+      now: () => now,
+      maxRetryDelay: 30_000,
+    })
+    await queue.enqueue({ method: 'POST', path: '/limited', body: {} })
+    const processor = new OfflineCommandProcessor(
+      queue,
+      api({
+        post: vi.fn(async () => {
+          throw new ApiError('quota details', 429, undefined, undefined, 15_000)
+        }) as ApiClient['post'],
+      }),
+    )
+
+    await processor.flush()
+    expect((await queue.getAll())[0]?.nextAttemptAt).toBe('2026-07-25T00:00:15.000Z')
+    now = new Date('2026-07-25T00:00:14.999Z')
+    expect(await queue.getReady()).toHaveLength(0)
+  })
+
+  it('aborts an active replay and leaves the command available', async () => {
+    const queue = new OfflineQueue({ storage: createMemoryOfflineQueueStorage() })
+    await queue.enqueue({ method: 'POST', path: '/slow', body: {} })
+    const controller = new AbortController()
+    const post = vi.fn(
+      (_path: string, _body: unknown, options: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          options.signal.addEventListener('abort', () => {
+            const error = new Error('Aborted')
+            error.name = 'AbortError'
+            reject(error)
+          })
+        }),
+    )
+    const flush = new OfflineCommandProcessor(
+      queue,
+      api({ post: post as ApiClient['post'] }),
+    ).flush(controller.signal)
+    await vi.waitFor(() => expect(post).toHaveBeenCalledOnce())
+    controller.abort()
+
+    const result = await flush
+    expect(result.cancelled).toBe(true)
+    expect(result.failed).toBe(0)
+    expect(await queue.getReady()).toHaveLength(1)
   })
 })

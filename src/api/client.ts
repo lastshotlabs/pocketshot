@@ -5,13 +5,21 @@ export class ApiError extends Error {
   status: number
   code?: string
   data?: unknown
+  retryAfterMs?: number
 
-  constructor(message: string, status: number, code?: string, data?: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    code?: string,
+    data?: unknown,
+    retryAfterMs?: number,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.data = data
+    this.retryAfterMs = retryAfterMs
   }
 }
 
@@ -111,7 +119,7 @@ export class ApiClient {
       const code: string | undefined = (errBody as Record<string, unknown>).code as
         | string
         | undefined
-      throw new ApiError(msg, res.status, code, errBody)
+      throw new ApiError(msg, res.status, code, errBody, parseRetryAfter(res.headers.get('retry-after')))
     }
     const contentType = res.headers.get('content-type')
     if (!contentType?.includes('application/json')) {
@@ -160,4 +168,12 @@ export class ApiClient {
     })
     return this.handleResponse<T>(res)
   }
+}
+
+function parseRetryAfter(value: string | null): number | undefined {
+  if (!value) return undefined
+  const seconds = Number(value)
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1_000
+  const date = Date.parse(value)
+  return Number.isNaN(date) ? undefined : Math.max(0, date - Date.now())
 }

@@ -1,4 +1,9 @@
-export { OfflineQueue, createMemoryOfflineQueueStorage } from './queue'
+export {
+  OfflineQueue,
+  OfflineQueueCapacityError,
+  InvalidOfflineOperationError,
+  createMemoryOfflineQueueStorage,
+} from './queue'
 export { OfflineCommandProcessor } from './processor'
 export type { OfflineCommandProcessorOptions } from './processor'
 export { OptimisticOfflineMutations } from './optimistic'
@@ -13,4 +18,5 @@ export type {
   OfflineQueueOptions,
   OfflineQueueStorage,
   OfflineFlushResult,
+  OfflineQueueDiagnostics,
 } from './types'

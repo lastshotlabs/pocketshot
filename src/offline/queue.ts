@@ -3,7 +3,56 @@ import type {
   OfflineQueueOptions,
   OfflineQueueStorage,
   QueuedOperation,
+  OfflineQueueDiagnostics,
 } from './types'
+
+const DEFAULT_MAX_OPERATIONS = 1_000
+const DEFAULT_MAX_OPERATION_BYTES = 512 * 1024
+const DEFAULT_MAX_BYTES = 10 * 1024 * 1024
+const MAX_ERROR_LENGTH = 160
+
+export class OfflineQueueCapacityError extends Error {
+  constructor(message = 'Offline queue capacity exceeded') {
+    super(message)
+    this.name = 'OfflineQueueCapacityError'
+  }
+}
+
+export class InvalidOfflineOperationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'InvalidOfflineOperationError'
+  }
+}
+
+function jsonClone<T>(value: T, label = 'value'): T {
+  let serialized: string | undefined
+  try {
+    serialized = JSON.stringify(value)
+  } catch {
+    throw new InvalidOfflineOperationError(`${label} must be JSON serializable`)
+  }
+  if (serialized === undefined) {
+    throw new InvalidOfflineOperationError(`${label} must be JSON serializable`)
+  }
+  return JSON.parse(serialized) as T
+}
+
+function operationBytes(operation: QueuedOperation): number {
+  return new TextEncoder().encode(JSON.stringify(operation)).byteLength
+}
+
+function cloneOperation(operation: QueuedOperation): QueuedOperation {
+  return jsonClone(operation, 'operation')
+}
+
+function defaultSanitizeError(error: unknown): string {
+  if (error && typeof error === 'object' && 'status' in error) {
+    const status = Number((error as { status?: unknown }).status)
+    if (Number.isInteger(status)) return `Request failed (${status})`
+  }
+  return error instanceof Error ? error.name : 'Replay failed'
+}
 
 interface SQLiteDatabase {
   execAsync(sql: string): Promise<void>
@@ -148,11 +197,11 @@ function createSQLiteStorage(): OfflineQueueStorage | null {
 export function createMemoryOfflineQueueStorage(
   initial: QueuedOperation[] = [],
 ): OfflineQueueStorage {
-  let operations = initial.map((operation) => ({ ...operation }))
+  let operations = initial.map(cloneOperation)
   return {
-    load: async () => operations.map((operation) => ({ ...operation })),
+    load: async () => operations.map(cloneOperation),
     save: async (next) => {
-      operations = next.map((operation) => ({ ...operation }))
+      operations = next.map(cloneOperation)
     },
     clear: async () => {
       operations = []
@@ -175,6 +224,10 @@ export class OfflineQueue {
   private readonly maxRetryDelay: number
   private readonly now: () => Date
   private readonly createId: () => string
+  private readonly maxOperations: number
+  private readonly maxOperationBytes: number
+  private readonly maxBytes: number
+  private readonly sanitizeErrorValue: (error: unknown) => string
 
   constructor(options: OfflineQueueOptions = {}) {
     this.maxAttemptsValue = options.maxAttempts ?? 5
@@ -183,6 +236,18 @@ export class OfflineQueue {
     this.now = options.now ?? (() => new Date())
     this.createId =
       options.createId ?? (() => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`)
+    this.maxOperations = options.maxOperations ?? DEFAULT_MAX_OPERATIONS
+    this.maxOperationBytes = options.maxOperationBytes ?? DEFAULT_MAX_OPERATION_BYTES
+    this.maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES
+    this.sanitizeErrorValue = options.sanitizeError ?? defaultSanitizeError
+    if (
+      this.maxAttemptsValue < 1 ||
+      this.maxOperations < 1 ||
+      this.maxOperationBytes < 1 ||
+      this.maxBytes < 1
+    ) {
+      throw new RangeError('Offline queue limits must be positive')
+    }
     const sqliteStorage = options.storage ? null : createSQLiteStorage()
     this.storage = options.storage ?? sqliteStorage ?? createMemoryOfflineQueueStorage()
     if (!options.storage && !sqliteStorage) {
@@ -200,8 +265,12 @@ export class OfflineQueue {
       const loaded = await this.storage.load()
       this.operations = loaded.map((operation) =>
         operation.status === 'processing'
-          ? { ...operation, status: 'queued', lastError: 'Recovered after process interruption' }
-          : operation,
+          ? {
+              ...cloneOperation(operation),
+              status: 'queued',
+              lastError: 'Recovered after process interruption',
+            }
+          : cloneOperation(operation),
       )
       this.loaded = true
       await this.storage.save(this.operations)
@@ -216,19 +285,27 @@ export class OfflineQueue {
   async enqueue(input: NewQueuedOperation): Promise<QueuedOperation> {
     return this.serialize(async () => {
       await this.load()
+      if (!input.path.startsWith('/') || input.path.startsWith('//')) {
+        throw new InvalidOfflineOperationError('path must be an API-relative path')
+      }
+      const body = jsonClone(input.body, 'body')
+      const optimisticContext =
+        input.optimisticContext === undefined
+          ? undefined
+          : jsonClone(input.optimisticContext, 'optimisticContext')
       const id = this.createId()
       const idempotencyKey = input.idempotencyKey ?? id
       const existing = this.operations.find(
         (operation) => operation.idempotencyKey === idempotencyKey,
       )
-      if (existing) return { ...existing }
+      if (existing) return cloneOperation(existing)
       const operation: QueuedOperation = {
         schemaVersion: 2,
         id,
         idempotencyKey,
         method: input.method,
         path: input.path,
-        body: input.body,
+        body,
         queuedAt: this.now().toISOString(),
         attempts: 0,
         status: 'queued',
@@ -236,11 +313,22 @@ export class OfflineQueue {
         lastError: null,
         ...(input.optimisticContext === undefined
           ? {}
-          : { optimisticContext: input.optimisticContext }),
+          : { optimisticContext }),
+      }
+      const bytes = operationBytes(operation)
+      if (bytes > this.maxOperationBytes) {
+        throw new OfflineQueueCapacityError('Offline operation exceeds its byte limit')
+      }
+      if (this.operations.length >= this.maxOperations) {
+        throw new OfflineQueueCapacityError('Offline queue operation limit reached')
+      }
+      const currentBytes = this.operations.reduce((total, item) => total + operationBytes(item), 0)
+      if (currentBytes + bytes > this.maxBytes) {
+        throw new OfflineQueueCapacityError('Offline queue byte limit reached')
       }
       this.operations.push(operation)
       await this.persist()
-      return { ...operation }
+      return cloneOperation(operation)
     })
   }
 
@@ -252,11 +340,27 @@ export class OfflineQueue {
     })
   }
 
+  /** Cancels a pending command and returns its optimistic context for UI rollback. */
+  async cancel(id: string): Promise<QueuedOperation | null> {
+    return this.serialize(async () => {
+      await this.load()
+      const index = this.operations.findIndex((operation) => operation.id === id)
+      if (index < 0) return null
+      const [removed] = this.operations.splice(index, 1)
+      await this.persist()
+      return removed ? cloneOperation(removed) : null
+    })
+  }
+
   async markProcessing(id: string): Promise<void> {
     await this.update(id, { status: 'processing' })
   }
 
-  async markRetry(id: string, error: string): Promise<QueuedOperation | null> {
+  async markRetry(
+    id: string,
+    error: unknown,
+    retryAfterMs?: number,
+  ): Promise<QueuedOperation | null> {
     return this.serialize(async () => {
       await this.load()
       const operation = this.operations.find((candidate) => candidate.id === id)
@@ -265,13 +369,16 @@ export class OfflineQueue {
       Object.assign(operation, {
         attempts,
         status: 'queued',
-        lastError: error,
+        lastError: this.sanitizeError(error),
         nextAttemptAt: new Date(
-          this.now().getTime() + this.retryDelayFor(attempts - 1),
+          this.now().getTime() +
+            (retryAfterMs === undefined
+              ? this.retryDelayFor(attempts - 1)
+              : Math.max(0, Math.min(retryAfterMs, this.maxRetryDelay))),
         ).toISOString(),
       } satisfies Partial<QueuedOperation>)
       await this.persist()
-      return { ...operation }
+      return cloneOperation(operation)
     })
   }
 
@@ -279,7 +386,7 @@ export class OfflineQueue {
     await this.markRetry(id, 'Replay failed')
   }
 
-  async moveToDeadLetter(id: string, error: string): Promise<void> {
+  async moveToDeadLetter(id: string, error: unknown): Promise<void> {
     await this.serialize(async () => {
       await this.load()
       const operation = this.operations.find((candidate) => candidate.id === id)
@@ -287,7 +394,7 @@ export class OfflineQueue {
       Object.assign(operation, {
         status: 'dead_letter',
         attempts: operation.attempts + 1,
-        lastError: error,
+        lastError: this.sanitizeError(error),
         nextAttemptAt: null,
       } satisfies Partial<QueuedOperation>)
       await this.persist()
@@ -308,7 +415,7 @@ export class OfflineQueue {
     await this.load()
     return this.operations
       .filter((operation) => operation.status !== 'dead_letter')
-      .map((operation) => ({ ...operation }))
+      .map(cloneOperation)
   }
 
   async getReady(): Promise<QueuedOperation[]> {
@@ -325,7 +432,22 @@ export class OfflineQueue {
     await this.load()
     return this.operations
       .filter((operation) => operation.status === 'dead_letter')
-      .map((operation) => ({ ...operation }))
+      .map(cloneOperation)
+  }
+
+  async getDiagnostics(): Promise<OfflineQueueDiagnostics> {
+    await this.mutationChain
+    await this.load()
+    const active = this.operations.filter((operation) => operation.status !== 'dead_letter')
+    return {
+      total: this.operations.length,
+      queued: this.operations.filter((operation) => operation.status === 'queued').length,
+      processing: this.operations.filter((operation) => operation.status === 'processing').length,
+      deadLettered: this.operations.filter((operation) => operation.status === 'dead_letter')
+        .length,
+      bytes: this.operations.reduce((total, operation) => total + operationBytes(operation), 0),
+      oldestQueuedAt: active[0]?.queuedAt ?? null,
+    }
   }
 
   async clear(): Promise<void> {
@@ -342,6 +464,11 @@ export class OfflineQueue {
 
   retryDelayFor(attempts: number): number {
     return Math.min(this.retryDelay * 2 ** attempts, this.maxRetryDelay)
+  }
+
+  sanitizeError(error: unknown): string {
+    const sanitized = this.sanitizeErrorValue(error).replace(/\s+/g, ' ').trim()
+    return (sanitized || 'Replay failed').slice(0, MAX_ERROR_LENGTH)
   }
 
   private async update(id: string, patch: Partial<QueuedOperation>): Promise<void> {

@@ -5,7 +5,12 @@ vi.mock('expo-sqlite', () => {
   throw new Error('not installed')
 })
 
-import { OfflineQueue, createMemoryOfflineQueueStorage } from '../../src/offline/queue'
+import {
+  InvalidOfflineOperationError,
+  OfflineQueue,
+  OfflineQueueCapacityError,
+  createMemoryOfflineQueueStorage,
+} from '../../src/offline/queue'
 import type { QueuedOperation } from '../../src/offline/types'
 
 describe('OfflineQueue (in-memory fallback)', () => {
@@ -165,5 +170,74 @@ describe('OfflineQueue (in-memory fallback)', () => {
     expect(await durable.getDeadLetters()).toHaveLength(1)
     await durable.retryDeadLetter(operation.id)
     expect(await durable.getReady()).toHaveLength(1)
+  })
+
+  it('rejects unsafe paths and non-JSON payloads at the durable boundary', async () => {
+    await expect(
+      queue.enqueue({ method: 'POST', path: 'https://attacker.test/write', body: {} }),
+    ).rejects.toBeInstanceOf(InvalidOfflineOperationError)
+    const circular: { self?: unknown } = {}
+    circular.self = circular
+    await expect(
+      queue.enqueue({ method: 'POST', path: '/write', body: circular }),
+    ).rejects.toBeInstanceOf(InvalidOfflineOperationError)
+  })
+
+  it('enforces operation-count and byte budgets before storage exhaustion', async () => {
+    const countLimited = new OfflineQueue({
+      storage: createMemoryOfflineQueueStorage(),
+      maxOperations: 1,
+    })
+    await countLimited.enqueue({ method: 'POST', path: '/first', body: {} })
+    await expect(
+      countLimited.enqueue({ method: 'POST', path: '/second', body: {} }),
+    ).rejects.toBeInstanceOf(OfflineQueueCapacityError)
+
+    const byteLimited = new OfflineQueue({
+      storage: createMemoryOfflineQueueStorage(),
+      maxOperationBytes: 200,
+    })
+    await expect(
+      byteLimited.enqueue({ method: 'POST', path: '/large', body: { text: 'x'.repeat(500) } }),
+    ).rejects.toBeInstanceOf(OfflineQueueCapacityError)
+  })
+
+  it('returns immutable snapshots and cancellation context for optimistic rollback', async () => {
+    const body = { nested: { value: 1 } }
+    const operation = await queue.enqueue({
+      method: 'POST',
+      path: '/draft',
+      body,
+      optimisticContext: { localId: 'draft-1' },
+    })
+    body.nested.value = 2
+    const snapshot = await queue.getAll()
+    ;(snapshot[0]!.body as { nested: { value: number } }).nested.value = 3
+    expect((await queue.getAll())[0]?.body).toEqual({ nested: { value: 1 } })
+
+    expect(await queue.cancel(operation.id)).toEqual(
+      expect.objectContaining({ optimisticContext: { localId: 'draft-1' } }),
+    )
+    expect(await queue.cancel(operation.id)).toBeNull()
+  })
+
+  it('exposes bounded non-sensitive health diagnostics', async () => {
+    const operation = await queue.enqueue({
+      method: 'POST',
+      path: '/private/user@example.com',
+      body: { token: 'secret' },
+    })
+    await queue.moveToDeadLetter(operation.id, 'backend leaked user@example.com token=secret')
+
+    const diagnostics = await queue.getDiagnostics()
+    expect(diagnostics).toMatchObject({
+      total: 1,
+      queued: 0,
+      processing: 0,
+      deadLettered: 1,
+      oldestQueuedAt: null,
+    })
+    expect(JSON.stringify(diagnostics)).not.toContain('secret')
+    expect((await queue.getDeadLetters())[0]?.lastError).toBe('Replay failed')
   })
 })

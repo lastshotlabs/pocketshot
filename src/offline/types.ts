@@ -53,6 +53,14 @@ export interface OfflineQueueOptions {
   now?: () => Date
   /** Injectable ID factory. The same ID is used as the idempotency key by default. */
   createId?: () => string
+  /** Maximum durable commands, including dead letters. Default: 1000. */
+  maxOperations?: number
+  /** Maximum serialized bytes for one command body and optimistic context. Default: 512 KiB. */
+  maxOperationBytes?: number
+  /** Maximum serialized bytes retained by the queue. Default: 10 MiB. */
+  maxBytes?: number
+  /** Converts replay failures into bounded, privacy-safe durable diagnostics. */
+  sanitizeError?: (error: unknown) => string
 }
 
 export type NewQueuedOperation = Pick<QueuedOperation, 'method' | 'path' | 'body'> &
@@ -63,4 +71,16 @@ export interface OfflineFlushResult {
   failed: number
   deadLettered: number
   deferred: number
+  authorizationRequired: boolean
+  cancelled: boolean
+}
+
+/** Non-sensitive queue health suitable for support diagnostics and telemetry. */
+export interface OfflineQueueDiagnostics {
+  total: number
+  queued: number
+  processing: number
+  deadLettered: number
+  bytes: number
+  oldestQueuedAt: string | null
 }
