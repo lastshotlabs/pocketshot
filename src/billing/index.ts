@@ -1,12 +1,22 @@
 export {
   EntitlementController,
+  createMemoryEntitlementStorage,
   type BillingAdapter,
   type EntitlementState,
   type EntitlementVerifier,
+  type EntitlementControllerOptions,
+  type EntitlementCache,
+  type EntitlementStorage,
   type StoreEntitlement,
 } from '../coach/controllers'
 
 import type { BillingAdapter, StoreEntitlement } from '../coach/controllers'
+export { FeatureEntitlementGate } from './access'
+export type {
+  EntitlementAccessSource,
+  FeatureEntitlementMap,
+  FeatureEntitlementRule,
+} from './access'
 
 export class LocalBillingAdapter implements BillingAdapter {
   private entitlements = new Map<string, StoreEntitlement>()

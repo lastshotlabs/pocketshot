@@ -7,6 +7,7 @@ import {
   convertMeasurement,
   type BillingAdapter,
   type EntitlementVerifier,
+  type StoreEntitlement,
 } from '../../src/coach/controllers'
 
 describe('MetricLogController', () => {
@@ -273,7 +274,7 @@ describe('EntitlementController', () => {
     }
     const billing = new EntitlementController(failing)
     await expect(billing.purchase('pro')).rejects.toThrow('Store unavailable')
-    expect(billing.snapshot).toMatchObject({ isLoading: false, error: 'Store unavailable' })
+    expect(billing.snapshot).toMatchObject({ isLoading: false, error: 'Error' })
   })
 
   it('keeps pending and revoked products locked', async () => {
@@ -312,6 +313,65 @@ describe('EntitlementController', () => {
     }
     const billing = new EntitlementController(adapter(), verifier)
     await expect(billing.purchase('pro')).rejects.toThrow('does not match')
+    expect(billing.canAccess('pro')).toBe(false)
+  })
+
+  it('treats restore and refresh as authoritative and clears stale access', async () => {
+    const store = adapter()
+    const billing = new EntitlementController(store)
+    await billing.purchase('pro')
+    expect(billing.canAccess('pro')).toBe(true)
+    ;(store.refresh as ReturnType<typeof vi.fn>).mockResolvedValue([])
+
+    await billing.refresh()
+
+    expect(billing.canAccess('pro')).toBe(false)
+    expect(billing.snapshot.entitlements).toEqual([])
+  })
+
+  it('enforces expiry locally and never exposes verification tokens', async () => {
+    const store: BillingAdapter = {
+      purchase: async (productId) => ({
+        productId,
+        state: 'active',
+        expiresAt: '2026-07-26T00:00:00.000Z',
+        verificationToken: 'store-secret',
+      }),
+      restore: async () => [],
+      refresh: async () => [],
+    }
+    const billing = new EntitlementController(store, undefined, {
+      now: () => new Date('2026-07-26T00:00:00.000Z'),
+    })
+    await billing.purchase('pro')
+
+    expect(billing.canAccess('pro')).toBe(false)
+    expect(billing.snapshot.entitlements[0]?.verificationToken).toBeUndefined()
+    expect(JSON.stringify(billing.snapshot)).not.toContain('store-secret')
+  })
+
+  it('serializes overlapping authoritative operations', async () => {
+    let releaseRestore!: () => void
+    const store: BillingAdapter = {
+      purchase: async (productId) => ({ productId, state: 'active', expiresAt: null }),
+      restore: vi.fn(
+        () =>
+          new Promise<StoreEntitlement[]>((resolve) => {
+            releaseRestore = () =>
+              resolve([{ productId: 'pro', state: 'active' as const, expiresAt: null }])
+          }),
+      ),
+      refresh: vi.fn(async () => []),
+    }
+    const billing = new EntitlementController(store)
+    const restore = billing.restore()
+    const refresh = billing.refresh()
+    await vi.waitFor(() => expect(store.restore).toHaveBeenCalledOnce())
+    expect(store.refresh).not.toHaveBeenCalled()
+    releaseRestore()
+    await Promise.all([restore, refresh])
+
+    expect(store.refresh).toHaveBeenCalledOnce()
     expect(billing.canAccess('pro')).toBe(false)
   })
 })

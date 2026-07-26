@@ -385,70 +385,272 @@ export interface EntitlementVerifier {
   verify(storeEntitlement: StoreEntitlement): Promise<StoreEntitlement>
 }
 
+export interface EntitlementControllerOptions {
+  now?: () => Date
+  sanitizeError?: (error: unknown) => string
+  /** Require server verification before granting active or grace access. */
+  requireVerification?: boolean
+  storage?: EntitlementStorage
+  /** Required with storage to prevent cross-account entitlement reuse. */
+  accountId?: string
+  /** Maximum offline age for cached access after successful verification. Default: 24 hours. */
+  cacheMaxAgeMs?: number
+}
+
+export interface EntitlementCache {
+  schemaVersion: 1
+  accountId: string
+  savedAt: string
+  entitlements: StoreEntitlement[]
+}
+
+export interface EntitlementStorage {
+  load(accountId: string): Promise<EntitlementCache | null>
+  save(cache: EntitlementCache): Promise<void>
+  clear(accountId: string): Promise<void>
+}
+
 export class EntitlementController {
   private entitlements = new Map<string, StoreEntitlement>()
   private loadingValue = false
   private errorValue: string | null = null
+  private operationChain: Promise<void> = Promise.resolve()
+  private readonly listeners = new Set<() => void>()
+  private lastRefreshedAtValue: string | null = null
+  private cacheValidUntil = 0
 
   constructor(
     private readonly adapter: BillingAdapter,
     private readonly verifier?: EntitlementVerifier,
-  ) {}
+    private readonly options: EntitlementControllerOptions = {},
+  ) {
+    if (options.requireVerification && !verifier) {
+      throw new Error('Production entitlement verification is required')
+    }
+    if (options.storage && !options.accountId?.trim()) {
+      throw new Error('Account ID is required for entitlement storage')
+    }
+    if (
+      options.cacheMaxAgeMs !== undefined &&
+      (!Number.isFinite(options.cacheMaxAgeMs) || options.cacheMaxAgeMs < 0)
+    ) {
+      throw new RangeError('Entitlement cache age must be non-negative')
+    }
+  }
 
   get snapshot(): {
     entitlements: StoreEntitlement[]
     isLoading: boolean
     error: string | null
+    lastRefreshedAt: string | null
+    isCacheStale: boolean
   } {
     return {
-      entitlements: [...this.entitlements.values()].map((value) => structuredClone(value)),
+      entitlements: [...this.entitlements.values()].map((value) => publicEntitlement(value)),
       isLoading: this.loadingValue,
       error: this.errorValue,
+      lastRefreshedAt: this.lastRefreshedAtValue,
+      isCacheStale: this.isCacheStale(),
     }
   }
 
   canAccess(productId: string): boolean {
-    const state = this.entitlements.get(productId)?.state
+    const entitlement = this.entitlements.get(productId)
+    if (!entitlement) return false
+    if (this.isCacheStale()) return false
+    const state = entitlement.state
+    if (
+      entitlement.expiresAt &&
+      (!Number.isFinite(Date.parse(entitlement.expiresAt)) ||
+        Date.parse(entitlement.expiresAt) <= (this.options.now?.() ?? new Date()).getTime())
+    ) {
+      return false
+    }
     return state === 'active' || state === 'grace'
   }
 
   async purchase(productId: string): Promise<void> {
-    await this.run(async () => [await this.adapter.purchase(productId)])
+    if (!productId.trim()) throw new Error('Product ID is required')
+    await this.serialize(() => this.run(async () => [await this.adapter.purchase(productId)], false))
   }
 
   async restore(): Promise<void> {
-    await this.run(() => this.adapter.restore())
+    await this.serialize(() => this.run(() => this.adapter.restore(), true))
   }
 
   async refresh(): Promise<void> {
-    await this.run(() => this.adapter.refresh())
+    await this.serialize(() => this.run(() => this.adapter.refresh(), true))
   }
 
-  private async run(operation: () => Promise<StoreEntitlement[]>): Promise<void> {
+  initialize(): Promise<void> {
+    return this.serialize(async () => {
+      if (!this.options.storage || !this.options.accountId) return
+      const cache = await this.options.storage.load(this.options.accountId)
+      if (!cache || cache.schemaVersion !== 1 || cache.accountId !== this.options.accountId) return
+      if (!Number.isFinite(Date.parse(cache.savedAt))) {
+        await this.options.storage.clear(this.options.accountId)
+        return
+      }
+      const next = new Map<string, StoreEntitlement>()
+      for (const entitlement of cache.entitlements) {
+        validateStoreEntitlement(entitlement)
+        next.set(entitlement.productId, publicEntitlement(entitlement))
+      }
+      this.entitlements = next
+      this.lastRefreshedAtValue = cache.savedAt
+      this.cacheValidUntil =
+        Date.parse(cache.savedAt) + (this.options.cacheMaxAgeMs ?? 24 * 60 * 60 * 1_000)
+      this.emit()
+    })
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener)
+    listener()
+    return () => this.listeners.delete(listener)
+  }
+
+  /** Clears account-scoped entitlements immediately during logout/account switching. */
+  async reset(): Promise<void> {
+    this.entitlements.clear()
+    this.errorValue = null
+    this.lastRefreshedAtValue = null
+    this.cacheValidUntil = 0
+    if (this.options.storage && this.options.accountId) {
+      await this.options.storage.clear(this.options.accountId)
+    }
+    this.emit()
+  }
+
+  private async run(
+    operation: () => Promise<StoreEntitlement[]>,
+    replace: boolean,
+  ): Promise<void> {
     this.loadingValue = true
     this.errorValue = null
+    this.emit()
     try {
-      for (const storeEntitlement of await operation()) {
-        this.entitlements.set(
+      const storeEntitlements = await operation()
+      const next = replace
+        ? new Map<string, StoreEntitlement>()
+        : new Map(
+            [...this.entitlements.entries()].map(([key, value]) => [key, structuredClone(value)]),
+          )
+      for (const storeEntitlement of storeEntitlements) {
+        validateStoreEntitlement(storeEntitlement)
+        next.set(
           storeEntitlement.productId,
-          structuredClone(
-            this.verifier ? { ...storeEntitlement, state: 'pending' } : storeEntitlement,
-          ),
+          this.verifier
+            ? { ...structuredClone(storeEntitlement), state: 'pending' }
+            : structuredClone(storeEntitlement),
         )
+      }
+      this.entitlements = next
+      const refreshedAt = (this.options.now?.() ?? new Date()).toISOString()
+      this.lastRefreshedAtValue = refreshedAt
+      this.cacheValidUntil =
+        Date.parse(refreshedAt) + (this.options.cacheMaxAgeMs ?? 24 * 60 * 60 * 1_000)
+      await this.persist().catch((error) => {
+        this.errorValue = this.safeError(error)
+      })
+      this.emit()
+      for (const storeEntitlement of storeEntitlements) {
         const entitlement = this.verifier
           ? await this.verifier.verify(structuredClone(storeEntitlement))
           : storeEntitlement
+        validateStoreEntitlement(entitlement)
         if (this.verifier && entitlement.productId !== storeEntitlement.productId) {
           throw new Error('Verified entitlement product does not match the store transaction')
         }
-        this.entitlements.set(entitlement.productId, structuredClone(entitlement))
+        if (
+          this.verifier &&
+          storeEntitlement.transactionId &&
+          entitlement.transactionId !== storeEntitlement.transactionId
+        ) {
+          throw new Error('Verified entitlement transaction does not match the store transaction')
+        }
+        next.set(entitlement.productId, structuredClone(entitlement))
       }
+      this.entitlements = next
     } catch (error) {
-      this.errorValue = error instanceof Error ? error.message : String(error)
+      this.errorValue = this.safeError(error)
       throw error
     } finally {
       this.loadingValue = false
+      this.emit()
     }
+  }
+
+  private serialize(operation: () => Promise<void>): Promise<void> {
+    const run = this.operationChain.then(operation)
+    this.operationChain = run.catch(() => undefined)
+    return run
+  }
+
+  private safeError(error: unknown): string {
+    const value = (
+      this.options.sanitizeError?.(error) ??
+      (error instanceof Error ? error.name : 'Billing operation failed')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (value || 'Billing operation failed').slice(0, 160)
+  }
+
+  private emit(): void {
+    for (const listener of this.listeners) listener()
+  }
+
+  private isCacheStale(): boolean {
+    return (
+      this.lastRefreshedAtValue !== null &&
+      (this.options.now?.() ?? new Date()).getTime() >= this.cacheValidUntil
+    )
+  }
+
+  private async persist(): Promise<void> {
+    if (!this.options.storage || !this.options.accountId || !this.lastRefreshedAtValue) return
+    await this.options.storage.save({
+      schemaVersion: 1,
+      accountId: this.options.accountId,
+      savedAt: this.lastRefreshedAtValue,
+      entitlements: [...this.entitlements.values()].map(publicEntitlement),
+    })
+  }
+}
+
+export function createMemoryEntitlementStorage(): EntitlementStorage {
+  const caches = new Map<string, EntitlementCache>()
+  return {
+    async load(accountId) {
+      const cache = caches.get(accountId)
+      return cache ? structuredClone(cache) : null
+    },
+    async save(cache) {
+      caches.set(cache.accountId, structuredClone(cache))
+    },
+    async clear(accountId) {
+      caches.delete(accountId)
+    },
+  }
+}
+
+function publicEntitlement(value: StoreEntitlement): StoreEntitlement {
+  const { verificationToken: _verificationToken, ...publicValue } = structuredClone(value)
+  return publicValue
+}
+
+function validateStoreEntitlement(entitlement: StoreEntitlement): void {
+  if (!entitlement.productId.trim()) throw new Error('Entitlement product ID is required')
+  if (
+    !['inactive', 'pending', 'active', 'grace', 'expired', 'revoked'].includes(
+      entitlement.state,
+    )
+  ) {
+    throw new Error('Entitlement state is invalid')
+  }
+  if (entitlement.expiresAt && !Number.isFinite(Date.parse(entitlement.expiresAt))) {
+    throw new Error('Entitlement expiry is invalid')
   }
 }
 

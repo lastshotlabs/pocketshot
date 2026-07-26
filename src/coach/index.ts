@@ -3,6 +3,7 @@ export {
   GoalController,
   WorkoutController,
   EntitlementController,
+  createMemoryEntitlementStorage,
   convertMeasurement,
 } from './controllers'
 export type {
@@ -18,4 +19,7 @@ export type {
   EntitlementState,
   StoreEntitlement,
   BillingAdapter,
+  EntitlementControllerOptions,
+  EntitlementCache,
+  EntitlementStorage,
 } from './controllers'
