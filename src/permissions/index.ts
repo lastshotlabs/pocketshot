@@ -8,3 +8,4 @@ export type {
 
 export { createPermissionHooks } from './hooks'
 export type { PermissionHooks } from './hooks'
+export * from './controller'

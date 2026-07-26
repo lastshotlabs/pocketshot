@@ -7,3 +7,4 @@ export {
 } from './hooks'
 
 export type { BiometricAuthResult, BiometricAvailability, BiometricPromptOptions } from './types'
+export * from './controller'
