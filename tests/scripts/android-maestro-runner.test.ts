@@ -1,4 +1,4 @@
-import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
@@ -59,6 +59,10 @@ function run(item: ReturnType<typeof fixture>) {
 }
 
 describe('classified Android Maestro runner', () => {
+  it('is executable in clean Unix checkouts', () => {
+    expect(statSync(runner).mode & 0o111).not.toBe(0)
+  })
+
   it('retries exactly once when the app is still alive', () => {
     const item = fixture({ appAlive: true, maestroStatuses: [1, 0] })
     const result = run(item)
