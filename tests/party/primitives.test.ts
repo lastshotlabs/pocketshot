@@ -13,6 +13,20 @@ import {
 } from '../../src/party-session'
 
 describe('party lifecycle primitives', () => {
+  it('bounds restored and long-session identity collections', () => {
+    const party = new PartySessionController({ rounds: 1 }, undefined, 1)
+    party.join({ id: 'host', displayName: 'Host', role: 'host', seat: 0, connected: true })
+    expect(() =>
+      party.join({ id: 'other', displayName: 'Other', role: 'participant', seat: 1, connected: true }),
+    ).toThrow('capacity')
+
+    const ballot = new BallotController<'yes'>(['host'], undefined, 1)
+    ballot.applyEvent({ id: 'one', sequence: 1, voterId: 'host', choice: 'yes', approved: true })
+    expect(() =>
+      ballot.applyEvent({ id: 'two', sequence: 2, voterId: 'host', choice: 'yes', approved: false }),
+    ).toThrow('capacity')
+  })
+
   it('recovers a host, stages rules, and deduplicates rematches', () => {
     const party = new PartySessionController({ rounds: 5 })
     party.join({ id: 'h', displayName: 'Host', role: 'host', seat: 1, connected: true })

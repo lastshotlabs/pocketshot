@@ -34,7 +34,19 @@ export class PartySessionController<Rules extends object> {
   private blocked = new Set<string>()
   private state: Omit<PartySessionSnapshot<Rules>, 'members'>
 
-  constructor(rules: Rules, snapshot?: PartySessionSnapshot<Rules>) {
+  constructor(
+    rules: Rules,
+    snapshot?: PartySessionSnapshot<Rules>,
+    private readonly capacity = 500,
+  ) {
+    if (!Number.isInteger(capacity) || capacity < 1) throw new Error('Party capacity is invalid')
+    if (
+      (snapshot?.members.length ?? 0) > capacity ||
+      (snapshot?.admissionQueue?.length ?? 0) > capacity ||
+      (snapshot?.blockedMemberIds?.length ?? 0) > capacity
+    ) {
+      throw new Error('Party snapshot capacity exceeded')
+    }
     this.state = snapshot
       ? {
           hostId: snapshot.hostId,
@@ -87,6 +99,9 @@ export class PartySessionController<Rules extends object> {
       throw new Error('Member has not been admitted')
     }
     if (!member.id || !member.displayName.trim()) throw new Error('Member identity is required')
+    if (!this.members.has(member.id) && this.members.size >= this.capacity) {
+      throw new Error('Party member capacity exceeded')
+    }
     if (member.seat !== null && this.seatOwner(member.seat, member.id)) {
       throw new Error(`Seat ${member.seat} is already claimed`)
     }
@@ -106,6 +121,12 @@ export class PartySessionController<Rules extends object> {
   }
 
   requestAdmission(request: Omit<PartyAdmissionRequest, 'status'>): 'admitted' | 'pending' {
+    if (!request.id.trim() || !request.displayName.trim() || !Number.isFinite(request.requestedAt)) {
+      throw new Error('Admission request is invalid')
+    }
+    if (!this.admissions.has(request.id) && this.admissions.size >= this.capacity) {
+      throw new Error('Party admission capacity exceeded')
+    }
     if (this.blocked.has(request.id)) throw new Error('Member is blocked')
     if (this.state.admissionPolicy === 'closed') throw new Error('Party admission is closed')
     const status = this.state.admissionPolicy === 'open' ? 'admitted' : 'pending'
@@ -132,6 +153,9 @@ export class PartySessionController<Rules extends object> {
   block(actorId: string, memberId: string): void {
     this.requireHost(actorId)
     if (memberId === actorId) throw new Error('Host cannot block themself')
+    if (!this.blocked.has(memberId) && this.blocked.size >= this.capacity) {
+      throw new Error('Party block capacity exceeded')
+    }
     this.blocked.add(memberId)
     this.admissions.delete(memberId)
     if (this.members.has(memberId)) this.members.delete(memberId)
@@ -343,7 +367,12 @@ export class PrivateSubmissionController<Value> {
     private readonly editWindowMs: number,
     private readonly now: () => number = Date.now,
     initial: PrivateSubmission<Value>[] = [],
+    private readonly capacity = 500,
   ) {
+    if (!Number.isFinite(editWindowMs) || editWindowMs < 0 || !Number.isInteger(capacity) || capacity < 1) {
+      throw new Error('Submission limits are invalid')
+    }
+    if (initial.length > capacity) throw new Error('Submission capacity exceeded')
     for (const submission of initial) {
       this.submissions.set(submission.actorId, structuredClone(submission))
       this.processedKeys.add(submission.idempotencyKey)
@@ -357,6 +386,12 @@ export class PrivateSubmissionController<Value> {
   submit(actorId: string, value: Value, idempotencyKey: string): boolean {
     if (!actorId || !idempotencyKey) throw new Error('Actor and idempotency key are required')
     if (this.processedKeys.has(idempotencyKey)) return false
+    if (!this.submissions.has(actorId) && this.submissions.size >= this.capacity) {
+      throw new Error('Submission capacity exceeded')
+    }
+    if (this.processedKeys.size >= this.capacity * 10) {
+      throw new Error('Submission replay capacity exceeded')
+    }
     const existing = this.submissions.get(actorId)
     if (existing && this.now() > existing.editableUntil) {
       throw new Error('Submission edit window has closed')
@@ -393,6 +428,9 @@ export class PrivateSubmissionController<Value> {
   resend(actorId: string, idempotencyKey: string): boolean {
     const submission = this.requireSubmission(actorId)
     if (this.processedKeys.has(idempotencyKey)) return false
+    if (this.processedKeys.size >= this.capacity * 10) {
+      throw new Error('Submission replay capacity exceeded')
+    }
     if (submission.deliveryStatus !== 'rejected') {
       throw new Error('Only rejected submissions can be resent')
     }
@@ -442,7 +480,17 @@ export class BallotController<Choice extends string> {
   private lastSequence = 0
   private processedEventIds = new Set<string>()
 
-  constructor(eligible: string[], snapshot?: BallotSnapshot<Choice>) {
+  constructor(
+    eligible: string[],
+    snapshot?: BallotSnapshot<Choice>,
+    private readonly maximumEvents = 10_000,
+  ) {
+    if (!Number.isInteger(maximumEvents) || maximumEvents < 1) {
+      throw new Error('Ballot event capacity is invalid')
+    }
+    if ((snapshot?.processedEventIds?.length ?? 0) > maximumEvents) {
+      throw new Error('Ballot event capacity exceeded')
+    }
     this.eligible = new Set(snapshot?.eligible ?? eligible)
     this.closed = snapshot?.closed ?? false
     this.lastSequence = snapshot?.lastSequence ?? 0
@@ -470,6 +518,9 @@ export class BallotController<Choice extends string> {
     if (!event.id) throw new Error('Ballot event ID is required')
     if (this.processedEventIds.has(event.id) || event.sequence <= this.lastSequence) return false
     if (event.sequence !== this.lastSequence + 1) throw new Error('Ballot event sequence gap')
+    if (this.processedEventIds.size >= this.maximumEvents) {
+      throw new Error('Ballot event capacity exceeded')
+    }
     this.set(event.voterId, event.choice, event.approved)
     this.processedEventIds.add(event.id)
     this.lastSequence = event.sequence
@@ -523,7 +574,11 @@ export class HostCorrectionController<State> {
     initial: State,
     snapshot?: CorrectionSnapshot<State>,
     private readonly now: () => number = Date.now,
+    private readonly maximumHistory = 100,
   ) {
+    if (!Number.isInteger(maximumHistory) || maximumHistory < 1) {
+      throw new Error('Correction history capacity is invalid')
+    }
     this.state = snapshot
       ? {
           ...structuredClone(snapshot),
@@ -540,6 +595,8 @@ export class HostCorrectionController<State> {
           actorId: null,
           audit: [],
         }
+    this.state.history = this.state.history.slice(-this.maximumHistory)
+    this.state.audit = this.state.audit?.slice(-this.maximumHistory * 5)
   }
 
   get snapshot(): CorrectionSnapshot<State> {
@@ -573,6 +630,7 @@ export class HostCorrectionController<State> {
     }
     if (expectedVersion !== this.state.version) throw new Error('Correction version conflict')
     this.state.history.push(structuredClone(this.state.state))
+    this.state.history = this.state.history.slice(-this.maximumHistory)
     this.state.state = structuredClone(this.state.proposal)
     this.state.version = (this.state.version ?? 0) + 1
     this.record('confirm')
@@ -600,6 +658,7 @@ export class HostCorrectionController<State> {
       version: this.state.version ?? 0,
       at: this.now(),
     })
+    this.state.audit = this.state.audit.slice(-this.maximumHistory * 5)
   }
 }
 
@@ -682,7 +741,18 @@ export class PersonalCuePolicy {
   constructor(
     private readonly duplicateWindowMs = 5_000,
     private quietHours: { startHour: number; endHour: number } | null = null,
-  ) {}
+    private readonly maximumSeen = 1_000,
+  ) {
+    if (
+      !Number.isFinite(duplicateWindowMs) ||
+      duplicateWindowMs < 0 ||
+      !Number.isInteger(maximumSeen) ||
+      maximumSeen < 1
+    ) {
+      throw new Error('Cue policy limits are invalid')
+    }
+    this.setQuietHours(quietHours)
+  }
 
   setRoomMuted(roomId: string, muted: boolean): void {
     if (muted) this.mutedRooms.add(roomId)
@@ -690,6 +760,17 @@ export class PersonalCuePolicy {
   }
 
   setQuietHours(value: { startHour: number; endHour: number } | null): void {
+    if (
+      value &&
+      (!Number.isInteger(value.startHour) ||
+        value.startHour < 0 ||
+        value.startHour > 23 ||
+        !Number.isInteger(value.endHour) ||
+        value.endHour < 0 ||
+        value.endHour > 23)
+    ) {
+      throw new Error('Quiet hours are invalid')
+    }
     this.quietHours = value
   }
 
@@ -702,6 +783,10 @@ export class PersonalCuePolicy {
     const last = this.seen.get(key)
     if (last !== undefined && request.at - last < this.duplicateWindowMs) return false
     this.seen.set(key, request.at)
+    for (const [seenKey, at] of this.seen) {
+      if (request.at - at >= this.duplicateWindowMs) this.seen.delete(seenKey)
+    }
+    while (this.seen.size > this.maximumSeen) this.seen.delete(this.seen.keys().next().value!)
     return true
   }
 
