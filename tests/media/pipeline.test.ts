@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createMemoryMediaStorage,
   MediaPermissionError,
+  MediaPipelineCapacityError,
   MediaPipelineController,
   MediaValidationError,
   type MediaAnalysisAdapter,
@@ -222,5 +223,72 @@ describe('MediaPipelineController', () => {
 
     expect(result.analysisResult).toBe('ok')
     expect(analysis.start).toHaveBeenCalledTimes(1)
+  })
+
+  it('serializes concurrent idempotent enqueue and quota checks', async () => {
+    let id = 0
+    const pipeline = controller({
+      createId: () => `media-${++id}`,
+      limits: { maxPendingBytes: 15 },
+    })
+
+    const duplicate = await Promise.all([
+      pipeline.enqueue(image, 'library', true, 'same-capture'),
+      pipeline.enqueue(image, 'library', true, 'same-capture'),
+    ])
+    expect(duplicate[0].id).toBe(duplicate[1].id)
+    expect(pipeline.list()).toHaveLength(1)
+
+    const results = await Promise.allSettled([
+      pipeline.enqueue({ ...image, uri: 'file:///tmp/a.jpg', size: 5 }),
+      pipeline.enqueue({ ...image, uri: 'file:///tmp/b.jpg', size: 5 }),
+    ])
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1)
+  })
+
+  it('keeps terminal success when local cleanup fails and supports retry', async () => {
+    const remove = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('file:///private/user@example.com'))
+      .mockResolvedValue(undefined)
+    const pipeline = controller({ files: { remove } })
+    const record = await pipeline.enqueue(image)
+
+    const completed = await pipeline.run(record.id)
+    expect(completed.status).toBe('complete')
+    expect(completed.cleanupPending).toBe(true)
+    expect(completed.error).toBe('Error')
+    expect(pipeline.getDiagnostics().cleanupPending).toBe(1)
+
+    expect(await pipeline.retryCleanup(record.id)).toBe(true)
+    expect(pipeline.get(record.id)?.cleanupPending).toBe(false)
+    expect(pipeline.get(record.id)?.localFilesCleaned).toBe(true)
+  })
+
+  it('bounds durable record size and prunes oldest clean terminal records', async () => {
+    let id = 0
+    const pipeline = controller({
+      createId: () => `media-${++id}`,
+      maxRecords: 1,
+      maxRecordBytes: 2_000,
+    })
+    const first = await pipeline.enqueue(image, 'library', false)
+    await pipeline.run(first.id)
+    const second = await pipeline.enqueue({ ...image, uri: 'file:///tmp/second.jpg' })
+    expect(pipeline.list().map((record) => record.id)).toEqual([second.id])
+
+    const analysis: MediaAnalysisAdapter = {
+      start: vi.fn(async () => ({ jobId: 'analysis-large' })),
+      status: vi.fn(async () => ({
+        state: 'complete' as const,
+        result: { value: 'x'.repeat(4_000) },
+      })),
+      cancel: vi.fn(async () => undefined),
+    }
+    const bounded = controller({ analysis, maxRecordBytes: 2_000 })
+    const record = await bounded.enqueue(image)
+    await expect(bounded.run(record.id)).rejects.toBeInstanceOf(MediaPipelineCapacityError)
+    expect(bounded.get(record.id)?.analysisResult).toBeNull()
   })
 })

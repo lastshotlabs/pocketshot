@@ -110,6 +110,8 @@ export interface DurableMediaRecord {
   updatedAt: string
   temporary: boolean
   localFilesCleaned: boolean
+  /** True when terminal work succeeded but temporary-file deletion must be retried. */
+  cleanupPending?: boolean
 }
 
 export interface MediaPipelineStorage {
@@ -133,6 +135,24 @@ export interface MediaPipelineOptions {
   wait?: (milliseconds: number) => Promise<void>
   analysisPollInterval?: number
   maxAnalysisPolls?: number
+  /** Maximum durable pipeline records. Old clean terminal records are pruned first. Default: 500. */
+  maxRecords?: number
+  /** Maximum serialized bytes per durable record. Default: 1 MiB. */
+  maxRecordBytes?: number
+  /** Converts adapter failures into bounded, privacy-safe durable diagnostics. */
+  sanitizeError?: (error: unknown) => string
+}
+
+export interface MediaPipelineDiagnostics {
+  total: number
+  pending: number
+  active: number
+  paused: number
+  failed: number
+  complete: number
+  cancelled: number
+  cleanupPending: number
+  pendingBytes: number
 }
 
 export type MediaPipelineEvent =
@@ -156,5 +176,19 @@ export class MediaValidationError extends Error {
   ) {
     super(message)
     this.name = 'MediaValidationError'
+  }
+}
+
+export class MediaPipelineCapacityError extends Error {
+  constructor(message = '[pocketshot] Media pipeline capacity exceeded') {
+    super(message)
+    this.name = 'MediaPipelineCapacityError'
+  }
+}
+
+export class MediaCleanupError extends Error {
+  constructor(readonly recordId: string) {
+    super('[pocketshot] Temporary media cleanup must be retried')
+    this.name = 'MediaCleanupError'
   }
 }

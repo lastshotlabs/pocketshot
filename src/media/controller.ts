@@ -3,12 +3,19 @@ import type {
   MediaAsset,
   MediaPipelineEvent,
   MediaPipelineOptions,
+  MediaPipelineDiagnostics,
   MediaSource,
 } from './types'
-import { MediaPermissionError } from './types'
+import {
+  MediaCleanupError,
+  MediaPermissionError,
+  MediaPipelineCapacityError,
+} from './types'
 import { validateMediaAsset, validatePendingQuota } from './validation'
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+const DEFAULT_MAX_RECORDS = 500
+const DEFAULT_MAX_RECORD_BYTES = 1024 * 1024
 
 export class MediaPipelineController {
   private records: DurableMediaRecord[] = []
@@ -18,6 +25,8 @@ export class MediaPipelineController {
   private readonly aborters = new Map<string, AbortController>()
   private readonly paused = new Set<string>()
   private readonly runs = new Map<string, Promise<DurableMediaRecord>>()
+  private mutationChain: Promise<void> = Promise.resolve()
+  private persistChain: Promise<void> = Promise.resolve()
 
   constructor(private readonly options: MediaPipelineOptions) {}
 
@@ -32,6 +41,7 @@ export class MediaPipelineController {
         this.records = (await this.options.storage.load()).map((stored) => {
           const record = { ...stored }
           record.localFilesCleaned ??= false
+          record.cleanupPending ??= false
           return ['processing', 'uploading', 'analyzing'].includes(record.status)
             ? {
                 ...record,
@@ -58,6 +68,24 @@ export class MediaPipelineController {
     return record ? clone(record) : null
   }
 
+  getDiagnostics(): MediaPipelineDiagnostics {
+    const activeStatuses = new Set(['processing', 'uploading', 'analyzing'])
+    return {
+      total: this.records.length,
+      pending: this.records.filter((record) => ['pending', 'ready', 'uploaded'].includes(record.status))
+        .length,
+      active: this.records.filter((record) => activeStatuses.has(record.status)).length,
+      paused: this.records.filter((record) => record.status === 'paused').length,
+      failed: this.records.filter((record) => record.status === 'failed').length,
+      complete: this.records.filter((record) => record.status === 'complete').length,
+      cancelled: this.records.filter((record) => record.status === 'cancelled').length,
+      cleanupPending: this.records.filter((record) => record.cleanupPending).length,
+      pendingBytes: this.records
+        .filter((record) => !['complete', 'cancelled'].includes(record.status))
+        .reduce((total, record) => total + record.asset.size, 0),
+    }
+  }
+
   async acquire(source: MediaSource, temporary = true): Promise<DurableMediaRecord | null> {
     await this.load()
     const permission = await this.options.capture.requestPermission(source)
@@ -73,38 +101,48 @@ export class MediaPipelineController {
     temporary = true,
     idempotencyKey?: string,
   ): Promise<DurableMediaRecord> {
-    await this.load()
-    const duplicate = this.records.find((record) => record.idempotencyKey === idempotencyKey)
-    if (duplicate) return clone(duplicate)
-    validateMediaAsset(asset, this.options.limits)
-    validatePendingQuota(asset, this.records, this.options.limits)
-    const id = this.options.createId?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
-    const key = idempotencyKey ?? id
-    const timestamp = this.now()
-    const record: DurableMediaRecord = {
-      schemaVersion: 1,
-      id,
-      idempotencyKey: key,
-      source,
-      original: clone(asset),
-      asset: clone(asset),
-      status: 'pending',
-      uploadSessionId: null,
-      uploadChunkSize: null,
-      uploadedBytes: 0,
-      fileUrl: null,
-      analysisJobId: null,
-      analysisResult: null,
-      attempts: 0,
-      error: null,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      temporary,
-      localFilesCleaned: false,
-    }
-    this.records.push(record)
-    await this.changed(record)
-    return clone(record)
+    return this.serialize(async () => {
+      await this.load()
+      const duplicate = idempotencyKey
+        ? this.records.find((record) => record.idempotencyKey === idempotencyKey)
+        : undefined
+      if (duplicate) return clone(duplicate)
+      validateMediaAsset(asset, this.options.limits)
+      this.pruneCleanTerminalRecords()
+      validatePendingQuota(asset, this.records, this.options.limits)
+      if (this.records.length >= (this.options.maxRecords ?? DEFAULT_MAX_RECORDS)) {
+        throw new MediaPipelineCapacityError()
+      }
+      const id = this.options.createId?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
+      const key = idempotencyKey ?? id
+      const timestamp = this.now()
+      const record: DurableMediaRecord = {
+        schemaVersion: 1,
+        id,
+        idempotencyKey: key,
+        source,
+        original: clone(asset),
+        asset: clone(asset),
+        status: 'pending',
+        uploadSessionId: null,
+        uploadChunkSize: null,
+        uploadedBytes: 0,
+        fileUrl: null,
+        analysisJobId: null,
+        analysisResult: null,
+        attempts: 0,
+        error: null,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        temporary,
+        localFilesCleaned: false,
+        cleanupPending: false,
+      }
+      this.assertRecordCapacity(record)
+      this.records.push(record)
+      await this.changed(record)
+      return clone(record)
+    })
   }
 
   run(id: string): Promise<DurableMediaRecord> {
@@ -140,7 +178,7 @@ export class MediaPipelineController {
         await this.update(record, {
           status: 'failed',
           attempts: record.attempts + 1,
-          error: error instanceof Error ? error.message : String(error),
+          error: this.safeError(error),
         })
       }
       throw error
@@ -166,20 +204,34 @@ export class MediaPipelineController {
     const record = this.require(id)
     this.paused.add(id)
     this.aborters.get(id)?.abort()
-    if (record.analysisJobId && this.options.analysis) {
-      await this.options.analysis.cancel(record.analysisJobId)
-    }
-    if (record.uploadSessionId) await this.options.upload.cancel?.(record.uploadSessionId)
-    await this.update(record, { status: 'cancelled', error: null })
+    const remoteCleanup = await Promise.allSettled([
+      record.analysisJobId && this.options.analysis
+        ? this.options.analysis.cancel(record.analysisJobId)
+        : Promise.resolve(),
+      record.uploadSessionId
+        ? (this.options.upload.cancel?.(record.uploadSessionId) ?? Promise.resolve())
+        : Promise.resolve(),
+    ])
+    const rejected = remoteCleanup.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    )
+    await this.update(record, {
+      status: 'cancelled',
+      error: rejected ? this.safeError(rejected.reason) : null,
+    })
     await this.cleanup(record)
   }
 
   async remove(id: string): Promise<void> {
     const record = this.require(id)
-    await this.cleanup(record)
+    if (!(await this.cleanup(record))) throw new MediaCleanupError(id)
     this.records = this.records.filter((candidate) => candidate.id !== id)
     await this.persist()
     for (const listener of this.listeners) listener({ type: 'removed', id })
+  }
+
+  async retryCleanup(id: string): Promise<boolean> {
+    return this.cleanup(this.require(id))
   }
 
   private async process(record: DurableMediaRecord): Promise<void> {
@@ -268,7 +320,7 @@ export class MediaPipelineController {
     throw new Error('[pocketshot] Analysis polling limit reached')
   }
 
-  private async cleanup(record: DurableMediaRecord): Promise<void> {
+  private async cleanup(record: DurableMediaRecord): Promise<boolean> {
     if (
       record.temporary &&
       !record.localFilesCleaned &&
@@ -277,11 +329,22 @@ export class MediaPipelineController {
       record.asset.uri
     ) {
       const uris = new Set([record.original.uri, record.asset.uri])
-      await Promise.all([...uris].map((uri) => this.options.files!.remove(uri)))
-      record.localFilesCleaned = true
-      record.updatedAt = this.now()
-      await this.persist()
+      try {
+        await Promise.all([...uris].map((uri) => this.options.files!.remove(uri)))
+        await this.update(record, {
+          localFilesCleaned: true,
+          cleanupPending: false,
+          ...(record.status === 'failed' ? {} : { error: null }),
+        })
+      } catch (error) {
+        await this.update(record, {
+          cleanupPending: true,
+          error: this.safeError(error),
+        })
+        return false
+      }
     }
+    return true
   }
 
   private require(id: string): DurableMediaRecord {
@@ -294,7 +357,14 @@ export class MediaPipelineController {
     record: DurableMediaRecord,
     patch: Partial<DurableMediaRecord>,
   ): Promise<void> {
+    const before = clone(record)
     Object.assign(record, patch, { updatedAt: this.now() })
+    try {
+      this.assertRecordCapacity(record)
+    } catch (error) {
+      Object.assign(record, before)
+      throw error
+    }
     await this.changed(record)
   }
 
@@ -305,11 +375,61 @@ export class MediaPipelineController {
   }
 
   private async persist(): Promise<void> {
-    await this.options.storage.save(this.records)
+    const snapshot = clone(this.records)
+    const save = this.persistChain.then(() => this.options.storage.save(snapshot))
+    this.persistChain = save.catch(() => undefined)
+    await save
   }
 
   private now(): string {
     return (this.options.now?.() ?? new Date()).toISOString()
+  }
+
+  private pruneCleanTerminalRecords(): void {
+    const maximum = this.options.maxRecords ?? DEFAULT_MAX_RECORDS
+    if (this.records.length < maximum) return
+    const removable = this.records
+      .filter(
+        (record) =>
+          ['complete', 'cancelled'].includes(record.status) &&
+          !record.cleanupPending &&
+          (!record.temporary || record.localFilesCleaned || this.options.retainLocalFile),
+      )
+      .sort((left, right) => left.updatedAt.localeCompare(right.updatedAt))
+    const removeCount = this.records.length - maximum + 1
+    const ids = new Set(removable.slice(0, removeCount).map((record) => record.id))
+    this.records = this.records.filter((record) => !ids.has(record.id))
+  }
+
+  private assertRecordCapacity(record: DurableMediaRecord): void {
+    const bytes = new TextEncoder().encode(JSON.stringify(record)).byteLength
+    if (bytes > (this.options.maxRecordBytes ?? DEFAULT_MAX_RECORD_BYTES)) {
+      throw new MediaPipelineCapacityError('[pocketshot] Media record byte limit exceeded')
+    }
+  }
+
+  private safeError(error: unknown): string {
+    const value = (
+      this.options.sanitizeError?.(error) ??
+      (error instanceof Error ? error.name : 'Media pipeline failure')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (value || 'Media pipeline failure').slice(0, 160)
+  }
+
+  private async serialize<T>(operation: () => Promise<T>): Promise<T> {
+    const previous = this.mutationChain
+    let release!: () => void
+    this.mutationChain = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    await previous
+    try {
+      return await operation()
+    } finally {
+      release()
+    }
   }
 }
 
