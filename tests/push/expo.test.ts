@@ -80,4 +80,19 @@ describe('createExpoPushAdapter', () => {
     )
     expect(token).toHaveBeenCalledWith('rotated')
   })
+
+  it('preserves Expo epoch-millisecond notification dates', () => {
+    const expo = module()
+    const adapter = createExpoPushAdapter(expo.value)
+    const received = vi.fn()
+    adapter.subscribeReceived(received)
+    const milliseconds = Date.parse('2026-07-25T12:00:00.000Z')
+    ;(expo.value.addNotificationReceivedListener as ReturnType<typeof vi.fn>).mock.calls[0]![0]({
+      ...nativeNotification('milliseconds'),
+      date: milliseconds,
+    })
+    expect(received).toHaveBeenCalledWith(
+      expect.objectContaining({ receivedAt: '2026-07-25T12:00:00.000Z' }),
+    )
+  })
 })

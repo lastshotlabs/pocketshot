@@ -107,7 +107,7 @@ describe('PushLifecycleController', () => {
     await controller.start()
     expect(controller.state).toMatchObject({
       status: 'failed',
-      error: 'registration unavailable',
+      error: 'Error',
     })
     expect(onError).toHaveBeenCalledOnce()
 
@@ -179,18 +179,70 @@ describe('PushLifecycleController', () => {
     const restoredNative = adapter(tap('cold'))
     const unregisterToken = vi.fn(async () => undefined)
     const restoredTap = vi.fn()
+    const restoredRegister = vi.fn(async () => undefined)
     const restored = new PushLifecycleController({
       adapter: restoredNative.value,
-      registerToken: async () => undefined,
+      registerToken: restoredRegister,
       unregisterToken,
       storage,
       onTap: restoredTap,
     })
     await restored.start()
+    expect(restoredRegister).toHaveBeenCalledWith('token-1')
     expect(restoredTap).not.toHaveBeenCalled()
     await restored.revoke()
     expect(unregisterToken).toHaveBeenCalledWith('token-1')
     expect(restored.state).toMatchObject({ status: 'revoked', token: null })
+    expect(await storage.get()).toBeNull()
+  })
+
+  it('coalesces concurrent start calls and fails closed on empty native tokens', async () => {
+    const native = adapter()
+    let release!: () => void
+    ;(native.value.getLastNotificationResponse as ReturnType<typeof vi.fn>).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve(null)
+        }),
+    )
+    const registerToken = vi.fn(async () => undefined)
+    const controller = new PushLifecycleController({
+      adapter: native.value,
+      registerToken,
+    })
+    const first = controller.start()
+    const second = controller.start()
+    await vi.waitFor(() =>
+      expect(native.value.getLastNotificationResponse).toHaveBeenCalledOnce(),
+    )
+    release()
+    await Promise.all([first, second])
+    expect(registerToken).toHaveBeenCalledOnce()
+
+    const invalid = adapter()
+    ;(invalid.value.getExpoPushToken as ReturnType<typeof vi.fn>).mockResolvedValue(' ')
+    const rejected = new PushLifecycleController({
+      adapter: invalid.value,
+      registerToken,
+    })
+    await rejected.start()
+    expect(rejected.state).toMatchObject({ status: 'failed', error: 'Error' })
+  })
+
+  it('clears local credentials even when backend unregistration fails', async () => {
+    const storage = createMemoryPushLifecycleStorage()
+    const native = adapter()
+    const controller = new PushLifecycleController({
+      adapter: native.value,
+      registerToken: async () => undefined,
+      unregisterToken: async () => {
+        throw new Error('private backend detail')
+      },
+      storage,
+    })
+    await controller.start()
+    await expect(controller.revoke()).rejects.toThrow()
+    expect(controller.state).toMatchObject({ status: 'revoked', token: null, error: 'Error' })
     expect(await storage.get()).toBeNull()
   })
 })

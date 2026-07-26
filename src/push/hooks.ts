@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Platform } from 'react-native'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type { ApiClient } from '../api/client'
+import type { PushLifecycleController } from './controller'
 import type {
   PushPermissionResult,
   PushPermissionStatus,
@@ -71,7 +72,9 @@ function normalizeNotification(raw: unknown): PushNotification {
     title: n.request?.content?.title ?? null,
     body: n.request?.content?.body ?? null,
     data: n.request?.content?.data ?? {},
-    receivedAt: n.date ? new Date(n.date * 1000).toISOString() : new Date().toISOString(),
+    receivedAt: n.date
+      ? new Date(n.date < 10_000_000_000 ? n.date * 1_000 : n.date).toISOString()
+      : new Date().toISOString(),
   }
 }
 
@@ -284,7 +287,31 @@ export function createPushHooks(api: ApiClient) {
     return { lastNotification, lastTapEvent }
   }
 
+  /**
+   * Recommended process-level hook. It projects the production lifecycle
+   * controller into React without reimplementing native registration behavior.
+   */
+  function usePushLifecycle(
+    controller: PushLifecycleController,
+    options: { autoStart?: boolean } = {},
+  ) {
+    const [state, setState] = useState(controller.state)
+    useEffect(() => {
+      const unsubscribe = controller.subscribe(setState)
+      if (options.autoStart ?? true) void controller.start()
+      return unsubscribe
+    }, [controller, options.autoStart])
+    return {
+      ...state,
+      start: () => controller.start(),
+      enable: () => controller.enable(),
+      revoke: () => controller.revoke(),
+      openSettings: () => controller.openSettings(),
+    }
+  }
+
   return {
+    usePushLifecycle,
     usePushPermissionStatus,
     usePushPermissionRequest,
     useExpoPushToken,

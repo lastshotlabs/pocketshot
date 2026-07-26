@@ -116,7 +116,13 @@ export type PushDisposition =
   | { status: 'deliver'; notification: PersonalPush }
   | {
       status: 'suppressed'
-      reason: 'duplicate' | 'expired' | 'muted' | 'disabled-category' | 'quiet-hours'
+      reason:
+        | 'duplicate'
+        | 'expired'
+        | 'muted'
+        | 'disabled-category'
+        | 'quiet-hours'
+        | 'wrong-recipient'
     }
 
 export interface PushOpenRoute {

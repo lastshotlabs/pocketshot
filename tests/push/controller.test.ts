@@ -60,7 +60,27 @@ describe('PersonalPushPolicyController', () => {
     expect(controller.consumePendingOpen()).toBeNull()
     expect(() =>
       controller.open(notification({ route: 'https://evil.example/steal' }), false),
-    ).toThrow('not allowlisted')
+    ).toThrow('app-relative')
+    expect(() =>
+      controller.open(notification({ route: 'https://evil.example/join/ABC123' }), false),
+    ).toThrow('app-relative')
+  })
+
+  it('suppresses cross-account and malformed-expiry notifications', () => {
+    const controller = new PersonalPushPolicyController({
+      allowedCategories: ['turn'],
+      allowedRoutePrefixes: ['/join'],
+      expectedRecipientId: 'player-1',
+      now: () => new Date('2026-07-25T12:00:00.000Z'),
+    })
+    expect(controller.evaluate(notification({ id: 'wrong', recipientId: 'player-2' }))).toEqual({
+      status: 'suppressed',
+      reason: 'wrong-recipient',
+    })
+    expect(controller.evaluate(notification({ id: 'invalid', expiresAt: 'not-a-date' }))).toEqual({
+      status: 'suppressed',
+      reason: 'expired',
+    })
   })
 
   it('restores durable preferences without restoring delivery dedupe state', () => {

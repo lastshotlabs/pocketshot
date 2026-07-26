@@ -87,7 +87,12 @@ function normalizeNotification(raw: unknown): PushNotification {
     body: notification.request?.content?.body ?? null,
     data: notification.request?.content?.data ?? {},
     receivedAt: notification.date
-      ? new Date(notification.date * 1000).toISOString()
+      ? new Date(normalizeExpoTimestamp(notification.date)).toISOString()
       : new Date().toISOString(),
   }
+}
+
+function normalizeExpoTimestamp(value: number): number {
+  // Expo currently reports epoch milliseconds; accept seconds from older/custom adapters.
+  return value < 10_000_000_000 ? value * 1_000 : value
 }

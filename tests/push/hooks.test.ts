@@ -51,6 +51,7 @@ describe('createPushHooks factory shape', () => {
   it('returns all expected hooks', () => {
     const hooks = createPushHooks(makeApi())
     const expected = [
+      'usePushLifecycle',
       'usePushPermissionStatus',
       'usePushPermissionRequest',
       'useExpoPushToken',

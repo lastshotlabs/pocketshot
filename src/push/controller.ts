@@ -14,6 +14,8 @@ import type {
 export interface PersonalPushPolicyOptions {
   allowedCategories: string[]
   allowedRoutePrefixes: string[]
+  expectedRecipientId?: string
+  maxSeenNotifications?: number
   now?: () => Date
 }
 
@@ -31,6 +33,8 @@ export interface PushLifecycleControllerOptions {
   onNotification?(notification: PushNotification): void
   onTap?(event: NotificationTapEvent, coldStart: boolean): void
   onError?(error: Error): void
+  /** Converts failures into bounded, privacy-safe state diagnostics. */
+  sanitizeError?(error: unknown): string
 }
 
 /** Owns process-level native push behavior while routing and backend policy stay app-owned. */
@@ -48,6 +52,7 @@ export class PushLifecycleController {
   private readonly seenTaps = new Set<string>()
   private unsubscribers: Array<() => void> = []
   private restored = false
+  private startPromise: Promise<void> | null = null
 
   constructor(private readonly options: PushLifecycleControllerOptions) {}
 
@@ -63,6 +68,14 @@ export class PushLifecycleController {
 
   async start(): Promise<void> {
     if (this.value.status === 'starting' || this.value.status === 'ready') return
+    if (this.startPromise) return this.startPromise
+    this.startPromise = this.performStart().finally(() => {
+      this.startPromise = null
+    })
+    return this.startPromise
+  }
+
+  private async performStart(): Promise<void> {
     const generation = ++this.generation
     await this.restore()
     if (this.options.permission) {
@@ -86,22 +99,27 @@ export class PushLifecycleController {
       if (coldResponse) this.acceptTap(coldResponse, true)
       const token = await this.options.adapter.getExpoPushToken(this.options.projectId)
       if (generation !== this.generation) return
-      await this.register(token, generation)
+      await this.register(token, generation, true)
       if (generation !== this.generation) return
-      this.unsubscribers = [
+      this.unsubscribers.push(
         this.options.adapter.subscribeReceived((notification) => {
           this.value.lastNotification = clone(notification)
           this.options.onNotification?.(clone(notification))
           this.emit()
         }),
+      )
+      this.unsubscribers.push(
         this.options.adapter.subscribeTapped((event) => this.acceptTap(event, false)),
+      )
+      this.unsubscribers.push(
         this.options.adapter.subscribeToken((nextToken) => {
           void this.register(nextToken, generation).catch((error) => this.fail(error, generation))
         }),
-      ]
+      )
       this.value.status = 'ready'
       this.emit()
     } catch (error) {
+      for (const unsubscribe of this.unsubscribers.splice(0)) unsubscribe()
       this.fail(error, generation)
     }
   }
@@ -130,12 +148,25 @@ export class PushLifecycleController {
   async revoke(): Promise<void> {
     const token = this.value.token
     this.stop()
-    if (token && this.options.unregisterToken) await this.options.unregisterToken(token)
+    const cleanup = await Promise.allSettled([
+      token && this.options.unregisterToken
+        ? this.options.unregisterToken(token)
+        : Promise.resolve(),
+      this.options.storage?.clear() ?? Promise.resolve(),
+    ])
+    const rejected = cleanup.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    )
     this.value.token = null
     this.value.status = 'revoked'
+    this.value.error = rejected ? this.safeError(rejected.reason) : null
     this.seenTaps.clear()
-    await this.options.storage?.clear()
     this.emit()
+    if (rejected) {
+      const error = toError(rejected.reason)
+      this.options.onError?.(error)
+      throw error
+    }
   }
 
   stop(): void {
@@ -145,8 +176,9 @@ export class PushLifecycleController {
     this.emit()
   }
 
-  private async register(token: string, generation: number): Promise<void> {
-    if (!token || token === this.value.token) return
+  private async register(token: string, generation: number, force = false): Promise<void> {
+    if (!token.trim()) throw new Error('[pocketshot] Native push token is empty')
+    if (!force && token === this.value.token) return
     const attempts = Math.max(1, this.options.maxRegistrationAttempts ?? 3)
     let failure: unknown
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -173,6 +205,11 @@ export class PushLifecycleController {
     const key = `${event.notification.notificationId}:${event.actionIdentifier}`
     if (this.seenTaps.has(key)) return
     this.seenTaps.add(key)
+    while (this.seenTaps.size > 100) {
+      const oldest = this.seenTaps.values().next().value as string | undefined
+      if (oldest === undefined) break
+      this.seenTaps.delete(oldest)
+    }
     this.value.lastTap = clone(event)
     this.options.onTap?.(clone(event), coldStart)
     void this.persist().catch((error) => this.options.onError?.(toError(error)))
@@ -183,7 +220,7 @@ export class PushLifecycleController {
     if (generation !== this.generation) return
     const error = cause instanceof Error ? cause : new Error(String(cause))
     this.value.status = 'failed'
-    this.value.error = error.message
+    this.value.error = this.safeError(error)
     this.options.onError?.(error)
     this.emit()
   }
@@ -207,6 +244,16 @@ export class PushLifecycleController {
       token: this.value.token,
       seenTapKeys: [...this.seenTaps].slice(-100),
     })
+  }
+
+  private safeError(error: unknown): string {
+    const value = (
+      this.options.sanitizeError?.(error) ??
+      (error instanceof Error ? error.name : 'Push lifecycle failure')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (value || 'Push lifecycle failure').slice(0, 160)
   }
 }
 
@@ -270,8 +317,26 @@ export class PersonalPushPolicyController {
     this.requireCategory(notification.category)
     if (this.seen.has(notification.id)) return { status: 'suppressed', reason: 'duplicate' }
     this.seen.add(notification.id)
+    while (this.seen.size > (this.options.maxSeenNotifications ?? 1_000)) {
+      const oldest = this.seen.values().next().value as string | undefined
+      if (oldest === undefined) break
+      this.seen.delete(oldest)
+    }
+    if (
+      this.options.expectedRecipientId &&
+      notification.recipientId !== this.options.expectedRecipientId
+    ) {
+      return { status: 'suppressed', reason: 'wrong-recipient' }
+    }
     const now = this.now()
-    if (notification.expiresAt && new Date(notification.expiresAt).getTime() <= now.getTime()) {
+    if (
+      !notification.id.trim() ||
+      !notification.recipientId.trim() ||
+      !Number.isFinite(Date.parse(notification.createdAt)) ||
+      (notification.expiresAt !== undefined &&
+        (!Number.isFinite(Date.parse(notification.expiresAt)) ||
+          Date.parse(notification.expiresAt) <= now.getTime()))
+    ) {
       return { status: 'suppressed', reason: 'expired' }
     }
     if (notification.roomId && this.mutedRooms.has(notification.roomId)) {
@@ -337,6 +402,9 @@ export class PersonalPushPolicyController {
   }
 
   private normalizeRoute(value: string): string {
+    if (!value.startsWith('/') || value.startsWith('//')) {
+      throw new Error('[pocketshot] Push route must be app-relative')
+    }
     let route: string
     try {
       const url = new URL(value, 'https://pocketshot.invalid')
