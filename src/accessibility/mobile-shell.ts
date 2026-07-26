@@ -20,12 +20,18 @@ export class MobileShellController {
   private readonly routes = new Map<string, MobileRouteDefinition>()
   private history: string[] = []
   private current: MobileRouteDefinition
+  private readonly maxHistory: number
 
   constructor(
     definitions: MobileRouteDefinition[],
     initialRoute: string,
     private readonly focus: (target: string) => void | Promise<void> = () => undefined,
+    options: { maxHistory?: number } = {},
   ) {
+    this.maxHistory = options.maxHistory ?? 100
+    if (!Number.isInteger(this.maxHistory) || this.maxHistory < 1) {
+      throw new RangeError('Mobile route history limit must be a positive integer')
+    }
     for (const definition of definitions) {
       if (!definition.name.trim()) throw new Error('Route name is required')
       if (this.routes.has(definition.name)) throw new Error(`Duplicate route: ${definition.name}`)
@@ -48,6 +54,7 @@ export class MobileShellController {
     const next = this.require(route)
     if (next.name === this.current.name) return
     this.history.push(this.current.name)
+    if (this.history.length > this.maxHistory) this.history.shift()
     this.current = next
     await this.restoreCurrentFocus()
   }

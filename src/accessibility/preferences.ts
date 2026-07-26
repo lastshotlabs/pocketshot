@@ -1,6 +1,8 @@
 export interface AccessibilityPreferences {
   fontScale: number
   reduceMotion: boolean
+  reduceTransparency: boolean
+  boldText: boolean
   highContrast: boolean
   screenReaderEnabled: boolean
 }
@@ -14,6 +16,8 @@ export class AccessibilityController {
   private value: AccessibilityPreferences = {
     fontScale: 1,
     reduceMotion: false,
+    reduceTransparency: false,
+    boldText: false,
     highContrast: false,
     screenReaderEnabled: false,
   }
@@ -26,8 +30,8 @@ export class AccessibilityController {
 
   update(preferences: Partial<AccessibilityPreferences>): void {
     const next = { ...this.value, ...preferences }
-    if (!Number.isFinite(next.fontScale) || next.fontScale < 0.5 || next.fontScale > 2) {
-      throw new Error('Font scale must be between 0.5 and 2')
+    if (!Number.isFinite(next.fontScale) || next.fontScale < 0.5 || next.fontScale > 3.2) {
+      throw new Error('Font scale must be between 0.5 and 3.2')
     }
     this.value = next
   }

@@ -3,6 +3,9 @@ import {
   MobileShellController,
   conformTouchTarget,
   safeAreaThumbDock,
+  auditAccessibilityNode,
+  contrastRatio,
+  resolveAdaptiveLayout,
   type AccessibilityAdapter,
 } from '../../src/accessibility'
 import { describe, expect, it, vi } from 'vitest'
@@ -22,7 +25,7 @@ describe('AccessibilityController', () => {
 
   it('validates font scale and animation duration', () => {
     const accessibility = new AccessibilityController(adapter())
-    expect(() => accessibility.update({ fontScale: 2.1 })).toThrow('between')
+    expect(() => accessibility.update({ fontScale: 3.21 })).toThrow('between')
     expect(() => accessibility.duration(-1)).toThrow('negative')
   })
 
@@ -36,6 +39,45 @@ describe('AccessibilityController', () => {
     expect(native.announce).toHaveBeenCalledOnce()
     expect(native.announce).toHaveBeenCalledWith('Saved')
     expect(native.focus).toHaveBeenCalledWith('save-button')
+  })
+
+  it('audits semantics, touch targets, and WCAG contrast', () => {
+    expect(contrastRatio('#000', '#fff')).toBeCloseTo(21)
+    expect(
+      auditAccessibilityNode(
+        {
+          id: 'icon-button',
+          interactive: true,
+          width: 24,
+          height: 24,
+          foreground: '#777',
+          background: '#888',
+        },
+        'ios',
+      ).map((violation) => violation.code),
+    ).toEqual(['missing-role', 'missing-label', 'touch-target', 'contrast'])
+  })
+
+  it('reflows columns at 200% text and accounts for rotation, insets, and keyboard', () => {
+    expect(
+      resolveAdaptiveLayout({
+        width: 844,
+        height: 390,
+        fontScale: 2,
+        topInset: 0,
+        rightInset: 20,
+        bottomInset: 21,
+        leftInset: 20,
+        keyboardHeight: 200,
+      }),
+    ).toMatchObject({
+      orientation: 'landscape',
+      sizeClass: 'compact',
+      contentWidth: 804,
+      contentHeight: 190,
+      shouldReflowColumns: true,
+      keyboardVisible: true,
+    })
   })
 })
 
