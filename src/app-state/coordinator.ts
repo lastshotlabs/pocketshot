@@ -37,6 +37,8 @@ export interface LifecycleCoordinatorOptions {
   now?: () => Date
   timeout?: <T>(operation: Promise<T>, milliseconds: number) => Promise<T>
   onError?(taskId: string, phase: 'foreground' | 'background', error: Error): void
+  /** Converts task failures into bounded, privacy-safe persisted diagnostics. */
+  sanitizeError?(error: unknown): string
 }
 
 const clone = <T>(value: T): T => structuredClone(value)
@@ -55,6 +57,7 @@ export class LifecycleCoordinator {
   private readonly listeners = new Set<(checkpoint: LifecycleCheckpoint) => void>()
   private queue: Promise<void> = Promise.resolve()
   private initialized = false
+  private initializePromise: Promise<LifecycleCheckpoint> | null = null
   private readonly now: () => Date
   private readonly timeout: NonNullable<LifecycleCoordinatorOptions['timeout']>
 
@@ -71,6 +74,13 @@ export class LifecycleCoordinator {
     if (!task.id.trim()) throw new Error('[pocketshot] Lifecycle task id is required')
     if (this.tasks.has(task.id))
       throw new Error(`[pocketshot] Duplicate lifecycle task: ${task.id}`)
+    if (
+      (task.order !== undefined && !Number.isFinite(task.order)) ||
+      (task.timeoutMs !== undefined &&
+        (!Number.isFinite(task.timeoutMs) || task.timeoutMs <= 0))
+    ) {
+      throw new RangeError('[pocketshot] Lifecycle task order/timeout is invalid')
+    }
     this.tasks.set(task.id, task)
     return () => this.tasks.delete(task.id)
   }
@@ -83,7 +93,16 @@ export class LifecycleCoordinator {
 
   async initialize(initialState: LifecycleState = 'active'): Promise<LifecycleCheckpoint> {
     if (this.initialized) return this.checkpoint
-    const stored = await this.options.storage.get()
+    this.initializePromise ??= this.performInitialize(initialState).finally(() => {
+      this.initializePromise = null
+    })
+    return this.initializePromise
+  }
+
+  private async performInitialize(initialState: LifecycleState): Promise<LifecycleCheckpoint> {
+    const loaded = await this.options.storage.get()
+    const stored = isCheckpoint(loaded) ? loaded : null
+    if (loaded && !stored) await this.options.storage.clear()
     this.value = stored
       ? {
           ...clone(stored),
@@ -108,7 +127,7 @@ export class LifecycleCoordinator {
   }
 
   transition(nextState: LifecycleState, reason: LifecycleReason = 'os-transition'): Promise<void> {
-    this.queue = this.queue.then(async () => {
+    this.queue = this.queue.catch(() => undefined).then(async () => {
       if (!this.initialized) await this.initialize(this.value.state)
       const previousState = this.value.state
       if (previousState === nextState) return
@@ -125,6 +144,8 @@ export class LifecycleCoordinator {
   }
 
   async markCleanShutdown(): Promise<void> {
+    await this.queue.catch(() => undefined)
+    if (!this.initialized) await this.initialize(this.value.state)
     this.value.cleanShutdown = true
     await this.options.storage.set(this.value)
     this.emit()
@@ -158,7 +179,7 @@ export class LifecycleCoordinator {
         await this.timeout(Promise.resolve(operation(context)), task.timeoutMs ?? 5_000)
       } catch (cause) {
         const error = cause instanceof Error ? cause : new Error(String(cause))
-        this.value.failures.push({ taskId: task.id, phase, message: error.message })
+        this.value.failures.push({ taskId: task.id, phase, message: this.safeError(error) })
         this.value.failures = this.value.failures.slice(-50)
         this.options.onError?.(task.id, phase, error)
       }
@@ -168,6 +189,16 @@ export class LifecycleCoordinator {
   private emit(): void {
     const value = this.checkpoint
     for (const listener of this.listeners) listener(value)
+  }
+
+  private safeError(error: unknown): string {
+    const value = (
+      this.options.sanitizeError?.(error) ??
+      (error instanceof Error ? error.name : 'Lifecycle task failed')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (value || 'Lifecycle task failed').slice(0, 160)
   }
 }
 
@@ -195,4 +226,15 @@ function withTimeout<T>(operation: Promise<T>, milliseconds: number): Promise<T>
       )
     }),
   ]).finally(() => clearTimeout(timer))
+}
+
+function isCheckpoint(value: LifecycleCheckpoint | null): value is LifecycleCheckpoint {
+  return Boolean(
+    value &&
+      value.schemaVersion === 1 &&
+      Number.isInteger(value.processGeneration) &&
+      value.processGeneration >= 0 &&
+      ['active', 'inactive', 'background'].includes(value.state) &&
+      Array.isArray(value.failures),
+  )
 }

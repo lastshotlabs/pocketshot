@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { LifecycleCoordinator, createMemoryLifecycleStorage } from '../../src/app-state/coordinator'
+import { bindLifecycleCoordinator } from '../../src/app-state/bridge'
+import type { AppStateManager } from '../../src/app-state/manager'
 
 describe('LifecycleCoordinator', () => {
   it('serializes ordered background and foreground reconciliation', async () => {
@@ -69,7 +71,7 @@ describe('LifecycleCoordinator', () => {
         {
           taskId: 'queue',
           phase: 'foreground',
-          message: 'private backend detail',
+          message: 'Error',
         },
       ],
     })
@@ -89,5 +91,61 @@ describe('LifecycleCoordinator', () => {
     expect(recovered).not.toHaveBeenCalled()
     await second.clear()
     expect(await storage.get()).toBeNull()
+  })
+
+  it('coalesces initialization and recovers its transition queue after storage failure', async () => {
+    const backing = createMemoryLifecycleStorage()
+    const get = vi.fn(() => backing.get())
+    let fail = false
+    const coordinator = new LifecycleCoordinator({
+      storage: {
+        get,
+        clear: () => backing.clear(),
+        set: async (value) => {
+          if (fail) {
+            fail = false
+            throw new Error('disk unavailable')
+          }
+          await backing.set(value)
+        },
+      },
+    })
+    await Promise.all([coordinator.initialize(), coordinator.initialize()])
+    expect(get).toHaveBeenCalledOnce()
+    fail = true
+    await expect(coordinator.transition('background')).rejects.toThrow('disk unavailable')
+    await coordinator.transition('active')
+    expect(coordinator.checkpoint.state).toBe('active')
+  })
+
+  it('bridges the single native lifecycle manager into durable transitions', async () => {
+    let foreground: (() => void) | null = null
+    let background: (() => void) | null = null
+    const manager = {
+      state: 'active',
+      onForeground(callback: () => void) {
+        foreground = callback
+        return () => {
+          foreground = null
+        }
+      },
+      onBackground(callback: () => void) {
+        background = callback
+        return () => {
+          background = null
+        }
+      },
+    } as unknown as AppStateManager
+    const coordinator = new LifecycleCoordinator({
+      storage: createMemoryLifecycleStorage(),
+    })
+    const unbind = await bindLifecycleCoordinator(manager, coordinator)
+    ;(background as (() => void) | null)?.()
+    await vi.waitFor(() => expect(coordinator.checkpoint.state).toBe('background'))
+    ;(foreground as (() => void) | null)?.()
+    await vi.waitFor(() => expect(coordinator.checkpoint.state).toBe('active'))
+    unbind()
+    expect(foreground).toBeNull()
+    expect(background).toBeNull()
   })
 })
