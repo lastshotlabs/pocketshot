@@ -1,7 +1,7 @@
 {
   "packageBytes": {
     "dist/index.js": 163840,
-    "dist/index.cjs": 212992,
+    "dist/index.cjs": 245760,
     "dist/ui.js": 1572864,
     "dist/ui.cjs": 1677722
   },

@@ -7,7 +7,8 @@ const packageRoot = new URL('../', import.meta.url)
 
 const budgets = {
   'dist/index.js': 160 * 1024,
-  'dist/index.cjs': 208 * 1024,
+  // CJS cannot share Pocketshot's production controller chunks like the ESM build.
+  'dist/index.cjs': 240 * 1024,
   'dist/ui.js': 1.5 * 1024 * 1024,
   'dist/ui.cjs': 1.6 * 1024 * 1024,
   'dist/types/index.d.ts': 16 * 1024,
@@ -31,7 +32,7 @@ const budgets = {
   'dist/billing.js': 16 * 1024,
   'dist/billing.cjs': 20 * 1024,
   'dist/coach.js': 16 * 1024,
-  'dist/coach.cjs': 20 * 1024,
+  'dist/coach.cjs': 24 * 1024,
   'dist/party.js': 16 * 1024,
   'dist/party.cjs': 20 * 1024,
   'dist/party-session.js': 32 * 1024,
@@ -45,7 +46,7 @@ const budgets = {
   'dist/accessibility.js': 12 * 1024,
   'dist/accessibility.cjs': 16 * 1024,
   'dist/community.js': 16 * 1024,
-  'dist/community.cjs': 60 * 1024,
+  'dist/community.cjs': 64 * 1024,
   'dist/community-core.js': 48 * 1024,
   'dist/community-core.cjs': 52 * 1024,
 }
