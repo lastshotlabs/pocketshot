@@ -2,7 +2,7 @@
   "expo": {
     "name": "PocketShot Party",
     "slug": "pocketshot-party",
-    "scheme": "pocketshot-party",
+    "scheme": ["hitshot", "pocketshot-party"],
     "version": "0.0.1",
     "runtimeVersion": { "policy": "appVersion" },
     "platforms": ["ios", "android"],
@@ -18,7 +18,22 @@
         ]
       }
     },
-    "android": { "package": "com.lastshotlabs.pocketshot.party", "versionCode": 1 },
+    "android": {
+      "package": "com.lastshotlabs.pocketshot.party",
+      "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "hitshot", "host": "join", "pathPrefix": "/" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "pocketshot-party", "host": "join", "pathPrefix": "/" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
     "plugins": ["expo-router", ["expo-audio", { "enableBackgroundPlayback": true }]]
   }
 }

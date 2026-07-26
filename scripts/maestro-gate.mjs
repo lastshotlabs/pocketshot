@@ -12,6 +12,10 @@ const nativeWorkflow = await readFile(
   new URL('../.github/workflows/native.yml', import.meta.url),
   'utf8',
 )
+const androidRunner = await readFile(
+  new URL('./run-android-maestro.sh', import.meta.url),
+  'utf8',
+)
 const partyJoinRoute = await readFile(
   new URL('../products/hitshot/app/join/[code].tsx', import.meta.url),
   'utf8',
@@ -20,6 +24,9 @@ const partyNativeIntent = await readFile(
   new URL('../products/hitshot/app/+native-intent.ts', import.meta.url),
   'utf8',
 )
+const partyApp = JSON.parse(
+  await readFile(new URL('../products/hitshot/app.json', import.meta.url), 'utf8'),
+).expo
 const coachFlow = await readFile(
   new URL('../.maestro/coach-critical.yaml', import.meta.url),
   'utf8',
@@ -94,6 +101,18 @@ if (!partyJoinRoute.includes('initialJoinCode')) {
 if (!partyNativeIntent.includes('redirectSystemPath')) {
   failures.push('Party shell does not normalize native intent paths')
 }
+for (const scheme of ['hitshot', 'pocketshot-party']) {
+  const customFilter = partyApp.android?.intentFilters?.find(
+    (filter) =>
+      !filter.autoVerify &&
+      filter.data?.some(
+        (entry) => entry.scheme === scheme && entry.host === 'join' && entry.pathPrefix === '/',
+      ),
+  )
+  if (!customFilter) {
+    failures.push(`Party Android intent delivery is not host-qualified for ${scheme}://join/`)
+  }
+}
 if (!communityFlow.includes('id: published-thread-title')) {
   failures.push('Community journey does not assert the published thread with a stable test ID')
 }
@@ -138,6 +157,20 @@ if (!workflow.includes('emulator-options: -no-window -gpu swiftshader_indirect -
 }
 if (!workflow.includes('adb shell settings put global hide_error_dialogs 1')) {
   failures.push('Android workflow does not suppress runner-service ANR dialogs')
+}
+if (!workflow.includes('scripts/run-android-maestro.sh')) {
+  failures.push('Android workflow bypasses the classified Maestro runner')
+}
+for (const diagnostic of [
+  'dumpsys activity exit-info',
+  'dumpsys activity activities',
+  'shell pidof',
+  'classified as app process termination',
+  'retrying once as runner instability',
+]) {
+  if (!androidRunner.includes(diagnostic)) {
+    failures.push(`Android Maestro runner is missing diagnostic: ${diagnostic}`)
+  }
 }
 if (!workflow.includes('scheme=$(basename "$workspace" .xcworkspace)')) {
   failures.push('iOS workflow does not select the application workspace scheme')

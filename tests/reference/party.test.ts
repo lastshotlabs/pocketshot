@@ -138,7 +138,12 @@ describe('Party clean-room acceptance model', () => {
 
   it('routes Android custom-scheme system URLs into the Expo join screen', () => {
     expect(normalizePartySystemPath('hitshot://join/HIT-427')).toBe('/join/HIT-427')
+    expect(normalizePartySystemPath('hitshot:///join/HIT-427')).toBe('/join/HIT-427')
     expect(normalizePartySystemPath('pocketshot-party://join/HIT-427')).toBe('/join/HIT-427')
+    expect(normalizePartySystemPath('https://links.hitshot.app/join/HIT-427?from=qr')).toBe(
+      '/join/HIT-427',
+    )
+    expect(normalizePartySystemPath('/join/HIT-427')).toBe('/join/HIT-427')
     expect(normalizePartySystemPath('/games')).toBe('/games')
     expect(normalizePartySystemPath('pocketshot-party://join/%E0%A4%A')).toBe('/')
   })

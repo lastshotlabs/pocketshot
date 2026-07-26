@@ -41,7 +41,12 @@
         },
         {
           "action": "VIEW",
-          "data": [{ "scheme": "hitshot" }, { "scheme": "pocketshot-party" }],
+          "data": [{ "scheme": "hitshot", "host": "join", "pathPrefix": "/" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "pocketshot-party", "host": "join", "pathPrefix": "/" }],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]

@@ -86,12 +86,15 @@ jobs:
             adb wait-for-device
             adb shell settings put global hide_error_dialogs 1
             adb install -r "products/${{ matrix.product }}/android/app/build/outputs/apk/release/app-release.apk"
-            "$HOME/.maestro/bin/maestro" test ${{ matrix.flow }}
+            ANDROID_MAESTRO_DIAGNOSTICS_DIR="$RUNNER_TEMP/android-maestro-${{ matrix.product }}" \
+              scripts/run-android-maestro.sh ${{ matrix.flow }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: maestro-${{ matrix.product }}-failure
-          path: ~/.maestro/tests
+          path: |
+            ~/.maestro/tests
+            ${{ runner.temp }}/android-maestro-${{ matrix.product }}
           if-no-files-found: ignore
 
   ios-maestro:
