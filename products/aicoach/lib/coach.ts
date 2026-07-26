@@ -121,7 +121,7 @@ export class CoachDemoController {
   readonly media
   readonly metrics = new MetricLogController()
   readonly goals = new GoalController()
-  readonly workouts = new WorkoutController()
+  readonly workouts: WorkoutController
   readonly billing = new EntitlementController({
     purchase: async (productId) => ({
       productId,
@@ -164,8 +164,13 @@ export class CoachDemoController {
       },
     ],
   )
-  constructor(capture: MediaCaptureAdapter = defaultCoachCapture(), snapshot?: CoachSnapshot) {
+  constructor(
+    capture: MediaCaptureAdapter = defaultCoachCapture(),
+    snapshot?: CoachSnapshot,
+    now: () => number = Date.now,
+  ) {
     this.media = createCoachMedia(capture)
+    this.workouts = new WorkoutController(now)
     if (snapshot) {
       Object.assign(this.stateValue, structuredClone(snapshot.state))
       for (const program of snapshot.programs) this.workouts.saveProgram(program)

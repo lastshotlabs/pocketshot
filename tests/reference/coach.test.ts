@@ -159,7 +159,8 @@ describe('Coach clean-room acceptance model', () => {
   })
 
   it('persists unit/time-zone preferences and composes program, set editing, and rest lifecycle', () => {
-    const coach = new CoachDemoController()
+    const now = Date.parse('2026-07-26T12:00:00.000Z')
+    const coach = new CoachDemoController(undefined, undefined, () => now)
     coach.updatePreferences({
       massUnit: 'lb',
       distanceUnit: 'mi',
