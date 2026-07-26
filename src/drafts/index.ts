@@ -1,4 +1,9 @@
-export { DurableDraftController, bindDraftLifecycle, createDurableDraft } from './controller'
+export {
+  DraftCapacityError,
+  DurableDraftController,
+  bindDraftLifecycle,
+  createDurableDraft,
+} from './controller'
 export { DraftConflictError } from './conflict'
 export { createMemoryDraftStorage, createSQLiteDraftStorage } from './storage'
 export type { SQLiteDraftDatabase, SQLiteDraftModule } from './storage'

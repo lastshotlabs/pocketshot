@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { DraftConflictError } from '../../src/drafts/conflict'
-import { DurableDraftController, bindDraftLifecycle } from '../../src/drafts/controller'
+import {
+  DraftCapacityError,
+  DurableDraftController,
+  bindDraftLifecycle,
+} from '../../src/drafts/controller'
 import type { AppStateManager } from '../../src/app-state/manager'
 import { createMemoryDraftStorage } from '../../src/drafts/storage'
 import type { DraftStorage, SaveDraftInput } from '../../src/drafts/types'
@@ -205,5 +209,42 @@ describe('DurableDraftController', () => {
     expect(controller.snapshot.isDirty).toBe(false)
     unbind()
     expect(background).toBeNull()
+  })
+
+  it('rejects oversized drafts without corrupting the current durable value', async () => {
+    const storage = createMemoryDraftStorage()
+    const controller = new DurableDraftController<Draft>({
+      id: 'deck:bounded',
+      initialValue: { title: 'Small', cards: ['one'] },
+      storage,
+      publishSchema,
+      saveRemote: async (input) => ({ value: input.value, version: 'server-1' }),
+      maxBytes: 1_000,
+    })
+    await controller.initialize()
+
+    await expect(
+      controller.update({ title: 'Large', cards: ['x'.repeat(2_000)] }),
+    ).rejects.toBeInstanceOf(DraftCapacityError)
+    expect(controller.snapshot.value).toEqual({ title: 'Small', cards: ['one'] })
+    expect((await storage.load<Draft>('deck:bounded'))?.value).toEqual({
+      title: 'Small',
+      cards: ['one'],
+    })
+  })
+
+  it('persists privacy-safe save errors instead of backend messages', async () => {
+    const { controller, storage } = setup(
+      createMemoryDraftStorage(),
+      vi.fn(async () => {
+        throw new Error('user@example.com token=secret')
+      }),
+    )
+    await controller.initialize()
+    await controller.update({ title: 'Private', cards: ['one'] })
+    await expect(controller.flush()).rejects.toThrow()
+
+    expect(controller.snapshot.lastError).toBe('Error')
+    expect((await storage.load<Draft>('deck:1'))?.lastError).toBe('Error')
   })
 })

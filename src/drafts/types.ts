@@ -64,6 +64,10 @@ export interface DurableDraftOptions<T> {
   autosaveMs?: number
   maxUndo?: number
   maxHistory?: number
+  /** Maximum serialized bytes retained for this draft, including undo/history. Default: 5 MiB. */
+  maxBytes?: number
+  /** Converts save failures into bounded, privacy-safe durable diagnostics. */
+  sanitizeError?: (error: unknown) => string
   now?: () => Date
   clone?: (value: T) => T
   isOfflineError?: (error: unknown) => boolean

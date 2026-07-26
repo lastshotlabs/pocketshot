@@ -9,6 +9,16 @@ import type {
   DurableDraftSnapshot,
 } from './types'
 
+const DEFAULT_MAX_DRAFT_BYTES = 5 * 1024 * 1024
+const MAX_ERROR_LENGTH = 160
+
+export class DraftCapacityError extends Error {
+  constructor(readonly bytes: number, readonly maximum: number) {
+    super(`Draft requires ${bytes} bytes; maximum is ${maximum}`)
+    this.name = 'DraftCapacityError'
+  }
+}
+
 export class DurableDraftController<T> {
   private record: DurableDraftRecord<T> | null = null
   private readonly listeners = new Set<DraftListener>()
@@ -16,6 +26,7 @@ export class DurableDraftController<T> {
   private savePromise: Promise<void> | null = null
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null
   private disposed = false
+  private persistChain: Promise<void> = Promise.resolve()
 
   constructor(private readonly options: DurableDraftOptions<T>) {}
 
@@ -52,15 +63,21 @@ export class DurableDraftController<T> {
   initialize(): Promise<void> {
     this.disposed = false
     if (this.record) return Promise.resolve()
-    this.initializePromise ??= this.performInitialize().finally(() => {
-      this.initializePromise = null
-    })
+    this.initializePromise ??= this.performInitialize()
+      .catch((error) => {
+        this.record = null
+        throw error
+      })
+      .finally(() => {
+        this.initializePromise = null
+      })
     return this.initializePromise
   }
 
   async update(next: T | ((current: T) => T)): Promise<void> {
     await this.initialize()
     const record = this.requireRecord()
+    const before = this.cloneRecord(record)
     const previous = this.clone(record.value)
     const value = typeof next === 'function' ? (next as (current: T) => T)(previous) : next
     record.undo.push(previous)
@@ -73,7 +90,12 @@ export class DurableDraftController<T> {
     record.health = record.conflict ? 'conflict' : 'unsaved'
     record.lastError = null
     this.addHistory('local')
-    await this.persist()
+    try {
+      await this.persist()
+    } catch (error) {
+      this.record = before
+      throw error
+    }
     this.scheduleAutosave()
   }
 
@@ -159,6 +181,7 @@ export class DurableDraftController<T> {
 
   async duplicate(newId: string): Promise<DurableDraftRecord<T>> {
     await this.initialize()
+    if (!newId.trim()) throw new Error('Draft ID is required')
     const current = this.requireRecord()
     const now = this.nowIso()
     const duplicate: DurableDraftRecord<T> = {
@@ -177,8 +200,10 @@ export class DurableDraftController<T> {
       redo: [],
       history: [],
     }
-    await this.options.storage.save(duplicate)
-    return duplicate
+    this.compactToCapacity(duplicate)
+    this.assertCapacity(duplicate)
+    await this.options.storage.save(this.cloneRecord(duplicate))
+    return this.cloneRecord(duplicate)
   }
 
   async dispose(): Promise<void> {
@@ -265,7 +290,7 @@ export class DurableDraftController<T> {
       } else {
         record.health = this.options.isOfflineError?.(error) ? 'offline' : 'error'
       }
-      record.lastError = error instanceof Error ? error.message : String(error)
+      record.lastError = this.safeError(error)
       await this.persist()
       throw error
     }
@@ -299,7 +324,12 @@ export class DurableDraftController<T> {
   }
 
   private async persist(): Promise<void> {
-    await this.options.storage.save(this.requireRecord())
+    this.compactToCapacity(this.requireRecord())
+    const snapshot = this.cloneRecord(this.requireRecord())
+    this.assertCapacity(snapshot)
+    const save = this.persistChain.then(() => this.options.storage.save(snapshot))
+    this.persistChain = save.catch(() => undefined)
+    await save
     this.emit()
   }
 
@@ -323,6 +353,49 @@ export class DurableDraftController<T> {
 
   private cloneVersion(version: DraftVersion<T>): DraftVersion<T> {
     return { ...version, value: this.clone(version.value) }
+  }
+
+  private cloneRecord(record: DurableDraftRecord<T>): DurableDraftRecord<T> {
+    return defaultClone(record)
+  }
+
+  private assertCapacity(record: DurableDraftRecord<T>): void {
+    const bytes = this.recordBytes(record)
+    const maximum = this.options.maxBytes ?? DEFAULT_MAX_DRAFT_BYTES
+    if (bytes > maximum) throw new DraftCapacityError(bytes, maximum)
+  }
+
+  private compactToCapacity(record: DurableDraftRecord<T>): void {
+    const maximum = this.options.maxBytes ?? DEFAULT_MAX_DRAFT_BYTES
+    while (this.recordBytes(record) > maximum && record.history.length > 0) {
+      record.history.shift()
+    }
+    while (this.recordBytes(record) > maximum && record.undo.length > 0) {
+      record.undo.shift()
+    }
+    while (this.recordBytes(record) > maximum && record.redo.length > 0) {
+      record.redo.shift()
+    }
+  }
+
+  private recordBytes(record: DurableDraftRecord<T>): number {
+    const serialized = JSON.stringify(record)
+    if (serialized === undefined) throw new TypeError('Draft must be JSON serializable')
+    return new TextEncoder().encode(serialized).byteLength
+  }
+
+  private safeError(error: unknown): string {
+    const sanitized = (
+      this.options.sanitizeError?.(error) ??
+      (error instanceof DraftConflictError
+        ? 'Draft conflict'
+        : error instanceof Error
+          ? error.name
+          : 'Draft save failed')
+    )
+      .replace(/\s+/g, ' ')
+      .trim()
+    return (sanitized || 'Draft save failed').slice(0, MAX_ERROR_LENGTH)
   }
 
   private nowIso(): string {
