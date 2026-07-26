@@ -246,6 +246,18 @@ export class RelationshipPrivacyController {
   shouldNotify(userId: string): boolean {
     return !this.blocked.has(userId) && !this.muted.has(userId)
   }
+
+  restore(snapshot: { blocked: string[]; muted: string[] }): void {
+    this.blocked.clear()
+    this.muted.clear()
+    for (const userId of snapshot.muted) this.mute(userId)
+    for (const userId of snapshot.blocked) this.block(userId)
+  }
+
+  clear(): void {
+    this.blocked.clear()
+    this.muted.clear()
+  }
 }
 
 function requireUserId(userId: string): void {

@@ -440,6 +440,9 @@ export class NotificationInboxController {
   ): { notificationId: string; route: string } | null {
     const item = this.items.get(id)
     if (!item?.route) return null
+    if (!item.route.startsWith('/') || item.route.startsWith('//')) {
+      throw new Error('Notification route must be app-relative')
+    }
     const url = new URL(item.route, 'https://pocketshot.invalid')
     const route = `${url.pathname}${url.search}${url.hash}`
     if (
@@ -564,10 +567,17 @@ export class MessagingController {
     this.connection = value
   }
 
-  revokeAccess(): void {
+  revokeAccess(options: { clearMessages?: boolean; clearMembership?: boolean } = {}): void {
     this.access = 'revoked'
-    for (const [id, message] of this.messages) {
-      if (message.status === 'pending') this.messages.set(id, { ...message, status: 'failed' })
+    this.typing.clear()
+    this.presence.clear()
+    if (options.clearMembership) this.members.clear()
+    if (options.clearMessages) {
+      this.messages.clear()
+    } else {
+      for (const [id, message] of this.messages) {
+        if (message.status === 'pending') this.messages.set(id, { ...message, status: 'failed' })
+      }
     }
   }
 
@@ -592,6 +602,17 @@ export interface ModerationAuditEntry {
   timestamp: string
 }
 
+export interface ModerationControllerOptions {
+  authorize?(input: {
+    actorId: string
+    operation: 'assign' | 'resolve' | 'dismiss' | 'note'
+    report: ModerationReport
+  }): boolean
+  maxAuditEntries?: number
+  maxNotesPerReport?: number
+  maxPendingActions?: number
+}
+
 export class ModerationController {
   private reports = new Map<string, ModerationReport>()
   private audit: ModerationAuditEntry[] = []
@@ -601,7 +622,10 @@ export class ModerationController {
   >()
   private notes = new Map<string, Array<{ actorId: string; text: string; timestamp: string }>>()
 
-  constructor(private readonly now: () => string = () => new Date().toISOString()) {}
+  constructor(
+    private readonly now: () => string = () => new Date().toISOString(),
+    private readonly options: ModerationControllerOptions = {},
+  ) {}
 
   get snapshot(): {
     reports: ModerationReport[]
@@ -627,12 +651,16 @@ export class ModerationController {
   }
 
   submit(report: Omit<ModerationReport, 'status' | 'assigneeId'>): void {
+    if (!report.id.trim() || !report.targetId.trim() || !report.reason.trim()) {
+      throw new Error('Moderation report requires an ID, target, and reason')
+    }
     if (this.reports.has(report.id)) return
     this.reports.set(report.id, { ...structuredClone(report), status: 'open', assigneeId: null })
   }
 
   assign(id: string, actorId: string): void {
     const report = this.requireReport(id)
+    this.authorize(actorId, 'assign', report)
     this.reports.set(id, { ...report, status: 'assigned', assigneeId: actorId })
     this.record(id, actorId, 'assign', 'Claimed for review')
   }
@@ -640,6 +668,8 @@ export class ModerationController {
   resolve(id: string, actorId: string, action: string, reason: string): void {
     const report = this.requireReport(id)
     if (report.status === 'resolved' || report.status === 'dismissed') return
+    if (!action.trim() || !reason.trim()) throw new Error('Moderation resolution is incomplete')
+    this.authorize(actorId, 'resolve', report)
     this.reports.set(id, { ...report, status: 'resolved' })
     this.record(id, actorId, action, reason)
   }
@@ -647,14 +677,20 @@ export class ModerationController {
   dismiss(id: string, actorId: string, reason: string): void {
     const report = this.requireReport(id)
     if (report.status === 'resolved' || report.status === 'dismissed') return
+    if (!reason.trim()) throw new Error('Moderation dismissal reason is required')
+    this.authorize(actorId, 'dismiss', report)
     this.reports.set(id, { ...report, status: 'dismissed' })
     this.record(id, actorId, 'dismiss', reason)
   }
 
   addNote(reportId: string, actorId: string, text: string): void {
-    this.requireReport(reportId)
+    const report = this.requireReport(reportId)
+    this.authorize(actorId, 'note', report)
     if (!text.trim()) throw new Error('Moderator note cannot be empty')
     const notes = this.notes.get(reportId) ?? []
+    if (notes.length >= (this.options.maxNotesPerReport ?? 500)) {
+      throw new Error('Moderator note limit reached')
+    }
     notes.push({ actorId, text: text.trim(), timestamp: this.now() })
     this.notes.set(reportId, notes)
   }
@@ -668,6 +704,9 @@ export class ModerationController {
       throw new Error('Moderation proposal requires action and reason')
     }
     if (this.pending.has(id)) return
+    if (this.pending.size >= (this.options.maxPendingActions ?? 500)) {
+      throw new Error('Moderation proposal limit reached')
+    }
     this.pending.set(id, structuredClone(input))
   }
 
@@ -690,6 +729,26 @@ export class ModerationController {
 
   private record(reportId: string, actorId: string, action: string, reason: string): void {
     this.audit.push({ reportId, actorId, action, reason, timestamp: this.now() })
+    this.audit = this.audit.slice(-(this.options.maxAuditEntries ?? 5_000))
+  }
+
+  private authorize(
+    actorId: string,
+    operation: 'assign' | 'resolve' | 'dismiss' | 'note',
+    report: ModerationReport,
+  ): void {
+    if (!actorId.trim()) throw new Error('Moderation actor is required')
+    if (
+      (operation === 'resolve' || operation === 'dismiss') &&
+      report.assigneeId &&
+      report.assigneeId !== actorId &&
+      !this.options.authorize
+    ) {
+      throw new Error('Moderation report is assigned to another actor')
+    }
+    if (this.options.authorize && !this.options.authorize({ actorId, operation, report })) {
+      throw new Error('Moderation authorization revoked')
+    }
   }
 }
 
@@ -701,16 +760,19 @@ export class CommunityAuthorizationController {
   private revokedScopes = new Map<string, Set<string>>()
 
   setRole(actorId: string, role: CommunityRole): void {
+    if (!actorId.trim()) throw new Error('Community actor is required')
     this.roles.set(actorId, role)
   }
 
   revoke(actorId: string, scope: string): void {
+    if (!actorId.trim() || !scope.trim()) throw new Error('Community revocation is invalid')
     const scopes = this.revokedScopes.get(actorId) ?? new Set<string>()
     scopes.add(scope)
     this.revokedScopes.set(actorId, scopes)
   }
 
   restore(actorId: string, scope: string): void {
+    if (!actorId.trim() || !scope.trim()) throw new Error('Community restoration is invalid')
     this.revokedScopes.get(actorId)?.delete(scope)
   }
 

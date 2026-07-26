@@ -132,7 +132,9 @@ describe('CommunityAdminController', () => {
   const authenticatedAt = '2026-07-25T12:01:00.000Z'
 
   it('requires grants and fresh auth for sensitive admin actions', () => {
-    const admin = new CommunityAdminController(() => now)
+    const admin = new CommunityAdminController(() => now, undefined, {
+      bootstrapAdminIds: ['owner'],
+    })
     expect(() => admin.ban('mod', 'spammer', 'Spam', authenticatedAt)).toThrow('Missing ability')
     admin.grant('owner', 'mod', 'ban')
     admin.ban('mod', 'spammer', 'Spam', authenticatedAt)
@@ -146,7 +148,9 @@ describe('CommunityAdminController', () => {
   })
 
   it('rejects stale authentication for bans, flags, and broadcasts', () => {
-    const admin = new CommunityAdminController(() => now)
+    const admin = new CommunityAdminController(() => now, undefined, {
+      bootstrapAdminIds: ['owner'],
+    })
     admin.grant('owner', 'mod', 'ban')
     expect(() => admin.ban('mod', 'spammer', 'Spam', '2026-07-25T11:00:00.000Z')).toThrow(
       'Fresh authentication',
@@ -154,7 +158,9 @@ describe('CommunityAdminController', () => {
   })
 
   it('handles consent, idempotent broadcasts, flags, and guarded legal viewing', () => {
-    const admin = new CommunityAdminController(() => now)
+    const admin = new CommunityAdminController(() => now, undefined, {
+      bootstrapAdminIds: ['owner'],
+    })
     admin.setConsent('alex', 'privacy-v2', true)
     admin.grant('owner', 'admin', 'broadcast')
     admin.grant('owner', 'admin', 'manage_flags')
@@ -168,5 +174,18 @@ describe('CommunityAdminController', () => {
       flags: { posting: false },
       broadcasts: [{ id: 'notice', body: 'Maintenance' }],
     })
+  })
+
+  it('prevents untrusted grant escalation and protects the final administrator', () => {
+    const admin = new CommunityAdminController(() => now, undefined, {
+      bootstrapAdminIds: ['owner'],
+    })
+    expect(() => admin.grant('attacker', 'attacker', 'administer')).toThrow('Missing ability')
+    expect(() => admin.revokeGrant('owner', 'owner', 'administer')).toThrow(
+      'final administrator',
+    )
+    admin.grant('owner', 'second-owner', 'administer')
+    admin.revokeGrant('owner', 'owner', 'administer')
+    expect(admin.can('owner', 'administer')).toBe(false)
   })
 })

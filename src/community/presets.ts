@@ -209,6 +209,7 @@ export class RoomStateController {
 }
 
 export type CommunityAbility =
+  | 'administer'
   | 'moderate'
   | 'ban'
   | 'broadcast'
@@ -224,6 +225,13 @@ export interface AdminAuditEvent {
   at: string
 }
 
+export interface CommunityAdminOptions {
+  /** Trusted identities seeded from server-side bootstrap configuration. */
+  bootstrapAdminIds: readonly string[]
+  maxAuditEntries?: number
+  maxBroadcasts?: number
+}
+
 export class CommunityAdminController {
   private grants = new Map<string, Set<CommunityAbility>>()
   private bans = new Map<string, { reason: string; expiresAt: string | null }>()
@@ -235,7 +243,13 @@ export class CommunityAdminController {
   constructor(
     private readonly now: () => string = () => new Date().toISOString(),
     private readonly freshAuthWindowMs = 5 * 60 * 1000,
-  ) {}
+    private readonly options: CommunityAdminOptions = { bootstrapAdminIds: [] },
+  ) {
+    for (const actorId of options.bootstrapAdminIds) {
+      const id = requireId(actorId)
+      this.grants.set(id, new Set<CommunityAbility>(['administer']))
+    }
+  }
 
   get snapshot() {
     return {
@@ -248,10 +262,23 @@ export class CommunityAdminController {
   }
 
   grant(actorId: string, userId: string, ability: CommunityAbility): void {
+    this.require(actorId, 'administer')
     const abilities = this.grants.get(userId) ?? new Set<CommunityAbility>()
     abilities.add(ability)
     this.grants.set(userId, abilities)
     this.record(actorId, 'grant', userId, ability)
+  }
+
+  revokeGrant(actorId: string, userId: string, ability: CommunityAbility): void {
+    this.require(actorId, 'administer')
+    if (ability === 'administer' && actorId === userId) {
+      const otherAdmins = [...this.grants].some(
+        ([id, abilities]) => id !== userId && abilities.has('administer'),
+      )
+      if (!otherAdmins) throw new Error('Cannot revoke the final administrator')
+    }
+    this.grants.get(userId)?.delete(ability)
+    this.record(actorId, 'revoke_grant', userId, ability)
   }
 
   can(userId: string, ability: CommunityAbility): boolean {
@@ -272,6 +299,13 @@ export class CommunityAdminController {
     this.require(actorId, 'ban')
     this.requireFreshAuth(authenticatedAt)
     if (!reason.trim()) throw new Error('Ban reason is required')
+    requireId(userId)
+    if (
+      expiresAt &&
+      (!Number.isFinite(Date.parse(expiresAt)) || Date.parse(expiresAt) <= Date.parse(this.now()))
+    ) {
+      throw new Error('Ban expiry must be a future timestamp')
+    }
     this.bans.set(userId, { reason, expiresAt })
     this.record(actorId, 'ban', userId, reason)
   }
@@ -288,6 +322,9 @@ export class CommunityAdminController {
     this.requireFreshAuth(authenticatedAt)
     if (!body.trim()) throw new Error('Broadcast body is required')
     if (this.broadcasts.some((candidate) => candidate.id === id)) return
+    if (this.broadcasts.length >= (this.options.maxBroadcasts ?? 1_000)) {
+      throw new Error('Broadcast retention limit reached')
+    }
     this.broadcasts.push({ id: requireId(id), body, publishedAt: this.now() })
     this.record(actorId, 'broadcast', id, 'published')
   }
@@ -311,6 +348,7 @@ export class CommunityAdminController {
 
   private record(actorId: string, action: string, targetId: string | null, reason: string): void {
     this.audit.push({ actorId, action, targetId, reason, at: this.now() })
+    this.audit = this.audit.slice(-(this.options.maxAuditEntries ?? 5_000))
   }
 }
 

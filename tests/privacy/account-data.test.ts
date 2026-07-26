@@ -126,4 +126,15 @@ describe('relationship privacy', () => {
     expect(privacy.canInteract('blocked')).toBe(true)
     expect(privacy.shouldNotify('blocked')).toBe(false)
   })
+
+  it('restores and clears durable relationship preferences', () => {
+    const first = new RelationshipPrivacyController()
+    first.block('blocked')
+    first.mute('quiet')
+    const restored = new RelationshipPrivacyController()
+    restored.restore(first.snapshot)
+    expect(restored.snapshot).toEqual(first.snapshot)
+    restored.clear()
+    expect(restored.snapshot).toEqual({ blocked: [], muted: [] })
+  })
 })

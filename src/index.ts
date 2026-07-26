@@ -136,6 +136,7 @@ export {
   AutomodController,
   PrivacyController,
 } from './community/controllers'
+export type { ModerationControllerOptions } from './community/controllers'
 export {
   AccountDataController,
   RelationshipPrivacyController,

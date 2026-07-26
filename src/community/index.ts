@@ -46,6 +46,7 @@ export type {
   CommunityPoll,
   CommunityDraft,
   CommunityProfile,
+  CommunityAdminOptions,
   CommunityProfileVisibility,
   RoomPresence,
   CommunityAbility,

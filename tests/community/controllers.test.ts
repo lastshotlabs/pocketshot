@@ -218,6 +218,14 @@ describe('NotificationInboxController', () => {
         },
       }),
     ).toThrow('sequence gap')
+    notifications.receive({
+      id: 'absolute',
+      sequence: 2,
+      category: 'reply',
+      text: 'Unsafe',
+      route: 'https://evil.example/threads/thread-1',
+    })
+    expect(() => notifications.openRoute('absolute', ['/threads'])).toThrow('app-relative')
   })
 })
 
@@ -260,6 +268,22 @@ describe('MessagingController', () => {
       typing: ['sam'],
       presence: { sam: 'online' },
       connection: 'reconnecting',
+    })
+  })
+
+  it('purges sensitive conversation state on authorization revocation when requested', () => {
+    const messages = new MessagingController()
+    messages.configureMembers(['alex', 'sam'])
+    messages.setTyping('sam', true)
+    messages.setPresence('sam', 'online')
+    messages.send({ id: 'local', clientId: 'client', body: 'Private' })
+    messages.revokeAccess({ clearMessages: true, clearMembership: true })
+    expect(messages.snapshot).toMatchObject({
+      access: 'revoked',
+      messages: [],
+      members: [],
+      typing: [],
+      presence: {},
     })
   })
 })
@@ -307,6 +331,27 @@ describe('ModerationController', () => {
           },
         ],
       },
+    })
+  })
+
+  it('rechecks moderation authorization at confirmation time', () => {
+    let allowed = true
+    const moderation = new ModerationController(
+      () => '2026-07-25T12:00:00.000Z',
+      { authorize: () => allowed },
+    )
+    moderation.submit({ id: 'report', targetId: 'thread', reason: 'Review' })
+    moderation.proposeAction('action-1', {
+      reportId: 'report',
+      actorId: 'mod',
+      action: 'remove',
+      reason: 'Confirmed violation',
+    })
+    allowed = false
+    expect(() => moderation.confirmAction('action-1')).toThrow('authorization revoked')
+    expect(moderation.snapshot).toMatchObject({
+      reports: [expect.objectContaining({ status: 'open' })],
+      pendingActions: [expect.objectContaining({ id: 'action-1' })],
     })
   })
 })
