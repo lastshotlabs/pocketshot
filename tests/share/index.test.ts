@@ -75,6 +75,11 @@ describe('share', () => {
       expect.any(Object),
     )
   })
+
+  it('rejects empty content and credential-bearing URLs', async () => {
+    await expect(share({})).rejects.toThrow('requires')
+    await expect(share({ url: 'https://user:pass@example.com' })).rejects.toThrow('unsafe')
+  })
 })
 
 // ── shareFile() — uses require('expo-sharing') → test observable behavior ────
@@ -95,6 +100,10 @@ describe('shareFile', () => {
     // and doesn't throw unexpectedly in the happy path.
     expect(typeof shareFile).toBe('function')
   })
+
+  it('rejects remote file URLs', async () => {
+    await expect(shareFile('https://example.com/private.pdf')).rejects.toThrow('local')
+  })
 })
 
 // ── Clipboard — uses require('expo-clipboard') → test observable behavior ─────
@@ -109,6 +118,11 @@ describe('getClipboardString', () => {
 describe('setClipboardString', () => {
   it('resolves without throwing', async () => {
     await expect(setClipboardString('new text')).resolves.toBeUndefined()
+  })
+
+  it('bounds clipboard content and validates expiry', async () => {
+    await expect(setClipboardString('x', { expiresInSeconds: 0 })).rejects.toThrow('positive')
+    await expect(setClipboardString('x'.repeat(1024 * 1024 + 1))).rejects.toThrow('1 MiB')
   })
 })
 

@@ -54,6 +54,7 @@ export async function share(
   content: ShareContent,
   options: ShareOptions = {},
 ): Promise<ShareResult> {
+  validateShareContent(content)
   try {
     // RNShare content type requires `message: string` but accepts url alone on iOS.
     // We cast to satisfy TS while preserving the correct runtime shape.
@@ -92,6 +93,11 @@ export async function shareFile(
   fileUri: string,
   opts: { mimeType?: string; dialogTitle?: string } = {},
 ): Promise<void> {
+  const uri = new URL(fileUri)
+  if (!['file:', 'content:'].includes(uri.protocol) || uri.username || uri.password) {
+    throw new Error('[pocketshot] File sharing requires a local file or content URI')
+  }
+  if (fileUri.length > 4_096) throw new Error('[pocketshot] File URI is too long')
   const Sharing = tryLoadSharing()
   if (!Sharing) {
     throw new Error(
@@ -125,11 +131,40 @@ export async function getClipboardString(): Promise<string> {
  */
 export async function setClipboardString(
   text: string,
-  _opts: ClipboardWriteOptions = {},
+  opts: ClipboardWriteOptions = {},
 ): Promise<void> {
+  if (new TextEncoder().encode(text).byteLength > 1024 * 1024) {
+    throw new Error('[pocketshot] Clipboard text exceeds the 1 MiB limit')
+  }
+  if (
+    opts.expiresInSeconds !== undefined &&
+    (!Number.isFinite(opts.expiresInSeconds) || opts.expiresInSeconds <= 0)
+  ) {
+    throw new Error('[pocketshot] Clipboard expiry must be positive')
+  }
   const Clipboard = requireClipboard()
   // expo-clipboard setStringAsync returns boolean (true = success)
-  await Clipboard.setStringAsync(text)
+  await Clipboard.setStringAsync(
+    text,
+    opts.expiresInSeconds ? { inputInSeconds: opts.expiresInSeconds } : undefined,
+  )
+}
+
+function validateShareContent(content: ShareContent): void {
+  if (!content.message?.trim() && !content.url?.trim()) {
+    throw new Error('[pocketshot] Share content requires a message or URL')
+  }
+  for (const value of [content.message, content.title]) {
+    if (value && new TextEncoder().encode(value).byteLength > 100_000) {
+      throw new Error('[pocketshot] Share content is too large')
+    }
+  }
+  if (content.url) {
+    const url = new URL(content.url)
+    if (url.username || url.password || content.url.length > 2_048) {
+      throw new Error('[pocketshot] Share URL is unsafe')
+    }
+  }
 }
 
 /**

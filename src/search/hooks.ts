@@ -26,8 +26,13 @@ export function createSearchHooks(api: ApiClient) {
       searchEmpty = false,
       staleTime = 60_000,
     } = opts
+    validateSearchOptions(minLength, debounce, endpoint, params.limit)
 
-    const [query, setQuery] = useState(params.query ?? '')
+    const [query, setQueryValue] = useState(params.query ?? '')
+    const setQuery = useCallback((value: string) => {
+      if (value.length > 1_000) throw new Error('[pocketshot] Search query is too long')
+      setQueryValue(value)
+    }, [])
     const [debouncedQuery, setDebouncedQuery] = useState(query)
 
     useEffect(() => {
@@ -87,6 +92,8 @@ export function createSearchHooks(api: ApiClient) {
     const { minLength = 2, endpoint = '/search', staleTime = 60_000 } = opts
 
     const pageSize = params.limit ?? 20
+    validateSearchOptions(minLength, 0, endpoint, pageSize)
+    if (params.query.length > 1_000) throw new Error('[pocketshot] Search query is too long')
     const isEnabled = params.query.length >= minLength
 
     const { data, isLoading, isFetching, fetchNextPage, hasNextPage } = useInfiniteQuery<
@@ -124,6 +131,25 @@ export function createSearchHooks(api: ApiClient) {
   }
 
   return { useSearch, useInfiniteSearch }
+}
+
+function validateSearchOptions(
+  minLength: number,
+  debounce: number,
+  endpoint: string,
+  limit?: number,
+): void {
+  if (
+    !Number.isInteger(minLength) ||
+    minLength < 0 ||
+    !Number.isFinite(debounce) ||
+    debounce < 0 ||
+    !endpoint.startsWith('/') ||
+    endpoint.startsWith('//') ||
+    (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 100))
+  ) {
+    throw new Error('[pocketshot] Search options are invalid')
+  }
 }
 
 export type SearchHooks = ReturnType<typeof createSearchHooks>

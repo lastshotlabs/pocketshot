@@ -28,4 +28,6 @@ export interface ShareResult {
 export interface ClipboardWriteOptions {
   /** Whether to show the system "Copied" notification on iOS 16+. Default: true. */
   announce?: boolean
+  /** Ask the platform to expire sensitive clipboard content after this many seconds. */
+  expiresInSeconds?: number
 }

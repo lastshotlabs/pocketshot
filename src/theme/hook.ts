@@ -39,7 +39,16 @@ async function loadPersistedTheme(): Promise<{
   try {
     const raw = await SecureStore.getItemAsync(THEME_STORAGE_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as { flavor: FlavorName; colorScheme: 'light' | 'dark' | 'system' }
+    const value = JSON.parse(raw) as { flavor?: unknown; colorScheme?: unknown }
+    if (
+      typeof value.flavor !== 'string' ||
+      !(value.flavor in flavors) ||
+      !['light', 'dark', 'system'].includes(String(value.colorScheme))
+    ) {
+      await SecureStore.deleteItemAsync(THEME_STORAGE_KEY)
+      return null
+    }
+    return value as { flavor: FlavorName; colorScheme: 'light' | 'dark' | 'system' }
   } catch {
     return null
   }
