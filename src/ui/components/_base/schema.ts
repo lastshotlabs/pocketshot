@@ -71,8 +71,8 @@ export type MergeComponentShape<Base, Override> = Omit<Base, keyof Override> & O
  * state, and slot graph in every component schema declaration.
  */
 export type ExtendedComponentSchema<T extends z.ZodRawShape> = z.ZodType<
-  MergeComponentShape<BaseComponentOutput, z.output<z.ZodObject<T>>>,
-  MergeComponentShape<BaseComponentInput, z.input<z.ZodObject<T>>>
+  MergeComponentShape<BaseComponentOutput, z.core.$InferObjectOutput<T, {}>>,
+  MergeComponentShape<BaseComponentInput, z.core.$InferObjectInput<T, {}>>
 >
 
 /**
