@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, looseSlots } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -12,7 +12,7 @@ export const QrScannerSchema = extendComponentSchema({
   showOverlay: z.boolean().optional().default(true),
   overlayText: z.union([z.string(), FromRefSchema]).optional(),
   testID: z.string().optional(),
-  slots: looseSlots([
+  slots: slotsSchema([
     'root',
     'overlayContainer',
     'topOverlay',

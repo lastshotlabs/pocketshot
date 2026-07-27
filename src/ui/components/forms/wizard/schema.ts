@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, looseSlots } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -35,7 +35,7 @@ export const WizardSchema = extendComponentSchema({
   onComplete: ActionSchema.optional(),
   onCancel: ActionSchema.optional(),
   testID: z.string().optional(),
-  slots: looseSlots([
+  slots: slotsSchema([
     'root',
     'keyboardAvoid',
     'container',

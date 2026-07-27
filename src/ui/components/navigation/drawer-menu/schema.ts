@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, looseSlots } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 
 const ActionSchema = z.custom<import('../../../actions/types').Action>()
 
@@ -30,7 +30,7 @@ export const DrawerMenuSchema = extendComponentSchema({
   footer: DrawerMenuFooterSchema.optional(),
   position: z.enum(['left', 'right']).optional().default('left'),
   widthPercent: z.number().optional().default(80),
-  slots: looseSlots([
+  slots: slotsSchema([
     'root',
     'backdrop',
     'panel',

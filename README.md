@@ -2,6 +2,11 @@
 
 Expo / React Native framework library for Slingshot backends — scaffold a new app with `pocketshot init` or drop the runtime into an existing project.
 
+Pocketshot's package entry points have explicit stability and ownership tiers.
+Read the
+[public surface maturity guide](https://github.com/lastshotlabs/pocketshot/blob/main/docs/public-surface-maturity.md)
+before adopting beta native capabilities or experimental product kits.
+
 ## Registry setup
 
 `@lastshotlabs/*` packages are published to **GitHub Packages**, not the public npm

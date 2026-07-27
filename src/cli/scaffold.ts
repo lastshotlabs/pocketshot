@@ -106,7 +106,7 @@ export async function scaffold(config: PocketshotScaffoldConfig): Promise<void> 
   }
 
   if (config.pushNotifications) {
-    await write('lib/usePushSetup.ts', pushSetupTemplate(config))
+    await write('lib/usePushSetup.ts', pushSetupTemplate())
   }
 
   if (config.deepLinks) {

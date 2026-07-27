@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, looseSlots } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 
 export const VideoPlayerSchema = extendComponentSchema({
@@ -15,7 +15,7 @@ export const VideoPlayerSchema = extendComponentSchema({
     .optional()
     .default(16 / 9),
   testID: z.string().optional(),
-  slots: looseSlots([
+  slots: slotsSchema([
     'root',
     'container',
     'videoWrapper',

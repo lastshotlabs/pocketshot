@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { extendComponentSchema, looseSlots } from '../../_base/schema'
+import { extendComponentSchema, slotsSchema } from '../../_base/schema'
 import { fromRefSchema as FromRefSchema } from '@lastshotlabs/frontend-contract/refs'
 import type { Action } from '../../../actions/types'
 
@@ -15,7 +15,7 @@ export const FileUploaderSchema = extendComponentSchema({
   value: z.union([z.array(z.string()), FromRefSchema]).optional(),
   onChangeAction: ActionSchema.optional(),
   testID: z.string().optional(),
-  slots: looseSlots([
+  slots: slotsSchema([
     'root',
     'label',
     'dropZone',

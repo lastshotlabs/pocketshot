@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { installScaffoldDependencies, scaffold } from '../../src/cli/scaffold'
+import { pushSetupTemplate } from '../../src/cli/templates/app/push-setup'
 import type { PocketshotScaffoldConfig } from '../../src/cli/types'
 
 describe('scaffold dependency installation', () => {
@@ -35,6 +36,17 @@ describe('scaffold dependency installation', () => {
         throw new Error(`${command} failed`)
       }),
     ).toThrow('Both bun install and npm install failed')
+  })
+})
+
+describe('push setup template', () => {
+  it('requires an app-owned notification routing callback without unfinished code', () => {
+    const content = pushSetupTemplate()
+
+    expect(content).toContain('onNotificationTapped: (event: NotificationTapEvent) => void')
+    expect(content).toContain('usePushNotifications({ onNotificationTapped })')
+    expect(content).not.toContain('TODO')
+    expect(content).not.toContain('console.log')
   })
 })
 

@@ -12,13 +12,10 @@ export interface TokenStorage {
 /**
  * Creates a TokenStorage backed by expo-secure-store.
  *
- * expo-secure-store is a peer dependency. If you do not use this factory
- * (i.e. you supply your own TokenStorage implementation to createPocketshot),
- * you can omit expo-secure-store from your app's dependencies — but this
- * module-level import will still be evaluated at SDK load time.
- *
- * TODO: Migrate to a subpath export (e.g. @lastshotlabs/pocketshot/storage)
- * so that only apps that call createSecureStoreStorage pay the import cost.
+ * `expo-secure-store` is a required peer because secure storage is
+ * Pocketshot's safe mobile default. Tests and specialized consumers may inject
+ * another `TokenStorage` into `createPocketshot`, but normal applications
+ * should keep the Expo implementation installed.
  */
 export function createSecureStoreStorage(key: string): TokenStorage {
   const refreshKey = `${key}_refresh`

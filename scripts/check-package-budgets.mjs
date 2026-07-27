@@ -92,7 +92,9 @@ for (const entry of await readdir(dist, { withFileTypes: true })) {
 const typeFiles = (await filesUnder(dist.pathname + 'types')).filter((path) =>
   path.endsWith('.d.ts'),
 )
-const largestTypeBudget = 2 * 1024 * 1024
+// Component schema declarations must keep shared style/state/slot contracts
+// behind named type boundaries instead of serializing the complete Zod graph.
+const largestTypeBudget = 512 * 1024
 for (const path of typeFiles) {
   const size = (await stat(path)).size
   if (size > largestTypeBudget) {
@@ -104,7 +106,7 @@ for (const path of typeFiles) {
 const totalTypeBytes = (
   await Promise.all(typeFiles.map(async (path) => (await stat(path)).size))
 ).reduce((total, size) => total + size, 0)
-const totalTypeBudget = 60 * 1024 * 1024
+const totalTypeBudget = 12 * 1024 * 1024
 if (totalTypeBytes > totalTypeBudget) {
   failures.push(`dist/types total: ${totalTypeBytes} bytes exceeds ${totalTypeBudget}`)
 }

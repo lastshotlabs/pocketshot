@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "levels": {
+    "stable": "Supported foundation. Changes require explicit release notes and consumer verification.",
+    "beta": "Supported for production evaluation, but contract refinement is still expected before 1.0.",
+    "experimental": "Reference-backed incubation surface. No stability promise before promotion."
+  },
+  "surfaces": {
+    ".": {
+      "tier": "core",
+      "maturity": "stable",
+      "owner": "framework",
+      "purpose": "Factory runtime, API client, authentication bootstrap, and primary hooks."
+    },
+    "./auth": {
+      "tier": "core",
+      "maturity": "stable",
+      "owner": "framework",
+      "purpose": "Native authentication, account lifecycle, OAuth, MFA, passkeys, and token storage."
+    },
+    "./organizations": {
+      "tier": "core",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Slingshot organization contracts and query hooks."
+    },
+    "./permissions": {
+      "tier": "core",
+      "maturity": "stable",
+      "owner": "framework",
+      "purpose": "Backend authorization and native permission orchestration."
+    },
+    "./search": {
+      "tier": "core",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Contract-driven Slingshot search hooks."
+    },
+    "./webhooks": {
+      "tier": "core",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Slingshot webhook administration hooks and contracts."
+    },
+    "./realtime": {
+      "tier": "native-infrastructure",
+      "maturity": "stable",
+      "owner": "framework",
+      "purpose": "Ordered, resumable realtime channels and reconciliation."
+    },
+    "./offline": {
+      "tier": "native-infrastructure",
+      "maturity": "stable",
+      "owner": "framework",
+      "purpose": "Durable mutation queues, optimistic state, and synchronization."
+    },
+    "./drafts": {
+      "tier": "native-infrastructure",
+      "maturity": "stable",
+      "owner": "framework",
+      "purpose": "Durable drafts, recovery, autosave, and conflict handling."
+    },
+    "./media": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "native",
+      "purpose": "Recoverable capture, transformation, upload, and analysis pipelines."
+    },
+    "./upload": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Slingshot upload hooks and authorization boundaries."
+    },
+    "./push": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "native",
+      "purpose": "Native push registration, lifecycle, and notification-open routing."
+    },
+    "./ai": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Durable streaming conversations and reviewed AI actions."
+    },
+    "./audio": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "native",
+      "purpose": "Provider-neutral native audio playback and second-screen pairing."
+    },
+    "./billing": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "native",
+      "purpose": "Entitlements and injectable native store adapters."
+    },
+    "./privacy": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Account data, relationship privacy, export, deletion, and cleanup."
+    },
+    "./observability": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Lifecycle telemetry, diagnostics, feature flags, and rollout controls."
+    },
+    "./accessibility": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "ui",
+      "purpose": "Accessibility contracts, preferences, auditing, and adaptive layout."
+    },
+    "./app-state": {
+      "tier": "native-infrastructure",
+      "maturity": "stable",
+      "owner": "native",
+      "purpose": "Centralized application lifecycle coordination."
+    },
+    "./biometrics": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "native",
+      "purpose": "Biometric availability, gates, and fresh-authentication controls."
+    },
+    "./deep-links": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "native",
+      "purpose": "Deep-link parsing, routing, deferred intent, and OAuth return normalization."
+    },
+    "./device": {
+      "tier": "native-infrastructure",
+      "maturity": "stable",
+      "owner": "native",
+      "purpose": "Device information and capability hooks."
+    },
+    "./haptics": {
+      "tier": "native-infrastructure",
+      "maturity": "stable",
+      "owner": "native",
+      "purpose": "No-op-safe native haptic feedback."
+    },
+    "./share": {
+      "tier": "native-infrastructure",
+      "maturity": "stable",
+      "owner": "native",
+      "purpose": "Native sharing and clipboard-safe utilities."
+    },
+    "./sse": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Application-lifecycle-aware server-sent event subscriptions."
+    },
+    "./theme": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "ui",
+      "purpose": "Native appearance, tokens, preferences, and theme hooks."
+    },
+    "./ws": {
+      "tier": "native-infrastructure",
+      "maturity": "beta",
+      "owner": "framework",
+      "purpose": "Legacy room WebSocket client and hooks."
+    },
+    "./ui": {
+      "tier": "ui",
+      "maturity": "beta",
+      "owner": "ui",
+      "purpose": "React Native components, tokens, actions, manifests, and headless UI hooks."
+    },
+    "./coach": {
+      "tier": "kit",
+      "maturity": "experimental",
+      "owner": "kits",
+      "purpose": "Opinionated coaching, metrics, goals, training, and entitlement controllers."
+    },
+    "./party": {
+      "tier": "kit",
+      "maturity": "experimental",
+      "owner": "kits",
+      "purpose": "Opinionated party-game controllers, providers, decks, and replay."
+    },
+    "./party-session": {
+      "tier": "kit",
+      "maturity": "experimental",
+      "owner": "kits",
+      "purpose": "Shared-device and separate-device party session primitives."
+    },
+    "./community": {
+      "tier": "kit",
+      "maturity": "experimental",
+      "owner": "kits",
+      "purpose": "Opinionated community hooks, contracts, controllers, and presets."
+    },
+    "./community/core": {
+      "tier": "kit",
+      "maturity": "experimental",
+      "owner": "kits",
+      "purpose": "Headless community state and reconciliation controllers."
+    },
+    "./testing": {
+      "tier": "tooling",
+      "maturity": "beta",
+      "owner": "tooling",
+      "purpose": "Deterministic reliability harnesses and fault injection."
+    },
+    "./release": {
+      "tier": "tooling",
+      "maturity": "experimental",
+      "owner": "tooling",
+      "purpose": "Release control-plane, diagnostics, flags, and rollback helpers."
+    }
+  }
+}
