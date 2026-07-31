@@ -34,5 +34,10 @@ name: Burndown six-player landscape shared table
     id: shared-handoff-curtain
 - tapOn:
     id: arm-seat
+- scrollUntilVisible:
+    element:
+      text: Your turn
+    direction: UP
+    centerElement: true
 - assertVisible: Your turn
 - setOrientation: PORTRAIT

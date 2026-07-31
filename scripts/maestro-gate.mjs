@@ -171,6 +171,11 @@ for (const [control, direction] of [
   }
 }
 if (
+  !burndownLandscapeFlow.includes('text: Your turn\n    direction: UP\n    centerElement: true')
+) {
+  failures.push('Burndown landscape journey does not center the armed turn state')
+}
+if (
   !burndownDeepLinkFlow.includes('extendedWaitUntil:') ||
   !burndownDeepLinkFlow.includes('timeout: 30000')
 ) {
