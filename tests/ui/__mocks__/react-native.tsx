@@ -58,13 +58,17 @@ export function FlatList<T>({
   data,
   renderItem,
   keyExtractor,
+  ListHeaderComponent,
   ListEmptyComponent,
+  ListFooterComponent,
   ...props
 }: {
   data?: T[] | null
   renderItem: (info: { item: T; index: number }) => React.ReactElement | null
   keyExtractor?: (item: T, index: number) => string
+  ListHeaderComponent?: React.ReactElement | React.ComponentType
   ListEmptyComponent?: React.ReactElement | React.ComponentType
+  ListFooterComponent?: React.ReactElement | React.ComponentType
   [key: string]: unknown
 }) {
   const items = data ?? []
@@ -76,16 +80,28 @@ export function FlatList<T>({
           ? React.createElement(ListEmptyComponent as React.ComponentType)
           : null
       : null
+  const header = React.isValidElement(ListHeaderComponent)
+    ? ListHeaderComponent
+    : ListHeaderComponent
+      ? React.createElement(ListHeaderComponent as React.ComponentType)
+      : null
+  const footer = React.isValidElement(ListFooterComponent)
+    ? ListFooterComponent
+    : ListFooterComponent
+      ? React.createElement(ListFooterComponent as React.ComponentType)
+      : null
 
   return React.createElement(
     'FlatList',
     props,
+    header,
     ...items.map((item, index) => {
       const key = keyExtractor ? keyExtractor(item, index) : String(index)
       const rendered = renderItem({ item, index })
       return rendered ? React.cloneElement(rendered, { key }) : null
     }),
     empty,
+    footer,
   )
 }
 FlatList.displayName = 'FlatList'

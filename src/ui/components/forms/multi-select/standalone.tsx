@@ -365,7 +365,7 @@ export function MultiSelectBase({
           accessibilityLabel="Close options panel"
         >
           <SafeAreaView style={panelSurface.style as ViewStyle | undefined}>
-            <TouchableOpacity activeOpacity={1}>
+            <TouchableOpacity activeOpacity={1} accessible={false}>
               <View style={panelHeaderSurface.style as ViewStyle | undefined}>
                 <Text style={mergeText(panelTitleSurface)}>{label ?? 'Select options'}</Text>
               </View>

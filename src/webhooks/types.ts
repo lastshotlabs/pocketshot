@@ -43,8 +43,9 @@ export interface WebhookEndpointParams {
 
 export interface WebhookDeliveryListParams {
   endpointId: string
-  page?: number
-  pageSize?: number
+  limit?: number
+  cursor?: string
+  sortDir?: 'asc' | 'desc'
 }
 
 // ── Test ──────────────────────────────────────────────────────────────────────

@@ -159,12 +159,13 @@ export function ModalBase({
     >
       <TouchableWithoutFeedback
         onPress={closeOnBackdrop ? onClose : undefined}
+        accessibilityRole={closeOnBackdrop ? 'button' : undefined}
         accessibilityLabel="Close modal"
       >
         <Animated.View
           style={[{ flex: 1, opacity }, backdropSurface.style as ViewStyle | undefined]}
         >
-          <TouchableWithoutFeedback>
+          <TouchableWithoutFeedback accessible={false}>
             <Animated.View
               style={[
                 contentWrapperSurface.style as ViewStyle | undefined,

@@ -39,8 +39,7 @@ name: Coach conversation, metrics, workout, billing, and privacy
     centerElement: true
 - tapOn:
     id: start-workout
-- assertVisible:
-    id: coach-connection
+- assertVisible: 'Workout: active'
 - scrollUntilVisible:
     element:
       id: log-set
@@ -49,7 +48,7 @@ name: Coach conversation, metrics, workout, billing, and privacy
 - tapOn:
     id: log-set
 - assertVisible:
-    id: coach-connection
+    id: edit-set
 - scrollUntilVisible:
     element:
       id: complete-workout
@@ -57,8 +56,11 @@ name: Coach conversation, metrics, workout, billing, and privacy
     centerElement: true
 - tapOn:
     id: complete-workout
-- assertVisible:
-    id: coach-connection
+- scrollUntilVisible:
+    element:
+      text: 'Workout: complete'
+    direction: UP
+    centerElement: true
 - assertVisible: 'Workout: complete'
 - scrollUntilVisible:
     element:
@@ -75,4 +77,10 @@ name: Coach conversation, metrics, workout, billing, and privacy
     centerElement: true
 - tapOn:
     id: request-export
+- extendedWaitUntil:
+    visible:
+      id: refresh-export
+    timeout: 10000
+- tapOn:
+    id: refresh-export
 - assertVisible: 'Export: ready'

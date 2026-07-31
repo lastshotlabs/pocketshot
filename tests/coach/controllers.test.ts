@@ -289,7 +289,9 @@ describe('EntitlementController', () => {
   }
 
   it('purchases, restores grace access, and expires after refresh', async () => {
-    const billing = new EntitlementController(adapter())
+    const billing = new EntitlementController(adapter(), undefined, {
+      now: () => new Date('2026-07-27T12:00:00.000Z'),
+    })
     await billing.purchase('pro')
     expect(billing.canAccess('pro')).toBe(true)
     await billing.restore()

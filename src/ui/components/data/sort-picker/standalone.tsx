@@ -264,7 +264,11 @@ export function SortPickerBase({
       statusBarTranslucent
       accessibilityViewIsModal
     >
-      <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Dismiss">
+      <TouchableWithoutFeedback
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss"
+      >
         <Animated.View
           style={[
             { flex: 1, justifyContent: 'flex-end' },
@@ -272,7 +276,7 @@ export function SortPickerBase({
             { opacity },
           ]}
         >
-          <TouchableWithoutFeedback>
+          <TouchableWithoutFeedback accessible={false}>
             <Animated.View
               style={[
                 {

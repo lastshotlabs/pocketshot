@@ -86,12 +86,17 @@ The entries in this table use the prefix
 
 ### UI
 
-| Entry point                   | Maturity | Purpose                                                                    |
-| ----------------------------- | -------- | -------------------------------------------------------------------------- |
-| `@lastshotlabs/pocketshot/ui` | Beta     | React Native components, tokens, actions, manifests, and headless UI hooks |
+| Entry point                                | Maturity | Purpose                                                                    |
+| ------------------------------------------ | -------- | -------------------------------------------------------------------------- |
+| `@lastshotlabs/pocketshot/ui`              | Beta     | React Native components, tokens, actions, manifests, and headless UI hooks |
+| `@lastshotlabs/pocketshot/ui/components/*` | Beta     | Focused ESM/CommonJS entry for each of the 125 component directories       |
 
-UI remains beta until the complex-component behavior backlog, focused export
-work, accessibility evidence, and physical-device matrix are complete.
+Focused imports use the concrete
+`ui/components/<category>/<component>` path. The package gate verifies every
+source component has matching runtime and declaration targets, and checks
+simple and complex import graphs against the monolithic barrel. UI remains beta
+until the complex-component behavior backlog, accessibility evidence, and
+physical-device matrix are complete.
 
 ### Product kits
 

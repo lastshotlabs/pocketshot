@@ -541,14 +541,18 @@ export function EntityPickerBase({
         statusBarTranslucent
         accessibilityViewIsModal
       >
-        <TouchableWithoutFeedback onPress={closeModal} accessibilityLabel="Close entity picker">
+        <TouchableWithoutFeedback
+          onPress={closeModal}
+          accessibilityRole="button"
+          accessibilityLabel="Close entity picker"
+        >
           <View
             style={[
               { flex: 1, justifyContent: 'flex-end' },
               backdropSurface.style as ViewStyle | undefined,
             ]}
           >
-            <TouchableWithoutFeedback>
+            <TouchableWithoutFeedback accessible={false}>
               <Animated.View
                 style={[
                   {

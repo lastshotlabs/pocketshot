@@ -285,7 +285,11 @@ export function ContextMenuBase({
           onRequestClose={closeMenu}
           statusBarTranslucent
         >
-          <TouchableWithoutFeedback onPress={closeMenu} accessibilityLabel="Close menu">
+          <TouchableWithoutFeedback
+            onPress={closeMenu}
+            accessibilityRole="button"
+            accessibilityLabel="Close menu"
+          >
             <View style={backdropSurface.style as ViewStyle | undefined} />
           </TouchableWithoutFeedback>
           <Animated.View

@@ -170,7 +170,11 @@ export function ConfirmDialogBase({
       accessibilityViewIsModal
       testID={baseTestID}
     >
-      <TouchableWithoutFeedback onPress={handleCancel} accessibilityLabel="Dismiss">
+      <TouchableWithoutFeedback
+        onPress={handleCancel}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss"
+      >
         <Animated.View
           style={[
             { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -178,7 +182,7 @@ export function ConfirmDialogBase({
             { opacity },
           ]}
         >
-          <TouchableWithoutFeedback>
+          <TouchableWithoutFeedback accessible={false}>
             <Animated.View
               style={[
                 panelSurface.style as ViewStyle | undefined,

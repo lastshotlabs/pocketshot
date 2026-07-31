@@ -372,7 +372,7 @@ export function DateRangePickerBase({
           accessibilityLabel="Close date range picker"
         >
           <SafeAreaView style={styles.pickerPanel}>
-            <TouchableOpacity activeOpacity={1}>
+            <TouchableOpacity activeOpacity={1} accessible={false}>
               <Text style={styles.phaseText}>
                 {selectionPhase === 'start' ? 'Select start date' : 'Select end date'}
               </Text>

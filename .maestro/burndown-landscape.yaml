@@ -12,7 +12,7 @@ name: Burndown six-player landscape shared table
     id: burndown-lobby-title
 - assertVisible: Jo · 3 lives
 - assertVisible: Rae · 3 lives
-- setOrientation: LANDSCAPE
+- setOrientation: LANDSCAPE_LEFT
 - tapOn:
     id: start-match
 - assertVisible:

@@ -124,6 +124,8 @@ for (const target of declaredTargets) {
     failures.push('package.json is missing a required types/bin target')
     continue
   }
+  // Wildcard exports are expanded and verified by the focused UI isolation gate.
+  if (target.includes('*')) continue
   try {
     await stat(new URL(target.replace(/^\.\//, ''), packageRoot))
   } catch {

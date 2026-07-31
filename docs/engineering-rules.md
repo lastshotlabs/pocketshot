@@ -17,9 +17,10 @@ Change anything freely — no deprecation cycles, no migration guides, no backwa
 Pocketshot is the React Native/Expo client SDK for Slingshot-powered backends. It is the mobile counterpart to Snapshot (web). Every Slingshot backend feature should be accessible from a native iOS and Android app built entirely with Pocketshot primitives.
 
 **Three surfaces:**
+
 1. **SDK** — TypeScript library. `createPocketshot(config)` factory returns all hooks. Targets iOS and Android via Expo.
 2. **CLI** — `pocketshot init` (scaffold), `pocketshot sync` (OpenAPI codegen). Targets Node/Bun.
-3. **Config-driven UI layer** _(in development)_ — StyleSheet-based design tokens, config-addressable React Native component library, screen composition from JSON manifest, inter-component data binding, action vocabulary.
+3. **Config-driven UI layer** — Shipped StyleSheet-based design tokens, a 125-component config-addressable React Native catalog, JSON manifest composition, inter-component data binding, and an action vocabulary. Support levels are recorded in [`public-surface-maturity.md`](./public-surface-maturity.md).
 
 The SDK and CLI are different execution contexts. React Native APIs (`AppState`, `SecureStore`, `Appearance`) must never appear in CLI code. Node-only APIs must never appear in SDK code.
 
@@ -35,12 +36,14 @@ These apply equally to Slingshot, Snapshot, and Pocketshot. They are documented 
 
 ```ts
 // Correct
-const pocketshot = createPocketshot({ apiUrl: "https://api.example.com" })
+const pocketshot = createPocketshot({ apiUrl: 'https://api.example.com' })
 export const { useUser, useLogin, useRoom } = pocketshot
 
 // Wrong — never
 let globalApiClient: ApiClient
-export function useUser() { return globalApiClient.get("/auth/me") }
+export function useUser() {
+  return globalApiClient.get('/auth/me')
+}
 ```
 
 **Why:** Multiple instances (multi-tenant apps, tests, storybook) cannot share state. A singleton creates implicit coupling that is impossible to test cleanly and impossible to isolate.
@@ -103,7 +106,7 @@ Auth endpoints, community endpoints, webhook endpoints — all defined in contra
 
 ```ts
 const contract = mergeContract(apiUrl, {
-  endpoints: { login: "/custom/auth/login" }
+  endpoints: { login: '/custom/auth/login' },
 })
 ```
 
@@ -121,13 +124,13 @@ Generated files include `// --- section:name ---` / `// --- end:name ---` marker
 
 ### 14. Test What You Ship
 
-| Layer | Tool |
-|-------|------|
-| SDK hooks | vitest + React Native Testing Library |
-| Zod schemas | vitest |
-| CLI templates | vitest string assertions |
-| UI components | vitest + RNTL |
-| E2E critical paths | Maestro |
+| Layer              | Tool                                  |
+| ------------------ | ------------------------------------- |
+| SDK hooks          | vitest + React Native Testing Library |
+| Zod schemas        | vitest                                |
+| CLI templates      | vitest string assertions              |
+| UI components      | vitest + RNTL                         |
+| E2E critical paths | Maestro                               |
 
 No live network in unit or integration tests. Mock the API client. E2E runs against a local Slingshot instance.
 
@@ -175,16 +178,16 @@ All server state flows through `queryClient`. Mutations invalidate the relevant 
 
 Every integration point uses the mobile-native solution. There is no acceptable alternative.
 
-| Web Pattern (Snapshot) | Mobile Pattern (Pocketshot) |
-|------------------------|----------------------------|
-| `localStorage` | `expo-secure-store` |
-| CSS modals / drawers | `@gorhom/bottom-sheet` |
-| Web Push API | `expo-notifications` + FCM/APN |
-| WebAuthn browser API | `react-native-passkeys` (platform authenticator) |
-| CSS custom properties | StyleSheet token objects + `useTokens()` |
-| IndexedDB | `expo-sqlite` |
-| TanStack Router (URL-based) | `expo-router` (file-based, stack/tabs/drawer) |
-| Service workers | N/A — not available in React Native |
+| Web Pattern (Snapshot)      | Mobile Pattern (Pocketshot)                      |
+| --------------------------- | ------------------------------------------------ |
+| `localStorage`              | `expo-secure-store`                              |
+| CSS modals / drawers        | `@gorhom/bottom-sheet`                           |
+| Web Push API                | `expo-notifications` + FCM/APN                   |
+| WebAuthn browser API        | `react-native-passkeys` (platform authenticator) |
+| CSS custom properties       | StyleSheet token objects + `useTokens()`         |
+| IndexedDB                   | `expo-sqlite`                                    |
+| TanStack Router (URL-based) | `expo-router` (file-based, stack/tabs/drawer)    |
+| Service workers             | N/A — not available in React Native              |
 
 Using a web pattern on mobile either won't compile, will crash at runtime, or will produce a user experience that feels foreign to the platform.
 
@@ -221,6 +224,7 @@ Every screen with form inputs uses `KeyboardAvoidingView` or `react-native-keybo
 **Why:** The keyboard overlays content. Unlike the web (where browsers adjust scroll position), React Native screens don't move automatically. Users who can't see the input they're typing in will not use the app.
 
 The pattern:
+
 ```tsx
 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
   <ScrollView>
@@ -232,11 +236,13 @@ The pattern:
 ### 28. Platform.OS in Adapters, Not Components
 
 Platform-specific behavior goes in:
+
 - Adapter files (`src/auth/storage.ios.ts` / `storage.android.ts`)
 - Component platform extensions (`button.ios.tsx` / `button.android.tsx`)
 - The `_base/platform.ts` utility in the component library
 
 Not in component render functions:
+
 ```ts
 // Wrong
 function MyComponent() {
@@ -285,6 +291,7 @@ Every touchable, pressable, text input, and button has a `testID` prop. Conventi
 ### 32. All Interactive Elements Have Accessibility Props
 
 Every interactive element has:
+
 - `accessibilityLabel` — What the element is (read aloud by VoiceOver/TalkBack)
 - `accessibilityRole` — Type of element (`"button"`, `"tab"`, `"checkbox"`, etc.)
 - `accessibilityHint` — What will happen when activated (if not obvious from the label)
@@ -306,10 +313,11 @@ Push notifications, camera, microphone, location, contacts, photo library — pr
 **Why:** Permission prompts at launch get denied ~70% of the time because users don't trust an app they haven't used yet. Contextual prompts (e.g., "Allow camera access to scan a QR code?" when the user taps the QR scanner) get granted much more often. Apple's Human Interface Guidelines explicitly discourage launch-time permission requests.
 
 Pattern:
+
 ```ts
 // Wrong
 useEffect(() => {
-  Notifications.requestPermissionsAsync()  // on mount
+  Notifications.requestPermissionsAsync() // on mount
 }, [])
 
 // Correct
@@ -331,7 +339,7 @@ Screens using custom navigation patterns, bottom sheets, or non-standard modals 
 
 **Why:** On iOS, back navigation is a swipe gesture or explicit button. Android has a dedicated hardware/software back button that users expect to "undo" the last modal, sheet, or navigation action. Unhandled: app exits unexpectedly or the sheet stays open with no dismiss path.
 
-### 36. EXPO_PUBLIC_ Prefix for Client Environment Variables
+### 36. EXPO*PUBLIC* Prefix for Client Environment Variables
 
 All environment variables readable by the React Native runtime must use the `EXPO_PUBLIC_` prefix. Variables without this prefix are undefined in the app bundle.
 
@@ -348,6 +356,7 @@ Never put secrets in `EXPO_PUBLIC_` variables — they are bundled into the app 
 ### 37. Reanimated Worklets Stay in Worklet Context
 
 Functions with the `'worklet'` directive run on the UI thread and cannot access:
+
 - Jotai atoms
 - React state (`useState`, `useReducer`)
 - JS thread closures
@@ -364,7 +373,7 @@ const animatedStyle = useAnimatedStyle(() => {
 // Wrong — crashes at runtime
 const animatedStyle = useAnimatedStyle(() => {
   'worklet'
-  return { opacity: someJotaiAtom.value }  // cannot access atoms from worklet
+  return { opacity: someJotaiAtom.value } // cannot access atoms from worklet
 })
 ```
 
@@ -374,13 +383,13 @@ When a module requires an optional peer dep, check at call time:
 
 ```ts
 function useBiometrics() {
-  let LocalAuthentication: typeof import("expo-local-authentication")
+  let LocalAuthentication: typeof import('expo-local-authentication')
   try {
-    LocalAuthentication = require("expo-local-authentication")
+    LocalAuthentication = require('expo-local-authentication')
   } catch {
     throw new Error(
-      "[pocketshot] useBiometrics() requires expo-local-authentication.\n" +
-      "Install it: npx expo install expo-local-authentication"
+      '[pocketshot] useBiometrics() requires expo-local-authentication.\n' +
+        'Install it: npx expo install expo-local-authentication',
     )
   }
   // ...
@@ -394,14 +403,15 @@ Never let missing optional deps surface as a cryptic native crash or a `undefine
 All haptic calls go through `src/haptics/` wrappers:
 
 ```ts
-import { impact, notification, selection } from "@lastshotlabs/pocketshot"
+import { impact, notification, selection } from '@lastshotlabs/pocketshot'
 
-impact("light")        // instead of Haptics.impactAsync(ImpactFeedbackStyle.Light)
-notification("error")  // instead of Haptics.notificationAsync(NotificationFeedbackType.Error)
-selection()            // instead of Haptics.selectionAsync()
+impact('light') // instead of Haptics.impactAsync(ImpactFeedbackStyle.Light)
+notification('error') // instead of Haptics.notificationAsync(NotificationFeedbackType.Error)
+selection() // instead of Haptics.selectionAsync()
 ```
 
 The wrappers:
+
 1. Check `await Haptics.isAvailableAsync()` before calling
 2. Respect the device's haptic accessibility setting
 3. No-op on simulators and devices without haptic hardware
@@ -414,7 +424,7 @@ Never call `expo-haptics` directly in components.
 In root `_layout.tsx`:
 
 ```ts
-const [fontsLoaded] = useFonts({ "Inter-Regular": require("./assets/fonts/Inter-Regular.ttf") })
+const [fontsLoaded] = useFonts({ 'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf') })
 
 useEffect(() => {
   if (fontsLoaded) SplashScreen.hideAsync()
@@ -432,6 +442,7 @@ Render app content only after fonts + auth state are resolved. The splash screen
 React Native 0.76+ enables the New Architecture (Fabric renderer + TurboModules bridgeless) by default. All code must be compatible.
 
 Rules:
+
 - No synchronous native method calls on the old bridge
 - No legacy `NativeModules.*` usage — use the TurboModule equivalents
 - All third-party native modules must have New Architecture support before adding as a dependency
@@ -540,6 +551,7 @@ tokens.opacity.{ disabled, hover, muted }  // 0–1
 ```
 
 **Names that do NOT exist (common mistakes):**
+
 - ~~`tokens.colors.danger`~~ → use `tokens.colors.destructive`
 - ~~`tokens.colors.cardBg`~~ → use `tokens.colors.card`
 - ~~`tokens.font.sm`~~ → use `tokens.font.sizes.sm`
@@ -569,15 +581,15 @@ const { result } = renderHook(() => useLogin(), {
 ### Schema Tests (vitest)
 
 ```ts
-describe("stat-card schema", () => {
-  it("accepts valid config", () => {
+describe('stat-card schema', () => {
+  it('accepts valid config', () => {
     expect(() => statCardSchema.parse(baseConfig)).not.toThrow()
   })
-  it("rejects missing required fields", () => {
+  it('rejects missing required fields', () => {
     expect(() => statCardSchema.parse({})).toThrow()
   })
-  it("accepts from-ref for value field", () => {
-    expect(() => statCardSchema.parse({ ...baseConfig, value: { from: "my-id" } })).not.toThrow()
+  it('accepts from-ref for value field', () => {
+    expect(() => statCardSchema.parse({ ...baseConfig, value: { from: 'my-id' } })).not.toThrow()
   })
 })
 ```
@@ -602,6 +614,7 @@ it("shows skeleton when loading", () => {
 Maestro YAML files in `e2e/`. Run against local Slingshot + Pocketshot dev build.
 
 Critical paths that must have E2E coverage:
+
 - Email/password auth flow (register → verify email → login → logout)
 - MFA setup and verification
 - OAuth login (GitHub)
@@ -621,6 +634,7 @@ bun test                 # vitest run — all pass
 ```
 
 Additionally:
+
 - [ ] JSDoc updated on affected exports (same commit)
 - [ ] `docs/` page created or updated (same commit)
 - [ ] Showcase updated if a component changed (same commit)

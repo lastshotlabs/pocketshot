@@ -310,7 +310,7 @@ export function DatePickerBase({
           accessibilityLabel="Close date picker"
         >
           <SafeAreaView style={styles.pickerPanel}>
-            <TouchableOpacity activeOpacity={1}>
+            <TouchableOpacity activeOpacity={1} accessible={false}>
               <View style={styles.navRow}>
                 <TouchableOpacity
                   onPress={handlePrevMonth}

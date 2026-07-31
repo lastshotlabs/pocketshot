@@ -32,6 +32,11 @@
       "import": "./dist/ui.js",
       "require": "./dist/ui.cjs"
     },
+    "./ui/components/*": {
+      "types": "./dist/types/ui/components/*/index.d.ts",
+      "import": "./dist/ui/components/*/index.js",
+      "require": "./dist/ui/components/*/index.cjs"
+    },
     "./realtime": {
       "types": "./dist/types/realtime/index.d.ts",
       "import": "./dist/realtime.js",
@@ -205,8 +210,9 @@
     "test": "vitest run",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\"",
-    "check:package": "node scripts/public-surface-gate.mjs && node scripts/check-package-budgets.mjs",
+    "check:package": "node scripts/public-surface-gate.mjs && node scripts/check-package-budgets.mjs && node scripts/ui-isolation-gate.mjs",
     "check:public-surface": "node scripts/public-surface-gate.mjs",
+    "check:ui-isolation": "node scripts/ui-isolation-gate.mjs",
     "check:release-artifacts": "node scripts/verify-release-artifacts.mjs",
     "check:release-tag": "node scripts/verify-release-tag.mjs",
     "check:security": "node scripts/security-gate.mjs",

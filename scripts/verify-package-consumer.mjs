@@ -82,10 +82,12 @@ try {
     `import React from 'react'
 import { createPocketshot, type PocketshotConfig } from '@lastshotlabs/pocketshot'
 import {
-  ButtonBase,
-  type ButtonBaseProps,
   type ManifestConfig,
 } from '@lastshotlabs/pocketshot/ui'
+import {
+  ButtonBase,
+  type ButtonBaseProps,
+} from '@lastshotlabs/pocketshot/ui/components/forms/button'
 import { createRealtimeChannel, MemoryRealtimeStorage } from '@lastshotlabs/pocketshot/realtime'
 import { OfflineQueue, createMemoryOfflineQueueStorage } from '@lastshotlabs/pocketshot/offline'
 import { createDurableDraft, createMemoryDraftStorage } from '@lastshotlabs/pocketshot/drafts'
@@ -249,10 +251,16 @@ export const Consumer = () => <ButtonBase {...button} />
   await writeFile(
     join(consumerDir, 'App.tsx'),
     `import React from 'react'
-import { ButtonBase } from '@lastshotlabs/pocketshot/ui'
+import { ButtonBase } from '@lastshotlabs/pocketshot/ui/components/forms/button'
+import { ChatWindowBase } from '@lastshotlabs/pocketshot/ui/components/communication/chat-window'
+import { MediaPickerBase } from '@lastshotlabs/pocketshot/ui/components/content/media-picker'
 
 export default function App() {
-  return <ButtonBase label="PocketShot consumer" onPress={() => undefined} />
+  return <>
+    <ButtonBase label="PocketShot consumer" onPress={() => undefined} />
+    <ChatWindowBase messages={[]} currentUserId="consumer" onSend={() => undefined} />
+    <MediaPickerBase mediaTypes={['image']} maxSelections={1} />
+  </>
 }
 `,
   )

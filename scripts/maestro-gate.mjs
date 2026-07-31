@@ -12,10 +12,7 @@ const nativeWorkflow = await readFile(
   new URL('../.github/workflows/native.yml', import.meta.url),
   'utf8',
 )
-const androidRunner = await readFile(
-  new URL('./run-android-maestro.sh', import.meta.url),
-  'utf8',
-)
+const androidRunner = await readFile(new URL('./run-android-maestro.sh', import.meta.url), 'utf8')
 const partyJoinRoute = await readFile(
   new URL('../products/hitshot/app/join/[code].tsx', import.meta.url),
   'utf8',
@@ -118,7 +115,7 @@ if (!communityFlow.includes('id: published-thread-title')) {
 }
 if (
   !all.includes('id: setup-six-player-table') ||
-  !all.includes('setOrientation: LANDSCAPE') ||
+  !all.includes('setOrientation: LANDSCAPE_LEFT') ||
   !workflow.includes('.maestro/burndown-landscape.yaml')
 ) {
   failures.push('Burndown six-player landscape journey is missing')
@@ -160,6 +157,13 @@ if (!workflow.includes('adb shell settings put global hide_error_dialogs 1')) {
 }
 if (!workflow.includes('scripts/run-android-maestro.sh')) {
   failures.push('Android workflow bypasses the classified Maestro runner')
+}
+if (
+  !workflow.includes(
+    'ANDROID_MAESTRO_DIAGNOSTICS_DIR="$RUNNER_TEMP/android-maestro-${{ matrix.product }}" scripts/run-android-maestro.sh',
+  )
+) {
+  failures.push('Android workflow does not invoke the classified runner as one emulator action')
 }
 for (const diagnostic of [
   'dumpsys activity exit-info',

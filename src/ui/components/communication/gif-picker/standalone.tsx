@@ -170,7 +170,11 @@ export function GifPickerBase({
         statusBarTranslucent
         accessibilityViewIsModal
       >
-        <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Close GIF picker">
+        <TouchableWithoutFeedback
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close GIF picker"
+        >
           <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
         </TouchableWithoutFeedback>
 

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { ApiClient } from '../api/client'
+import { listQuery } from '../api/list-query'
 import type {
   WebhookEndpointResponse,
   CreateWebhookEndpointBody,
@@ -77,10 +78,10 @@ export function createWebhookHooks(api: ApiClient) {
 
   // ── Deliveries ────────────────────────────────────────────────────────────────
 
-  function useWebhookDeliveries({ endpointId, page, pageSize }: WebhookDeliveryListParams) {
-    const query = `?page=${page ?? 1}&pageSize=${pageSize ?? 20}`
+  function useWebhookDeliveries({ endpointId, ...params }: WebhookDeliveryListParams) {
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<WebhookDeliveryResponse>>({
-      queryKey: keys.deliveries(endpointId),
+      queryKey: [...keys.deliveries(endpointId), params],
       queryFn: () =>
         api.get<PaginatedResponse<WebhookDeliveryResponse>>(
           `/webhooks/endpoints/${endpointId}/deliveries${query}`,

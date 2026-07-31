@@ -351,7 +351,11 @@ export function DropdownMenuBase({
           onRequestClose={closeDropdown}
           statusBarTranslucent
         >
-          <TouchableWithoutFeedback onPress={closeDropdown} accessibilityLabel="Close menu">
+          <TouchableWithoutFeedback
+            onPress={closeDropdown}
+            accessibilityRole="button"
+            accessibilityLabel="Close menu"
+          >
             <View style={backdropSurface.style as ViewStyle | undefined} />
           </TouchableWithoutFeedback>
           <Animated.View

@@ -192,6 +192,7 @@ export function TooltipBase({
       >
         <TouchableWithoutFeedback
           onPress={handleBackdropPress}
+          accessibilityRole="button"
           accessibilityLabel="Close tooltip"
           testID={testID ? `${testID}-backdrop` : undefined}
         >

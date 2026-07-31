@@ -166,11 +166,15 @@ export function ActionSheetBase({
       accessibilityViewIsModal
       testID={testID ?? id}
     >
-      <TouchableWithoutFeedback onPress={dismiss} accessibilityLabel="Dismiss">
+      <TouchableWithoutFeedback
+        onPress={dismiss}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss"
+      >
         <Animated.View
           style={[{ flex: 1, opacity }, backdropSurface.style as ViewStyle | undefined, style]}
         >
-          <TouchableWithoutFeedback>
+          <TouchableWithoutFeedback accessible={false}>
             <Animated.View
               style={[
                 { paddingBottom: tokens.spacing[8], transform: [{ translateY }] },

@@ -140,17 +140,15 @@ export interface NotificationResponse {
 
 export interface PaginatedResponse<T> {
   items: T[]
-  total: number
-  page: number
-  pageSize: number
+  cursor?: string
+  nextCursor?: string
+  hasMore?: boolean
 }
 
-export interface CommunitySearchParams {
+export interface CommunitySearchParams extends ListParams {
   q: string
   type?: 'threads' | 'replies'
   containerId?: string
-  page?: number
-  pageSize?: number
 }
 
 export interface SearchResponse {
@@ -161,8 +159,9 @@ export interface SearchResponse {
 // ── Param types ───────────────────────────────────────────────────────────────
 
 export interface ListParams {
-  page?: number
-  pageSize?: number
+  limit?: number
+  cursor?: string
+  sortDir?: 'asc' | 'desc'
 }
 
 export interface ThreadListParams extends ListParams {

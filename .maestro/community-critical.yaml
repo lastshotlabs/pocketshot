@@ -35,4 +35,10 @@ name: Community post, message, moderation, privacy, and reconnect
     id: block-user
 - tapOn:
     id: privacy-export
+- extendedWaitUntil:
+    visible:
+      id: refresh-export
+    timeout: 10000
+- tapOn:
+    id: refresh-export
 - assertVisible: 'Export: ready'

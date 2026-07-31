@@ -367,9 +367,13 @@ export function CommandPaletteBase({
       accessibilityViewIsModal
       testID={baseTestID}
     >
-      <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Close command palette">
+      <TouchableWithoutFeedback
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close command palette"
+      >
         <Animated.View style={[backdropSurface.style as ViewStyle | undefined, { opacity }]}>
-          <TouchableWithoutFeedback>
+          <TouchableWithoutFeedback accessible={false}>
             <Animated.View
               style={[
                 containerSurface.style as ViewStyle | undefined,

@@ -341,7 +341,7 @@ export function PhoneInputBase({
           accessibilityLabel="Close country picker"
         >
           <SafeAreaView style={pickerPanelSurface.style as ViewStyle | undefined}>
-            <TouchableOpacity activeOpacity={1}>
+            <TouchableOpacity activeOpacity={1} accessible={false}>
               <View style={pickerHeaderSurface.style as ViewStyle | undefined}>
                 <Text style={mergeText(pickerTitleSurface)}>Select Country</Text>
                 <TouchableOpacity

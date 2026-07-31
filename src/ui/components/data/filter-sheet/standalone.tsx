@@ -480,7 +480,11 @@ export function FilterSheetBase({
       statusBarTranslucent
       accessibilityViewIsModal
     >
-      <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Dismiss filters">
+      <TouchableWithoutFeedback
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss filters"
+      >
         <Animated.View
           style={[
             { flex: 1, justifyContent: 'flex-end' },
@@ -488,7 +492,7 @@ export function FilterSheetBase({
             { opacity },
           ]}
         >
-          <TouchableWithoutFeedback>
+          <TouchableWithoutFeedback accessible={false}>
             <Animated.View
               style={[
                 {

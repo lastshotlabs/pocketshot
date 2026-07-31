@@ -440,7 +440,11 @@ export function EmojiPickerBase({
         statusBarTranslucent
         accessibilityViewIsModal
       >
-        <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Close emoji picker">
+        <TouchableWithoutFeedback
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close emoji picker"
+        >
           <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
         </TouchableWithoutFeedback>
 

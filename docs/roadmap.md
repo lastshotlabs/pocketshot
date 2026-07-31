@@ -1,8 +1,8 @@
 # Pocketshot Audit and Roadmap
 
-> **Audited:** 2026-07-27
+> **Audited:** 2026-07-27; current-state update 2026-07-31
 >
-> **Baseline:** `main` at `5acb7e2`, package `@lastshotlabs/pocketshot@0.1.3`
+> **Baseline:** package `@lastshotlabs/pocketshot@0.1.5`
 >
 > **Scope:** Pocketshot only. Slingshot appears here solely as Pocketshot's
 > backend contract and integration dependency.
@@ -25,7 +25,7 @@ than continued surface-area growth. Pocketshot's main risks are:
 
 - package and declaration weight;
 - an oversized public UI surface;
-- incomplete component-level behavior and accessibility evidence;
+- physical-device accessibility and native-capability evidence;
 - framework core mixed with product-specific kits and release applications;
 - simulator/export evidence being treated too closely to device certification;
 - old specifications and rules that no longer describe the shipped project.
@@ -92,13 +92,13 @@ Simulator builds and optimized exports are necessary, but they do not prove:
 
 Signed previews and a named physical-device matrix remain release gates.
 
-#### 2. The accessibility gate is narrower than its name
+#### 2. Static accessibility coverage is complete; device certification remains open
 
-The current gate validates accessibility evidence and nine pressables in the
-reference shells. It does not behaviorally inspect all 125 components for
-accessible names, roles, state, focus order, announcements, touch targets, or
-large-text behavior. Passing this gate should be described as static baseline
-conformance, not full accessibility certification.
+The gate now inspects named roles across 207 catalog controls, validates nine
+reference-shell controls and touch targets, and requires colocated behavior
+suites for all 125 components. This closes the static catalog gap. Focus order,
+announcements, large-text layout, assistive technology, and real touch targets
+remain physical-device evidence.
 
 #### 3. Product readiness and framework readiness are conflated
 
@@ -128,31 +128,19 @@ The likely cause is repeated expansion of large inferred Zod/component schema
 types. Public declarations should name and reuse stable types rather than
 serialize the full inferred graph in every component.
 
-#### 5. The UI entry point is large
+#### 5. Focused UI entry points are complete
 
-`dist/ui.js` is approximately 1.27 MB and `dist/ui.cjs` approximately 1.40 MB.
-The package provides domain subpaths, but not focused component subpaths. Tree
-shaking may reduce application output, but tooling must parse the barrel and
-consumer mistakes remain expensive.
+The package now emits ESM, CommonJS, and declarations for all 125
+`ui/components/<category>/<component>` paths. An isolation gate proves focused
+Button and ChatWindow imports remain substantially smaller than the full UI
+barrel, while the barrel remains available for manifest and catalog tooling.
 
-Pocketshot needs generated, supported component entry points or smaller
-category entry points, plus Metro/Hermes bundle proofs showing that importing a
-Button does not pull the full catalog.
+#### 6. Component behavior coverage is complete
 
-#### 6. Component behavior coverage is incomplete
-
-Pocketshot ships 125 component directories; 106 have colocated
-`component.test.tsx` suites. Nineteen lack them, concentrated in complex
-surfaces:
-
-- chat, comments, feed, message thread, reactions, emoji and GIF pickers;
-- date, time, date-range, location, quick-add, and wizard forms;
-- tree view;
-- audit log, calendar, kanban, and notification feed.
-
-Inventory/schema conformance tests are useful, but these complex components need
-rendering, interaction, error, accessibility, and SSR-independent native
-behavior tests.
+All 125 component directories now have colocated behavior suites. The 19
+complex surfaces share a stronger contract covering representative rendering,
+stable test targets, accessibility semantics, interactions, structural visual
+baselines, and alternate state where applicable.
 
 #### 7. Public surface and product kits need explicit tiers
 
@@ -187,19 +175,12 @@ preserving explicit public entry points.
 
 ### P2 findings — truth and developer experience
 
-#### 9. Project guidance is stale
+#### 9. Project guidance is current
 
-`docs/spec-pocketshot-2.0.md` is still marked Draft and describes many shipped
-features as future work, including SSE, push, passkeys, organizations, upload,
-and the UI runtime. Engineering guidance says the config-driven UI layer is “in
-development” even though a large runtime and component catalog ship.
-
-The documentation should distinguish:
-
-- current supported behavior;
-- experimental behavior;
-- historical design decisions;
-- remaining release proof.
+The former 2.0 draft has been replaced by current architecture and capability
+status. Engineering guidance now describes the shipped UI layer, public
+maturity is linked explicitly, and repository, simulator, physical-device, and
+consumer-store evidence are distinguished.
 
 #### 10. Two TODOs violate the project's own production rule
 
@@ -238,6 +219,13 @@ candidate-consumer tests.
   the real required-peer boundary, and generated push setup requires an
   app-owned, typed notification-routing callback instead of scaffolding
   unfinished logging code.
+- **2026-07-31 — focused UI and component confidence completed:** all 125
+  focused component paths ship in ESM/CommonJS with declaration and isolation
+  checks; all 125 components have behavior suites; and the accessibility gate
+  inspects the full interactive catalog.
+- **2026-07-31 — architecture record corrected:** the stale 2.0 phase draft was
+  replaced with current architecture, capability, ownership, and release-proof
+  documentation.
 
 ### Horizon 0 — Correct the record
 
@@ -378,13 +366,10 @@ of any product's app-store schedule.
 
 ## Immediate Sequence
 
-1. Add focused UI exports with bundle-isolation tests.
-2. Complete tests for the 19 uncovered components.
-3. Replace the narrow accessibility gate with catalog and device evidence.
-4. Publish the Slingshot/Pocketshot compatibility matrix and candidate tests.
-5. Complete signed preview builds and the physical-device matrix.
-6. Separate Pocketshot framework releases from product store submissions.
-7. Reclassify the 2.0 draft as current documentation or historical design.
+1. Publish the Slingshot/Pocketshot compatibility matrix and candidate tests.
+2. Complete signed preview builds and the physical-device matrix.
+3. Separate Pocketshot framework releases from product store submissions.
+4. Record owner acceptance after external release prerequisites are satisfied.
 
 ## Release Scorecard
 

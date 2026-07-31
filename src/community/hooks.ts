@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { ApiClient } from '../api/client'
+import { appendListParams, listQuery } from '../api/list-query'
 import type {
   ContainerResponse,
   CreateContainerBody,
@@ -56,9 +57,9 @@ export function createCommunityHooks(api: ApiClient) {
   // ── Containers ───────────────────────────────────────────────────────────────
 
   function useContainers(params?: ListParams) {
-    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<ContainerResponse>>({
-      queryKey: keys.containers(),
+      queryKey: [...keys.containers(), params ?? null],
       queryFn: () => api.get<PaginatedResponse<ContainerResponse>>(`/community/containers${query}`),
     })
   }
@@ -106,9 +107,9 @@ export function createCommunityHooks(api: ApiClient) {
   // ── Threads ───────────────────────────────────────────────────────────────────
 
   function useContainerThreads({ containerId, ...params }: ThreadListParams) {
-    const query = `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}`
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<ThreadResponse>>({
-      queryKey: keys.threads(containerId),
+      queryKey: [...keys.threads(containerId), params],
       queryFn: () =>
         api.get<PaginatedResponse<ThreadResponse>>(
           `/community/containers/${containerId}/threads${query}`,
@@ -216,9 +217,9 @@ export function createCommunityHooks(api: ApiClient) {
   // ── Replies ───────────────────────────────────────────────────────────────────
 
   function useThreadReplies({ threadId, ...params }: ReplyListParams) {
-    const query = `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}`
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<ReplyResponse>>({
-      queryKey: keys.replies(threadId),
+      queryKey: [...keys.replies(threadId), params],
       queryFn: () =>
         api.get<PaginatedResponse<ReplyResponse>>(`/community/threads/${threadId}/replies${query}`),
       enabled: !!threadId,
@@ -346,9 +347,9 @@ export function createCommunityHooks(api: ApiClient) {
   // ── Members / Roles ───────────────────────────────────────────────────────────
 
   function useContainerMembers(containerId: string, params?: ListParams) {
-    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<{ userId: string }>>({
-      queryKey: keys.members(containerId),
+      queryKey: [...keys.members(containerId), params ?? null],
       queryFn: () =>
         api.get<PaginatedResponse<{ userId: string }>>(
           `/community/containers/${containerId}/members${query}`,
@@ -358,9 +359,9 @@ export function createCommunityHooks(api: ApiClient) {
   }
 
   function useContainerModerators(containerId: string, params?: ListParams) {
-    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<{ userId: string }>>({
-      queryKey: keys.moderators(containerId),
+      queryKey: [...keys.moderators(containerId), params ?? null],
       queryFn: () =>
         api.get<PaginatedResponse<{ userId: string }>>(
           `/community/containers/${containerId}/moderators${query}`,
@@ -370,9 +371,9 @@ export function createCommunityHooks(api: ApiClient) {
   }
 
   function useContainerOwners(containerId: string, params?: ListParams) {
-    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<{ userId: string }>>({
-      queryKey: keys.owners(containerId),
+      queryKey: [...keys.owners(containerId), params ?? null],
       queryFn: () =>
         api.get<PaginatedResponse<{ userId: string }>>(
           `/community/containers/${containerId}/owners${query}`,
@@ -450,9 +451,9 @@ export function createCommunityHooks(api: ApiClient) {
   // ── Reports ───────────────────────────────────────────────────────────────────
 
   function useReports(params?: ListParams) {
-    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<ReportResponse>>({
-      queryKey: keys.reports(),
+      queryKey: [...keys.reports(), params ?? null],
       queryFn: () => api.get<PaginatedResponse<ReportResponse>>(`/community/reports${query}`),
     })
   }
@@ -502,9 +503,9 @@ export function createCommunityHooks(api: ApiClient) {
   // ── Bans ──────────────────────────────────────────────────────────────────────
 
   function useBans(params?: ListParams) {
-    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<BanResponse>>({
-      queryKey: keys.bans(),
+      queryKey: [...keys.bans(), params ?? null],
       queryFn: () => api.get<PaginatedResponse<BanResponse>>(`/community/bans${query}`),
     })
   }
@@ -545,9 +546,9 @@ export function createCommunityHooks(api: ApiClient) {
   // ── Notifications ─────────────────────────────────────────────────────────────
 
   function useNotifications(params?: ListParams) {
-    const query = params ? `?page=${params.page ?? 1}&pageSize=${params.pageSize ?? 20}` : ''
+    const query = listQuery(params)
     return useQuery<PaginatedResponse<NotificationResponse>>({
-      queryKey: keys.notifications(),
+      queryKey: [...keys.notifications(), params ?? null],
       queryFn: () =>
         api.get<PaginatedResponse<NotificationResponse>>(`/community/notifications${query}`),
     })
@@ -589,8 +590,7 @@ export function createCommunityHooks(api: ApiClient) {
     const qs = new URLSearchParams()
     if (params.q) qs.set('q', params.q)
     if (params.containerId) qs.set('containerId', params.containerId)
-    if (params.page) qs.set('page', String(params.page))
-    if (params.pageSize) qs.set('pageSize', String(params.pageSize))
+    appendListParams(qs, params)
     return useQuery<SearchResponse>({
       queryKey: [...keys.searchThreads(), params] as const,
       queryFn: () => api.get<SearchResponse>(`/community/search/threads?${qs.toString()}`),
@@ -602,8 +602,7 @@ export function createCommunityHooks(api: ApiClient) {
     const qs = new URLSearchParams()
     if (params.q) qs.set('q', params.q)
     if (params.containerId) qs.set('containerId', params.containerId)
-    if (params.page) qs.set('page', String(params.page))
-    if (params.pageSize) qs.set('pageSize', String(params.pageSize))
+    appendListParams(qs, params)
     return useQuery<SearchResponse>({
       queryKey: [...keys.searchReplies(), params] as const,
       queryFn: () => api.get<SearchResponse>(`/community/search/replies?${qs.toString()}`),

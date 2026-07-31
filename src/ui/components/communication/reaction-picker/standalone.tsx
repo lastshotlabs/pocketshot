@@ -164,7 +164,11 @@ export function ReactionPickerBase({
         statusBarTranslucent
         accessibilityViewIsModal
       >
-        <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Close reaction picker">
+        <TouchableWithoutFeedback
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close reaction picker"
+        >
           <View style={styles.backdrop} />
         </TouchableWithoutFeedback>
 

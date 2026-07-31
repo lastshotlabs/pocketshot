@@ -91,7 +91,7 @@ describe('useContainers', () => {
     useContainers()
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ['community', 'containers'],
+        queryKey: ['community', 'containers', null],
       }),
     )
   })
@@ -106,16 +106,20 @@ describe('useContainers', () => {
     expect(api.get).toHaveBeenCalledWith(expect.stringContaining('/community/containers'))
   })
 
-  it('appends pagination params', () => {
+  it('appends cursor pagination params and isolates each page in the cache', () => {
     const api = makeApi()
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false })
     const { useContainers } = createCommunityHooks(api)
-    useContainers({ page: 2, pageSize: 10 })
+    useContainers({ limit: 10, cursor: 'next/page', sortDir: 'desc' })
     const opts = mockUseQuery.mock.calls[0]![0] as { queryFn: () => void }
     opts.queryFn()
     const url = (api.get as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
-    expect(url).toContain('page=2')
-    expect(url).toContain('pageSize=10')
+    expect(url).toBe('/community/containers?limit=10&cursor=next%2Fpage&sortDir=desc')
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['community', 'containers', { limit: 10, cursor: 'next/page', sortDir: 'desc' }],
+      }),
+    )
   })
 })
 

@@ -297,6 +297,7 @@ export function TimelineBase({
                 onPress={() => onItemPress(item)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
+                accessibilityLabel={item.title}
               >
                 {renderItem({ item, index })}
               </TouchableOpacity>

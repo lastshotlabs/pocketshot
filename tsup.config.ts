@@ -1,4 +1,20 @@
 import { defineConfig } from 'tsup'
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+const componentRoot = 'src/ui/components'
+const uiComponentEntries = Object.fromEntries(
+  readdirSync(componentRoot, { withFileTypes: true })
+    .filter((category) => category.isDirectory() && !category.name.startsWith('_'))
+    .flatMap((category) =>
+      readdirSync(join(componentRoot, category.name), { withFileTypes: true })
+        .filter((component) => component.isDirectory())
+        .map((component) => [
+          `ui/components/${category.name}/${component.name}/index`,
+          join(componentRoot, category.name, component.name, 'index.ts'),
+        ]),
+    ),
+)
 
 const peerDeps = [
   '@tanstack/react-query',
@@ -82,6 +98,14 @@ export default defineConfig([
     },
     format: ['esm', 'cjs'],
     sourcemap: true,
+    external: peerDeps,
+    outDir: 'dist',
+  },
+  {
+    entry: uiComponentEntries,
+    format: ['esm', 'cjs'],
+    sourcemap: false,
+    minify: true,
     external: peerDeps,
     outDir: 'dist',
   },

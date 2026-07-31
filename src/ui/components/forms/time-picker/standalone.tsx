@@ -239,7 +239,7 @@ export function TimePickerBase({
           accessibilityLabel="Close time picker"
         >
           <SafeAreaView style={styles.pickerPanel}>
-            <TouchableOpacity activeOpacity={1}>
+            <TouchableOpacity activeOpacity={1} accessible={false}>
               <Text style={styles.pickerTitle}>{label ?? 'Select Time'}</Text>
 
               <View style={styles.columnsRow}>

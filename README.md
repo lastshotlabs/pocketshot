@@ -92,6 +92,22 @@ export default function RootLayout() {
 }
 ```
 
+Import individual UI components from focused subpaths so Metro and Hermes do
+not need to traverse the full component catalog:
+
+```tsx
+import { ButtonBase } from '@lastshotlabs/pocketshot/ui/components/forms/button'
+import { ChatWindowBase } from '@lastshotlabs/pocketshot/ui/components/communication/chat-window'
+```
+
+The `@lastshotlabs/pocketshot/ui` barrel remains available for manifests,
+tokens, actions, and catalog-wide use. All 125 component directories have a
+matching `ui/components/<category>/<component>` entry point in both ESM and
+CommonJS builds.
+
+See [Pocketshot Architecture and Capability Status](docs/spec-pocketshot-2.0.md)
+for the current system boundary, capability matrix, and release-evidence model.
+
 ## `pocketshot init`
 
 ```bash

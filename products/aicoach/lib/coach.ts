@@ -122,15 +122,19 @@ export class CoachDemoController {
   readonly metrics = new MetricLogController()
   readonly goals = new GoalController()
   readonly workouts: WorkoutController
-  readonly billing = new EntitlementController({
-    purchase: async (productId) => ({
-      productId,
-      state: 'active',
-      expiresAt: '2026-08-25',
-    }),
-    restore: async () => [{ productId: 'coach-pro', state: 'grace', expiresAt: '2026-07-28' }],
-    refresh: async () => [{ productId: 'coach-pro', state: 'expired', expiresAt: '2026-07-20' }],
-  })
+  readonly billing = new EntitlementController(
+    {
+      purchase: async (productId) => ({
+        productId,
+        state: 'active',
+        expiresAt: '2026-08-25',
+      }),
+      restore: async () => [{ productId: 'coach-pro', state: 'grace', expiresAt: '2026-07-28' }],
+      refresh: async () => [{ productId: 'coach-pro', state: 'expired', expiresAt: '2026-07-20' }],
+    },
+    undefined,
+    { now: () => new Date('2026-07-27T12:00:00.000Z') },
+  )
   readonly account = createDemoAccount()
   readonly privacy = new AccountDataController(
     {
