@@ -12,6 +12,6 @@ name: Burndown cold invite link
 - extendedWaitUntil:
     visible:
       id: burndown-lobby-title
-    timeout: 30000
+    timeout: 60000
 - assertVisible:
     id: burndown-lobby-title

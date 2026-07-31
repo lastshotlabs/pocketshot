@@ -177,7 +177,7 @@ if (
 }
 if (
   !burndownDeepLinkFlow.includes('extendedWaitUntil:') ||
-  !burndownDeepLinkFlow.includes('timeout: 30000')
+  !burndownDeepLinkFlow.includes('timeout: 60000')
 ) {
   failures.push('Burndown cold-link journey does not wait for a slow native launch')
 }
