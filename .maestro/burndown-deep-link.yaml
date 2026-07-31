@@ -9,5 +9,9 @@ name: Burndown cold invite link
 - tapOn:
     text: Wait
     optional: true
+- extendedWaitUntil:
+    visible:
+      id: burndown-lobby-title
+    timeout: 30000
 - assertVisible:
     id: burndown-lobby-title

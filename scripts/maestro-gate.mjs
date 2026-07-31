@@ -32,6 +32,22 @@ const communityFlow = await readFile(
   new URL('../.maestro/community-critical.yaml', import.meta.url),
   'utf8',
 )
+const blankslateFlow = await readFile(
+  new URL('../.maestro/blankslate-critical.yaml', import.meta.url),
+  'utf8',
+)
+const burndownCriticalFlow = await readFile(
+  new URL('../.maestro/burndown-critical.yaml', import.meta.url),
+  'utf8',
+)
+const burndownDeepLinkFlow = await readFile(
+  new URL('../.maestro/burndown-deep-link.yaml', import.meta.url),
+  'utf8',
+)
+const burndownLandscapeFlow = await readFile(
+  new URL('../.maestro/burndown-landscape.yaml', import.meta.url),
+  'utf8',
+)
 const failures = []
 
 const appIds = [
@@ -124,6 +140,29 @@ const coachScrollCount = coachFlow.split('scrollUntilVisible:').length - 1
 const centeredCoachScrollCount = coachFlow.split('centerElement: true').length - 1
 if (coachScrollCount === 0 || centeredCoachScrollCount !== coachScrollCount) {
   failures.push('Coach journey does not center every scrolled control above Android navigation')
+}
+if (!coachFlow.includes("assertVisible: 'Access: available · grace'")) {
+  failures.push('Coach journey does not assert the seeded grace entitlement contract')
+}
+if (!blankslateFlow.includes('text: cake\n    direction: UP\n    centerElement: true')) {
+  failures.push('Blank Slate journey does not bring the revealed private answer into view')
+}
+if (!blankslateFlow.includes('- tapOn: Birthday.*') || blankslateFlow.includes('- hideKeyboard')) {
+  failures.push('Blank Slate journey does not use the reliable iOS keyboard-dismiss workaround')
+}
+for (const [name, body, control] of [
+  ['critical', burndownCriticalFlow, 'enter-shared'],
+  ['landscape', burndownLandscapeFlow, 'setup-six-player-table'],
+]) {
+  if (!body.includes(`id: ${control}\n    direction: DOWN\n    centerElement: true`)) {
+    failures.push(`Burndown ${name} journey does not center its below-fold entry control`)
+  }
+}
+if (
+  !burndownDeepLinkFlow.includes('extendedWaitUntil:') ||
+  !burndownDeepLinkFlow.includes('timeout: 30000')
+) {
+  failures.push('Burndown cold-link journey does not wait for a slow native launch')
 }
 for (const [index, body] of bodies.entries()) {
   if (!body.includes('launchApp:') && !body.includes('openLink:')) {

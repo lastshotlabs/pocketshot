@@ -6,6 +6,11 @@ name: Burndown shared-device turn, challenge, and privacy handoff
 - tapOn:
     text: Wait
     optional: true
+- scrollUntilVisible:
+    element:
+      id: enter-shared
+    direction: DOWN
+    centerElement: true
 - tapOn:
     id: enter-shared
 - assertVisible:

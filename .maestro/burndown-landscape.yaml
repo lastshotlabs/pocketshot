@@ -6,6 +6,11 @@ name: Burndown six-player landscape shared table
 - tapOn:
     text: Wait
     optional: true
+- scrollUntilVisible:
+    element:
+      id: setup-six-player-table
+    direction: DOWN
+    centerElement: true
 - tapOn:
     id: setup-six-player-table
 - assertVisible:

@@ -14,7 +14,7 @@ name: Blank Slate private write, reveal, vote, score, and next round
 - tapOn:
     id: private-slate-input
 - inputText: cake
-- hideKeyboard
+- tapOn: Birthday.*
 - tapOn:
     id: submit-alex
 - tapOn:
@@ -33,6 +33,11 @@ name: Blank Slate private write, reveal, vote, score, and next round
     centerElement: true
 - tapOn:
     id: reveal
+- scrollUntilVisible:
+    element:
+      text: cake
+    direction: UP
+    centerElement: true
 - assertVisible: cake
 - scrollUntilVisible:
     element:

@@ -69,7 +69,7 @@ name: Coach conversation, metrics, workout, billing, and privacy
     centerElement: true
 - tapOn:
     id: restore-pro
-- assertVisible: 'Access: active'
+- assertVisible: 'Access: available · grace'
 - scrollUntilVisible:
     element:
       id: request-export
