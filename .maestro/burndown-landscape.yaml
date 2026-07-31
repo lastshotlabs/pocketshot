@@ -13,11 +13,21 @@ name: Burndown six-player landscape shared table
     centerElement: true
 - tapOn:
     id: setup-six-player-table
+- scrollUntilVisible:
+    element:
+      id: burndown-lobby-title
+    direction: UP
+    centerElement: true
 - assertVisible:
     id: burndown-lobby-title
 - assertVisible: Jo · 3 lives
 - assertVisible: Rae · 3 lives
 - setOrientation: LANDSCAPE_LEFT
+- scrollUntilVisible:
+    element:
+      id: start-match
+    direction: DOWN
+    centerElement: true
 - tapOn:
     id: start-match
 - assertVisible:

@@ -158,6 +158,18 @@ for (const [name, body, control] of [
     failures.push(`Burndown ${name} journey does not center its below-fold entry control`)
   }
 }
+for (const [control, direction] of [
+  ['burndown-lobby-title', 'UP'],
+  ['start-match', 'DOWN'],
+]) {
+  if (
+    !burndownLandscapeFlow.includes(
+      `id: ${control}\n    direction: ${direction}\n    centerElement: true`,
+    )
+  ) {
+    failures.push(`Burndown landscape journey does not center ${control}`)
+  }
+}
 if (
   !burndownDeepLinkFlow.includes('extendedWaitUntil:') ||
   !burndownDeepLinkFlow.includes('timeout: 30000')
